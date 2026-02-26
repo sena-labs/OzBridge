@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "moduleResolution": "Node16",
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "copilot-chat-toolkit": ["./packages/copilot-chat-toolkit/src/index.ts"]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", ".vscode-test"]
+}

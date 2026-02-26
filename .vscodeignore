@@ -1,0 +1,30 @@
+# Source & development
+.vscode/**
+.vscode-test/**
+.github/**
+src/**
+test/**
+docs/**
+coverage/**
+
+# Build tooling
+tsconfig.json
+vitest.config.ts
+esbuild.js
+.gitignore
+.markdownlint*
+
+# SDK workspace package (bundled by esbuild)
+packages/**
+
+# Scaffold output (created by /init, not part of the extension)
+.agents/**
+.warp/**
+
+# Misc
+node_modules/**
+*.ts
+!dist/**
+
+# Source maps (exclude after !dist re-include)
+dist/**/*.map

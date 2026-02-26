@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guida Rapida — Warp Bridge per VS Code</title>
+<style>
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #0e0e12;
+  color: #e2e2e8;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #16161d; }
+::-webkit-scrollbar-thumb { background: #01d68f55; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #01d68f; }
+
+/* ===== NAV SIDEBAR ===== */
+.sidebar {
+  position: fixed; top: 0; left: 0;
+  width: 280px; height: 100vh;
+  background: #16161d;
+  border-right: 1px solid #2a2a35;
+  padding: 24px 0;
+  overflow-y: auto;
+  z-index: 100;
+  transition: transform .3s ease;
+}
+.sidebar-logo {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 24px 24px;
+  border-bottom: 1px solid #2a2a35;
+  margin-bottom: 16px;
+}
+.sidebar-logo .logo-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #01d68f, #00b377);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 18px; color: #0e0e12;
+}
+.sidebar-logo span {
+  font-size: 15px; font-weight: 700; color: #fff;
+  letter-spacing: -.3px;
+}
+.sidebar nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 24px;
+  color: #8b8b9e;
+  text-decoration: none;
+  font-size: 13.5px;
+  transition: all .2s;
+  border-left: 3px solid transparent;
+}
+.sidebar nav a:hover,
+.sidebar nav a.active {
+  color: #01d68f;
+  background: #01d68f0a;
+  border-left-color: #01d68f;
+}
+.sidebar nav a .nav-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: #2a2a35; border-radius: 6px;
+  font-size: 11px; font-weight: 700; color: #8b8b9e;
+  flex-shrink: 0;
+  transition: all .2s;
+}
+.sidebar nav a:hover .nav-num,
+.sidebar nav a.active .nav-num {
+  background: #01d68f22;
+  color: #01d68f;
+}
+
+/* ===== MOBILE TOGGLE ===== */
+.mobile-toggle {
+  display: none;
+  position: fixed; top: 16px; left: 16px;
+  z-index: 200;
+  width: 44px; height: 44px;
+  background: #16161d; border: 1px solid #2a2a35;
+  border-radius: 10px;
+  color: #01d68f; font-size: 22px;
+  cursor: pointer;
+  align-items: center; justify-content: center;
+}
+.mobile-toggle:hover { background: #1e1e28; }
+
+/* ===== MAIN CONTENT ===== */
+.main {
+  margin-left: 280px;
+  min-height: 100vh;
+}
+
+/* ===== HERO ===== */
+.hero {
+  position: relative;
+  padding: 80px 60px 60px;
+  background: linear-gradient(165deg, #0e0e12 0%, #111827 50%, #0e0e12 100%);
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; top: -200px; right: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, #01d68f15 0%, transparent 70%);
+  animation: heroPulse 6s ease-in-out infinite;
+}
+@keyframes heroPulse {
+  0%, 100% { opacity: .5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px;
+  background: #01d68f15;
+  border: 1px solid #01d68f33;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: #01d68f;
+  text-transform: uppercase; letter-spacing: .8px;
+  margin-bottom: 24px;
+}
+.hero-badge::before {
+  content: '';
+  width: 8px; height: 8px;
+  background: #01d68f;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .4; transform: scale(.7); }
+}
+.hero h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 20px;
+  letter-spacing: -.5px;
+}
+.hero h1 .accent { color: #01d68f; }
+.hero p.subtitle {
+  font-size: 18px;
+  color: #8b8b9e;
+  max-width: 560px;
+  line-height: 1.7;
+  margin-bottom: 32px;
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #01d68f, #00b377);
+  color: #0e0e12;
+  font-weight: 700; font-size: 15px;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all .25s;
+  box-shadow: 0 4px 20px #01d68f33;
+}
+.hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px #01d68f55;
+}
+
+/* ===== SECTIONS ===== */
+.section {
+  padding: 60px;
+  border-bottom: 1px solid #1e1e28;
+}
+.section:last-child { border-bottom: none; }
+.section-header {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 40px;
+}
+.section-num {
+  display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, #01d68f22, #01d68f08);
+  border: 1px solid #01d68f33;
+  border-radius: 14px;
+  font-size: 20px; font-weight: 800; color: #01d68f;
+  flex-shrink: 0;
+}
+.section-header h2 {
+  font-size: 28px; font-weight: 700; color: #fff;
+  letter-spacing: -.3px;
+}
+
+/* ===== REQUIREMENT CARDS ===== */
+.req-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.req-card {
+  background: #16161d;
+  border: 1px solid #2a2a35;
+  border-radius: 14px;
+  padding: 24px;
+  transition: all .25s;
+}
+.req-card:hover {
+  border-color: #01d68f44;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px #01d68f11;
+}
+.req-card .req-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+.req-card h3 { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.req-card p { font-size: 13px; color: #8b8b9e; }
+.req-card .version {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 3px 10px;
+  background: #01d68f15;
+  border-radius: 6px;
+  font-size: 12px; font-weight: 600; color: #01d68f;
+}
+
+/* ===== STEP CARDS ===== */
+.steps { display: flex; flex-direction: column; gap: 24px; }
+.step-card {
+  background: #16161d;
+  border: 1px solid #2a2a35;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all .25s;
+}
+.step-card:hover {
+  border-color: #01d68f33;
+  box-shadow: 0 4px 20px #01d68f0a;
+}
+.step-top {
+  display: flex; align-items: center; gap: 16px;
+  padding: 24px 28px;
+}
+.step-badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, #01d68f, #00b377);
+  border-radius: 10px;
+  font-size: 16px; font-weight: 800; color: #0e0e12;
+  flex-shrink: 0;
+}
+.step-top h3 { font-size: 17px; font-weight: 700; color: #fff; }
+.step-body { padding: 0 28px 28px; }
+.step-body p { color: #b0b0be; font-size: 14.5px; margin-bottom: 12px; }
+
+/* ===== GIF / SCREENSHOT PLACEHOLDER ===== */
+.media-placeholder {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  background: #1a1a24;
+  border: 2px dashed #2a2a35;
+  overflow: hidden;
+  margin: 16px 0;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: border-color .3s;
+}
+.media-placeholder:hover { border-color: #01d68f44; }
+.media-placeholder .ph-icon {
+  font-size: 48px;
+  opacity: .3;
+  animation: floatIcon 3s ease-in-out infinite;
+}
+@keyframes floatIcon {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.media-placeholder .ph-label {
+  font-size: 13px; color: #8b8b9e; font-weight: 600;
+  text-align: center; padding: 0 20px;
+}
+.media-placeholder .ph-format {
+  font-size: 11px; color: #555; font-weight: 600;
+  padding: 3px 10px;
+  background: #2a2a35;
+  border-radius: 6px;
+}
+/* Actual media replaces placeholder */
+.media-placeholder img,
+.media-placeholder video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* ===== SIMULATED TERMINAL ===== */
+.terminal {
+  background: #1a1a24;
+  border: 1px solid #2a2a35;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 16px 0;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: 13.5px;
+}
+.terminal-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: #16161d;
+  border-bottom: 1px solid #2a2a35;
+}
+.terminal-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-dot.r { background: #ff5f57; }
+.terminal-dot.y { background: #ffbd2e; }
+.terminal-dot.g { background: #28ca41; }
+.terminal-bar span {
+  margin-left: 8px;
+  font-size: 12px; color: #555; font-weight: 600;
+}
+.terminal-body {
+  padding: 16px 20px;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+.terminal-body .prompt { color: #01d68f; }
+.terminal-body .cmd { color: #e2e2e8; }
+.terminal-body .output { color: #8b8b9e; }
+.terminal-body .success { color: #01d68f; }
+.terminal-body .path { color: #6c9cff; }
+
+/* ===== TYPING ANIMATION ===== */
+.typing-line {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid #01d68f;
+  animation: typing 2.5s steps(40, end) forwards, blink .75s step-end infinite;
+  max-width: 0;
+}
+.step-card:hover .typing-line { max-width: 100%; }
+@keyframes typing { from { max-width: 0; } to { max-width: 100%; } }
+@keyframes blink { 50% { border-color: transparent; } }
+
+/* ===== CHAT SIMULATION ===== */
+.chat-sim {
+  background: #1a1a24;
+  border: 1px solid #2a2a35;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 16px 0;
+}
+.chat-sim-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: #16161d;
+  border-bottom: 1px solid #2a2a35;
+  font-size: 13px; color: #8b8b9e; font-weight: 600;
+}
+.chat-sim-bar .cs-icon {
+  width: 20px; height: 20px;
+  background: linear-gradient(135deg, #01d68f, #00b377);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; color: #0e0e12; font-weight: 800;
+}
+.chat-msg {
+  padding: 14px 20px;
+  border-bottom: 1px solid #1e1e28;
+  display: flex; gap: 12px;
+}
+.chat-msg:last-child { border-bottom: none; }
+.chat-avatar {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  flex-shrink: 0;
+}
+.chat-avatar.user { background: #3b3b4f; color: #e2e2e8; }
+.chat-avatar.warp { background: linear-gradient(135deg, #01d68f, #00b377); color: #0e0e12; }
+.chat-bubble { font-size: 13.5px; line-height: 1.6; }
+.chat-bubble .mention { color: #01d68f; font-weight: 600; }
+.chat-bubble .cmd-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  background: #01d68f15;
+  border-radius: 4px;
+  color: #01d68f;
+  font-family: 'Cascadia Code', monospace;
+  font-size: 12.5px;
+}
+.chat-bubble code {
+  padding: 2px 6px;
+  background: #2a2a35;
+  border-radius: 4px;
+  font-family: 'Cascadia Code', monospace;
+  font-size: 12.5px;
+  color: #e2e2e8;
+}
+
+/* ===== COMMAND TABLE ===== */
+.cmd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.cmd-card {
+  background: #16161d;
+  border: 1px solid #2a2a35;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all .25s;
+  cursor: default;
+}
+.cmd-card:hover {
+  border-color: #01d68f44;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px #01d68f0a;
+}
+.cmd-card .cmd-name {
+  display: inline-block;
+  font-family: 'Cascadia Code', monospace;
+  font-size: 14px; font-weight: 700;
+  color: #01d68f;
+  margin-bottom: 8px;
+}
+.cmd-card .cmd-desc { font-size: 13px; color: #8b8b9e; margin-bottom: 10px; }
+.cmd-card .cmd-example {
+  font-family: 'Cascadia Code', monospace;
+  font-size: 12px; color: #6c9cff;
+  background: #1a1a24;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: block;
+  overflow-x: auto;
+}
+
+/* ===== SETTINGS TABLE ===== */
+.settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+}
+.settings-table th {
+  text-align: left;
+  padding: 12px 16px;
+  background: #16161d;
+  color: #8b8b9e;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  border-bottom: 1px solid #2a2a35;
+}
+.settings-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #1e1e28;
+  font-size: 13.5px;
+}
+.settings-table tr:hover td { background: #16161d55; }
+.settings-table .setting-key {
+  font-family: 'Cascadia Code', monospace;
+  color: #01d68f;
+  font-size: 12.5px;
+}
+.settings-table .setting-default {
+  font-family: 'Cascadia Code', monospace;
+  color: #6c9cff;
+  font-size: 12.5px;
+}
+
+/* ===== TIPS ===== */
+.tip-box {
+  background: #01d68f0a;
+  border: 1px solid #01d68f22;
+  border-left: 4px solid #01d68f;
+  border-radius: 0 12px 12px 0;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.tip-box.warning {
+  background: #ffbd2e0a;
+  border-color: #ffbd2e22;
+  border-left-color: #ffbd2e;
+}
+.tip-box.warning .tip-label { color: #ffbd2e; }
+.tip-box .tip-label {
+  font-size: 12px; font-weight: 700; color: #01d68f;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  margin-bottom: 8px;
+}
+.tip-box p { font-size: 14px; color: #b0b0be; }
+
+/* ===== COLLAPSIBLE FAQ ===== */
+.faq-item {
+  background: #16161d;
+  border: 1px solid #2a2a35;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color .25s;
+}
+.faq-item:hover { border-color: #2a2a45; }
+.faq-q {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px;
+  cursor: pointer;
+  font-size: 15px; font-weight: 600; color: #e2e2e8;
+  user-select: none;
+  transition: color .2s;
+}
+.faq-q:hover { color: #01d68f; }
+.faq-q .faq-arrow {
+  font-size: 18px; color: #555;
+  transition: transform .3s, color .3s;
+}
+.faq-item.open .faq-arrow { transform: rotate(180deg); color: #01d68f; }
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .4s ease, padding .3s ease;
+  padding: 0 24px;
+}
+.faq-item.open .faq-a {
+  max-height: 500px;
+  padding: 0 24px 20px;
+}
+.faq-a p { font-size: 14px; color: #8b8b9e; line-height: 1.7; }
+
+/* ===== BEST PRACTICE COMPARISON ===== */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+.compare-card {
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid;
+}
+.compare-card.bad {
+  background: #ff5f5710;
+  border-color: #ff5f5733;
+}
+.compare-card.good {
+  background: #01d68f10;
+  border-color: #01d68f33;
+}
+.compare-card .compare-label {
+  font-size: 12px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .8px;
+  margin-bottom: 12px;
+}
+.compare-card.bad .compare-label { color: #ff5f57; }
+.compare-card.good .compare-label { color: #01d68f; }
+.compare-card ul {
+  list-style: none;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.compare-card li {
+  font-size: 13.5px; color: #b0b0be;
+  padding-left: 22px;
+  position: relative;
+}
+.compare-card li::before {
+  position: absolute; left: 0; font-size: 14px;
+}
+.compare-card.bad li::before { content: '✗'; color: #ff5f57; }
+.compare-card.good li::before { content: '✓'; color: #01d68f; }
+
+/* ===== GLOSSARY ===== */
+.glossary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+.glossary-item {
+  background: #16161d;
+  border: 1px solid #2a2a35;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+.glossary-item dt {
+  font-size: 14px; font-weight: 700; color: #01d68f;
+  margin-bottom: 4px;
+}
+.glossary-item dd { font-size: 13px; color: #8b8b9e; }
+
+/* ===== FOOTER ===== */
+.footer {
+  padding: 40px 60px;
+  border-top: 1px solid #1e1e28;
+  text-align: center;
+  color: #555;
+  font-size: 13px;
+}
+.footer a { color: #01d68f; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ===== OS TABS ===== */
+.os-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.os-tab {
+  padding: 8px 20px;
+  background: #1a1a24;
+  border: 1px solid #2a2a35;
+  border-radius: 8px 8px 0 0;
+  font-size: 13px; font-weight: 600;
+  color: #8b8b9e;
+  cursor: pointer;
+  transition: all .2s;
+  border-bottom: 2px solid transparent;
+}
+.os-tab:hover { color: #e2e2e8; background: #1e1e28; }
+.os-tab.active {
+  color: #01d68f;
+  background: #1a1a24;
+  border-bottom-color: #01d68f;
+}
+.os-content { display: none; }
+.os-content.active { display: block; }
+
+/* ===== ANIMATED FLOW ===== */
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 30px 20px;
+  margin: 20px 0;
+  background: #16161d;
+  border: 1px solid #2a2a35;
+  border-radius: 14px;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+.flow-node {
+  display: flex; align-items: center; justify-content: center;
+  padding: 10px 18px;
+  background: #1a1a24;
+  border: 1px solid #2a2a35;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 600; color: #e2e2e8;
+  white-space: nowrap;
+  animation: fadeInUp .5s ease both;
+}
+.flow-node:nth-child(1) { animation-delay: .1s; }
+.flow-node:nth-child(3) { animation-delay: .3s; }
+.flow-node:nth-child(5) { animation-delay: .5s; }
+.flow-node:nth-child(7) { animation-delay: .7s; }
+.flow-node:nth-child(9) { animation-delay: .9s; }
+.flow-arrow { color: #01d68f; font-size: 18px; animation: fadeInUp .5s ease both; }
+.flow-arrow:nth-child(2) { animation-delay: .2s; }
+.flow-arrow:nth-child(4) { animation-delay: .4s; }
+.flow-arrow:nth-child(6) { animation-delay: .6s; }
+.flow-arrow:nth-child(8) { animation-delay: .8s; }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== BACK-TO-TOP ===== */
+.back-to-top {
+  position: fixed; bottom: 28px; right: 28px;
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, #01d68f, #00b377);
+  border: none; border-radius: 12px;
+  color: #0e0e12; font-size: 20px;
+  cursor: pointer;
+  opacity: 0; pointer-events: none;
+  transition: all .3s;
+  box-shadow: 0 4px 16px #01d68f44;
+  z-index: 90;
+  display: flex; align-items: center; justify-content: center;
+}
+.back-to-top.visible { opacity: 1; pointer-events: all; }
+.back-to-top:hover { transform: translateY(-3px); box-shadow: 0 8px 24px #01d68f55;}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .mobile-toggle { display: flex; }
+  .main { margin-left: 0; }
+  .hero, .section, .footer { padding: 40px 24px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .flow-diagram { flex-direction: column; }
+  .flow-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- MOBILE TOGGLE -->
+<button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">☰</button>
+
+<!-- SIDEBAR NAV -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">W</div>
+    <span>Warp Bridge<br><small style="font-weight:400;font-size:11px;color:#8b8b9e">Guida Rapida</small></span>
+  </div>
+  <nav>
+    <a href="#prerequisiti"><span class="nav-num">1</span> Prerequisiti</a>
+    <a href="#installa-warp"><span class="nav-num">2</span> Installa Warp</a>
+    <a href="#installa-ext"><span class="nav-num">3</span> Installa estensione</a>
+    <a href="#primo-avvio"><span class="nav-num">4</span> Primo avvio</a>
+    <a href="#uso-base"><span class="nav-num">5</span> Utilizzo base</a>
+    <a href="#comandi"><span class="nav-num">6</span> Tutti i comandi</a>
+    <a href="#impostazioni"><span class="nav-num">7</span> Impostazioni</a>
+    <a href="#consigli"><span class="nav-num">8</span> Consigli pro</a>
+    <a href="#problemi"><span class="nav-num">9</span> Problemi comuni</a>
+    <a href="#glossario"><span class="nav-num">G</span> Glossario</a>
+  </nav>
+</aside>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- HERO -->
+  <header class="hero" id="top">
+    <div class="hero-badge">Guida per principianti</div>
+    <h1>Inizia con <span class="accent">Warp Bridge</span><br>in pochi minuti</h1>
+    <p class="subtitle">Usa gli agenti AI di Warp direttamente dalla chat di VS Code. Nessuna esperienza tecnica necessaria — segui i passaggi e sarai operativo subito.</p>
+    <a href="#prerequisiti" class="hero-cta">Iniziamo →</a>
+  </header>
+
+  <!-- COME FUNZIONA — FLOW ANIMATO -->
+  <div class="section" style="padding-top:40px;padding-bottom:40px;border-bottom:1px solid #1e1e28;">
+    <p style="text-align:center;font-size:13px;color:#8b8b9e;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Come funziona</p>
+    <div class="flow-diagram">
+      <div class="flow-node">💬 Tu scrivi nella chat</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">🔌 Warp Bridge</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">⚙️ Oz CLI</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">🤖 Agente AI</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">✅ Risultato in chat</div>
+    </div>
+  </div>
+
+  <!-- ===== 1. PREREQUISITI ===== -->
+  <section class="section" id="prerequisiti">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <h2>Cosa ti serve prima di iniziare</h2>
+    </div>
+
+    <div class="req-grid">
+      <div class="req-card">
+        <div class="req-icon" style="background:#3b82f615;">💻</div>
+        <h3>VS Code</h3>
+        <p>L'editor di Microsoft — gratuito e multipiattaforma.</p>
+        <span class="version">≥ 1.96.0</span>
+      </div>
+      <div class="req-card">
+        <div class="req-icon" style="background:#8b5cf615;">🤖</div>
+        <h3>GitHub Copilot Chat</h3>
+        <p>Estensione di chat AI per VS Code. Serve per il pannello <code>@warp</code>.</p>
+        <span class="version">qualsiasi versione</span>
+      </div>
+      <div class="req-card">
+        <div class="req-icon" style="background:#01d68f15;">⚡</div>
+        <h3>Warp Terminal</h3>
+        <p>Il terminale avanzato che include il CLI «Oz» per gli agenti.</p>
+        <span class="version">ultima stabile</span>
+      </div>
+      <div class="req-card">
+        <div class="req-icon" style="background:#f59e0b15;">🔑</div>
+        <h3>Account Warp</h3>
+        <p>Registrazione gratuita su <a href="https://app.warp.dev" style="color:#01d68f" target="_blank">app.warp.dev</a>.</p>
+        <span class="version">gratuito</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 2. INSTALLA WARP ===== -->
+  <section class="section" id="installa-warp">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <h2>Installa Warp e il CLI Oz</h2>
+    </div>
+
+    <!-- OS TABS -->
+    <div class="os-tabs">
+      <div class="os-tab active" onclick="switchOS('win')">🪟 Windows</div>
+      <div class="os-tab" onclick="switchOS('mac')">🍎 macOS</div>
+      <div class="os-tab" onclick="switchOS('linux')">🐧 Linux</div>
+    </div>
+
+    <!-- WINDOWS -->
+    <div class="os-content active" id="os-win">
+      <div class="steps">
+        <div class="step-card">
+          <div class="step-top">
+            <div class="step-badge">1</div>
+            <h3>Scarica Warp</h3>
+          </div>
+          <div class="step-body">
+            <p>Vai su <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a> e scarica l'installer per Windows. Esegui il file e segui la procedura guidata.</p>
+            <div class="media-placeholder" data-media="gif-01-download-warp.gif">
+              <img src="media/gif-01-download-warp.gif" alt="Download e installazione di Warp su Windows">
+              <div class="ph-icon">⬇️</div>
+              <div class="ph-label">GIF: Download e installazione di Warp su Windows</div>
+              <div class="ph-format">GIF · 16:9 · ~800×450px</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-top">
+            <div class="step-badge">2</div>
+            <h3>Verifica che Oz sia nel PATH</h3>
+          </div>
+          <div class="step-body">
+            <p>Apri PowerShell e digita:</p>
+            <div class="terminal">
+              <div class="terminal-bar">
+                <div class="terminal-dot r"></div>
+                <div class="terminal-dot y"></div>
+                <div class="terminal-dot g"></div>
+                <span>PowerShell</span>
+              </div>
+              <div class="terminal-body">
+                <span class="prompt">PS C:\&gt;</span> <span class="cmd">where oz</span><br>
+                <span class="path">C:\Users\TuoNome\AppData\Local\Programs\Warp\oz.cmd</span>
+              </div>
+            </div>
+            <div class="media-placeholder" data-media="gif-02-verify-oz.gif">
+              <img src="media/gif-02-verify-oz.gif" alt="Verifica di Oz nel PATH da PowerShell">
+              <div class="ph-icon">✅</div>
+              <div class="ph-label">GIF: Verifica di Oz nel PATH da PowerShell</div>
+              <div class="ph-format">GIF · 16:9</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step-card">
+          <div class="step-top">
+            <div class="step-badge">3</div>
+            <h3>Primo login</h3>
+          </div>
+          <div class="step-body">
+            <p>Autenticati con il tuo account Warp:</p>
+            <div class="terminal">
+              <div class="terminal-bar">
+                <div class="terminal-dot r"></div>
+                <div class="terminal-dot y"></div>
+                <div class="terminal-dot g"></div>
+                <span>PowerShell</span>
+              </div>
+              <div class="terminal-body">
+                <span class="prompt">PS C:\&gt;</span> <span class="cmd">oz auth login</span><br>
+                <span class="output">Opening browser for authentication...</span><br>
+                <span class="success">✓ Successfully logged in!</span>
+              </div>
+            </div>
+            <div class="media-placeholder" data-media="gif-03-oz-login.gif">
+              <img src="media/gif-03-oz-login.gif" alt="Processo di login con Oz">
+              <div class="ph-icon">🔑</div>
+              <div class="ph-label">GIF: Processo di login con Oz (apertura browser → callback)</div>
+              <div class="ph-format">GIF · 16:9</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MACOS -->
+    <div class="os-content" id="os-mac">
+      <div class="steps">
+        <div class="step-card">
+          <div class="step-top"><div class="step-badge">1</div><h3>Installa con Homebrew</h3></div>
+          <div class="step-body">
+            <div class="terminal">
+              <div class="terminal-bar">
+                <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
+                <span>Terminal</span>
+              </div>
+              <div class="terminal-body">
+                <span class="prompt">$</span> <span class="cmd">brew install warp</span><br>
+                <span class="prompt">$</span> <span class="cmd">which oz</span><br>
+                <span class="path">/Applications/Warp.app/Contents/MacOS/oz</span><br>
+                <span class="prompt">$</span> <span class="cmd">oz auth login</span><br>
+                <span class="success">✓ Successfully logged in!</span>
+              </div>
+            </div>
+            <p>In alternativa scarica il .dmg da <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINUX -->
+    <div class="os-content" id="os-linux">
+      <div class="steps">
+        <div class="step-card">
+          <div class="step-top"><div class="step-badge">1</div><h3>Installa dal sito</h3></div>
+          <div class="step-body">
+            <p>Segui le istruzioni per la tua distribuzione su <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a>, poi verifica:</p>
+            <div class="terminal">
+              <div class="terminal-bar">
+                <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
+                <span>Terminal</span>
+              </div>
+              <div class="terminal-body">
+                <span class="prompt">$</span> <span class="cmd">which oz</span><br>
+                <span class="path">~/.warp/bin/oz</span><br>
+                <span class="prompt">$</span> <span class="cmd">oz auth login</span><br>
+                <span class="success">✓ Successfully logged in!</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 3. INSTALLA ESTENSIONE ===== -->
+  <section class="section" id="installa-ext">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <h2>Installa l'estensione in VS Code</h2>
+    </div>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-top">
+          <div class="step-badge">1</div>
+          <h3>Installa il file VSIX</h3>
+        </div>
+        <div class="step-body">
+          <p>Apri il terminale integrato di VS Code (<kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+`</kbd>) e digita:</p>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
+              <span>VS Code Terminal</span>
+            </div>
+            <div class="terminal-body">
+              <span class="prompt">PS&gt;</span> <span class="cmd">code --install-extension warp-vsc-bridge-0.1.0.vsix</span><br>
+              <span class="success">Extension 'warp-vsc-bridge-0.1.0.vsix' was successfully installed.</span>
+            </div>
+          </div>
+          <div class="media-placeholder" data-media="gif-04-install-vsix.gif">
+            <img src="media/gif-04-install-vsix.gif" alt="Installazione del VSIX nel terminale di VS Code">
+            <div class="ph-icon">📦</div>
+            <div class="ph-label">GIF: Installazione del VSIX nel terminale di VS Code</div>
+            <div class="ph-format">GIF · 16:9</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-top">
+          <div class="step-badge">2</div>
+          <h3>Ricarica la finestra</h3>
+        </div>
+        <div class="step-body">
+          <p>Premi <kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+Shift+P</kbd>, digita <code>Reload Window</code> e premi Invio.</p>
+          <div class="media-placeholder" data-media="gif-05-reload-window.gif">
+            <img src="media/gif-05-reload-window.gif" alt="Reload Window dal Command Palette">
+            <div class="ph-icon">🔄</div>
+            <div class="ph-label">GIF: Reload Window dal Command Palette</div>
+            <div class="ph-format">GIF · 16:9</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-label">💡 Metodo alternativo — da sorgente</div>
+      <p>Se sei uno sviluppatore puoi clonare il repository, eseguire <code>npm install && npm run build</code> e premere <strong>F5</strong> per lanciare l'Extension Development Host.</p>
+    </div>
+  </section>
+
+  <!-- ===== 4. PRIMO AVVIO ===== -->
+  <section class="section" id="primo-avvio">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <h2>Primo avvio e verifica</h2>
+    </div>
+
+    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Controlliamo che tutto funzioni con un solo comando:</p>
+
+    <div class="chat-sim">
+      <div class="chat-sim-bar">
+        <div class="cs-icon">W</div>
+        Copilot Chat — @warp
+      </div>
+      <div class="chat-msg">
+        <div class="chat-avatar user">Tu</div>
+        <div class="chat-bubble"><span class="mention">@warp</span> <span class="cmd-tag">/config</span></div>
+      </div>
+      <div class="chat-msg">
+        <div class="chat-avatar warp">W</div>
+        <div class="chat-bubble">
+          ⚙️ <strong>Configurazione Warp Bridge</strong><br>
+          ────────────────────────<br>
+          ✅ <strong>Disponibile</strong> — versione: unknown<br>
+          Modello: <code>auto</code><br>
+          Profilo: <code>Default</code><br>
+          Timeout: <code>300 s</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="media-placeholder" data-media="gif-06-first-config.gif">
+      <img src="media/gif-06-first-config.gif" alt="Primo avvio — @warp /config nella chat">
+      <div class="ph-icon">🎬</div>
+      <div class="ph-label">GIF: Primo avvio — digitare @warp /config nella chat e vedere la risposta</div>
+      <div class="ph-format">GIF · 16:9</div>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-label">✅ Tutto ok?</div>
+      <p>Se vedi <strong>«✅ Disponibile»</strong> sei pronto! Se vedi <strong>«❌ Non disponibile»</strong> vai alla sezione <a href="#problemi" style="color:#01d68f">Problemi comuni</a>.</p>
+    </div>
+  </section>
+
+  <!-- ===== 5. UTILIZZO BASE ===== -->
+  <section class="section" id="uso-base">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <h2>Utilizzo base</h2>
+    </div>
+
+    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Tutte le interazioni avvengono nella <strong style="color:#fff">chat di Copilot</strong>. Scrivi sempre <code>@warp</code> all'inizio.</p>
+
+    <!-- RUN LOCALE -->
+    <div class="step-card" style="margin-bottom:24px;">
+      <div class="step-top">
+        <div class="step-badge">🚀</div>
+        <h3>Esecuzione locale — <code style="color:#01d68f">/run</code></h3>
+      </div>
+      <div class="step-body">
+        <div class="chat-sim">
+          <div class="chat-sim-bar"><div class="cs-icon">W</div> Copilot Chat</div>
+          <div class="chat-msg">
+            <div class="chat-avatar user">Tu</div>
+            <div class="chat-bubble"><span class="mention">@warp</span> <span class="cmd-tag">/run</span> correggi il bug nella funzione di login</div>
+          </div>
+          <div class="chat-msg">
+            <div class="chat-avatar warp">W</div>
+            <div class="chat-bubble">
+              🔄 Esecuzione agente in corso...<br><br>
+              ✅ <strong>Completato</strong><br>
+              Ho trovato e corretto il bug: la variabile <code>isAuthenticated</code> non veniva aggiornata dopo il refresh del token...
+            </div>
+          </div>
+        </div>
+        <div class="media-placeholder" data-media="gif-07-run-local.gif">
+          <img src="media/gif-07-run-local.gif" alt="Esecuzione /run — l'agente analizza e corregge il codice">
+          <div class="ph-icon">🚀</div>
+          <div class="ph-label">GIF: Esecuzione /run — l'agente analizza e corregge il codice</div>
+          <div class="ph-format">GIF · 16:9</div>
+        </div>
+        <div class="tip-box" style="margin-top:12px;">
+          <div class="tip-label">💡 Suggerimento</div>
+          <p><strong>Seleziona del codice</strong> nell'editor prima di inviare il comando: l'agente lo vedrà come contesto aggiuntivo e darà risultati migliori.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLOUD -->
+    <div class="step-card" style="margin-bottom:24px;">
+      <div class="step-top">
+        <div class="step-badge">☁️</div>
+        <h3>Esecuzione cloud — <code style="color:#01d68f">/cloud</code></h3>
+      </div>
+      <div class="step-body">
+        <div class="chat-sim">
+          <div class="chat-sim-bar"><div class="cs-icon">W</div> Copilot Chat</div>
+          <div class="chat-msg">
+            <div class="chat-avatar user">Tu</div>
+            <div class="chat-bubble"><span class="mention">@warp</span> <span class="cmd-tag">/cloud</span> esegui i test e genera il report di copertura</div>
+          </div>
+          <div class="chat-msg">
+            <div class="chat-avatar warp">W</div>
+            <div class="chat-bubble">
+              ☁️ Task inviato al cloud — ID: <code>run-a7f3</code><br>
+              ⏳ In coda... → 🔄 In esecuzione... → ✅ Completato!<br><br>
+              Copertura: <strong>98.15%</strong> statements, <strong>98.68%</strong> lines.
+            </div>
+          </div>
+        </div>
+        <div class="tip-box warning" style="margin-top:12px;">
+          <div class="tip-label">⚠️ Attenzione — crediti</div>
+          <p>Le esecuzioni cloud consumano crediti del tuo account Warp. Le esecuzioni locali (<code>/run</code>) sono gratuite.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="step-card" style="margin-bottom:24px;">
+      <div class="step-top">
+        <div class="step-badge">📊</div>
+        <h3>Stato esecuzioni — <code style="color:#01d68f">/status</code></h3>
+      </div>
+      <div class="step-body">
+        <div class="chat-sim">
+          <div class="chat-sim-bar"><div class="cs-icon">W</div> Copilot Chat</div>
+          <div class="chat-msg">
+            <div class="chat-avatar user">Tu</div>
+            <div class="chat-bubble"><span class="mention">@warp</span> <span class="cmd-tag">/status</span></div>
+          </div>
+          <div class="chat-msg">
+            <div class="chat-avatar warp">W</div>
+            <div class="chat-bubble">
+              📋 <strong>Esecuzioni recenti:</strong><br>
+              <code>run-a7f3</code> — ✅ SUCCEEDED — 2 min fa<br>
+              <code>run-b291</code> — 🔄 RUNNING — 30 sec fa
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INIT -->
+    <div class="step-card">
+      <div class="step-top">
+        <div class="step-badge">🏗️</div>
+        <h3>Inizializzare un progetto — <code style="color:#01d68f">/init</code></h3>
+      </div>
+      <div class="step-body">
+        <p>Se è la prima volta che usi Warp in un progetto, esegui <code>@warp /init</code> per creare automaticamente i file di configurazione:</p>
+        <div class="terminal">
+          <div class="terminal-bar">
+            <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
+            <span>Risultato</span>
+          </div>
+          <div class="terminal-body">
+            <span class="success">✓</span> <span class="output">Creata cartella .agents/skills/ con 7 file SKILL.md</span><br>
+            <span class="success">✓</span> <span class="output">Creato .warp/rules/PROJECT.md</span>
+          </div>
+        </div>
+        <div class="media-placeholder" data-media="gif-08-init.gif">
+          <img src="media/gif-08-init.gif" alt="Scaffolding del progetto con /init">
+          <div class="ph-icon">🏗️</div>
+          <div class="ph-label">GIF: Scaffolding del progetto con /init</div>
+          <div class="ph-format">GIF · 16:9</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6. TUTTI I COMANDI ===== -->
+  <section class="section" id="comandi">
+    <div class="section-header">
+      <div class="section-num">6</div>
+      <h2>Tutti i comandi disponibili</h2>
+    </div>
+
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <span class="cmd-name">/run</span>
+        <p class="cmd-desc">Esegui un agente AI localmente nel tuo workspace.</p>
+        <code class="cmd-example">@warp /run refactora questa funzione</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">/cloud</span>
+        <p class="cmd-desc">Esegui un agente nel cloud (consuma crediti).</p>
+        <code class="cmd-example">@warp /cloud deploy to staging</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">/status</span>
+        <p class="cmd-desc">Controlla lo stato delle esecuzioni recenti.</p>
+        <code class="cmd-example">@warp /status run-a7f3</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">/schedule</span>
+        <p class="cmd-desc">Crea e gestisci esecuzioni pianificate (cron).</p>
+        <code class="cmd-example">@warp /schedule list</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">/models</span>
+        <p class="cmd-desc">Elenca i modelli AI disponibili.</p>
+        <code class="cmd-example">@warp /models</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">/mcp</span>
+        <p class="cmd-desc">Elenca i server MCP configurati.</p>
+        <code class="cmd-example">@warp /mcp</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">/config</span>
+        <p class="cmd-desc">Mostra la configurazione attuale e lo stato del CLI.</p>
+        <code class="cmd-example">@warp /config</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">/init</span>
+        <p class="cmd-desc">Genera i file Skills e Rules nel workspace.</p>
+        <code class="cmd-example">@warp /init</code>
+      </div>
+    </div>
+
+    <!-- Sub-comandi schedule -->
+    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;">Sotto-comandi di <code style="color:#01d68f">/schedule</code></h3>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <span class="cmd-name">list</span>
+        <p class="cmd-desc">Mostra tutte le pianificazioni.</p>
+        <code class="cmd-example">@warp /schedule list</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">create</span>
+        <p class="cmd-desc">Crea una nuova pianificazione con cron.</p>
+        <code class="cmd-example">@warp /schedule create lint "0 9 * * *" "Esegui lint"</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">pause / unpause</span>
+        <p class="cmd-desc">Metti in pausa o riprendi una pianificazione.</p>
+        <code class="cmd-example">@warp /schedule pause sched-123</code>
+      </div>
+      <div class="cmd-card">
+        <span class="cmd-name">delete</span>
+        <p class="cmd-desc">Elimina una pianificazione.</p>
+        <code class="cmd-example">@warp /schedule delete sched-123</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 7. IMPOSTAZIONI ===== -->
+  <section class="section" id="impostazioni">
+    <div class="section-header">
+      <div class="section-num">7</div>
+      <h2>Personalizza le impostazioni</h2>
+    </div>
+
+    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Apri le impostazioni di VS Code (<kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+,</kbd>) e cerca <code>warpBridge</code>.</p>
+
+    <div class="media-placeholder" data-media="gif-09-settings.gif">
+      <img src="media/gif-09-settings.gif" alt="Impostazioni di VS Code — parametri Warp Bridge">
+      <div class="ph-icon">⚙️</div>
+      <div class="ph-label">GIF: Apertura impostazioni di VS Code e modifica dei parametri Warp Bridge</div>
+      <div class="ph-format">GIF · 16:9</div>
+    </div>
+
+    <table class="settings-table">
+      <thead>
+        <tr>
+          <th>Impostazione</th>
+          <th>Default</th>
+          <th>Descrizione</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="setting-key">ozPath</td>
+          <td class="setting-default">oz</td>
+          <td>Percorso del CLI Oz. Cambia solo se non è nel PATH.</td>
+        </tr>
+        <tr>
+          <td class="setting-key">defaultModel</td>
+          <td class="setting-default">auto</td>
+          <td>Modello AI predefinito. <code>auto</code> = Warp sceglie il migliore.</td>
+        </tr>
+        <tr>
+          <td class="setting-key">defaultProfile</td>
+          <td class="setting-default">Default</td>
+          <td>Profilo agente da usare.</td>
+        </tr>
+        <tr>
+          <td class="setting-key">defaultEnvironment</td>
+          <td class="setting-default"><em>(vuoto)</em></td>
+          <td>Ambiente cloud predefinito per <code>/cloud</code>.</td>
+        </tr>
+        <tr>
+          <td class="setting-key">timeoutMs</td>
+          <td class="setting-default">300000</td>
+          <td>Timeout per esecuzioni locali (5 minuti). Aumentalo per task lunghi.</td>
+        </tr>
+        <tr>
+          <td class="setting-key">cloudPollingIntervalMs</td>
+          <td class="setting-default">5000</td>
+          <td>Intervallo di polling per task cloud (ms).</td>
+        </tr>
+        <tr>
+          <td class="setting-key">cloudPollingTimeoutMs</td>
+          <td class="setting-default">1800000</td>
+          <td>Timeout massimo di attesa per task cloud (30 min).</td>
+        </tr>
+        <tr>
+          <td class="setting-key">maxOutputChars</td>
+          <td class="setting-default">5000</td>
+          <td>Lunghezza massima dell'output in chat. Aumenta se risposte troncate.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;">Scenari comuni</h3>
+    <div class="steps">
+      <div class="step-card">
+        <div class="step-top"><div class="step-badge">⏱️</div><h3>L'agente va in timeout</h3></div>
+        <div class="step-body">
+          <p>Imposta <code>warpBridge.timeoutMs</code> a <strong>600000</strong> (10 min) o più.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-top"><div class="step-badge">🧠</div><h3>Vuoi usare un modello specifico</h3></div>
+        <div class="step-body">
+          <p>Imposta <code>warpBridge.defaultModel</code> a <strong>gpt-4o</strong>, <strong>claude-sonnet</strong>, ecc.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-top"><div class="step-badge">✂️</div><h3>La risposta viene troncata</h3></div>
+        <div class="step-body">
+          <p>Aumenta <code>warpBridge.maxOutputChars</code> a <strong>10000</strong> o più.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 8. CONSIGLI ===== -->
+  <section class="section" id="consigli">
+    <div class="section-header">
+      <div class="section-num">8</div>
+      <h2>Consigli per ottenere il massimo</h2>
+    </div>
+
+    <!-- CONTESTO AUTOMATICO -->
+    <h3 style="color:#fff;margin-bottom:16px;font-size:18px;">🎯 L'estensione invia automaticamente all'agente:</h3>
+    <div class="req-grid" style="margin-bottom:32px;">
+      <div class="req-card">
+        <div class="req-icon" style="background:#3b82f615;">📄</div>
+        <h3>File aperto</h3>
+        <p>Il contenuto del file attivo nell'editor.</p>
+      </div>
+      <div class="req-card">
+        <div class="req-icon" style="background:#8b5cf615;">🔦</div>
+        <h3>Selezione attiva</h3>
+        <p>Il codice selezionato, se presente.</p>
+      </div>
+      <div class="req-card">
+        <div class="req-icon" style="background:#f59e0b15;">⚠️</div>
+        <h3>Errori e warning</h3>
+        <p>I diagnostici visibili nel file corrente.</p>
+      </div>
+      <div class="req-card">
+        <div class="req-icon" style="background:#01d68f15;">📁</div>
+        <h3>Workspace</h3>
+        <p>Il percorso e la struttura del progetto.</p>
+      </div>
+    </div>
+
+    <!-- CONFRONTO PROMPT -->
+    <h3 style="color:#fff;margin-bottom:16px;font-size:18px;">✍️ Scrivi prompt chiari</h3>
+    <div class="compare-grid">
+      <div class="compare-card bad">
+        <div class="compare-label">❌ Troppo vago</div>
+        <ul>
+          <li>"sistema il codice"</li>
+          <li>"fai i test"</li>
+          <li>"migliora tutto"</li>
+          <li>"deploy"</li>
+        </ul>
+      </div>
+      <div class="compare-card good">
+        <div class="compare-label">✅ Chiaro e specifico</div>
+        <ul>
+          <li>"aggiungi gestione errori a fetchUser()"</li>
+          <li>"scrivi test unitari per auth.ts"</li>
+          <li>"refactora il componente Sidebar in sotto-componenti"</li>
+          <li>"crea un Dockerfile per il backend Node.js"</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- COMANDO GIUSTO -->
+    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;">🗺️ Usa il comando giusto</h3>
+    <table class="settings-table">
+      <thead><tr><th>Situazione</th><th>Comando</th></tr></thead>
+      <tbody>
+        <tr><td>Modifica rapida al codice</td><td><code style="color:#01d68f">@warp /run ...</code></td></tr>
+        <tr><td>Operazione lunga o pesante</td><td><code style="color:#01d68f">@warp /cloud ...</code></td></tr>
+        <tr><td>Primo setup del progetto</td><td><code style="color:#01d68f">@warp /init</code></td></tr>
+        <tr><td>Verificare che tutto funzioni</td><td><code style="color:#01d68f">@warp /config</code></td></tr>
+        <tr><td>Automatizzare un controllo</td><td><code style="color:#01d68f">@warp /schedule create ...</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===== 9. PROBLEMI COMUNI ===== -->
+  <section class="section" id="problemi">
+    <div class="section-header">
+      <div class="section-num">9</div>
+      <h2>Risoluzione dei problemi comuni</h2>
+    </div>
+
+    <div class="faq-item open">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>❌ Il CLI Oz non viene trovato</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a">
+        <p><strong>Sintomo:</strong> <code>@warp /config</code> mostra «❌ Non disponibile».</p>
+        <p style="margin-top:10px"><strong>Soluzioni:</strong></p>
+        <p>1. Verifica che Warp sia installato — apri un terminale e digita <code>where oz</code> (Windows) o <code>which oz</code> (macOS/Linux).</p>
+        <p>2. Se il comando non viene trovato, vai in <strong>Impostazioni → warpBridge.ozPath</strong> e inserisci il percorso completo di Oz.</p>
+        <p>3. Dopo la modifica, ricarica VS Code: <strong>Ctrl+Shift+P</strong> → <code>Reload Window</code>.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>🔑 Errore di autenticazione</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a">
+        <p>Apri un terminale ed esegui <code>oz auth login</code>. Si aprirà il browser per riautenticarti. Dopo il login, torna su VS Code e riprova.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>⏱️ L'agente va in timeout</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a">
+        <p>Aumenta il timeout nelle impostazioni:</p>
+        <p>• Esecuzioni locali: <code>warpBridge.timeoutMs</code> (default 300 000 ms = 5 min)</p>
+        <p>• Esecuzioni cloud: <code>warpBridge.cloudPollingTimeoutMs</code> (default 1 800 000 ms = 30 min)</p>
+        <p>• Per operazioni molto pesanti, usa <code>/cloud</code> al posto di <code>/run</code>.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>💬 La chat non mostra @warp</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a">
+        <p>1. Verifica che <strong>GitHub Copilot Chat</strong> sia installato e attivo.</p>
+        <p>2. VS Code deve essere versione <strong>≥ 1.96.0</strong>.</p>
+        <p>3. Ricarica la finestra: <strong>Ctrl+Shift+P</strong> → <code>Reload Window</code>.</p>
+        <p>4. Controlla che l'estensione Warp Bridge sia abilitata: <strong>Ctrl+Shift+X</strong> → cerca "Warp Bridge".</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>✂️ L'output nella chat è troncato</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a">
+        <p>Aumenta <code>warpBridge.maxOutputChars</code> nelle impostazioni (default: 5000). Prova con <strong>10000</strong> o <strong>20000</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== GLOSSARIO ===== -->
+  <section class="section" id="glossario">
+    <div class="section-header">
+      <div class="section-num">G</div>
+      <h2>Glossario</h2>
+    </div>
+
+    <div class="glossary-grid">
+      <div class="glossary-item">
+        <dl><dt>Agente</dt><dd>Un programma AI che esegue compiti sul tuo codice (analisi, scrittura, review, test…).</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>CLI</dt><dd><em>Command Line Interface</em> — un programma che si usa da terminale. Oz è il CLI di Warp.</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>Chat Participant</dt><dd>Un'estensione VS Code che risponde nella chat di Copilot con un nome come <code>@warp</code>.</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>Cloud run</dt><dd>Un'esecuzione dell'agente sui server di Warp (consuma crediti).</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>Local run</dt><dd>Un'esecuzione dell'agente sul tuo computer (gratuita).</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>MCP</dt><dd><em>Model Context Protocol</em> — standard per collegare server di contesto ai modelli AI.</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>Oz</dt><dd>Il CLI incluso in Warp per controllare agenti, modelli, schedules e integrazioni.</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>Prompt</dt><dd>Il testo che scrivi nella chat per dire all'agente cosa fare.</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>Skills</dt><dd>File <code>.md</code> che descrivono le competenze di ogni agente nella pipeline a 7 fasi.</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>Slash command</dt><dd>Un comando preceduto da <code>/</code> nella chat (es. <code>/run</code>, <code>/cloud</code>).</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>VSIX</dt><dd>Il formato di pacchetto delle estensioni VS Code (come un file <code>.zip</code> speciale).</dd></dl>
+      </div>
+      <div class="glossary-item">
+        <dl><dt>Workspace</dt><dd>La cartella del progetto attualmente aperta in VS Code.</dd></dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>Warp Bridge per VS Code — v0.1.0 — <a href="https://github.com/user/warp-vsc-bridge" target="_blank">Repository</a> · <a href="../LICENSE">Licenza MIT</a></p>
+    <p style="margin-top:8px;">Hai bisogno di aiuto? <a href="https://github.com/user/warp-vsc-bridge/issues" target="_blank">Apri un issue</a> oppure digita <code style="color:#01d68f">@warp /config</code> per un check rapido.</p>
+  </footer>
+
+</div><!-- /.main -->
+
+<!-- BACK TO TOP -->
+<button class="back-to-top" onclick="window.scrollTo({top:0})" aria-label="Torna su">↑</button>
+
+<script>
+/* ===== OS TABS ===== */
+function switchOS(os) {
+  document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.os-content').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('os-' + os).classList.add('active');
+}
+
+/* ===== FAQ TOGGLE ===== */
+function toggleFaq(el) {
+  el.parentElement.classList.toggle('open');
+}
+
+/* ===== SIDEBAR ACTIVE STATE ===== */
+const sections = document.querySelectorAll('.section[id], .hero[id]');
+const navLinks = document.querySelectorAll('.sidebar nav a');
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      navLinks.forEach(link => {
+        link.classList.toggle('active',
+          link.getAttribute('href') === '#' + entry.target.id);
+      });
+    }
+  });
+}, { rootMargin: '-20% 0px -60% 0px' });
+
+sections.forEach(s => observer.observe(s));
+
+/* ===== BACK TO TOP ===== */
+window.addEventListener('scroll', () => {
+  document.querySelector('.back-to-top')
+    .classList.toggle('visible', window.scrollY > 400);
+});
+
+/* ===== CLOSE SIDEBAR ON MOBILE NAV ===== */
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      document.querySelector('.sidebar').classList.remove('open');
+    }
+  });
+});
+</script>
+
+</body>
+</html>

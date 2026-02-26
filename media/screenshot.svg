@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200" viewBox="0 0 640 200">
+  <rect width="640" height="200" rx="12" fill="#1e1e1e"/>
+  <text x="320" y="90" text-anchor="middle" fill="#569cd6" font-family="Consolas,monospace" font-size="22">@warp /run implement auth module</text>
+  <text x="320" y="130" text-anchor="middle" fill="#4ec9b0" font-family="Consolas,monospace" font-size="16">✅ Agent run — stato: SUCCEEDED</text>
+  <text x="320" y="165" text-anchor="middle" fill="#808080" font-family="Consolas,monospace" font-size="13">Warp Bridge for VS Code — Chat Participant demo</text>
+</svg>

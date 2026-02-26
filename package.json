@@ -1,0 +1,135 @@
+{
+  "name": "warp-vsc-bridge",
+  "displayName": "Warp Bridge",
+  "description": "Run Warp Oz agents from VS Code Copilot Chat",
+  "version": "0.1.0",
+  "publisher": "warp-vsc-bridge",
+  "license": "MIT",
+  "workspaces": ["packages/*"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/warp-vsc-bridge"
+  },
+  "icon": "media/warp-icon.png",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Chat"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "warp-vsc-bridge.warp",
+        "name": "warp",
+        "fullName": "Warp Bridge",
+        "description": "Run Warp Oz agents from VS Code",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "run",
+            "description": "Run an Oz agent locally in the current workspace"
+          },
+          {
+            "name": "cloud",
+            "description": "Run an Oz agent in the cloud (consumes credits)"
+          },
+          {
+            "name": "status",
+            "description": "Check status of cloud agent runs"
+          },
+          {
+            "name": "schedule",
+            "description": "Create and manage scheduled agent runs"
+          },
+          {
+            "name": "models",
+            "description": "List available AI models"
+          },
+          {
+            "name": "mcp",
+            "description": "List configured MCP servers"
+          },
+          {
+            "name": "config",
+            "description": "Show current Warp Bridge configuration"
+          },
+          {
+            "name": "init",
+            "description": "Scaffold Warp Skills and Rules for this workspace"
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Warp Bridge",
+      "properties": {
+        "warpBridge.ozPath": {
+          "type": "string",
+          "default": "oz",
+          "description": "Path to the Oz CLI executable"
+        },
+        "warpBridge.defaultModel": {
+          "type": "string",
+          "default": "auto",
+          "description": "Default AI model for agent runs"
+        },
+        "warpBridge.defaultProfile": {
+          "type": "string",
+          "default": "Default",
+          "description": "Default Oz agent profile"
+        },
+        "warpBridge.defaultEnvironment": {
+          "type": "string",
+          "default": "",
+          "description": "Default cloud environment name (empty = none)"
+        },
+        "warpBridge.cloudPollingIntervalMs": {
+          "type": "number",
+          "default": 5000,
+          "description": "Initial polling interval for cloud runs (ms)"
+        },
+        "warpBridge.cloudPollingTimeoutMs": {
+          "type": "number",
+          "default": 1800000,
+          "description": "Max polling duration for cloud runs (ms, default 30 min)"
+        },
+        "warpBridge.timeoutMs": {
+          "type": "number",
+          "default": 300000,
+          "description": "Timeout for local agent runs (ms, default 5 min)"
+        },
+        "warpBridge.maxOutputChars": {
+          "type": "number",
+          "default": 5000,
+          "description": "Max characters shown in chat before truncation"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "node esbuild.js --production",
+    "watch": "node esbuild.js --watch",
+    "compile": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "package": "npx @vscode/vsce package --no-dependencies -o warp-vsc-bridge.vsix"
+  },
+  "dependencies": {
+    "copilot-chat-toolkit": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.96.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  }
+}

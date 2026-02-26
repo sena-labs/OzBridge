@@ -1,0 +1,10 @@
+{
+  // Line length limit is too restrictive for markdown tables, links, and descriptions
+  "MD013": false,
+  // Keep-a-Changelog uses duplicate h3 headings (### Added, ### Fixed) across versions
+  "MD024": { "siblings_only": true },
+  // GitHub issue templates require <details> and <summary> for collapsible sections
+  "MD033": { "allowed_elements": ["details", "summary"] },
+  // PR template intentionally starts with ## Summary (not h1)
+  "MD041": false
+}

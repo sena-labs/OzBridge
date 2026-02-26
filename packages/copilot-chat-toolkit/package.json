@@ -1,0 +1,33 @@
+{
+  "name": "copilot-chat-toolkit",
+  "version": "0.1.0",
+  "description": "A reusable toolkit for building VS Code Copilot Chat extensions — JSON parsing, context collection, skill detection, command routing, and more.",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": { "node": ">=20" },
+  "keywords": [
+    "vscode",
+    "copilot",
+    "chat",
+    "extension",
+    "toolkit",
+    "sdk"
+  ],
+  "files": ["dist/**", "src/**/*.ts", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsc -p .",
+    "prepublishOnly": "npm run build",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+  },
+  "peerDependencies": {
+    "@types/vscode": "^1.96.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/vscode": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.96.0",
+    "typescript": "^5.7.0"
+  }
+}
