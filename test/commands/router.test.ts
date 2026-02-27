@@ -103,6 +103,7 @@ describe('CommandRouter', () => {
     it.each([
       ['cloud', 'agentRunCloud'],
       ['status', 'runList'],
+      ['history', 'runList'],
       ['schedule', 'scheduleList'],
       ['mcp', 'mcpList'],
     ] as const)('dovrebbe delegare a /%s', async (command, mockMethod) => {

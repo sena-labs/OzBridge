@@ -30,7 +30,7 @@ export const it: MessageCatalog = {
 export const oz_it: MessageCatalog = {
   // Router
   'unknown_command': '❓ Comando `/{0}` non riconosciuto.\n\n',
-  'commands_help': '**Comandi disponibili:**\n- `/run` — esegui agent locale\n- `/cloud` — esegui agent cloud\n- `/status` — stato dei run\n- `/schedule` — gestione schedule\n- `/models` — modelli disponibili\n- `/mcp` — server MCP\n- `/config` — configurazione\n- `/init` — scaffolding skills/rules\n',
+  'commands_help': '**Comandi disponibili:**\n- `/run` — esegui agent locale\n- `/cloud` — esegui agent cloud\n- `/status` — stato dei run\n- `/history` — cronologia run\n- `/schedule` — gestione schedule\n- `/models` — modelli disponibili\n- `/mcp` — server MCP\n- `/config` — configurazione\n- `/init` — scaffolding skills/rules\n',
 
   // /run
   'run_progress': 'Avvio agente Oz locale...',
@@ -53,6 +53,13 @@ export const oz_it: MessageCatalog = {
   'status_detail_progress': 'Recupero stato run {0}...',
   'status_list_progress': 'Recupero lista run...',
   'status_empty': '_Nessun run trovato._\n',
+
+  // /history
+  'history_progress': 'Recupero cronologia run...',
+  'history_detail_progress': 'Recupero dettagli run {0}...',
+  'history_empty': '_Nessun run nella cronologia._\n',
+  'history_count': '**{0} run recenti:**\n\n',
+  'history_help': '**Uso:**\n- `/history` — elenca le run recenti\n- `/history <run-id>` — mostra i dettagli di una run specifica\n',
 
   // /schedule
   'schedule_list_progress': 'Recupero schedule...',

@@ -14,6 +14,7 @@ import { createModelsCommand } from './modelsCommand.js';
 import { createMcpCommand } from './mcpCommand.js';
 import { createConfigCommand } from './ozConfigCommand.js';
 import { createInitCommand } from './initCommand.js';
+import { createHistoryCommand } from './historyCommand.js';
 import { t } from '../core/i18n.js';
 
 /**
@@ -35,6 +36,7 @@ export class CommandRouter {
       ['run', createRunCommand(cli, ctx, cfgMgr)],
       ['cloud', createCloudCommand(cli, cfgMgr, poller, ctx)],
       ['status', createStatusCommand(cli, cfgMgr)],
+      ['history', createHistoryCommand(cli, cfgMgr)],
       ['schedule', createScheduleCommand(cli, cfgMgr)],
       ['models', createModelsCommand(cli, cfgMgr)],
       ['mcp', createMcpCommand(cli, cfgMgr)],

@@ -57,8 +57,8 @@ async function dispatch(command: string | undefined, prompt = 'test prompt') {
 // Routing dispatch table
 // ============================================================================
 describe('CommandRouter — dispatch', () => {
-  it('dovrebbe registrare gli 8 comandi slash attesi', async () => {
-    const expectedCommands = ['run', 'cloud', 'status', 'schedule', 'models', 'mcp', 'config', 'init'];
+  it('dovrebbe registrare i 9 comandi slash attesi', async () => {
+    const expectedCommands = ['run', 'cloud', 'status', 'history', 'schedule', 'models', 'mcp', 'config', 'init'];
     for (const cmd of expectedCommands) {
       // Dispatch senza errore — il comando è registrato
       const result = await dispatch(cmd);

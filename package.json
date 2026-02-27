@@ -41,6 +41,10 @@
             "description": "Check status of cloud agent runs"
           },
           {
+            "name": "history",
+            "description": "View history of past agent runs"
+          },
+          {
             "name": "schedule",
             "description": "Create and manage scheduled agent runs"
           },
@@ -103,7 +107,7 @@
         },
         "warpBridge.maxOutputChars": {
           "type": "number",
-          "default": 5000,
+          "default": 15000,
           "description": "Max characters shown in chat before truncation"
         }
       }

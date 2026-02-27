@@ -35,7 +35,7 @@ export const en: MessageCatalog = {
 export const oz_en: MessageCatalog = {
   // Router
   'unknown_command': '❓ Unknown command `/{0}`.\n\n',
-  'commands_help': '**Available commands:**\n- `/run` — run local agent\n- `/cloud` — run cloud agent\n- `/status` — run status\n- `/schedule` — schedule management\n- `/models` — available models\n- `/mcp` — MCP servers\n- `/config` — configuration\n- `/init` — scaffold skills/rules\n',
+  'commands_help': '**Available commands:**\n- `/run` — run local agent\n- `/cloud` — run cloud agent\n- `/status` — run status\n- `/history` — run history\n- `/schedule` — schedule management\n- `/models` — available models\n- `/mcp` — MCP servers\n- `/config` — configuration\n- `/init` — scaffold skills/rules\n',
 
   // /run
   'run_progress': 'Starting local Oz agent...',
@@ -58,6 +58,13 @@ export const oz_en: MessageCatalog = {
   'status_detail_progress': 'Fetching run status {0}...',
   'status_list_progress': 'Fetching run list...',
   'status_empty': '_No runs found._\n',
+
+  // /history
+  'history_progress': 'Fetching run history...',
+  'history_detail_progress': 'Fetching run details for {0}...',
+  'history_empty': '_No runs in history._\n',
+  'history_count': '**{0} recent runs:**\n\n',
+  'history_help': '**Usage:**\n- `/history` — list recent agent runs\n- `/history <run-id>` — show details for a specific run\n',
 
   // /schedule
   'schedule_list_progress': 'Fetching schedules...',
