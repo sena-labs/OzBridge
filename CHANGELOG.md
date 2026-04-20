@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **CI matrix + bundle budget (`v0.9` deliverable N).** Rewrote
+  `.github/workflows/ci.yml` as a 2 × 3 matrix (Node **20.19** / **22.12**
+  × **ubuntu-latest** / **windows-latest** / **macos-latest**) with
+  `fail-fast: false` and cancel-in-progress concurrency, so a single
+  flaky platform no longer aborts the entire run. Added
+  `.github/workflows/bundle-budget.yml` that fails the PR whenever
+  `dist/extension.js` exceeds **125 KB** and renders a size summary in
+  the GitHub job summary. 9 new tests
+  (`test/ciMatrix.test.ts`) assert the matrix shape, concurrency
+  policy, test invocation and budget enforcement.
 - **Open VSX publishing & release pipeline (`v0.9` deliverable M).**
   Refactored `.github/workflows/publish.yml` into four stages with a
   shared VSIX artifact:
