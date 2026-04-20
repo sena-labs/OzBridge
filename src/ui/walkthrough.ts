@@ -36,6 +36,9 @@ export async function maybeOpenGettingStartedWalkthrough(
   deps: MaybeGatedWalkthroughDeps,
 ): Promise<boolean> {
   const { globalState, host } = deps;
+  if (!globalState || typeof globalState.get !== 'function' || typeof globalState.update !== 'function') {
+    return false;
+  }
   if (globalState.get<boolean>(WALKTHROUGH_STATE_KEY) === true) {
     return false;
   }

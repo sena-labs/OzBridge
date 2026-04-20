@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Open VSX publishing & release pipeline (`v0.9` deliverable M).**
+  Refactored `.github/workflows/publish.yml` into four stages with a
+  shared VSIX artifact:
+  1. `build` — install, type-check, test, package.
+  2. `publish-marketplace` — `@vscode/vsce publish` using `VSCE_PAT`.
+  3. `publish-openvsx` — `ovsx publish` using `OVSX_PAT`.
+  4. `github-release` — attaches the VSIX to the tagged release.
+  Each publish job soft-fails when the corresponding secret is missing
+  (`::warning::`), so partial registry access never blocks the release.
+  README gains install snippets and direct links for both registries;
+  7 new tests (`test/publishingReadiness.test.ts`) guard manifest
+  fields, icon existence, workflow job graph, secret wiring and README
+  copy.
 - **Get-Started walkthrough (`v0.9` deliverable L).** Contributes a
   four-step `warpBridge.gettingStarted` walkthrough (install Warp CLI,
   run `@warp`, explore the Warp views, enable the MCP bridge) under
