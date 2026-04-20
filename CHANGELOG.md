@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **WCAG 2.1 AA accessibility pass (v1.0 deliverable S).** Every
+  `TreeItem` produced by `WarpRunsTreeProvider` and
+  `WarpDriveTreeProvider` now carries an explicit
+  `accessibilityInformation` (label + `treeitem` role) so screen
+  readers announce a meaningful semantic value instead of the raw
+  display string (e.g. `"Run my-prompt, status INPROGRESS, active"`
+  rather than `"my-prompt"`). Categories that previously lacked a
+  hover tooltip now declare one. The status bar item exposes a
+  plain-language label in both steady and error states (codicon
+  glyphs like `$(cloud)` are not narrated by AT) with role
+  `'button'` to match its click-to-focus behaviour. New
+  `test/accessibility.test.ts` (13 tests) hard-blocks regressions:
+  every node kind across both providers must carry a non-empty
+  a11y label, walkthrough markdown files must declare alt text on
+  every embedded image and contain at least one heading for the
+  document outline. Pure-metadata change — zero runtime cost.
 - **Kill-switch + LTS policy (v1.0 deliverable T).** Two new
   `machine-overridable` settings ship the operator escape hatch:
   `warpBridge.killSwitch.enabled` (boolean, default `false`) and
