@@ -16,6 +16,7 @@ import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
 import { createWarpDriveSource } from './drive/driveSourceFactory.js';
+import { OzCliDriveRunner } from './drive/ozCliDriveRunner.js';
 import { IWarpDriveSource } from './drive/warpDriveSource.js';
 import { WarpDriveTreeProvider } from './ui/driveTreeProvider.js';
 import { registerDriveCommands } from './ui/driveCommands.js';
@@ -107,11 +108,12 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(disposable);
   }
 
-  // Warp Drive source — filesystem-backed until the Oz CLI exposes
-  // `drive` subcommands, in which case the factory can be re-invoked
-  // with a runner in a future patch without changing downstream
-  // consumers (sidebar tree, editor, …).
-  state.driveSource = createWarpDriveSource();
+  // Warp Drive source — composite (Oz CLI primary, filesystem fallback).
+  // The CLI runner transparently surfaces "unknown command" stderr from
+  // older Oz binaries as `CliDriveNotAvailableError`, so the factory's
+  // CompositeDriveSource falls back to the filesystem implementation
+  // without any user-visible error.
+  state.driveSource = createWarpDriveSource({ runner: new OzCliDriveRunner(cli) });
 
   // Warp Drive sidebar (view + context-menu commands).
   const driveTreeProvider = new WarpDriveTreeProvider(state.driveSource);
