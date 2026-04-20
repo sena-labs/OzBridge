@@ -161,14 +161,14 @@ export function registerMcpCommands(
       const ep = lifecycle.endpoint;
       await vscode.window.showInformationMessage(
         ep
-          ? `Warp MCP server listening on http://${ep.address}:${ep.port}/sse`
-          : 'Warp MCP server failed to start — see the Warp Bridge output channel.',
+          ? vscode.l10n.t('Warp MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port))
+          : vscode.l10n.t('Warp MCP server failed to start — see the Warp Bridge output channel.'),
       );
     }),
 
     vscode.commands.registerCommand('warpBridge.mcp.stop', async () => {
       await lifecycle.stop();
-      await vscode.window.showInformationMessage('Warp MCP server stopped.');
+      await vscode.window.showInformationMessage(vscode.l10n.t('Warp MCP server stopped.'));
     }),
 
     vscode.commands.registerCommand('warpBridge.mcp.status', async () => {
@@ -178,18 +178,18 @@ export function registerMcpCommands(
       const state = lifecycle.running
         ? `running — http://${ep?.address}:${ep?.port}/sse · ${tokenLabel}`
         : 'stopped';
-      await vscode.window.showInformationMessage(`Warp MCP server: ${state}`);
+      await vscode.window.showInformationMessage(vscode.l10n.t('Warp MCP server: {0}', state));
     }),
 
     vscode.commands.registerCommand('warpBridge.mcp.copyEndpointUrl', async () => {
       const ep = lifecycle.endpoint;
       if (!ep) {
-        await vscode.window.showWarningMessage('Warp MCP server is not running.');
+        await vscode.window.showWarningMessage(vscode.l10n.t('Warp MCP server is not running.'));
         return;
       }
       const url = `http://${ep.address}:${ep.port}/sse`;
       await vscode.env.clipboard.writeText(url);
-      await vscode.window.showInformationMessage(`Copied MCP endpoint URL: ${url}`);
+      await vscode.window.showInformationMessage(vscode.l10n.t('Copied MCP endpoint URL: {0}', url));
     }),
 
     vscode.commands.registerCommand('warpBridge.mcp.registerClient', async () => {
@@ -236,7 +236,7 @@ async function runRegistrarCommand(
 ): Promise<void> {
   if (action === 'register' && !lifecycle.running) {
     await vscode.window.showWarningMessage(
-      'Warp MCP server is not running. Start it first with "Warp: Start MCP server".',
+      vscode.l10n.t('Warp MCP server is not running. Start it first with "Warp: Start MCP server".'),
     );
     return;
   }
@@ -248,9 +248,9 @@ async function runRegistrarCommand(
   }));
   const picked = await vscode.window.showQuickPick(items, {
     title: action === 'register'
-      ? 'Warp Bridge · Register MCP client'
-      : 'Warp Bridge · Unregister MCP client',
-    placeHolder: 'Choose the client whose config file should be updated',
+      ? vscode.l10n.t('Warp Bridge · Register MCP client')
+      : vscode.l10n.t('Warp Bridge · Unregister MCP client'),
+    placeHolder: vscode.l10n.t('Choose the client whose config file should be updated'),
     canPickMany: false,
   });
   if (!picked || Array.isArray(picked)) { return; }
@@ -261,17 +261,17 @@ async function runRegistrarCommand(
       const endpoint = buildLocalEndpoint(lifecycle, cfgMgr);
       await target.register(endpoint);
       await vscode.window.showInformationMessage(
-        `Registered ${MCP_SERVER_NAME} in ${target.displayName} (${target.configPath}).`,
+        vscode.l10n.t('Registered {0} in {1} ({2}).', MCP_SERVER_NAME, target.displayName, target.configPath),
       );
     } else {
       await target.unregister(MCP_SERVER_NAME);
       await vscode.window.showInformationMessage(
-        `Unregistered ${MCP_SERVER_NAME} from ${target.displayName}.`,
+        vscode.l10n.t('Unregistered {0} from {1}.', MCP_SERVER_NAME, target.displayName),
       );
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    await vscode.window.showErrorMessage(`Warp MCP ${action} failed: ${msg}`);
+    await vscode.window.showErrorMessage(vscode.l10n.t('Warp MCP {0} failed: {1}', action, msg));
     logError(`mcp.${action}Client(${target.clientId}) failed: ${msg}`);
   }
 }

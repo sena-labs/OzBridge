@@ -89,9 +89,9 @@ export async function openHandoff(options: HandoffOptions): Promise<boolean> {
  */
 export async function showHandoffFallback(options: HandoffOptions): Promise<void> {
   const command = buildHandoffCommand(options);
-  const copy = 'Copy command';
+  const copy = vscode.l10n.t('Copy command');
   const choice = await vscode.window.showWarningMessage(
-    'Warp Bridge: could not open Warp via the `warp://` URL scheme. Install Warp ≥ 0.2024.x or copy the command and run it manually.',
+    vscode.l10n.t('Warp Bridge: could not open Warp via the `warp://` URL scheme. Install Warp ≥ 0.2024.x or copy the command and run it manually.'),
     { modal: true, detail: command },
     copy,
   );
@@ -135,7 +135,7 @@ export function registerHandoffCommands(deps: HandoffDeps): vscode.Disposable[] 
 
     vscode.commands.registerCommand(HANDOFF_COMMANDS.tree, async (node?: WarpTreeNode) => {
       if (!node || node.kind !== 'run') {
-        await vscode.window.showWarningMessage('Warp Bridge: select a run node to hand off.');
+        await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: select a run node to hand off.'));
         return;
       }
       await openHandoff({

@@ -81,11 +81,11 @@ async function scaffoldSelected(
     const exists = fs.existsSync(absolute);
     if (exists && askBeforeOverwrite) {
       const choice = await vscode.window.showWarningMessage(
-        `${t.relativePath} already exists. Overwrite?`,
+        vscode.l10n.t('{0} already exists. Overwrite?', t.relativePath),
         { modal: true },
-        'Overwrite',
+        vscode.l10n.t('Overwrite'),
       );
-      if (choice !== 'Overwrite') {
+      if (choice !== vscode.l10n.t('Overwrite')) {
         summary.skipped.push(t.relativePath);
         continue;
       }

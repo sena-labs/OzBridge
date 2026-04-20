@@ -33,14 +33,14 @@ export function registerDriveCommands(deps: DriveCommandDeps): vscode.Disposable
     vscode.commands.registerCommand(DRIVE_COMMANDS.insertIntoChat, async (node?: DriveTreeNode) => {
       const entry = getEntry(node);
       if (!entry) {
-        await vscode.window.showWarningMessage('Select a Warp Drive entry to insert into chat.');
+        await vscode.window.showWarningMessage(vscode.l10n.t('Select a Warp Drive entry to insert into chat.'));
         return;
       }
       let body: string;
       try {
         body = await deps.source.read(entry.id);
       } catch (err) {
-        await vscode.window.showErrorMessage(`Warp Drive read failed: ${errMsg(err)}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Warp Drive read failed: {0}', errMsg(err)));
         return;
       }
       const preview = body.length > 1500 ? `${body.slice(0, 1500)}\n… (truncated)` : body;
@@ -52,22 +52,22 @@ export function registerDriveCommands(deps: DriveCommandDeps): vscode.Disposable
     vscode.commands.registerCommand(DRIVE_COMMANDS.copyContent, async (node?: DriveTreeNode) => {
       const entry = getEntry(node);
       if (!entry) {
-        await vscode.window.showWarningMessage('Select a Warp Drive entry to copy.');
+        await vscode.window.showWarningMessage(vscode.l10n.t('Select a Warp Drive entry to copy.'));
         return;
       }
       try {
         const body = await deps.source.read(entry.id);
         await vscode.env.clipboard.writeText(body);
-        await vscode.window.showInformationMessage(`Copied ${entry.name} to clipboard.`);
+        await vscode.window.showInformationMessage(vscode.l10n.t('Copied {0} to clipboard.', entry.name));
       } catch (err) {
-        await vscode.window.showErrorMessage(`Warp Drive read failed: ${errMsg(err)}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Warp Drive read failed: {0}', errMsg(err)));
       }
     }),
 
     vscode.commands.registerCommand(DRIVE_COMMANDS.openInEditor, async (node?: DriveTreeNode) => {
       const entry = getEntry(node);
       if (!entry) {
-        await vscode.window.showWarningMessage('Select a Warp Drive entry to open.');
+        await vscode.window.showWarningMessage(vscode.l10n.t('Select a Warp Drive entry to open.'));
         return;
       }
       // Filesystem entries carry an absolute path as the id; we can
@@ -77,7 +77,7 @@ export function registerDriveCommands(deps: DriveCommandDeps): vscode.Disposable
           const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(entry.id));
           await vscode.window.showTextDocument(doc);
         } catch (err) {
-          await vscode.window.showErrorMessage(`Failed to open ${entry.name}: ${errMsg(err)}`);
+          await vscode.window.showErrorMessage(vscode.l10n.t('Failed to open {0}: {1}', entry.name, errMsg(err)));
         }
         return;
       }
@@ -91,7 +91,7 @@ export function registerDriveCommands(deps: DriveCommandDeps): vscode.Disposable
         });
         await vscode.window.showTextDocument(doc);
       } catch (err) {
-        await vscode.window.showErrorMessage(`Failed to open ${entry.name}: ${errMsg(err)}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Failed to open {0}: {1}', entry.name, errMsg(err)));
       }
     }),
   ];
