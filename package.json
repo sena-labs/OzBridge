@@ -499,6 +499,18 @@
           "default": "",
           "markdownDescription": "Application Insights connection string (`InstrumentationKey=...;IngestionEndpoint=...`) for opt-in telemetry. Empty string keeps the transport disabled even when VS Code's `telemetry.telemetryLevel` is on. See [`PRIVACY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/PRIVACY.md) for what is and isn't collected.",
           "scope": "machine-overridable"
+        },
+        "warpBridge.killSwitch.enabled": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "**Emergency kill-switch.** When `true`, the extension's `activate()` skips every wiring step (no commands, tools, MCP server, chat participant or trees are registered) and surfaces a single warning notification. Use only as an operator escape hatch for a critical regression or a supply-chain incident. See [`SECURITY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/SECURITY.md#kill-switch-v10-deliverable-t) for the policy.",
+          "scope": "machine-overridable"
+        },
+        "warpBridge.killSwitch.reason": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional message displayed in the kill-switch notification (e.g. an incident URL). Ignored unless `#warpBridge.killSwitch.enabled#` is `true`.",
+          "scope": "machine-overridable"
         }
       }
     },

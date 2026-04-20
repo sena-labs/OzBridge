@@ -60,6 +60,30 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(outputChannel);
   initLogger(outputChannel, '[warp-vsc-bridge]');
 
+  // ── Kill-switch (v1.0 deliverable T) ──────────────────────────────
+  // Operator escape hatch for emergencies (critical regression in
+  // production, supply-chain incident, etc.). When
+  // `warpBridge.killSwitch.enabled === true` we skip every wiring
+  // step and surface a single warning notification so users know
+  // the extension is intentionally inert. The setting is workspace-
+  // overridable so an org can ship it via shared `settings.json`.
+  // No commands, tools, MCP server or chat participant are
+  // registered — `deactivate()` remains safe to call.
+  const killSwitchEnabled =
+    vscode.workspace
+      .getConfiguration('warpBridge')
+      .get<boolean>('killSwitch.enabled', false) === true;
+  if (killSwitchEnabled) {
+    const reason =
+      vscode.workspace.getConfiguration('warpBridge').get<string>('killSwitch.reason', '') || '';
+    const detail = reason ? ` Reason: ${reason}` : '';
+    logInfo(`Kill-switch active — extension will not register any features.${detail}`);
+    void vscode.window.showWarningMessage(
+      `Warp Bridge is disabled by the kill-switch (warpBridge.killSwitch.enabled).${detail}`,
+    );
+    return;
+  }
+
   // Inizializza servizi
   // Il WorkspaceConfigResolver legge `.warp/warp-bridge.yaml` dal workspace
   // corrente e offre override typed che vincono sui settings VS Code.

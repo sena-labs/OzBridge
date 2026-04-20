@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Kill-switch + LTS policy (v1.0 deliverable T).** Two new
+  `machine-overridable` settings ship the operator escape hatch:
+  `warpBridge.killSwitch.enabled` (boolean, default `false`) and
+  `warpBridge.killSwitch.reason` (string, default `""`). When the
+  switch is on, `activate()` short-circuits before any wiring step
+  (no commands, tools, MCP server, chat participant or trees are
+  registered) and surfaces a single warning notification including
+  the optional reason text. The extension stays installed; flipping
+  the boolean back to `false` re-enables it for new windows without
+  a reload. `SECURITY.md` now documents the kill-switch playbook
+  and a formal LTS policy table (18-month active LTS, 6-month
+  critical-only window, `release/v<major>.<minor>.x` maintenance
+  branches, 14-day patch cadence for confirmed vulnerabilities,
+  one-minor-release deprecation notice). 6 new tests in
+  `test/killSwitchLts.test.ts` cover both activation paths
+  (short-circuit vs full wiring), the package.json contributions and
+  the SECURITY.md doc invariants.
 - **Activation performance budget (v1.0 deliverable R).** New
   `test/activationPerf.test.ts` measures `activate()` over 25
   iterations on a fresh state (warm-up excluded), prints a
