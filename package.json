@@ -360,6 +360,12 @@
         "title": "Warp: Triage Failed Run…",
         "category": "Warp",
         "icon": "$(lightbulb)"
+      },
+      {
+        "command": "warpBridge.exportDataset",
+        "title": "Warp: Export Run Dataset…",
+        "category": "Warp",
+        "icon": "$(export)"
       }
     ],
     "menus": {

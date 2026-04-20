@@ -25,6 +25,7 @@ import { DashboardPanel } from './ui/dashboardPanel.js';
 import { RunStatsService } from './services/runStats.js';
 import { FailureTriageService } from './services/failureTriage.js';
 import { createVsCodeLanguageModelClient } from './services/languageModelClient.js';
+import { DatasetExportService, DatasetFormat } from './services/datasetExport.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -182,6 +183,35 @@ export function activate(context: vscode.ExtensionContext): void {
         const message = err instanceof Error ? err.message : String(err);
         logError(`Triage failed: ${message}`);
         await vscode.window.showErrorMessage(`Warp triage failed: ${message}`);
+      }
+    }),
+  );
+
+  // Dataset export (v0.8 deliverable J) — stretch.
+  const datasetExport = new DatasetExportService(cli);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('warpBridge.exportDataset', async () => {
+      const pick = await vscode.window.showQuickPick(
+        [
+          { label: 'JSON Lines', value: 'jsonl' as DatasetFormat },
+          { label: 'CSV', value: 'csv' as DatasetFormat },
+        ],
+        { placeHolder: 'Choose dataset format' },
+      );
+      if (!pick) {
+        return;
+      }
+      try {
+        const content = await datasetExport.export({ format: pick.value });
+        const doc = await vscode.workspace.openTextDocument({
+          language: pick.value === 'csv' ? 'csv' : 'jsonl',
+          content,
+        });
+        await vscode.window.showTextDocument(doc, { preview: false });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logError(`Dataset export failed: ${message}`);
+        await vscode.window.showErrorMessage(`Warp dataset export failed: ${message}`);
       }
     }),
   );

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Run dataset export (`v0.8` deliverable J, stretch).** New
+  `DatasetExportService` + `warpBridge.exportDataset` command (`Warp:
+  Export Run Dataset…`) that serialises terminal runs to **JSON
+  Lines** or **RFC 4180 CSV**:
+  - Pure helpers `csvQuote` (correct quoting of comma/quote/newline),
+    `toCsv`, `toJsonl`, `truncateOutput` (line-boundary aware).
+  - `terminalOnly` filter on by default; configurable `limit` (default
+    200) and `maxOutputChars` (default 4 KB) caps keep the export
+    bounded.
+  - QuickPick prompt for format selection; result rendered as a
+    non-preview text document tagged with the right language id.
+  - 16 new tests (`test/services/datasetExport.test.ts`).
 - **Failure triage (`v0.8` deliverable I).** New
   `FailureTriageService` + `warpBridge.triageFailure` command (`Warp:
   Triage Failed Run…`):
