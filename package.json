@@ -495,7 +495,61 @@
           "scope": "machine-overridable"
         }
       }
-    }
+    },
+    "walkthroughs": [
+      {
+        "id": "warpBridge.gettingStarted",
+        "title": "%walkthrough.gettingStarted.title%",
+        "description": "%walkthrough.gettingStarted.description%",
+        "steps": [
+          {
+            "id": "warpBridge.gettingStarted.installCli",
+            "title": "%walkthrough.step.installCli.title%",
+            "description": "%walkthrough.step.installCli.description%",
+            "media": {
+              "markdown": "media/walkthrough/install-cli.md"
+            },
+            "completionEvents": [
+              "onCommand:warpBridge.tree.refresh"
+            ]
+          },
+          {
+            "id": "warpBridge.gettingStarted.firstAgent",
+            "title": "%walkthrough.step.firstAgent.title%",
+            "description": "%walkthrough.step.firstAgent.description%",
+            "media": {
+              "markdown": "media/walkthrough/first-agent.md"
+            },
+            "completionEvents": [
+              "onChatParticipant:warp-vsc-bridge.warp"
+            ]
+          },
+          {
+            "id": "warpBridge.gettingStarted.exploreViews",
+            "title": "%walkthrough.step.exploreViews.title%",
+            "description": "%walkthrough.step.exploreViews.description%",
+            "media": {
+              "markdown": "media/walkthrough/explore-views.md"
+            },
+            "completionEvents": [
+              "onView:warpBridge.runsView"
+            ]
+          },
+          {
+            "id": "warpBridge.gettingStarted.enableMcp",
+            "title": "%walkthrough.step.enableMcp.title%",
+            "description": "%walkthrough.step.enableMcp.description%",
+            "media": {
+              "markdown": "media/walkthrough/enable-mcp.md"
+            },
+            "completionEvents": [
+              "onSettingChanged:warpBridge.mcpEnabled",
+              "onCommand:warpBridge.mcp.start"
+            ]
+          }
+        ]
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
