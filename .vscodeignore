@@ -28,3 +28,6 @@ node_modules/**
 
 # Source maps (exclude after !dist re-include)
 dist/**/*.map
+
+# Publishing scripts (not needed by end-users)
+scripts/**

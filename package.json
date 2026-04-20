@@ -2,14 +2,18 @@
   "name": "warp-vsc-bridge",
   "displayName": "Warp Bridge",
   "description": "Run Warp Oz agents from VS Code Copilot Chat",
-  "version": "0.1.0",
-  "publisher": "warp-vsc-bridge",
+  "version": "0.5.0",
+  "publisher": "sena-labs",
   "license": "MIT",
   "workspaces": ["packages/*"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/warp-vsc-bridge"
+    "url": "https://github.com/sena-labs/warp-vsc-bridge"
   },
+  "bugs": {
+    "url": "https://github.com/sena-labs/warp-vsc-bridge/issues"
+  },
+  "homepage": "https://github.com/sena-labs/warp-vsc-bridge#readme",
   "icon": "media/warp-icon.png",
   "engines": {
     "vscode": "^1.96.0"
@@ -41,6 +45,10 @@
             "description": "Check status of cloud agent runs"
           },
           {
+            "name": "history",
+            "description": "View history of past agent runs"
+          },
+          {
             "name": "schedule",
             "description": "Create and manage scheduled agent runs"
           },
@@ -63,6 +71,236 @@
         ]
       }
     ],
+    "languageModelTools": [
+      {
+        "name": "warp_run_local",
+        "displayName": "Run Warp Oz agent (local)",
+        "toolReferenceName": "warpRunLocal",
+        "modelDescription": "Runs a Warp Oz agent locally in the current VS Code workspace and returns its output. Use when the user asks to execute, refactor, test, or debug code using Warp without consuming cloud credits. Automatically injects IDE context (workspace path, active file, selection, diagnostics) unless `includeIdeContext: false` is passed.",
+        "userDescription": "Let Copilot invoke Warp Oz agents locally without typing @warp.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(warp)",
+        "tags": ["warp", "oz", "agent", "local"],
+        "inputSchema": {
+          "type": "object",
+          "required": ["prompt"],
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Natural-language instruction for the Oz agent."
+            },
+            "model": {
+              "type": "string",
+              "description": "Optional AI model override (e.g. `gpt-4o`). Defaults to `warpBridge.defaultModel`."
+            },
+            "profile": {
+              "type": "string",
+              "description": "Optional Oz agent profile name. Defaults to `warpBridge.defaultProfile`."
+            },
+            "skill": {
+              "type": "string",
+              "description": "Optional agent skill id (e.g. `5-test-agent`). If omitted the CLI picks one based on the prompt."
+            },
+            "includeIdeContext": {
+              "type": "boolean",
+              "description": "Whether to inject workspace/file/selection/diagnostics as a [CONTEXT] prefix. Defaults to true."
+            }
+          }
+        }
+      },
+      {
+        "name": "warp_run_cloud",
+        "displayName": "Run Warp Oz agent (cloud)",
+        "toolReferenceName": "warpRunCloud",
+        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS \u2014 always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `warp_get_run`.",
+        "userDescription": "Let Copilot launch cloud Warp Oz runs (with explicit confirmation to consume credits).",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(cloud)",
+        "tags": ["warp", "oz", "agent", "cloud"],
+        "inputSchema": {
+          "type": "object",
+          "required": ["prompt"],
+          "properties": {
+            "prompt": {
+              "type": "string",
+              "description": "Natural-language instruction for the Oz cloud agent."
+            },
+            "model": {
+              "type": "string",
+              "description": "Optional AI model override. Defaults to `warpBridge.defaultModel`."
+            },
+            "environment": {
+              "type": "string",
+              "description": "Optional cloud environment name or id. Defaults to `warpBridge.defaultEnvironment`; if both are empty the extension auto-picks the first available environment."
+            },
+            "skill": {
+              "type": "string",
+              "description": "Optional agent skill id."
+            },
+            "includeIdeContext": {
+              "type": "boolean",
+              "description": "Whether to inject IDE context as a [CONTEXT] prefix. Defaults to true."
+            },
+            "wait": {
+              "type": "boolean",
+              "description": "Whether to poll the run until it reaches a terminal state. Defaults to true."
+            }
+          }
+        }
+      },
+      {
+        "name": "warp_get_run",
+        "displayName": "Get Warp Oz run",
+        "toolReferenceName": "warpGetRun",
+        "modelDescription": "Fetches the status and output of a Warp Oz run by its id. Read-only; safe to invoke without confirmation. Use it after `warp_run_cloud` with `wait: false`, or when the user references a run id.",
+        "userDescription": "Look up a Warp Oz run by id.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(search)",
+        "tags": ["warp", "oz", "agent"],
+        "inputSchema": {
+          "type": "object",
+          "required": ["runId"],
+          "properties": {
+            "runId": {
+              "type": "string",
+              "description": "Warp run identifier (as returned by `warp_run_cloud`, `warp_list_runs`, or the Warp UI)."
+            }
+          }
+        }
+      },
+      {
+        "name": "warp_list_runs",
+        "displayName": "List Warp Oz runs",
+        "toolReferenceName": "warpListRuns",
+        "modelDescription": "Lists recent Warp Oz runs. Supports filters: `all` (default), `active` (QUEUED + INPROGRESS), `completed` (SUCCEEDED + FAILED), or a specific `OzRunStatus` value. Read-only.",
+        "userDescription": "List recent Warp Oz runs with an optional status filter.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(list-unordered)",
+        "tags": ["warp", "oz", "agent"],
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": ["all", "active", "completed", "QUEUED", "INPROGRESS", "SUCCEEDED", "FAILED", "UNKNOWN"],
+              "description": "Filter by status. `active` = QUEUED or INPROGRESS. `completed` = SUCCEEDED or FAILED."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Maximum number of runs to return after filtering."
+            }
+          }
+        }
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "warpBridgeSidebar",
+          "title": "Warp Bridge",
+          "icon": "media/warp-icon.png"
+        }
+      ]
+    },
+    "views": {
+      "warpBridgeSidebar": [
+        {
+          "id": "warpBridge.runsView",
+          "name": "Runs & Resources",
+          "icon": "media/warp-icon.png",
+          "contextualTitle": "Warp Bridge"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "warpBridge.tree.refresh",
+        "title": "Warp: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "warpBridge.tree.copyId",
+        "title": "Warp: Copy ID",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "warpBridge.tree.openInBrowser",
+        "title": "Warp: Open in Browser",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "warpBridge.tree.showRun",
+        "title": "Warp: Show Run Details"
+      },
+      {
+        "command": "warpBridge.tree.pauseSchedule",
+        "title": "Warp: Pause Schedule",
+        "icon": "$(debug-pause)"
+      },
+      {
+        "command": "warpBridge.tree.unpauseSchedule",
+        "title": "Warp: Resume Schedule",
+        "icon": "$(play)"
+      },
+      {
+        "command": "warpBridge.tree.deleteSchedule",
+        "title": "Warp: Delete Schedule",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "warpBridge.handoff",
+        "title": "Warp: Hand off to Warp terminal…",
+        "category": "Warp",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "warpBridge.tree.handoff",
+        "title": "Warp: Hand off run to Warp terminal",
+        "category": "Warp",
+        "icon": "$(terminal)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "warpBridge.tree.refresh",
+          "when": "view == warpBridge.runsView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "warpBridge.tree.copyId",
+          "when": "view == warpBridge.runsView && viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/",
+          "group": "warpGeneric@1"
+        },
+        {
+          "command": "warpBridge.tree.openInBrowser",
+          "when": "view == warpBridge.runsView && viewItem =~ /^warpRun/",
+          "group": "warpGeneric@2"
+        },
+        {
+          "command": "warpBridge.tree.pauseSchedule",
+          "when": "view == warpBridge.runsView && viewItem == warpSchedule:running",
+          "group": "warpSchedule@1"
+        },
+        {
+          "command": "warpBridge.tree.unpauseSchedule",
+          "when": "view == warpBridge.runsView && viewItem == warpSchedule:paused",
+          "group": "warpSchedule@1"
+        },
+        {
+          "command": "warpBridge.tree.deleteSchedule",
+          "when": "view == warpBridge.runsView && viewItem =~ /^warpSchedule/",
+          "group": "warpSchedule@2"
+        },
+        {
+          "command": "warpBridge.tree.handoff",
+          "when": "view == warpBridge.runsView && viewItem =~ /^warpRun/",
+          "group": "warpGeneric@3"
+        }
+      ]
+    },
     "configuration": {
       "title": "Warp Bridge",
       "properties": {
@@ -103,7 +341,7 @@
         },
         "warpBridge.maxOutputChars": {
           "type": "number",
-          "default": 5000,
+          "default": 15000,
           "description": "Max characters shown in chat before truncation"
         }
       }
@@ -122,7 +360,7 @@
     "package": "npx @vscode/vsce package --no-dependencies -o warp-vsc-bridge.vsix"
   },
   "dependencies": {
-    "copilot-chat-toolkit": "*"
+    "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

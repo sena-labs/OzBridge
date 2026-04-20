@@ -10,7 +10,7 @@ import {
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
 import { detectSkill } from './skillDetector.js';
-import { t } from '../core/i18n.js';
+import { expandPromptVariables } from '../participant/promptExpander.js';
 
 /**
  * Creates the `/cloud` slash-command handler.
@@ -46,40 +46,47 @@ export function createCloudCommand(
       return {};
     }
 
-    // Avviso consumo crediti (informativo, non blocca l'esecuzione)
-    stream.markdown(t('oz.cloud_warning', prompt));
+    // Credit consumption warning (informational, does not block execution)
+    stream.markdown(`⚠️ **Launching cloud agent** — this operation consumes Warp credits.\n\nPrompt: _${prompt}_\n\n`);
 
-    // Risolvi environment: configurato → usa quello, altrimenti auto-detect
+    // Resolve environment: if configured use it, otherwise auto-detect
     let environment = config.defaultEnvironment || undefined;
     let noEnvironment = false;
     if (environment) {
-      stream.markdown(t('oz.cloud_env', environment));
+      stream.markdown(`Environment: \`${environment}\`\n\n`);
     } else {
       try {
         const envResult = await cli.environmentList();
         if (envResult.items.length > 0) {
           const env = envResult.items[0];
           environment = env.id;
-          stream.markdown(t('oz.cloud_env_auto', env.name, env.id));
+          stream.markdown(`ℹ️ No environment configured — auto-selected: \`${env.name}\` (\`${env.id}\`)\n\n`);
         } else {
           noEnvironment = true;
-          stream.markdown(t('oz.cloud_no_env'));
+          stream.markdown('⚠️ No environments available — running without environment (not recommended)\n\n');
         }
       } catch {
         noEnvironment = true;
-        stream.markdown(t('oz.cloud_no_env'));
+        stream.markdown('⚠️ No environments available — running without environment (not recommended)\n\n');
       }
     }
 
     // Inietta contesto IDE nel prompt
     const context = ctx.gather();
     const contextBlock = ctx.formatForPrompt(context);
-    const fullPrompt = `${contextBlock}\n\n${prompt}`;
+
+    // Espandi variabili di prompt (#warp.*, #oz.*) prima di iniettare il contesto
+    const expanded = await expandPromptVariables(prompt, { cli, cfgMgr });
+    if (expanded.replacements.length > 0) {
+      stream.markdown(`_Expanded ${expanded.replacements.length} prompt variable${expanded.replacements.length === 1 ? '' : 's'}._\n\n`);
+    }
+    const resolvedPrompt = expanded.text;
+    const fullPrompt = `${contextBlock}\n\n${resolvedPrompt}`;
 
     // Rileva se il prompt menziona un agent skill specifico
-    const skill = detectSkill(prompt);
+    const skill = detectSkill(resolvedPrompt);
 
-    stream.progress(t('oz.cloud_progress'));
+    stream.progress('Launching cloud agent...');
 
     try {
       const result = await cli.agentRunCloud({
@@ -93,31 +100,32 @@ export function createCloudCommand(
       });
 
       if (result.runId) {
-        stream.markdown(t('oz.cloud_started', result.runId));
-        stream.markdown(t('oz.cloud_polling'));
+        stream.markdown(`🚀 **Cloud run started**: \`${result.runId}\`\n\n`);
+        stream.markdown('Polling for results...\n\n');
 
-        // IMPL: polling asincrono con backoff (D3)
+        // IMPL: async polling with exponential backoff (D3)
         try {
           const finalResult = await poller.poll(
             result.runId,
             (status) => {
-              stream.progress(t('oz.cloud_status', status));
+              stream.progress(`Status: ${status}...`);
             },
             token,
           );
 
           formatter.formatRunResult(finalResult, stream, { autoOpened: true });
 
-          // Notifica VS Code
+          // VS Code notification
           const statusMsg = finalResult.status === 'SUCCEEDED'
-            ? t('oz.cloud_success')
-            : t('oz.cloud_failed');
+            ? '✅ Cloud agent completed successfully'
+            : '❌ Cloud agent failed';
           vscode.window.showInformationMessage(`Warp Bridge: ${statusMsg} (${result.runId})`);
         } catch (pollErr) {
           if (pollErr instanceof OzCliError) {
             formatter.formatError(pollErr, stream);
           } else {
-            stream.markdown(t('oz.error_polling', pollErr instanceof Error ? pollErr.message : String(pollErr)));
+            const msg = pollErr instanceof Error ? pollErr.message : String(pollErr);
+            stream.markdown(`❌ Polling error: ${msg}\n`);
           }
         }
       } else {

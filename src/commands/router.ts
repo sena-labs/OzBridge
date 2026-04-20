@@ -14,7 +14,7 @@ import { createModelsCommand } from './modelsCommand.js';
 import { createMcpCommand } from './mcpCommand.js';
 import { createConfigCommand } from './ozConfigCommand.js';
 import { createInitCommand } from './initCommand.js';
-import { t } from '../core/i18n.js';
+import { createHistoryCommand } from './historyCommand.js';
 
 /**
  * Routes incoming slash commands to the appropriate handler.
@@ -35,6 +35,7 @@ export class CommandRouter {
       ['run', createRunCommand(cli, ctx, cfgMgr)],
       ['cloud', createCloudCommand(cli, cfgMgr, poller, ctx)],
       ['status', createStatusCommand(cli, cfgMgr)],
+      ['history', createHistoryCommand(cli, cfgMgr)],
       ['schedule', createScheduleCommand(cli, cfgMgr)],
       ['models', createModelsCommand(cli, cfgMgr)],
       ['mcp', createMcpCommand(cli, cfgMgr)],
@@ -54,8 +55,19 @@ export class CommandRouter {
       const handler = this.handlers.get(commandName);
 
       if (!handler) {
-        stream.markdown(t('oz.unknown_command', commandName));
-        stream.markdown(t('oz.commands_help'));
+        stream.markdown(`❓ Unknown command \`/${commandName}\`.\n\n`);
+        stream.markdown(
+          '**Available commands:**\n' +
+          '- `/run` — run local agent\n' +
+          '- `/cloud` — run cloud agent\n' +
+          '- `/status` — active run status\n' +
+          '- `/history` — completed run history\n' +
+          '- `/schedule` — schedule management\n' +
+          '- `/models` — available models\n' +
+          '- `/mcp` — MCP servers\n' +
+          '- `/config` — configuration\n' +
+          '- `/init` — scaffold skills/rules\n',
+        );
         return {};
       }
 

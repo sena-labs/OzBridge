@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createRunCommand } from '../../src/commands/runCommand.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import {
@@ -9,7 +9,6 @@ import {
   createMockToken,
   makeRunResult,
 } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let cli: ReturnType<typeof createMockCli>;
 let handler: ReturnType<typeof createRunCommand>;
@@ -17,15 +16,10 @@ let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('it');
   cli = createMockCli();
   const ctx = createMockContextCollector();
   handler = createRunCommand(cli, ctx, createMockConfigManager());
   mock = createMockStream();
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 describe('/run command', () => {
@@ -34,7 +28,7 @@ describe('/run command', () => {
 
     await handler('test prompt', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('non trovato');
+    expect(mock.getFullOutput()).toContain('not found');
     expect(cli.agentRun).not.toHaveBeenCalled();
   });
 
@@ -154,7 +148,7 @@ describe('/run command', () => {
 
     await handler('hello', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Errore');
+    expect(mock.getFullOutput()).toContain('Error');
     expect(mock.getFullOutput()).toContain('unexpected');
   });
 

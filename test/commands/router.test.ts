@@ -1,14 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommandRouter } from '../../src/commands/router.js';
 import { createMockCli, createMockConfigManager, createMockContextCollector, createMockPoller, createMockStream, createMockToken } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let router: CommandRouter;
 let cli: ReturnType<typeof createMockCli>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('it');
   cli = createMockCli();
   router = new CommandRouter(
     cli,
@@ -16,10 +14,6 @@ beforeEach(() => {
     createMockConfigManager(),
     createMockPoller(),
   );
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 describe('CommandRouter', () => {
@@ -75,7 +69,7 @@ describe('CommandRouter', () => {
       );
 
       const output = mock.getFullOutput();
-      expect(output).toContain('non riconosciuto');
+      expect(output).toContain('Unknown command');
       expect(output).toContain('/run');
       expect(output).toContain('/cloud');
       expect(output).toContain('/config');
@@ -103,6 +97,7 @@ describe('CommandRouter', () => {
     it.each([
       ['cloud', 'agentRunCloud'],
       ['status', 'runList'],
+      ['history', 'runList'],
       ['schedule', 'scheduleList'],
       ['mcp', 'mcpList'],
     ] as const)('dovrebbe delegare a /%s', async (command, mockMethod) => {
@@ -153,8 +148,8 @@ describe('CommandRouter', () => {
         createMockToken() as any,
       );
 
-      // init senza workspace → errore, ma routing funziona
-      expect(mock.getFullOutput()).toContain('Nessun workspace');
+      // init without workspace → error, but routing works
+      expect(mock.getFullOutput()).toContain('No workspace open');
     });
   });
 });

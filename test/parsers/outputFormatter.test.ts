@@ -1,21 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OutputFormatter } from '../../src/parsers/outputFormatter.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import { createMockStream, createMockConfigManager, makeRunResult, makeListResult } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let formatter: OutputFormatter;
 let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('it');
   formatter = new OutputFormatter(createMockConfigManager());
   mock = createMockStream();
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 // ==========================================================================
@@ -101,19 +95,19 @@ describe('formatRunResult()', () => {
   });
 
   // --- Truncation ---
-  it('dovrebbe troncare output che supera maxOutputChars', () => {
-    const longOutput = 'x'.repeat(10_000);
+  it('should truncate output exceeding maxOutputChars', () => {
+    const longOutput = 'x'.repeat(20_000);
     formatter.formatRunResult(makeRunResult({ output: longOutput }), mock.stream as any);
     const full = mock.getFullOutput();
-    expect(full).toContain('troncato');
-    // Output totale deve essere significativamente più corto dell'input
+    expect(full).toContain('truncated');
+    // Total output must be significantly shorter than the input
     expect(full.length).toBeLessThan(longOutput.length);
   });
 
-  it('dovrebbe non troncare output entro il limite', () => {
+  it('should not truncate output within the limit', () => {
     const shortOutput = 'x'.repeat(100);
     formatter.formatRunResult(makeRunResult({ output: shortOutput }), mock.stream as any);
-    expect(mock.getFullOutput()).not.toContain('troncato');
+    expect(mock.getFullOutput()).not.toContain('truncated');
   });
 });
 
@@ -121,9 +115,9 @@ describe('formatRunResult()', () => {
 // formatList()
 // ==========================================================================
 describe('formatList()', () => {
-  it('dovrebbe mostrare messaggio per lista vuota', () => {
+  it('should show message for empty list', () => {
     formatter.formatList(makeListResult([]), ['id'], mock.stream as any);
-    expect(mock.getFullOutput()).toContain('Nessun elemento');
+    expect(mock.getFullOutput()).toContain('No items found');
   });
 
   it('dovrebbe mostrare rawText per lista vuota con rawText', () => {
@@ -157,53 +151,53 @@ describe('formatList()', () => {
 // formatError()
 // ==========================================================================
 describe('formatError()', () => {
-  it('dovrebbe mostrare messaggio NOT_FOUND con button install', () => {
+  it('should show NOT_FOUND message with install button', () => {
     const err = new OzCliError(OzCliErrorKind.NOT_FOUND, 'not found');
     formatter.formatError(err, mock.stream as any);
-    expect(mock.getFullOutput()).toContain('non trovato');
+    expect(mock.getFullOutput()).toContain('not found');
     expect(mock.buttons.length).toBeGreaterThanOrEqual(1);
-    expect(mock.buttons[0].title).toContain('Installa');
+    expect(mock.buttons[0].title).toContain('Install');
   });
 
-  it('dovrebbe mostrare messaggio NOT_AUTHENTICATED con button login', () => {
+  it('should show NOT_AUTHENTICATED message with login button', () => {
     const err = new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'not logged in');
     formatter.formatError(err, mock.stream as any);
-    expect(mock.getFullOutput()).toContain('autenticato');
+    expect(mock.getFullOutput()).toContain('Not authenticated');
     expect(mock.buttons.length).toBeGreaterThanOrEqual(1);
     expect(mock.buttons[0].title).toContain('Login');
   });
 
-  it('dovrebbe mostrare messaggio TIMEOUT con suggerimento settings', () => {
+  it('should show TIMEOUT message with settings hint', () => {
     const err = new OzCliError(OzCliErrorKind.TIMEOUT, 'timed out');
     formatter.formatError(err, mock.stream as any);
     expect(mock.getFullOutput()).toContain('Timeout');
   });
 
-  it('dovrebbe mostrare messaggio CANCELLED', () => {
+  it('should show CANCELLED message', () => {
     const err = new OzCliError(OzCliErrorKind.CANCELLED, 'cancelled');
     formatter.formatError(err, mock.stream as any);
-    expect(mock.getFullOutput()).toContain('annullata');
+    expect(mock.getFullOutput()).toContain('cancelled');
   });
 
-  it('dovrebbe mostrare messaggio PARSE_ERROR con dettaglio', () => {
+  it('should show PARSE_ERROR message with detail', () => {
     const err = new OzCliError(OzCliErrorKind.PARSE_ERROR, 'bad json', 0, 'stderr data');
     formatter.formatError(err, mock.stream as any);
-    expect(mock.getFullOutput()).toContain('parsing');
+    expect(mock.getFullOutput()).toContain('Parsing error');
     expect(mock.getFullOutput()).toContain('stderr data');
   });
 
-  // Gap: PARSE_ERROR senza stderr → fallback a error.message
-  it('dovrebbe fallback a message se PARSE_ERROR senza stderr', () => {
+  // Gap: PARSE_ERROR without stderr → fallback to error.message
+  it('should fallback to message when PARSE_ERROR has no stderr', () => {
     const err = new OzCliError(OzCliErrorKind.PARSE_ERROR, 'unexpected token at col 5');
     formatter.formatError(err, mock.stream as any);
-    expect(mock.getFullOutput()).toContain('parsing');
+    expect(mock.getFullOutput()).toContain('Parsing error');
     expect(mock.getFullOutput()).toContain('unexpected token at col 5');
   });
 
-  it('dovrebbe mostrare messaggio CLI_ERROR generico con exit code', () => {
+  it('should show generic CLI_ERROR message with exit code', () => {
     const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'something failed', 1, 'err output');
     formatter.formatError(err, mock.stream as any);
-    expect(mock.getFullOutput()).toContain('Errore CLI');
+    expect(mock.getFullOutput()).toContain('CLI Error');
     expect(mock.getFullOutput()).toContain('1');
   });
 
@@ -218,10 +212,10 @@ describe('formatError()', () => {
 // handleError()
 // ==========================================================================
 describe('handleError()', () => {
-  it('dovrebbe delegare OzCliError a formatError', () => {
+  it('should delegate OzCliError to formatError', () => {
     const err = new OzCliError(OzCliErrorKind.NOT_FOUND, 'not found');
     formatter.handleError(err, mock.stream as any);
-    expect(mock.getFullOutput()).toContain('non trovato');
+    expect(mock.getFullOutput()).toContain('not found');
     expect(mock.buttons.length).toBeGreaterThanOrEqual(1);
   });
 

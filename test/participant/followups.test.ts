@@ -1,16 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { FollowupProvider } from '../../src/participant/followups.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let provider: FollowupProvider;
 
 beforeEach(() => {
-  initI18n('it');
   provider = new FollowupProvider();
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 function getFollowups(command?: string) {
@@ -34,11 +28,11 @@ describe('FollowupProvider', () => {
     expect(followups.some(f => f.command === 'status')).toBe(true);
   });
 
-  it('dovrebbe fornire followup per /status → run + cloud', () => {
+  it('should provide followups for /status → run + history', () => {
     const followups = getFollowups('status');
     expect(followups).toHaveLength(2);
     expect(followups.some(f => f.command === 'run')).toBe(true);
-    expect(followups.some(f => f.command === 'cloud')).toBe(true);
+    expect(followups.some(f => f.command === 'history')).toBe(true);
   });
 
   it('dovrebbe fornire followup per /config → run + init', () => {

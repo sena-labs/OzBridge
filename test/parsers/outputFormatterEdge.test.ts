@@ -2,23 +2,17 @@
  * Test approfonditi per OutputFormatter — edge case e copertura completa di formatError,
  * formatRunResult, formatList, truncate.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { OutputFormatter } from '../../src/parsers/outputFormatter.js';
 import { OzCliError, OzCliErrorKind, OzRunResult } from '../../src/types/index.js';
 import { createMockStream, createMockConfigManager, makeRunResult, makeListResult } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let formatter: OutputFormatter;
 let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   mock = createMockStream();
-  initI18n('it');
   formatter = new OutputFormatter(createMockConfigManager());
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 // ============================================================================
@@ -43,7 +37,7 @@ describe('formatRunResult() — edge case', () => {
     expect(out).toContain('❌');
     expect(out).toContain('FAILED');
     expect(out).not.toContain('Run ID');
-    expect(out).not.toContain('Durata');
+    expect(out).not.toContain('Duration');
     expect(mock.buttons).toHaveLength(0);
   });
 
@@ -73,19 +67,19 @@ describe('formatRunResult() — edge case', () => {
     const result = makeRunResult({ output: longOutput });
     fmt.formatRunResult(result, mock.stream as any);
     const out = mock.getFullOutput();
-    expect(out).toContain('troncato');
-    expect(out).toContain('rimanenti');
+    expect(out).toContain('truncated');
+    expect(out).toContain('remaining');
     expect(out.length).toBeLessThan(longOutput.length);
   });
 
-  it('dovrebbe non troncare output corto', () => {
+  it('should not truncate short output', () => {
     const cfgMgr = createMockConfigManager({ maxOutputChars: 10000 });
     const fmt = new OutputFormatter(cfgMgr);
     const result = makeRunResult({ output: 'short output' });
     fmt.formatRunResult(result, mock.stream as any);
     const out = mock.getFullOutput();
     expect(out).toContain('short output');
-    expect(out).not.toContain('troncato');
+    expect(out).not.toContain('truncated');
   });
 
   it('dovrebbe non renderizzare output se è undefined/stringa vuota', () => {
@@ -139,10 +133,10 @@ describe('formatList() — edge case', () => {
     expect(mock.getFullOutput()).toContain('No items available.');
   });
 
-  it('dovrebbe mostrare placeholder generico se lista vuota senza rawText', () => {
+  it('should show generic placeholder when list is empty without rawText', () => {
     const list = makeListResult([]);
     formatter.formatList(list, ['id'], mock.stream as any);
-    expect(mock.getFullOutput()).toContain('Nessun elemento');
+    expect(mock.getFullOutput()).toContain('No items found');
   });
 });
 

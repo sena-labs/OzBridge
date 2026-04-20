@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createScheduleCommand } from '../../src/commands/scheduleCommand.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import {
@@ -8,7 +8,6 @@ import {
   createMockToken,
   makeListResult,
 } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let cli: ReturnType<typeof createMockCli>;
 let handler: ReturnType<typeof createScheduleCommand>;
@@ -16,14 +15,9 @@ let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('it');
   cli = createMockCli();
   handler = createScheduleCommand(cli, createMockConfigManager());
   mock = createMockStream();
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 describe('/schedule command', () => {
@@ -46,7 +40,7 @@ describe('/schedule command', () => {
       await handler('', mock.stream as any, createMockToken() as any);
 
       expect(cli.scheduleList).toHaveBeenCalled();
-      expect(mock.getFullOutput()).toContain('Nessuno schedule');
+      expect(mock.getFullOutput()).toContain('No schedules found');
     });
   });
 
@@ -64,7 +58,7 @@ describe('/schedule command', () => {
         cron: '0 9 * * *',
         prompt: 'Run linting',
       }));
-      expect(mock.getFullOutput()).toContain('Schedule creato');
+      expect(mock.getFullOutput()).toContain('Schedule created');
     });
 
     it('dovrebbe creare schedule con apici singoli', async () => {
@@ -77,18 +71,18 @@ describe('/schedule command', () => {
       expect(cli.scheduleCreate).toHaveBeenCalled();
     });
 
-    it('dovrebbe mostrare usage se formato non valido', async () => {
+    it('should show usage when format is invalid', async () => {
       await handler('create', mock.stream as any, createMockToken() as any);
 
       expect(cli.scheduleCreate).not.toHaveBeenCalled();
-      expect(mock.getFullOutput()).toContain('Uso');
+      expect(mock.getFullOutput()).toContain('Usage');
     });
 
-    it('dovrebbe mostrare usage se mancano le virgolette', async () => {
+    it('should show usage when quotes are missing', async () => {
       await handler('create name 0 9 * * * Run linting', mock.stream as any, createMockToken() as any);
 
       expect(cli.scheduleCreate).not.toHaveBeenCalled();
-      expect(mock.getFullOutput()).toContain('Uso');
+      expect(mock.getFullOutput()).toContain('Usage');
     });
 
     // Gap: create passa environment dalla config
@@ -117,14 +111,14 @@ describe('/schedule command', () => {
       await handler('pause s-123', mock.stream as any, createMockToken() as any);
 
       expect(cli.schedulePause).toHaveBeenCalledWith('s-123');
-      expect(mock.getFullOutput()).toContain('pausa');
+      expect(mock.getFullOutput()).toContain('paused');
     });
 
-    it('dovrebbe mostrare usage se ID mancante', async () => {
+    it('should show usage when ID is missing', async () => {
       await handler('pause', mock.stream as any, createMockToken() as any);
 
       expect(cli.schedulePause).not.toHaveBeenCalled();
-      expect(mock.getFullOutput()).toContain('Uso');
+      expect(mock.getFullOutput()).toContain('Usage');
     });
   });
 
@@ -136,13 +130,13 @@ describe('/schedule command', () => {
       await handler('unpause s-456', mock.stream as any, createMockToken() as any);
 
       expect(cli.scheduleUnpause).toHaveBeenCalledWith('s-456');
-      expect(mock.getFullOutput()).toContain('riattivato');
+      expect(mock.getFullOutput()).toContain('resumed');
     });
 
-    it('dovrebbe mostrare usage se ID mancante', async () => {
+    it('should show usage when ID is missing', async () => {
       await handler('unpause', mock.stream as any, createMockToken() as any);
 
-      expect(mock.getFullOutput()).toContain('Uso');
+      expect(mock.getFullOutput()).toContain('Usage');
     });
   });
 
@@ -154,33 +148,33 @@ describe('/schedule command', () => {
       await handler('delete s-789', mock.stream as any, createMockToken() as any);
 
       expect(cli.scheduleDelete).toHaveBeenCalledWith('s-789');
-      expect(mock.getFullOutput()).toContain('eliminato');
+      expect(mock.getFullOutput()).toContain('deleted');
     });
 
-    it('dovrebbe mostrare usage se ID mancante', async () => {
+    it('should show usage when ID is missing', async () => {
       await handler('delete', mock.stream as any, createMockToken() as any);
 
-      expect(mock.getFullOutput()).toContain('Uso');
+      expect(mock.getFullOutput()).toContain('Usage');
     });
   });
 
   // --- unknown subcommand ---
-  it('dovrebbe mostrare help per subcommand sconosciuto', async () => {
+  it('should show help for unknown subcommand', async () => {
     await handler('foobar', mock.stream as any, createMockToken() as any);
 
     const output = mock.getFullOutput();
-    expect(output).toContain('Comandi disponibili');
+    expect(output).toContain('Available commands');
     expect(output).toContain('/schedule list');
     expect(output).toContain('/schedule create');
   });
 
   // --- error handling ---
-  it('dovrebbe gestire OzCliError', async () => {
+  it('should handle OzCliError', async () => {
     cli.scheduleList.mockRejectedValue(new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'login'));
 
     await handler('list', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('autenticato');
+    expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
   it('dovrebbe gestire errore generico', async () => {
@@ -197,7 +191,7 @@ describe('/schedule command', () => {
 
     await handler('create job "invalid cron" "prompt"', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Errore CLI');
+    expect(mock.getFullOutput()).toContain('CLI Error');
   });
 
   it('dovrebbe gestire errore generico su scheduleCreate', async () => {
@@ -213,7 +207,7 @@ describe('/schedule command', () => {
 
     await handler('pause s-invalid', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('non trovato');
+    expect(mock.getFullOutput()).toContain('not found');
   });
 
   it('dovrebbe gestire errore su scheduleUnpause', async () => {
@@ -229,7 +223,7 @@ describe('/schedule command', () => {
 
     await handler('delete s-perm', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('autenticato');
+    expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
   // Gap: errore non-Error (stringa) nel catch → instanceof Error false branch (L122)

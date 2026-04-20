@@ -2,7 +2,7 @@
  * Test ad alta densità per CommandRouter — dispatch, unknown command,
  * risultati con metadata, factory wiring.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CommandRouter } from '../../src/commands/router.js';
 import {
   createMockCli,
@@ -12,7 +12,6 @@ import {
   createMockStream,
   createMockToken,
 } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let router: CommandRouter;
 let cli: ReturnType<typeof createMockCli>;
@@ -24,8 +23,7 @@ let token: ReturnType<typeof createMockToken>;
 
 beforeEach(() => {
   cli = createMockCli();
-  initI18n('it');
-  // La maggior parte dei command handler chiama checkAvailability come prima cosa
+  // Most command handlers call checkAvailability first
   cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0.0' });
   cli.profileList.mockResolvedValue({ items: [], rawText: '' });
   cli.environmentList.mockResolvedValue({ items: [], rawText: '' });
@@ -36,10 +34,6 @@ beforeEach(() => {
   router = new CommandRouter(cli, ctx, cfgMgr, poller);
   mock = createMockStream();
   token = createMockToken();
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 // Helper per invocare l'handler con un certo command name
@@ -57,8 +51,8 @@ async function dispatch(command: string | undefined, prompt = 'test prompt') {
 // Routing dispatch table
 // ============================================================================
 describe('CommandRouter — dispatch', () => {
-  it('dovrebbe registrare gli 8 comandi slash attesi', async () => {
-    const expectedCommands = ['run', 'cloud', 'status', 'schedule', 'models', 'mcp', 'config', 'init'];
+  it('dovrebbe registrare i 9 comandi slash attesi', async () => {
+    const expectedCommands = ['run', 'cloud', 'status', 'history', 'schedule', 'models', 'mcp', 'config', 'init'];
     for (const cmd of expectedCommands) {
       // Dispatch senza errore — il comando è registrato
       const result = await dispatch(cmd);

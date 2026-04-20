@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createConfigCommand } from '../../src/commands/ozConfigCommand.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import {
@@ -8,7 +8,6 @@ import {
   createMockToken,
   makeListResult,
 } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let cli: ReturnType<typeof createMockCli>;
 let handler: ReturnType<typeof createConfigCommand>;
@@ -16,18 +15,13 @@ let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('it');
   cli = createMockCli();
   handler = createConfigCommand(cli, createMockConfigManager());
   mock = createMockStream();
 });
 
-afterEach(() => {
-  _resetI18n();
-});
-
 describe('/config command', () => {
-  it('dovrebbe mostrare header "Configurazione"', async () => {
+  it('should show "Configuration" header', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));
     cli.environmentList.mockResolvedValue(makeListResult([]));
@@ -35,7 +29,7 @@ describe('/config command', () => {
 
     await handler('', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Configurazione');
+    expect(mock.getFullOutput()).toContain('Configuration');
   });
 
   it('dovrebbe mostrare tutti i parametri settings', async () => {
@@ -49,7 +43,7 @@ describe('/config command', () => {
     const output = mock.getFullOutput();
     expect(output).toContain('Oz Path');
     expect(output).toContain('Default Model');
-    expect(output).toContain('Timeout locale');
+    expect(output).toContain('Local timeout');
   });
 
   it('dovrebbe mostrare stato CLI disponibile con versione', async () => {
@@ -60,7 +54,7 @@ describe('/config command', () => {
 
     await handler('', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Disponibile');
+    expect(mock.getFullOutput()).toContain('Available');
     expect(mock.getFullOutput()).toContain('2.0.1');
   });
 
@@ -69,8 +63,8 @@ describe('/config command', () => {
 
     await handler('', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Non disponibile');
-    expect(mock.buttons.some(b => b.title.includes('Installa'))).toBe(true);
+    expect(mock.getFullOutput()).toContain('Not available');
+    expect(mock.buttons.some(b => b.title.includes('Install'))).toBe(true);
   });
 
   it('dovrebbe mostrare profili se disponibili', async () => {
@@ -119,15 +113,15 @@ describe('/config command', () => {
       expect.stringContaining('Failed to list profiles'),
       expect.anything(),
     );
-    // Il comando non deve fallire
-    expect(mock.getFullOutput()).toContain('Configurazione');
+    // The command should not fail
+    expect(mock.getFullOutput()).toContain('Configuration');
     warnSpy.mockRestore();
   });
 
-  // P2 fix: non-OzCliError nel catch principale
-  it('dovrebbe gestire errore non-OzCliError con logError e messaggio utente (P2)', async () => {
+  // P2 fix: non-OzCliError in main catch
+  it('should handle non-OzCliError with logError and user message (P2)', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    // checkAvailability lancia un errore generico (non OzCliError)
+    // checkAvailability throws a generic error (not OzCliError)
     cli.checkAvailability.mockRejectedValue(new TypeError('Cannot read properties of undefined'));
 
     await handler('', mock.stream as any, createMockToken() as any);
@@ -135,17 +129,17 @@ describe('/config command', () => {
     expect(errorSpy).toHaveBeenCalledWith(
       expect.stringContaining('Config command error'),
     );
-    expect(mock.getFullOutput()).toContain('Errore');
+    expect(mock.getFullOutput()).toContain('Error');
     expect(mock.getFullOutput()).toContain('Cannot read properties of undefined');
     errorSpy.mockRestore();
   });
 
-  it('dovrebbe gestire OzCliError nel catch principale con formatError (P2)', async () => {
+  it('should handle OzCliError in main catch with formatError (P2)', async () => {
     cli.checkAvailability.mockRejectedValue(new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'not logged'));
 
     await handler('', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('autenticato');
+    expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
   // Gap: environmentList failure dovrebbe loggare warning senza bloccare il comando
@@ -162,11 +156,11 @@ describe('/config command', () => {
       expect.stringContaining('Failed to list environments'),
       expect.anything(),
     );
-    expect(mock.getFullOutput()).toContain('Configurazione');
+    expect(mock.getFullOutput()).toContain('Configuration');
     warnSpy.mockRestore();
   });
 
-  // Gap: integrationList failure dovrebbe loggare warning senza bloccare il comando
+  // Gap: integrationList failure should log warning without blocking
   it('dovrebbe usare console.warn se integrationList fallisce (non blocca il comando)', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
@@ -180,11 +174,11 @@ describe('/config command', () => {
       expect.stringContaining('Failed to list integrations'),
       expect.anything(),
     );
-    expect(mock.getFullOutput()).toContain('Configurazione');
+    expect(mock.getFullOutput()).toContain('Configuration');
     warnSpy.mockRestore();
   });
 
-  // Gap: display environmentList con items
+  // Gap: display environmentList with items
   it('dovrebbe mostrare environments se disponibili', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));

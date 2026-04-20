@@ -7,7 +7,6 @@ import {
   WarpBridgeConfig,
   IConfigManager,
 } from '../types/index.js';
-import { t } from '../core/i18n.js';
 
 // IMPL: formattazione output Oz CLI → ChatResponseStream con troncamento (D7)
 
@@ -27,24 +26,23 @@ export class OutputFormatter {
     return this.cfgMgr.getConfig();
   }
 
-  // IMPL: formatta risultato di un agent run nel chat stream
+  // IMPL: format an agent run result into the chat stream
   formatRunResult(
     result: OzRunResult,
     stream: vscode.ChatResponseStream,
     opts?: { autoOpened?: boolean; local?: boolean },
   ): void {
     const statusIcon = result.status === 'SUCCEEDED' ? '✅' : '❌';
-    const header = t('oz.fmt_run_header', statusIcon, result.status);
 
-    stream.markdown(`${header}\n\n`);
+    stream.markdown(`${statusIcon} **Agent run** — status: \`${result.status}\`\n\n`);
 
     if (result.runId) {
-      stream.markdown(t('oz.fmt_run_id', result.runId));
+      stream.markdown(`**Run ID**: \`${result.runId}\`\n\n`);
     }
 
     if (result.durationMs > 0) {
       const secs = (result.durationMs / 1000).toFixed(1);
-      stream.markdown(t('oz.fmt_run_duration', secs));
+      stream.markdown(`⏱️ Duration: ${secs}s\n\n`);
     }
 
     if (result.output) {
@@ -54,16 +52,16 @@ export class OutputFormatter {
 
     if (result.runId && !opts?.autoOpened && !opts?.local) {
       // Cloud run without auto-open → show web link to cloud session
-      const sessionUrl = this.extractSessionUrl(result) 
+      const sessionUrl = this.extractSessionUrl(result)
         || `https://app.warp.dev/session/${result.runId}`;
       stream.button({
         command: 'vscode.open',
         arguments: [vscode.Uri.parse(sessionUrl)],
-        title: t('oz.fmt_open_warp_web'),
+        title: '🌐 Open in browser',
       });
     }
     // autoOpened: Warp terminal opened automatically via --open flag
-    // local: run eseguita localmente, conversation_id non è una sessione web
+    // local: run executed locally, conversation_id is not a web session
   }
 
   /**
@@ -90,7 +88,7 @@ export class OutputFormatter {
     if (listResult.items.length === 0) {
       stream.markdown(listResult.rawText
         ? `_${listResult.rawText}_\n`
-        : t('oz.fmt_list_empty'));
+        : '_No items found._\n');
       return;
     }
 
@@ -104,49 +102,49 @@ export class OutputFormatter {
     stream.markdown([headerRow, separatorRow, ...dataRows].join('\n') + '\n');
   }
 
-  // IMPL: formatta errore con azione suggerita (button login, link installazione)
+  // IMPL: format an error with suggested action (login button, install link)
   formatError(error: OzCliError, stream: vscode.ChatResponseStream): void {
     switch (error.kind) {
       case OzCliErrorKind.NOT_FOUND:
-        stream.markdown(t('oz.fmt_err_not_found'));
+        stream.markdown('⚠️ **Oz CLI not found.** Make sure Warp is installed and `oz` is in your PATH.\n\n');
         stream.button({
           command: 'vscode.open',
           arguments: [vscode.Uri.parse(WARP_INSTALL_URL)],
-          title: t('oz.fmt_err_install'),
+          title: '📥 Install Warp',
         });
         break;
 
       case OzCliErrorKind.NOT_AUTHENTICATED:
-        stream.markdown(t('oz.fmt_err_not_auth'));
+        stream.markdown('🔒 **Not authenticated.** Please log in to Warp.\n\n');
         stream.button({
           command: 'vscode.open',
           arguments: [vscode.Uri.parse(WARP_LOGIN_URL)],
-          title: t('oz.fmt_err_login'),
+          title: '🔑 Login Warp',
         });
         break;
 
       case OzCliErrorKind.TIMEOUT:
-        stream.markdown(t('oz.fmt_err_timeout', this.config.timeoutMs / 1000));
+        stream.markdown(`⏰ **Timeout.** Operation exceeded the ${this.config.timeoutMs / 1000}s limit.\n\nYou can increase the timeout in Settings → Warp Bridge → Timeout.\n`);
         break;
 
       case OzCliErrorKind.CANCELLED:
-        stream.markdown(t('oz.fmt_err_cancelled'));
+        stream.markdown('🚫 **Operation cancelled.**\n');
         break;
 
       case OzCliErrorKind.PARSE_ERROR:
         stream.markdown(
-          t('oz.fmt_err_parse') +
-          `\`\`\`\n${error.stderr?.substring(0, 500) ?? error.message}\n\`\`\`\n`
+          '⚠️ **Parsing error.** Unexpected output from Oz CLI.\n\n' +
+          `\`\`\`\n${error.stderr?.substring(0, 500) ?? error.message}\n\`\`\`\n`,
         );
         break;
 
       default:
         stream.markdown(
-          t('oz.fmt_err_cli', error.exitCode ?? '?') +
-          `\`\`\`\n${error.message}\n\`\`\`\n`
+          `❌ **CLI Error** (exit code ${error.exitCode ?? '?'}):\n\n` +
+          `\`\`\`\n${error.message}\n\`\`\`\n`,
         );
         if (error.stderr) {
-          stream.markdown(t('oz.fmt_err_stderr') + `\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n`);
+          stream.markdown(`\n**stderr:**\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n`);
         }
         break;
     }
@@ -160,17 +158,18 @@ export class OutputFormatter {
     if (err instanceof OzCliError) {
       this.formatError(err, stream);
     } else {
-      stream.markdown(t('oz.error', err instanceof Error ? err.message : String(err)));
+      const msg = err instanceof Error ? err.message : String(err);
+      stream.markdown(`❌ Error: ${msg}\n`);
     }
   }
 
-  // IMPL: tronca output a maxOutputChars con indicatore (decisione Q3 = 5000)
+  // IMPL: truncate output to maxOutputChars with indicator (default 15000)
   private truncate(text: string): string {
     if (text.length <= this.config.maxOutputChars) {
       return text;
     }
     const truncated = text.substring(0, this.config.maxOutputChars);
     const remaining = text.length - this.config.maxOutputChars;
-    return truncated + t('oz.fmt_truncated', remaining);
+    return truncated + `\n\n---\n_… output truncated (${remaining} chars remaining). Use \`/status\` with the Run ID for full output._\n`;
   }
 }

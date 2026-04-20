@@ -5,13 +5,13 @@ import {
   SlashCommandHandler,
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
-import { t } from '../core/i18n.js';
 
 /**
  * Creates the `/status` slash-command handler.
  *
- * Without arguments, lists recent Oz runs; with a run ID, shows the detail
- * of that specific run.
+ * Focuses on currently active runs. Without arguments, lists runs with
+ * status `QUEUED` or `INPROGRESS`; with a run ID, shows the detail of
+ * that specific run.
  *
  * @param cli - Oz CLI service for `runList()` / `runGet()`.
  * @param cfgMgr - Configuration manager.
@@ -28,20 +28,25 @@ export function createStatusCommand(
       const trimmed = prompt.trim();
 
       if (trimmed) {
-        // Prompt contiene un runId → dettaglio
-        stream.progress(t('oz.status_detail_progress', trimmed));
+        // Prompt contains a runId → detail
+        stream.progress(`Fetching run status ${trimmed}...`);
         const result = await cli.runGet(trimmed);
         formatter.formatRunResult(result, stream);
       } else {
-        // Nessun runId → lista
-        stream.progress(t('oz.status_list_progress'));
+        // No runId → list of active runs only (QUEUED or INPROGRESS)
+        stream.progress('Fetching active runs...');
         const list = await cli.runList();
-        if (list.items.length === 0) {
+        const active = list.items.filter(
+          (item) => item.status === 'QUEUED' || item.status === 'INPROGRESS',
+        );
+
+        if (active.length === 0) {
           stream.markdown(list.rawText
             ? `_${list.rawText}_\n`
-            : t('oz.status_empty'));
+            : '_No active runs. Use `/history` to see past runs._\n');
         } else {
-          formatter.formatList(list, ['id', 'status'], stream);
+          stream.markdown(`**${active.length} active run${active.length === 1 ? '' : 's'}:**\n\n`);
+          formatter.formatList({ items: active }, ['id', 'status'], stream);
         }
       }
     } catch (err) {

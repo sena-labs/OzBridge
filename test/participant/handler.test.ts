@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { chat, Uri } from '../../test/mocks/vscode.js';
 import { registerChatParticipant } from '../../src/participant/handler.js';
 import {
@@ -7,15 +7,9 @@ import {
   createMockContextCollector,
   createMockPoller,
 } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('en');
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 describe('registerChatParticipant()', () => {

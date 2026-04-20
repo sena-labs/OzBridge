@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { AGENT_SKILL_MAP, SlashCommandHandler } from '../types/index.js';
-import { t } from '../core/i18n.js';
 
 /**
  * Creates the `/init` slash-command handler.
@@ -60,7 +59,7 @@ export function createInitCommand(): SlashCommandHandler {
   return async (_prompt, stream, _token) => {
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders?.[0]) {
-      stream.markdown(t('oz.init_no_workspace'));
+      stream.markdown('❌ No workspace open. Open a folder before using `/init`.\n');
       return {};
     }
 
@@ -68,7 +67,7 @@ export function createInitCommand(): SlashCommandHandler {
     let created = 0;
     let skipped = 0;
 
-    stream.progress(t('oz.init_progress'));
+    stream.progress('Scaffolding Warp Skills and Rules...');
 
     // Crea 7 SKILL.md files (async, non blocca l'extension host)
     for (const [, skillName] of Object.entries(AGENT_SKILL_MAP)) {
@@ -101,12 +100,12 @@ export function createInitCommand(): SlashCommandHandler {
     }
 
     // Report
-    stream.markdown(t('oz.init_done'));
-    stream.markdown(t('oz.init_created', created));
+    stream.markdown('## ✅ Scaffolding complete\n\n');
+    stream.markdown(`- **${created}** files created\n`);
     if (skipped > 0) {
-      stream.markdown(t('oz.init_skipped', skipped));
+      stream.markdown(`- **${skipped}** files already exist (not overwritten)\n`);
     }
-    stream.markdown(t('oz.init_structure'));
+    stream.markdown('\n### Created Structure\n\n');
     stream.markdown('```\n');
     stream.markdown('.agents/skills/\n');
     for (const [, skillName] of Object.entries(AGENT_SKILL_MAP)) {

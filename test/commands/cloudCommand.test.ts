@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createCloudCommand } from '../../src/commands/cloudCommand.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import {
@@ -11,7 +11,6 @@ import {
   makeRunResult,
   makeListResult,
 } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let cli: ReturnType<typeof createMockCli>;
 let pollerMock: ReturnType<typeof createMockPoller>;
@@ -20,15 +19,10 @@ let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('it');
   cli = createMockCli();
   pollerMock = createMockPoller();
   handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector());
   mock = createMockStream();
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 describe('/cloud command', () => {
@@ -37,7 +31,7 @@ describe('/cloud command', () => {
 
     await handler('deploy app', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('non trovato');
+    expect(mock.getFullOutput()).toContain('not found');
     expect(cli.agentRunCloud).not.toHaveBeenCalled();
   });
 
@@ -47,7 +41,7 @@ describe('/cloud command', () => {
 
     await handler('deploy', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('crediti');
+    expect(mock.getFullOutput()).toContain('credits');
   });
 
   it('dovrebbe iniettare contesto IDE nel prompt', async () => {
@@ -87,8 +81,8 @@ describe('/cloud command', () => {
 
     await handler('deploy', mock.stream as any, createMockToken() as any);
 
-    expect(mock.progresses).toContain('Stato: INPROGRESS...');
-    expect(mock.progresses).toContain('Stato: FINALIZING...');
+    expect(mock.progresses).toContain('Status: INPROGRESS...');
+    expect(mock.progresses).toContain('Status: FINALIZING...');
   });
 
   it('dovrebbe mostrare risultato direttamente se runId mancante', async () => {
@@ -117,7 +111,7 @@ describe('/cloud command', () => {
 
     await handler('prompt', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('autenticato');
+    expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
   it('dovrebbe gestire errore generico su agentRunCloud', async () => {
@@ -136,7 +130,7 @@ describe('/cloud command', () => {
 
     await handler('prompt', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Errore polling');
+    expect(mock.getFullOutput()).toContain('Polling error');
     expect(mock.getFullOutput()).toContain('network disconnected');
   });
 
@@ -149,7 +143,7 @@ describe('/cloud command', () => {
     await handler('prompt', mock.stream as any, createMockToken() as any);
 
     expect(window.showInformationMessage).toHaveBeenCalledWith(
-      expect.stringContaining('completato con successo'),
+      expect.stringContaining('completed successfully'),
     );
   });
 
@@ -162,7 +156,7 @@ describe('/cloud command', () => {
     await handler('prompt', mock.stream as any, createMockToken() as any);
 
     expect(window.showInformationMessage).toHaveBeenCalledWith(
-      expect.stringContaining('fallito'),
+      expect.stringContaining('Cloud agent failed'),
     );
   });
 
@@ -265,7 +259,7 @@ describe('/cloud command', () => {
     const callArgs = cli.agentRunCloud.mock.calls[0][0];
     expect(callArgs.environment).toBeUndefined();
     expect(callArgs.noEnvironment).toBe(true);
-    expect(mock.getFullOutput()).toContain('Nessun environment');
+    expect(mock.getFullOutput()).toContain('No environments available');
   });
 
   it('dovrebbe usare --no-environment se environmentList fallisce', async () => {

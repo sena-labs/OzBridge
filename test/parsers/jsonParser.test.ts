@@ -254,6 +254,6 @@ describe('DEFAULT_CONFIG', () => {
     expect(DEFAULT_CONFIG.cloudPollingIntervalMs).toBe(5_000);
     expect(DEFAULT_CONFIG.cloudPollingTimeoutMs).toBe(1_800_000);
     expect(DEFAULT_CONFIG.timeoutMs).toBe(300_000);
-    expect(DEFAULT_CONFIG.maxOutputChars).toBe(5_000);
+    expect(DEFAULT_CONFIG.maxOutputChars).toBe(15_000);
   });
 });

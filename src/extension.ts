@@ -3,9 +3,14 @@ import { ConfigManager } from './services/configManager.js';
 import { ContextCollector } from './services/contextCollector.js';
 import { OzCliService } from './services/ozCliService.js';
 import { RunPoller } from './services/runPoller.js';
+import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
+import { registerWarpTools } from './tools/index.js';
+import { StatusBarManager } from './ui/statusBarItem.js';
+import { WarpRunsTreeProvider } from './ui/runsTreeProvider.js';
+import { registerTreeCommands } from './ui/treeCommands.js';
+import { registerHandoffCommands } from './ui/handoff.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
-import { initI18n, t } from './core/i18n.js';
 
 /**
  * Entry point of the Warp Bridge extension.
@@ -18,13 +23,14 @@ import { initI18n, t } from './core/i18n.js';
  */
 
 /** Module-level state — encapsulates extension lifecycle objects. */
-const state: { configManager?: ConfigManager; runPoller?: RunPoller } = {};
+const state: {
+  configManager?: ConfigManager;
+  runPoller?: RunPoller;
+  tracker?: ActiveRunsTracker;
+} = {};
 
 export function activate(context: vscode.ExtensionContext): void {
-  // Initialise i18n based on VS Code locale
-  initI18n(vscode.env.language);
-
-  // Log di avvio
+  // Startup log
   const outputChannel = vscode.window.createOutputChannel('Warp Bridge');
   context.subscriptions.push(outputChannel);
   initLogger(outputChannel, '[warp-vsc-bridge]');
@@ -48,6 +54,46 @@ export function activate(context: vscode.ExtensionContext): void {
   // Registra Chat Participant
   registerChatParticipant(context, cli, ctx, state.configManager, state.runPoller);
 
+  // Registra Language Model Tools — Agent-Native integration.
+  // Questi tool permettono a Copilot Agent mode di invocare Oz senza @warp.
+  // Il runtime di VS Code < 1.96 (`vscode.lm` assente) è gestito con graceful fallback.
+  if (typeof vscode.lm?.registerTool === 'function') {
+    registerWarpTools(context, cli, state.configManager, ctx, state.runPoller);
+  } else {
+    logInfo('vscode.lm.registerTool not available — Language Model Tools not registered');
+  }
+
+  // Avvia l'ActiveRunsTracker — feed event-driven per Status Bar e sidebar.
+  state.tracker = new ActiveRunsTracker(cli);
+  context.subscriptions.push(state.tracker);
+  state.tracker.start();
+
+  // Status Bar indicator $(cloud) Warp: N active
+  const statusBar = new StatusBarManager(state.tracker);
+  context.subscriptions.push(statusBar);
+
+  // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
+  const treeProvider = new WarpRunsTreeProvider(cli, state.tracker);
+  context.subscriptions.push(treeProvider);
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider('warpBridge.runsView', treeProvider),
+  );
+  for (const disposable of registerTreeCommands({ cli, tracker: state.tracker, provider: treeProvider })) {
+    context.subscriptions.push(disposable);
+  }
+
+  // Warp handoff — apre un tab Warp con contesto tramite URI warp://
+  for (const disposable of registerHandoffCommands({ cfgMgr: state.configManager })) {
+    context.subscriptions.push(disposable);
+  }
+
+  // Comando aggiuntivo: focus sulla sidebar — usato dal click sulla Status Bar.
+  context.subscriptions.push(
+    vscode.commands.registerCommand(StatusBarManager.FOCUS_COMMAND, () =>
+      vscode.commands.executeCommand('workbench.view.extension.warpBridgeSidebar'),
+    ),
+  );
+
   // I servizi leggono la config dinamicamente tramite IConfigManager,
   // quindi i cambi si applicano automaticamente alla prossima invocazione.
   state.configManager.onConfigChanged((newConfig) => {
@@ -57,15 +103,15 @@ export function activate(context: vscode.ExtensionContext): void {
   logInfo('Extension activated');
   logInfo(`Oz CLI path: ${state.configManager.getConfig().ozPath}`);
 
-  // Verifica availability in background (non blocca l'attivazione)
+  // Background availability check (does not block activation)
   cli.checkAvailability().then((avail) => {
     if (avail.available) {
       logInfo(`Oz CLI available: ${avail.version}`);
     } else {
       logInfo('WARNING: Oz CLI not found in PATH');
-      const installLabel = t('oz.ext_install_warp');
+      const installLabel = 'Install Warp';
       vscode.window.showWarningMessage(
-        t('oz.ext_cli_not_found'),
+        'Warp Bridge: Oz CLI not found. Install Warp to use @warp in chat.',
         installLabel,
       ).then((action) => {
         if (action === installLabel) {
@@ -88,4 +134,5 @@ export function deactivate(): void {
   // RunPoller è ora disposto anche via context.subscriptions,
   // ma disposeAll() è idempotente — sicuro chiamare in entrambi i punti.
   state.runPoller?.disposeAll();
+  state.tracker?.dispose();
 }
