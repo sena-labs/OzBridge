@@ -28,6 +28,7 @@ import { FailureTriageService } from './services/failureTriage.js';
 import { createVsCodeLanguageModelClient } from './services/languageModelClient.js';
 import { DatasetExportService, DatasetFormat } from './services/datasetExport.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
+import { createTelemetryReporter, ITelemetryReporter } from './services/telemetry.js';
 
 /**
  * Entry point of the Warp Bridge extension.
@@ -47,6 +48,7 @@ const state: {
   tracker?: ActiveRunsTracker;
   mcp?: McpLifecycle;
   driveSource?: IWarpDriveSource;
+  telemetry?: ITelemetryReporter;
 } = {};
 
 /** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
@@ -251,6 +253,25 @@ export function activate(context: vscode.ExtensionContext): void {
   logInfo('Extension activated');
   logInfo(`Oz CLI path: ${state.configManager.getConfig().ozPath}`);
 
+  // Telemetry (v1.0 deliverable P) — strictly opt-in via VS Code's
+  // global `telemetry.telemetryLevel` *and* an explicit AppInsights
+  // connection string. Default `connectionString = ""` ⇒ noop transport.
+  // No PII ever transits: see `src/services/telemetry.ts` and PRIVACY.md.
+  const telemetryConnectionString = vscode.workspace
+    .getConfiguration('warpBridge')
+    .get<string>('telemetry.connectionString', '');
+  state.telemetry = createTelemetryReporter({
+    env: { isTelemetryEnabled: vscode.env.isTelemetryEnabled ?? false },
+    connectionString: telemetryConnectionString,
+    version: EXTENSION_VERSION,
+  });
+  state.telemetry.track('extensionActivated', { version: EXTENSION_VERSION });
+  context.subscriptions.push({
+    dispose: () => {
+      void state.telemetry?.dispose();
+    },
+  });
+
   // First-activation Getting Started walkthrough (gated via globalState so
   // it opens at most once per install; failure is non-fatal).
   void maybeOpenGettingStartedWalkthrough({ globalState: context.globalState });
@@ -273,6 +294,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   }).catch((err) => {
     logError(`Availability check failed: ${err instanceof Error ? err.message : String(err)}`);
+    state.telemetry?.track('errorRaised', { kind: 'availabilityCheck' });
   });
 }
 

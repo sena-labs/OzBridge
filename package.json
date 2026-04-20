@@ -493,6 +493,12 @@
           "default": "",
           "markdownDescription": "Optional bearer token required on every MCP request. Empty string disables auth. Set via **Settings** or `settings.json`.",
           "scope": "machine-overridable"
+        },
+        "warpBridge.telemetry.connectionString": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Application Insights connection string (`InstrumentationKey=...;IngestionEndpoint=...`) for opt-in telemetry. Empty string keeps the transport disabled even when VS Code's `telemetry.telemetryLevel` is on. See [`PRIVACY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/PRIVACY.md) for what is and isn't collected.",
+          "scope": "machine-overridable"
         }
       }
     },

@@ -13,3 +13,12 @@ CLI through Warp Bridge.
 The MCP server binds to `127.0.0.1` by default and supports an
 optional bearer token (`warpBridge.mcpBearerToken`) for authenticated
 setups.
+
+---
+
+**Privacy.** Warp Bridge ships **no telemetry by default**. If you
+choose to enable it (`warpBridge.telemetry.connectionString`), only a
+closed set of typed events is sent — never prompt content, run IDs,
+output, file paths or workspace paths. See
+[`PRIVACY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/PRIVACY.md)
+for the full contract.
