@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9.0] — 2026-04-20
+"Reach" milestone. Ships the official `vscode.l10n` localization
+pipeline (en/it/es), a four-step Get-Started walkthrough, dual-registry
+publishing (Marketplace + Open VSX) with soft-fail on missing secrets,
+a 2 × 3 cross-platform CI matrix (Node `20.19` / `22.12` × ubuntu /
+windows / macos) plus a dedicated 125 KB bundle-budget workflow, and
+a contributor-docs rewrite around the deliverable-PR playbook.
+Delivers the full v0.9 scope (deliverables K–O) defined in
+`docs/MILESTONE-v0.9.md`.
 ### Changed
 - **Contributor docs rewrite (`v0.9` deliverable O).** Rewrote
   `CONTRIBUTING.md` around the **deliverable-PR playbook** used by the

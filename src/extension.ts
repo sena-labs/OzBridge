@@ -50,7 +50,7 @@ const state: {
 } = {};
 
 /** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
-const EXTENSION_VERSION = '0.8.0';
+const EXTENSION_VERSION = '0.9.0';
 
 export function activate(context: vscode.ExtensionContext): void {
   // Startup log

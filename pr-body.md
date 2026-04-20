@@ -1,3 +1,23 @@
+# Release v0.9.0 — "Reach"
+
+Promotes deliverables **K · L · M · N · O** to the v0.9.0 stable line.
+
+## What
+- Bumped `package.json` and `EXTENSION_VERSION` to `0.9.0`.
+- Promoted `[Unreleased]` to `## [0.9.0] — 2026-04-20` in `CHANGELOG.md` with a milestone summary.
+- Added `docs/RELEASE-NOTES-v0.9.0.md` covering all 5 deliverables, footprint table, install snippets (Marketplace + Open VSX), known issues (`VSCE_PAT` rotation pending), and v1.0 outlook.
+
+## Verification
+- `npm run compile` — clean.
+- `npm test -- --run` — **1029 / 1029** green.
+- `npm run build` — `dist/extension.js` = **102,388 B (99.99 KB)** · budget 125 KB.
+- `npm run package` — VSIX produced (~149 KB).
+
+## Next
+After merge:
+1. `git tag v0.9.0 -m "v0.9.0 — Reach"` and `git push --tags`.
+2. `publish.yml` runs the four-job pipeline (build → marketplace → openvsx → github-release). Marketplace job will warn-skip until `VSCE_PAT` is rotated.
+3. Cut `release/v0.9.x` maintenance branch from the tag.
 # v0.9 deliverable O — Contributor docs rewrite
 
 ## What
