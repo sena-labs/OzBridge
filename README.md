@@ -36,6 +36,7 @@ that Copilot Agent mode can invoke autonomously.
 - **`@warp` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel.
 - **Agent-Native Language Model Tools** (v0.3+) — Copilot Agent mode can invoke Warp Oz directly, without typing `@warp`.
 - **Warp sidebar + status bar** (v0.4+) — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
+- **Context variables & Warp handoff** (v0.5+) — inline `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
 - **9 slash commands** covering the full agent workflow: `/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`.
 - **IDE context injection** — automatically includes workspace path, active file, selection and diagnostics in every prompt.
 - **Agent skill detection** — maps prompt keywords to the 7-agent pipeline (spec, design, implement, review, test, deploy, maintenance).
@@ -191,6 +192,42 @@ A **status bar item** (`$(cloud) Warp: N active`, right-aligned) mirrors the
 Active Runs count in real time and switches to `warningBackground` at 1–2
 active runs or `errorBackground` at 3+. Clicking the indicator focuses the
 Warp Bridge sidebar.
+
+### Prompt variables
+
+Inside any `@warp /run …` or `@warp /cloud …` prompt you can embed a small
+set of tokens that the extension resolves **locally** before sending the
+prompt to the Oz CLI. Unknown tokens (e.g. `#some.other`) are passed
+through unchanged.
+
+| Token | Expands to |
+| --- | --- |
+| `#warp.env` | Value of `warpBridge.defaultEnvironment` (or `(no default environment)` when empty). |
+| `#warp.profile` | Value of `warpBridge.defaultProfile`. |
+| `#warp.model` | Value of `warpBridge.defaultModel`. |
+| `#oz.history` | Markdown table of the last 10 runs from `oz run list`. |
+| `#oz.run/<id>` | Fenced JSON payload from `oz run get <id>` (truncated at 2 000 chars). |
+
+Example:
+
+```text
+@warp /cloud deploy branch #warp.env profile=#warp.profile given the last runs:\n#oz.history
+```
+
+### Hand off to Warp
+
+Two commands open a real Warp terminal (Warp ≥ 0.2024.x) via the
+`warp://action/new_tab` URI scheme:
+
+- **`Warp: Hand off to Warp terminal…`** (Command Palette) — asks for a
+  prompt and runs `oz agent run --prompt "<prompt>"` in a new Warp tab.
+- **`Warp: Hand off run to Warp terminal`** (sidebar context menu on any
+  run node) — runs `oz run get <runId>` so you can drill into the run
+  directly in the terminal.
+
+If the `warp://` URL handler is not registered on the current platform,
+the extension shows a modal with the exact command to copy into any
+shell as a fallback.
 
 ## Configuration
 

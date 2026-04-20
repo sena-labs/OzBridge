@@ -161,6 +161,7 @@ export const window = {
   showWarningMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
   showInformationMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
   showErrorMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
+  showInputBox: vi.fn((_options?: unknown) => Promise.resolve(undefined as string | undefined)),
   createStatusBarItem: vi.fn((alignment?: StatusBarAlignment, priority?: number): MockStatusBarItem => {
     const item: MockStatusBarItem = {
       alignment: alignment ?? StatusBarAlignment.Right,

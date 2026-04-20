@@ -9,6 +9,7 @@ import {
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
 import { detectSkill } from './skillDetector.js';
+import { expandPromptVariables } from '../participant/promptExpander.js';
 
 /**
  * Creates the `/run` slash-command handler.
@@ -44,11 +45,18 @@ export function createRunCommand(
     const context = ctx.gather();
     const contextBlock = ctx.formatForPrompt(context);
 
+    // Espandi variabili di prompt (#warp.*, #oz.*) prima di iniettare il contesto
+    const expanded = await expandPromptVariables(prompt, { cli, cfgMgr });
+    if (expanded.replacements.length > 0) {
+      stream.markdown(`_Expanded ${expanded.replacements.length} prompt variable${expanded.replacements.length === 1 ? '' : 's'}._\n\n`);
+    }
+    const resolvedPrompt = expanded.text;
+
     // Costruisci prompt con contesto iniettato (D5)
-    const fullPrompt = `${contextBlock}\n\n${prompt}`;
+    const fullPrompt = `${contextBlock}\n\n${resolvedPrompt}`;
 
     // Rileva se il prompt menziona un agent skill specifico
-    const skill = detectSkill(prompt);
+    const skill = detectSkill(resolvedPrompt);
 
     stream.progress('Starting local Oz agent...');
 

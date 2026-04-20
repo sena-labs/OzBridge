@@ -10,6 +10,7 @@ import {
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
 import { detectSkill } from './skillDetector.js';
+import { expandPromptVariables } from '../participant/promptExpander.js';
 
 /**
  * Creates the `/cloud` slash-command handler.
@@ -73,10 +74,17 @@ export function createCloudCommand(
     // Inietta contesto IDE nel prompt
     const context = ctx.gather();
     const contextBlock = ctx.formatForPrompt(context);
-    const fullPrompt = `${contextBlock}\n\n${prompt}`;
+
+    // Espandi variabili di prompt (#warp.*, #oz.*) prima di iniettare il contesto
+    const expanded = await expandPromptVariables(prompt, { cli, cfgMgr });
+    if (expanded.replacements.length > 0) {
+      stream.markdown(`_Expanded ${expanded.replacements.length} prompt variable${expanded.replacements.length === 1 ? '' : 's'}._\n\n`);
+    }
+    const resolvedPrompt = expanded.text;
+    const fullPrompt = `${contextBlock}\n\n${resolvedPrompt}`;
 
     // Rileva se il prompt menziona un agent skill specifico
-    const skill = detectSkill(prompt);
+    const skill = detectSkill(resolvedPrompt);
 
     stream.progress('Launching cloud agent...');
 

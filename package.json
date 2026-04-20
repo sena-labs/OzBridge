@@ -246,6 +246,18 @@
         "command": "warpBridge.tree.deleteSchedule",
         "title": "Warp: Delete Schedule",
         "icon": "$(trash)"
+      },
+      {
+        "command": "warpBridge.handoff",
+        "title": "Warp: Hand off to Warp terminal…",
+        "category": "Warp",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "warpBridge.tree.handoff",
+        "title": "Warp: Hand off run to Warp terminal",
+        "category": "Warp",
+        "icon": "$(terminal)"
       }
     ],
     "menus": {
@@ -281,6 +293,11 @@
           "command": "warpBridge.tree.deleteSchedule",
           "when": "view == warpBridge.runsView && viewItem =~ /^warpSchedule/",
           "group": "warpSchedule@2"
+        },
+        {
+          "command": "warpBridge.tree.handoff",
+          "when": "view == warpBridge.runsView && viewItem =~ /^warpRun/",
+          "group": "warpGeneric@3"
         }
       ]
     },

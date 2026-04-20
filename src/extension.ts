@@ -9,6 +9,7 @@ import { registerWarpTools } from './tools/index.js';
 import { StatusBarManager } from './ui/statusBarItem.js';
 import { WarpRunsTreeProvider } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
+import { registerHandoffCommands } from './ui/handoff.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -78,6 +79,11 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.registerTreeDataProvider('warpBridge.runsView', treeProvider),
   );
   for (const disposable of registerTreeCommands({ cli, tracker: state.tracker, provider: treeProvider })) {
+    context.subscriptions.push(disposable);
+  }
+
+  // Warp handoff — apre un tab Warp con contesto tramite URI warp://
+  for (const disposable of registerHandoffCommands({ cfgMgr: state.configManager })) {
     context.subscriptions.push(disposable);
   }
 

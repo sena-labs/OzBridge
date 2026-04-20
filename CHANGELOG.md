@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **v0.5 Context & Handoff**:
+  - Prompt-variable expander (`src/participant/promptExpander.ts`) for `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>`. Resolution happens inside the extension before the prompt is forwarded to the Oz CLI. Tokens not recognised are passed through unchanged, and CLI failures during resolution are inlined as `_error resolving <token>: <msg>_` so the user's prompt is never lost.
+  - Integrated `expandPromptVariables` into the `/run` and `/cloud` command handlers. When any token is substituted the chat stream prints an `_Expanded N prompt variables_` marker before the run starts.
+  - `warpBridge.handoff` (Command Palette) and `warpBridge.tree.handoff` (sidebar context menu on run nodes) that open a real Warp terminal via the `warp://action/new_tab?path=…&command=…` URI scheme. POSIX-safe shell quoting for all embedded strings. Graceful fallback to a modal with the exact command when the URL scheme isn't registered.
+  - New `contributes.commands` / `contributes.menus` entries for the two handoff commands, plus the matching `view/item/context` entry gated on `viewItem =~ /^warpRun/`.
+  - 28 new unit tests: `test/ui/handoff.test.ts` (15) and `test/participant/promptExpander.test.ts` (13) covering URI building, shell quoting (`"`, `\`, `$`, `` ` ``), the palette/tree command flows, fallback modal, static token resolution, dynamic history/run tokens, empty-list fallback, output truncation, CLI error handling and token deduplication.
+  - `vscode` mock extended with `window.showInputBox`.
 - **v0.4 Surfaces** — native VS Code UI for Warp resources:
   - Dedicated **Activity Bar view** (`warpBridge.runsView`) with five categories: Active Runs, History, Schedules, Environments, MCP Servers. Each category renders live data from the Oz CLI via the new `ActiveRunsTracker` (Active Runs / History) or direct CLI calls (Schedules / Environments / MCP).
   - **Status Bar indicator** `$(cloud) Warp: N active` (right-aligned, priority 100) that colour-codes the active-run count (`default` / `warningBackground` / `errorBackground`) and falls back to `$(cloud-outline) Warp: unavailable` when the tracker fires an error.
