@@ -93,6 +93,7 @@ export const workspace = {
   getConfiguration: vi.fn((_section?: string) => ({
     get: vi.fn((_key: string, defaultValue?: unknown) => defaultValue),
   })),
+  openTextDocument: vi.fn((_arg: unknown) => Promise.resolve({ uri: Uri.file('/tmp/mock'), getText: vi.fn(() => '') })),
   onDidChangeConfiguration: vi.fn((_cb?: any) => ({ dispose: vi.fn() })),
   workspaceFolders: undefined as Array<{ uri: Uri; name: string; index: number }> | undefined,
   fs: {
@@ -193,6 +194,8 @@ export const window = {
   showInformationMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
   showErrorMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
   showInputBox: vi.fn((_options?: unknown) => Promise.resolve(undefined as string | undefined)),
+  showQuickPick: vi.fn((_items: unknown, _options?: unknown) => Promise.resolve(undefined as any)),
+  showTextDocument: vi.fn((_doc: unknown) => Promise.resolve({ selection: undefined, edit: vi.fn() })),
   createStatusBarItem: vi.fn((alignment?: StatusBarAlignment, priority?: number): MockStatusBarItem => {
     const item: MockStatusBarItem = {
       alignment: alignment ?? StatusBarAlignment.Right,

@@ -209,6 +209,12 @@
           "name": "Runs & Resources",
           "icon": "media/warp-icon.png",
           "contextualTitle": "Warp Bridge"
+        },
+        {
+          "id": "warpBridge.driveView",
+          "name": "Warp Drive",
+          "icon": "media/warp-icon.png",
+          "contextualTitle": "Warp Bridge"
         }
       ]
     },
@@ -282,6 +288,30 @@
         "title": "Warp: Copy MCP endpoint URL",
         "category": "Warp MCP",
         "icon": "$(copy)"
+      },
+      {
+        "command": "warpBridge.drive.refresh",
+        "title": "Warp Drive: Refresh",
+        "category": "Warp Drive",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "warpBridge.drive.insertIntoChat",
+        "title": "Warp Drive: Insert into chat",
+        "category": "Warp Drive",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "warpBridge.drive.copyContent",
+        "title": "Warp Drive: Copy content",
+        "category": "Warp Drive",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "warpBridge.drive.openInEditor",
+        "title": "Warp Drive: Open in editor",
+        "category": "Warp Drive",
+        "icon": "$(go-to-file)"
       }
     ],
     "menus": {
@@ -289,6 +319,11 @@
         {
           "command": "warpBridge.tree.refresh",
           "when": "view == warpBridge.runsView",
+          "group": "navigation"
+        },
+        {
+          "command": "warpBridge.drive.refresh",
+          "when": "view == warpBridge.driveView",
           "group": "navigation"
         }
       ],
@@ -322,6 +357,21 @@
           "command": "warpBridge.tree.handoff",
           "when": "view == warpBridge.runsView && viewItem =~ /^warpRun/",
           "group": "warpGeneric@3"
+        },
+        {
+          "command": "warpBridge.drive.insertIntoChat",
+          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "group": "warpDrive@1"
+        },
+        {
+          "command": "warpBridge.drive.copyContent",
+          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "group": "warpDrive@2"
+        },
+        {
+          "command": "warpBridge.drive.openInEditor",
+          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "group": "warpDrive@3"
         }
       ]
     },

@@ -17,6 +17,8 @@ import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
 import { createWarpDriveSource } from './drive/driveSourceFactory.js';
 import { IWarpDriveSource } from './drive/warpDriveSource.js';
+import { WarpDriveTreeProvider } from './ui/driveTreeProvider.js';
+import { registerDriveCommands } from './ui/driveCommands.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -109,6 +111,19 @@ export function activate(context: vscode.ExtensionContext): void {
   // with a runner in a future patch without changing downstream
   // consumers (sidebar tree, editor, …).
   state.driveSource = createWarpDriveSource();
+
+  // Warp Drive sidebar (view + context-menu commands).
+  const driveTreeProvider = new WarpDriveTreeProvider(state.driveSource);
+  context.subscriptions.push(driveTreeProvider);
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider('warpBridge.driveView', driveTreeProvider),
+  );
+  for (const disposable of registerDriveCommands({
+    source: state.driveSource,
+    provider: driveTreeProvider,
+  })) {
+    context.subscriptions.push(disposable);
+  }
 
   // MCP server export — opt-in via warpBridge.mcpEnabled.
   state.mcp = new McpLifecycle(cli, state.configManager, EXTENSION_VERSION);
