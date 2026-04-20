@@ -109,6 +109,13 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
         item.id = element.id;
         item.iconPath = new vscode.ThemeIcon(categoryIcon(element.category));
         item.contextValue = `warpCategory:${element.category}`;
+        item.tooltip = `${element.label} category`;
+        // v1.0 deliverable S — WCAG 2.1 AA: explicit a11y label/role
+        // so screen readers announce a meaningful semantic value.
+        item.accessibilityInformation = {
+          label: `${element.label} category`,
+          role: 'treeitem',
+        };
         return item;
       }
       case 'run': {
@@ -123,6 +130,10 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
           title: 'Show Run',
           arguments: [element.runId],
         };
+        item.accessibilityInformation = {
+          label: `Run ${element.label}, status ${element.status}${element.active ? ', active' : ''}`,
+          role: 'treeitem',
+        };
         return item;
       }
       case 'schedule': {
@@ -132,6 +143,10 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
         item.iconPath = new vscode.ThemeIcon(element.schedule.paused ? 'debug-pause' : 'clock');
         item.tooltip = `${element.schedule.name} — ${element.schedule.cron}\n${element.schedule.prompt}`;
         item.contextValue = element.schedule.paused ? 'warpSchedule:paused' : 'warpSchedule:running';
+        item.accessibilityInformation = {
+          label: `Schedule ${element.schedule.name}, cron ${element.schedule.cron}, ${element.schedule.paused ? 'paused' : 'running'}`,
+          role: 'treeitem',
+        };
         return item;
       }
       case 'environment': {
@@ -141,6 +156,10 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
         item.iconPath = new vscode.ThemeIcon('server-environment');
         item.tooltip = `${element.environment.name} (${element.environment.id})`;
         item.contextValue = 'warpEnvironment';
+        item.accessibilityInformation = {
+          label: `Environment ${element.environment.name}${element.environment.scope ? `, scope ${element.environment.scope}` : ''}`,
+          role: 'treeitem',
+        };
         return item;
       }
       case 'mcp': {
@@ -149,6 +168,10 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
         item.iconPath = new vscode.ThemeIcon('plug');
         item.tooltip = `MCP server ${element.server.name} (${element.server.uuid})`;
         item.contextValue = 'warpMcp';
+        item.accessibilityInformation = {
+          label: `MCP server ${element.server.name}`,
+          role: 'treeitem',
+        };
         return item;
       }
       case 'message': {
@@ -156,6 +179,11 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
         item.id = element.id;
         item.iconPath = new vscode.ThemeIcon('info');
         item.contextValue = 'warpMessage';
+        item.tooltip = element.label;
+        item.accessibilityInformation = {
+          label: `Information: ${element.label}`,
+          role: 'treeitem',
+        };
         return item;
       }
     }

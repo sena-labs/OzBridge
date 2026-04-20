@@ -72,6 +72,14 @@ export class WarpDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeN
         item.id = element.id;
         item.iconPath = new vscode.ThemeIcon(categoryIcon(element.category));
         item.contextValue = `warpDriveCategory:${element.category}`;
+        item.tooltip = `${element.label} category`;
+        // v1.0 deliverable S — WCAG 2.1 AA: every tree node carries an
+        // explicit a11y label + role so screen readers announce a
+        // semantic value rather than the raw display string.
+        item.accessibilityInformation = {
+          label: `${element.label} category`,
+          role: 'treeitem',
+        };
         return item;
       }
       case 'entry': {
@@ -86,6 +94,10 @@ export class WarpDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeN
           title: 'Open in Editor',
           arguments: [element],
         };
+        item.accessibilityInformation = {
+          label: `${element.entry.category} ${element.entry.name}, source ${element.entry.source}`,
+          role: 'treeitem',
+        };
         return item;
       }
       case 'message': {
@@ -93,6 +105,11 @@ export class WarpDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeN
         item.id = element.id;
         item.iconPath = new vscode.ThemeIcon('info');
         item.contextValue = 'warpDriveMessage';
+        item.tooltip = element.label;
+        item.accessibilityInformation = {
+          label: `Information: ${element.label}`,
+          role: 'treeitem',
+        };
         return item;
       }
     }

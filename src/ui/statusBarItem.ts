@@ -54,6 +54,12 @@ export class StatusBarManager implements vscode.Disposable {
     const activeCount = runs.filter((r) => isActive(r.status)).length;
     this.item.text = `$(cloud) Warp: ${activeCount} active`;
     this.item.tooltip = buildTooltip(runs);
+    // v1.0 deliverable S — WCAG 2.1 AA: codicon glyphs ($cloud) are
+    // not announced by screen readers; expose a plain-language label.
+    this.item.accessibilityInformation = {
+      label: `Warp Bridge: ${activeCount} active run${activeCount === 1 ? '' : 's'}`,
+      role: 'button',
+    };
 
     if (activeCount >= 3) {
       this.item.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
@@ -70,6 +76,10 @@ export class StatusBarManager implements vscode.Disposable {
     this.item.text = `$(cloud-outline) Warp: unavailable`;
     this.item.tooltip = 'Warp Bridge: unable to list runs. Check Oz CLI availability and authentication.';
     this.item.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+    this.item.accessibilityInformation = {
+      label: 'Warp Bridge: unavailable. Check Oz CLI availability and authentication.',
+      role: 'button',
+    };
   }
 }
 

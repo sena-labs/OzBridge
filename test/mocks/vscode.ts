@@ -158,6 +158,7 @@ export class TreeItem {
   contextValue?: string;
   command?: { command: string; title: string; arguments?: unknown[] };
   collapsibleState?: TreeItemCollapsibleState;
+  accessibilityInformation?: { label: string; role?: string };
   constructor(label: string | { label: string }, collapsibleState?: TreeItemCollapsibleState) {
     this.label = label;
     this.collapsibleState = collapsibleState;
@@ -173,6 +174,7 @@ interface MockStatusBarItem {
   backgroundColor?: ThemeColor;
   color?: string | ThemeColor;
   name?: string;
+  accessibilityInformation?: { label: string; role?: string };
   show: ReturnType<typeof vi.fn>;
   hide: ReturnType<typeof vi.fn>;
   dispose: ReturnType<typeof vi.fn>;

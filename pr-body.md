@@ -1,3 +1,77 @@
+# feat(a11y): WCAG 2.1 AA pass (v1.0 deliverable S)
+
+## What
+
+Final v1.0 deliverable. Adds first-class accessibility metadata across
+every UI surface and locks it in with an invariant test that blocks
+regressions.
+
+- **Tree views** (`WarpRunsTreeProvider`, `WarpDriveTreeProvider`):
+  every `TreeItem` now carries `accessibilityInformation` with a
+  semantic `label` and `role: 'treeitem'`. Examples:
+  - `"Run my-prompt, status INPROGRESS, active"` (was just
+    `"my-prompt"`)
+  - `"Schedule nightly, cron 0 0 * * *, paused"` (icon + cron alone
+    are not narrated)
+  - `"prompt My Prompt, source cli"` for drive entries
+- **Status bar** (`StatusBarManager`): exposes
+  `accessibilityInformation` in both steady (`Warp Bridge: 0 active
+  runs`) and error (`Warp Bridge: unavailable…`) states with role
+  `'button'` (matches its click-to-focus behaviour). Codicons like
+  `$(cloud)` are silent for AT — the explicit label fixes that.
+- **Tooltips backfilled** on category and message nodes that
+  previously rendered without one (mouse + keyboard hover parity).
+- **Walkthrough markdown invariant**: every `![alt](src)` reference
+  must carry non-empty alt text (WCAG 1.1.1) and every walkthrough
+  file must declare at least one heading (document outline).
+
+Pure-metadata change. Bundle delta is +0.79 KB (104.46 KB / 125 KB).
+
+## Verification
+
+- `npm run compile` ✅
+- `npm test -- --run` → **1089 / 1089 green** (+13 from
+  `test/accessibility.test.ts`)
+- `npm run build` → **dist/extension.js = 106,963 B (104.46 KB)**,
+  well under the 125 KB budget.
+
+New test file (`test/accessibility.test.ts`) covers:
+
+- Every node kind in `WarpRunsTreeProvider` (`category`, `run`,
+  `schedule`, `environment`, `mcp`, `message`) carries a non-empty
+  `accessibilityInformation.label` with `role: 'treeitem'` and a
+  defined `tooltip`.
+- Every node kind in `WarpDriveTreeProvider` (`category`, `entry`,
+  `message`) carries the same.
+- `StatusBarManager` exposes `accessibilityInformation` in idle
+  state with role `'button'` and a label matching `/0 active runs/`.
+- All four walkthrough markdown files declare alt text on every
+  embedded image and contain at least one heading.
+
+Mock surface in `test/mocks/vscode.ts` extended with the optional
+`accessibilityInformation` field on both `TreeItem` and
+`MockStatusBarItem` so production code typechecks cleanly under
+the test harness.
+
+## v1.0 milestone status
+
+| ID | Deliverable | Status |
+|----|-------------|--------|
+| P  | Telemetry opt-in (App Insights) | ✅ #26 |
+| Q  | Security gates (CodeQL + audit + gitleaks + Dependabot) | ✅ #27 |
+| R  | Activation perf CI budget | ✅ #33 |
+| T  | Kill-switch + LTS policy | ✅ #34 |
+| S  | **WCAG 2.1 AA accessibility pass** | **this PR** |
+
+All v1.0 code deliverables shipped after merge.
+
+## Next
+
+- v1.0.0 release ceremony: bump `0.9.0` → `1.0.0`, promote
+  `[Unreleased]` to `[1.0.0]`, author `docs/RELEASE-NOTES-v1.0.0.md`,
+  tag `v1.0.0`, branch `release/v1.0.x`.
+- Marketplace + Open VSX shipping pending external blockers
+  (VSCE_PAT rotation, OVSX_PAT/namespace).
 # feat(killswitch): operator escape hatch + LTS policy (v1.0 deliverable T)
 
 ## What
