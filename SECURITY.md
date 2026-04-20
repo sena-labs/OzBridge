@@ -79,3 +79,48 @@ Every PR and every push to `main` runs:
 - We follow [coordinated vulnerability disclosure](https://en.wikipedia.org/wiki/Coordinated_vulnerability_disclosure)
 - We aim to release patches within 14 days of confirming a vulnerability
 - Security advisories are published via GitHub Security Advisories
+
+## Kill-switch (v1.0 deliverable T)
+
+For incident response we ship an operator escape hatch. Setting
+
+```jsonc
+// VS Code settings.json (per-user or per-workspace)
+{
+  "warpBridge.killSwitch.enabled": true,
+  "warpBridge.killSwitch.reason": "Investigating SEC-2026-04-21"
+}
+```
+
+makes `activate()` skip every wiring step (no commands, tools, MCP
+server, chat participant or trees are registered) and surface a
+single warning notification with the optional reason text. The
+extension stays installed and can be re-enabled by flipping the
+boolean back to `false` — no reload required for new windows. Use it
+only for:
+
+- A confirmed critical regression that we cannot patch within hours.
+- An active supply-chain incident pending mitigation.
+- Targeted org-wide rollback before an emergency VSIX republish.
+
+Both settings have scope `machine-overridable`, so platform teams
+can ship them via a workspace-level `.vscode/settings.json` to disable
+the extension fleet-wide while a fix is in flight.
+
+## LTS Policy (v1.0 deliverable T)
+
+The support matrix at the top of this document is governed by the
+following rules:
+
+| Policy item                | Commitment                                                                 |
+| -------------------------- | -------------------------------------------------------------------------- |
+| Active LTS lifetime        | **18 months** from the GA release of a minor line                          |
+| Critical-only window       | **6 months** after a new minor takes over as Active LTS                    |
+| Backport scope             | Critical security fixes (CVSS ≥ 7.0) and data-loss bugs                    |
+| Maintenance branch         | `release/v<major>.<minor>.x` cut at GA, kept until EOL                     |
+| Patch cadence              | Best-effort; security patches within 14 days of confirmed vulnerability    |
+| Deprecation notice         | At least one minor release before EOL, called out in `CHANGELOG.md`        |
+| EOL announcement           | GitHub Release notes + `SECURITY.md` table refresh on every transition     |
+
+The matrix is asserted by the security-gates test suite — any
+silent change to the supported-versions table will fail CI.

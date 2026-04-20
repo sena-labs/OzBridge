@@ -1,3 +1,79 @@
+# feat(killswitch): operator escape hatch + LTS policy (v1.0 deliverable T)
+
+## What
+
+Ships **deliverable T** of the v1.0 milestone — the operator
+escape hatch and the formal LTS policy.
+
+- **Kill-switch settings** in `package.json`:
+  - `warpBridge.killSwitch.enabled` (boolean, default `false`,
+    scope `machine-overridable`).
+  - `warpBridge.killSwitch.reason` (string, default `""`).
+- **`src/extension.ts#activate`** reads both settings immediately
+  after logger init. When enabled, it logs a single info line and
+  surfaces a `showWarningMessage` ("Warp Bridge is disabled by the
+  kill-switch …" + optional reason), then **returns early** — no
+  commands, tools, MCP server, chat participant, trees, drives or
+  walkthrough hooks are registered. `deactivate()` remains safe to
+  call against the empty `state`.
+- **`SECURITY.md`** gains two new sections:
+  - **Kill-switch (v1.0 deliverable T)** — the operational
+    playbook, scope (`machine-overridable` for org-wide rollback via
+    workspace `settings.json`), and the three legitimate use cases
+    (critical regression, supply-chain incident, emergency rollback).
+  - **LTS Policy (v1.0 deliverable T)** — formal commitment table:
+    18-month active LTS, 6-month critical-only window, backport
+    scope (CVSS ≥ 7.0 + data-loss bugs), `release/v<major>.<minor>.x`
+    maintenance branches, 14-day patch cadence for confirmed
+    vulnerabilities, deprecation notice at least one minor release
+    before EOL.
+- **`test/killSwitchLts.test.ts`** — 6 new tests:
+  - `activate()` short-circuits and shows the warning when the
+    switch is on (subscriptions length ≤ 1, message contains
+    "kill-switch" + the reason).
+  - `activate()` proceeds normally when the switch is off
+    (subscriptions length > 1, no warning).
+  - `package.json` declares both settings with the right type,
+    default and scope.
+  - `SECURITY.md` publishes the kill-switch playbook and the LTS
+    policy table.
+  - The test uses a `loadFresh()` helper that calls
+    `vi.resetModules()` and re-imports `vscode` *and* the extension
+    so the per-test mock implementation lands on the right
+    `getConfiguration` instance.
+
+## Verification
+
+```
+npm run compile     # → 0 TypeScript errors
+npm test -- --run test/killSwitchLts.test.ts
+                    # → 6/6 green
+npm test -- --run   # → 1076/1076 green (77 files; +6 new tests)
+npm run build       # → dist/extension.js = 105,728 B (103.25 KB)
+                    #   +381 B vs deliverable R baseline (kill-switch
+                    #   gate + warning text). Within the 125 KB budget.
+```
+
+## v1.0 milestone status after this PR
+
+| Deliverable | Title                              | Status        |
+| ----------- | ---------------------------------- | ------------- |
+| P           | Telemetry opt-in                   | ✅ shipped #26 |
+| Q           | Security gates                     | ✅ shipped #27 |
+| R           | Activation perf budget             | ✅ shipped #33 |
+| S           | WCAG 2.1 AA accessibility pass     | ⏸ pending     |
+| T           | Kill-switch + LTS policy           | ✅ this PR     |
+
+Only **deliverable S** remains before the v1.0.0 release ceremony.
+
+## Next
+
+- **Deliverable S (v1.0):** WCAG 2.1 AA pass on tree views, status
+  bar, walkthrough — the only remaining v1.0 deliverable.
+- **v1.0.0 release ceremony:** bump → CHANGELOG promote → release
+  notes → tag `v1.0.0` → `release/v1.0.x` branch → ship to
+  Marketplace + Open VSX (pending external blockers in
+  `docs/NEXT-STEPS-v1.0.md`).
 # perf(activation): CI budget gate (v1.0 deliverable R)
 
 ## What
