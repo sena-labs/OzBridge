@@ -1,3 +1,17 @@
+# v0.9 deliverable O — Contributor docs rewrite
+
+## What
+- Rewrote `CONTRIBUTING.md` around the **deliverable-PR playbook** (branch → implement → tests → CHANGELOG → PR body **What/Verification/Next** → `gh pr merge --squash --delete-branch --auto`).
+- Documented the 2 × 3 CI matrix (Node `20.19` / `22.12`), the non-watch `npm test -- --run` invocation, the **125 KB** bundle budget, and the l10n bundle layout (`package.nls*.json`, `l10n/bundle.l10n*.json`).
+- Added `test/contributingDocs.test.ts` (8 regex-guarded tests) to prevent the doc from drifting away from the pipeline.
+
+## Verification
+- `npm run compile` — clean.
+- `npm test -- --run` — **1029 / 1029** green (+8 vs main).
+- No runtime/source changes → bundle size unchanged (≤ 125 KB budget).
+
+## Next
+- v0.9.0 release ceremony (version bump, CHANGELOG promote, `docs/RELEASE-NOTES-v0.9.0.md`, tag, release).
 # v0.9 deliverable N — CI matrix & bundle-budget workflow
 
 ## What

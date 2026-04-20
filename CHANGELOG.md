@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- **Contributor docs rewrite (`v0.9` deliverable O).** Rewrote
+  `CONTRIBUTING.md` around the **deliverable-PR playbook** used by the
+  maintainers: branch naming, Conventional Commits squash title, the
+  three-section PR body template (**What / Verification / Next**),
+  `gh pr merge --squash --delete-branch --auto` flow, the 2 × 3 CI
+  matrix baseline (Node `20.19` / `22.12`), the 125 KB bundle budget,
+  and the l10n bundle layout. 8 new tests
+  (`test/contributingDocs.test.ts`) guard these invariants so the doc
+  cannot silently drift from the pipeline.
+
 ### Added
 - **CI matrix + bundle budget (`v0.9` deliverable N).** Rewrote
   `.github/workflows/ci.yml` as a 2 × 3 matrix (Node **20.19** / **22.12**
