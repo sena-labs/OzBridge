@@ -82,6 +82,13 @@ export class CancellationTokenSource {
 // ---------------------------------------------------------------------------
 // workspace
 // ---------------------------------------------------------------------------
+export class RelativePattern {
+  constructor(
+    public readonly base: string | { uri: Uri },
+    public readonly pattern: string,
+  ) {}
+}
+
 export const workspace = {
   getConfiguration: vi.fn((_section?: string) => ({
     get: vi.fn((_key: string, defaultValue?: unknown) => defaultValue),
@@ -93,6 +100,30 @@ export const workspace = {
     createDirectory: vi.fn(),
     writeFile: vi.fn(),
   },
+  createFileSystemWatcher: vi.fn((_glob: unknown, _ignoreCreate?: boolean, _ignoreChange?: boolean, _ignoreDelete?: boolean) => {
+    const makeListener = () => {
+      const listeners: Array<() => void> = [];
+      const emitter = (cb: () => void) => {
+        listeners.push(cb);
+        return { dispose: vi.fn(() => { const i = listeners.indexOf(cb); if (i >= 0) { listeners.splice(i, 1); } }) };
+      };
+      (emitter as any).fire = () => { for (const l of listeners) { l(); } };
+      return emitter;
+    };
+    const onDidCreate = makeListener();
+    const onDidChange = makeListener();
+    const onDidDelete = makeListener();
+    return {
+      onDidCreate,
+      onDidChange,
+      onDidDelete,
+      dispose: vi.fn(),
+      // Test-only helpers to trigger events.
+      _fireCreate: () => (onDidCreate as any).fire(),
+      _fireChange: () => (onDidChange as any).fire(),
+      _fireDelete: () => (onDidDelete as any).fire(),
+    };
+  }),
 };
 
 // ---------------------------------------------------------------------------

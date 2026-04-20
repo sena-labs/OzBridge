@@ -26,8 +26,8 @@ export class BaseConfigManager<C extends object> implements IConfigManager<C> {
   ) {
     this.disposable = vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration(this.sectionName)) {
-        this.cachedConfig = null;
-        this.emitter.fire(this.getConfig());
+        this.invalidate();
+        this.fireChange();
       }
     });
   }
@@ -51,6 +51,25 @@ export class BaseConfigManager<C extends object> implements IConfigManager<C> {
       result[key] = cfg.get(key, (this.defaults as Record<string, unknown>)[key]);
     }
     return result as C;
+  }
+
+  /**
+   * Discards the cached snapshot so the next {@link getConfig} call
+   * recomputes it from scratch. Subclasses call this when an external
+   * input (e.g. a watched workspace YAML) changes and settings must be
+   * re-read.
+   */
+  protected invalidate(): void {
+    this.cachedConfig = null;
+  }
+
+  /**
+   * Emits `onConfigChanged` with the freshly-computed snapshot. Used in
+   * tandem with {@link invalidate} whenever an external change happens
+   * outside the VS Code settings subscription.
+   */
+  protected fireChange(): void {
+    this.emitter.fire(this.getConfig());
   }
 
   dispose(): void {

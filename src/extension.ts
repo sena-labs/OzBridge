@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 import { ConfigManager } from './services/configManager.js';
+import {
+  WorkspaceConfigResolver,
+  firstWorkspaceFolderPath,
+} from './services/workspaceConfigResolver.js';
 import { ContextCollector } from './services/contextCollector.js';
 import { OzCliService } from './services/ozCliService.js';
 import { RunPoller } from './services/runPoller.js';
@@ -11,6 +15,8 @@ import { WarpRunsTreeProvider } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
+import { createWarpDriveSource } from './drive/driveSourceFactory.js';
+import { IWarpDriveSource } from './drive/warpDriveSource.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -26,9 +32,11 @@ import { initLogger, logInfo, logError } from './services/logger.js';
 /** Module-level state — encapsulates extension lifecycle objects. */
 const state: {
   configManager?: ConfigManager;
+  workspaceConfigResolver?: WorkspaceConfigResolver;
   runPoller?: RunPoller;
   tracker?: ActiveRunsTracker;
   mcp?: McpLifecycle;
+  driveSource?: IWarpDriveSource;
 } = {};
 
 /** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
@@ -41,7 +49,11 @@ export function activate(context: vscode.ExtensionContext): void {
   initLogger(outputChannel, '[warp-vsc-bridge]');
 
   // Inizializza servizi
-  state.configManager = new ConfigManager();
+  // Il WorkspaceConfigResolver legge `.warp/warp-bridge.yaml` dal workspace
+  // corrente e offre override typed che vincono sui settings VS Code.
+  state.workspaceConfigResolver = new WorkspaceConfigResolver(firstWorkspaceFolderPath());
+  context.subscriptions.push(state.workspaceConfigResolver);
+  state.configManager = new ConfigManager(state.workspaceConfigResolver);
   context.subscriptions.push(state.configManager);
 
   const cli = new OzCliService(state.configManager);
@@ -91,6 +103,12 @@ export function activate(context: vscode.ExtensionContext): void {
   for (const disposable of registerHandoffCommands({ cfgMgr: state.configManager })) {
     context.subscriptions.push(disposable);
   }
+
+  // Warp Drive source — filesystem-backed until the Oz CLI exposes
+  // `drive` subcommands, in which case the factory can be re-invoked
+  // with a runner in a future patch without changing downstream
+  // consumers (sidebar tree, editor, …).
+  state.driveSource = createWarpDriveSource();
 
   // MCP server export — opt-in via warpBridge.mcpEnabled.
   state.mcp = new McpLifecycle(cli, state.configManager, EXTENSION_VERSION);
