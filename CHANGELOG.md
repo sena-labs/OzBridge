@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.8.0] — 2026-04-20
+"Observability" milestone. Adds run steering, statistics aggregation, a
+dashboard webview, AI-assisted failure triage, and dataset export.
+Delivers the full v0.8 scope (deliverables F–J) defined in
+`docs/MILESTONE-v0.8.md`.
 ### Added
 - **Run dataset export (`v0.8` deliverable J, stretch).** New
   `DatasetExportService` + `warpBridge.exportDataset` command (`Warp:
