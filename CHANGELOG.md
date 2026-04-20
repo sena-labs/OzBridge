@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- **v0.9 bootstrap.** Documented the "Reach" milestone (deliverables
+  K–O) in `docs/MILESTONE-v0.9.md` and `docs/NEXT-STEPS-v0.9.md`.
+- **Bundle budget raised to 125 KB.** v0.8 burned 99 % of the previous
+  100 KB cap; the v0.9 l10n bundle migration needs the headroom. Per-PR
+  size reporting remains mandatory.
 
 ## [0.8.0] — 2026-04-20
 "Observability" milestone. Adds run steering, statistics aggregation, a
