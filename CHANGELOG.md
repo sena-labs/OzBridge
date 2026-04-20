@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- **Telemetry opt-in pipeline (v1.0 deliverable P).** New
+  `src/services/telemetry.ts` ships an `ITelemetryReporter` contract
+  with two implementations: a default `NoopReporter` (zero network
+  code path) and an `HttpAppInsightsReporter` that batches events to
+  the AppInsights ingestion endpoint via the host's global `fetch`
+  (no new runtime dependency). The reporter is **doubly gated**:
+  active only when **both** `vscode.env.isTelemetryEnabled === true`
+  **and** the new setting `warpBridge.telemetry.connectionString`
+  carries a valid `InstrumentationKey=...;IngestionEndpoint=...`
+  string; either gate closed ⇒ noop. A hard-coded deny-list
+  (`prompt|content|output|path|workspace|runid|message|stack|email|user|token`)
+  is enforced both at the type level (closed `TelemetryEventMap`) and
+  at runtime, so prompt content, run IDs, output, file paths and
+  workspace paths can never be transmitted. The activation flow now
+  emits a single `extensionActivated { version }` event; availability
+  failures emit `errorRaised { kind: 'availabilityCheck' }`. The
+  privacy contract is documented in the new `PRIVACY.md` at the repo
+  root and linked from the Get-Started walkthrough's MCP step. 18
+  new tests in `test/services/telemetry.test.ts` cover the deny-list
+  invariant, both opt-in gates, the malformed-connection-string
+  fallback, the AppInsights envelope shape, transport-failure
+  resilience and the dispose-flushes-pending-batch contract.
+  `test/mocks/vscode.ts` now exposes `env.isTelemetryEnabled` (false
+  by default in tests) so suites can exercise both code paths.
+
 ### Changed
 - **v1.0 bootstrap.** Documented the "GA" milestone (deliverables
   P–T: telemetry opt-in, security gates, performance budgets,

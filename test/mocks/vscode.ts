@@ -299,6 +299,7 @@ export const commands = {
 // ---------------------------------------------------------------------------
 export const env = {
   language: 'en',
+  isTelemetryEnabled: false,
   openExternal: vi.fn(() => Promise.resolve(true)),
   clipboard: {
     writeText: vi.fn((_text: string) => Promise.resolve()),

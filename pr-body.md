@@ -1,3 +1,84 @@
+# feat(telemetry): opt-in reporter (v1.0 deliverable P)
+
+## What
+
+Ships **deliverable P** of the v1.0 milestone — the opt-in telemetry
+pipeline — defined in `docs/MILESTONE-v1.0.md` and
+`docs/NEXT-STEPS-v1.0.md`.
+
+- `src/services/telemetry.ts` introduces the `ITelemetryReporter`
+  contract with two implementations:
+  - **`NoopReporter`** — default; literal no-op `track`, no buffer,
+    no timer, no network code path.
+  - **`HttpAppInsightsReporter`** — batches typed events and POSTs
+    them to the AppInsights ingestion endpoint via the host's global
+    `fetch` (Node ≥ 18). **Zero new runtime dependency.**
+- The reporter is **doubly gated**: active only when **both**
+  `vscode.env.isTelemetryEnabled === true` **and**
+  `warpBridge.telemetry.connectionString` is a valid
+  `InstrumentationKey=...;IngestionEndpoint=...` string. Either gate
+  closed ⇒ noop transport. Malformed strings ⇒ noop fallback (warning
+  logged, extension keeps running).
+- New setting `warpBridge.telemetry.connectionString` (default `""`,
+  scope `machine-overridable`) declared in `package.json`, documented
+  with a `markdownDescription` linking to `PRIVACY.md`.
+- Hard-coded deny-list `FORBIDDEN_KEY_REGEX =
+  /prompt|content|output|path|workspace|runid|message|stack|email|user|token/i`
+  enforced both at the type level (closed `TelemetryEventMap`) and at
+  runtime in `HttpAppInsightsReporter.sanitise`. Prompt content, run
+  IDs, output, file paths, workspace paths, stack traces and tokens
+  cannot leave the process.
+- `src/extension.ts#activate` instantiates the reporter immediately
+  after logger init, emits `extensionActivated { version }`, and
+  registers `dispose()` on `context.subscriptions`. The
+  `cli.checkAvailability` failure path now also emits
+  `errorRaised { kind: 'availabilityCheck' }`.
+- New top-level `PRIVACY.md` documents the contract: TL;DR, the closed
+  event map, the deny-list, the opt-out matrix, the endpoint and the
+  retention policy. The Get-Started walkthrough's MCP step
+  (`media/walkthrough/enable-mcp.md`) now links to it.
+- `test/mocks/vscode.ts` extends the `env` mock with
+  `isTelemetryEnabled: false` so existing suites exercise the noop
+  path by default and new tests can flip the gate explicitly.
+
+## Verification
+
+```
+npm run compile     # → no TypeScript errors
+npm test -- --run   # → 1054/1054 green (74 files), incl. 18 new
+                    #   telemetry tests covering: deny-list invariant,
+                    #   both opt-in gates, malformed-string fallback,
+                    #   AppInsights envelope shape, transport-failure
+                    #   resilience, dispose-flushes-buffered-batch.
+npm run build       # → dist/extension.js = 105,347 B (102.88 KB)
+                    #   ≈ 102.88 / 125 KB budget (~22 KB headroom).
+```
+
+## Privacy contract (enforced by code + tests)
+
+| Layer            | Mechanism                                                              |
+| ---------------- | ---------------------------------------------------------------------- |
+| Off by default   | Both `isTelemetryEnabled === true` *and* non-empty connection string   |
+| Closed event set | `type TelemetryEventName` = 5 literal events                           |
+| Closed payload   | Strict `TelemetryEventMap`, no `Record<string, unknown>` ever exposed  |
+| Deny-list        | `FORBIDDEN_KEY_REGEX` (12 banned tokens), runtime-checked, drops batch |
+| Crash-safety     | `try/catch` swallows transport errors; reporter never crashes the host |
+| Opt-out          | Any one of: `telemetry.telemetryLevel = off`, empty conn string, disable extension |
+
+## Next
+
+- **Deliverable Q (v1.0):** security gates — CodeQL workflow, npm
+  audit gate, Dependabot baseline, secret scanning, `SECURITY.md`
+  refresh.
+- **Deliverable R (v1.0):** activation perf budgets enforced in CI
+  (`activate < 200 ms` on the perf-bench suite).
+- **Deliverable S (v1.0):** WCAG 2.1 AA pass on tree views, status
+  bar, walkthrough.
+- **Deliverable T (v1.0):** kill-switch setting + 18-month LTS policy.
+- **v1.0.0 release ceremony:** bump → CHANGELOG promote → release
+  notes → tag `v1.0.0` → `release/v1.0.x` branch → ship to Marketplace
+  + Open VSX (pending VSCE_PAT rotation + OVSX namespace claim, see
+  `docs/NEXT-STEPS-v1.0.md` "External blockers").
 # v1.0 bootstrap — "GA" milestone planning
 
 Plans the path from `v0.9.0` to `v1.0.0` ("Enterprise-ready") with the same deliverable-PR cadence used through v0.7 / v0.8 / v0.9.
