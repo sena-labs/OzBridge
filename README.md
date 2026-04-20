@@ -56,6 +56,30 @@ that Copilot Agent mode can invoke autonomously.
 
 ## Installation
 
+### From a registry
+
+Starting with `v0.9.0`, Warp Bridge is published to both registries on
+every tagged release.
+
+**VS Code Marketplace** (Stable / Insiders / Cursor with Microsoft
+marketplace access):
+
+```bash
+code --install-extension sena-labs.warp-vsc-bridge
+```
+
+**Open VSX** (VSCodium, Gitpod, Theia, Cursor with Open VSX mirror):
+
+```bash
+codium --install-extension sena-labs.warp-vsc-bridge
+# or, inside the editor GUI, search for "Warp Bridge" on open-vsx.org
+```
+
+Direct links:
+
+- Marketplace — <https://marketplace.visualstudio.com/items?itemName=sena-labs.warp-vsc-bridge>
+- Open VSX — <https://open-vsx.org/extension/sena-labs/warp-vsc-bridge>
+
 ### From VSIX (local)
 
 **Option A — VS Code GUI (recommended):**

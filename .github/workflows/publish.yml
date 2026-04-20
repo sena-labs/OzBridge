@@ -12,6 +12,141 @@ on:
         default: false
 
 permissions:
+  contents: write # required to attach the VSIX to the GitHub Release
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build & package VSIX
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.pkg.outputs.version }}
+      vsix: ${{ steps.pkg.outputs.vsix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run compile
+
+      - name: Test
+        run: npm test -- --run
+
+      - name: Build
+        run: npm run build
+
+      - name: Package VSIX
+        id: pkg
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          VSIX="warp-vsc-bridge-${VERSION}.vsix"
+          npx @vscode/vsce package --no-dependencies -o "$VSIX"
+          ls -lh "$VSIX"
+          npx @vscode/vsce ls "$VSIX" | head -n 40
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "vsix=$VSIX" >> "$GITHUB_OUTPUT"
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: warp-vsc-bridge-${{ steps.pkg.outputs.version }}
+          path: ${{ steps.pkg.outputs.vsix }}
+          retention-days: 30
+
+  publish-marketplace:
+    name: Publish to VS Code Marketplace
+    needs: build
+    if: ${{ inputs.dry_run != true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: warp-vsc-bridge-${{ needs.build.outputs.version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Publish to Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "$VSCE_PAT" ]; then
+            echo "::warning::VSCE_PAT secret is not set — skipping Marketplace publish"
+            exit 0
+          fi
+          npx @vscode/vsce publish --packagePath "${{ needs.build.outputs.vsix }}" -p "$VSCE_PAT"
+
+  publish-openvsx:
+    name: Publish to Open VSX
+    needs: build
+    if: ${{ inputs.dry_run != true }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: warp-vsc-bridge-${{ needs.build.outputs.version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Publish to Open VSX
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "$OVSX_PAT" ]; then
+            echo "::warning::OVSX_PAT secret is not set — skipping Open VSX publish"
+            exit 0
+          fi
+          npx ovsx publish "${{ needs.build.outputs.vsix }}" -p "$OVSX_PAT"
+
+  github-release:
+    name: Create GitHub Release
+    needs: build
+    if: ${{ inputs.dry_run != true && startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: warp-vsc-bridge-${{ needs.build.outputs.version }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ needs.build.outputs.vsix }}
+          generate_release_notes: true
+name: Publish extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (build + package only, no publish)'
+        type: boolean
+        default: false
+
+permissions:
   contents: write # per creare la GitHub Release con il VSIX allegato
 
 jobs:

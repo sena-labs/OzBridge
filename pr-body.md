@@ -1,3 +1,69 @@
+# Deliverable M — Open VSX publishing & release pipeline
+
+Third deliverable of the v0.9 "Reach" milestone
+(`docs/NEXT-STEPS-v0.9.md`).
+
+## What
+
+Refactors the publish workflow into a proper multi-stage pipeline and
+documents the Open VSX registry as a first-class install source.
+
+### `.github/workflows/publish.yml`
+
+Four jobs with a shared VSIX artifact:
+
+| Job | Purpose | Secret |
+|---|---|---|
+| `build` | install → compile → test → build → `vsce package` → upload artifact | — |
+| `publish-marketplace` | `@vscode/vsce publish --packagePath` | `VSCE_PAT` |
+| `publish-openvsx` | `npx ovsx publish` | `OVSX_PAT` |
+| `github-release` | attach VSIX to tag via `softprops/action-gh-release@v2` | — |
+
+Highlights:
+
+- Each registry job **soft-fails** (`::warning::`) when its secret is
+  missing, so partial access never blocks a release.
+- `concurrency: publish-${{ github.ref }}` prevents overlapping tag
+  runs from racing.
+- Single `npm test -- --run` invocation in `build`; publish jobs only
+  re-download the artifact (no rebuild).
+
+### README install section
+
+Added a "From a registry" subsection above the VSIX instructions with
+copy-pasteable `code --install-extension` / `codium --install-extension`
+commands plus direct Marketplace and Open VSX URLs.
+
+### Tests (+7) — `test/publishingReadiness.test.ts`
+
+- Mandatory publisher/marketplace fields (`publisher`, `name`,
+  `displayName`, `description`, `license`, `icon`, `categories`).
+- Canonical `repository.url` / `bugs.url` / `homepage` point at
+  `sena-labs/warp-vsc-bridge`.
+- Icon referenced in `package.json` exists on disk with non-zero size.
+- `engines.vscode` is a pinned semver and `main` is the esbuild output.
+- Workflow declares `build`, `publish-marketplace`, `publish-openvsx`,
+  `github-release` and the three publish jobs depend on `build`.
+- `VSCE_PAT` / `OVSX_PAT` secrets are wired in the right step envs.
+- README documents both registries with the `sena-labs.warp-vsc-bridge`
+  extension id.
+
+### Walkthrough helper hardening
+
+Made `maybeOpenGettingStartedWalkthrough` no-op when
+`context.globalState` is unavailable (e.g. in the smoke-test harness
+that bypasses the full extension host).
+
+## Verification
+
+- `npm run compile` — no TypeScript errors.
+- `npm test -- --run` — **1012/1012** (1005 baseline + 7 new tests).
+- `npm run build` — bundle **99.99 KB** (budget 125 KB).
+
+## Next
+
+Deliverable N (`docs/NEXT-STEPS-v0.9.md`) — CI matrix (Node 20/22 ×
+ubuntu/windows/macos) + bundle-budget gate.
 # Deliverable L — Get-Started walkthrough
 
 Second deliverable of the v0.9 "Reach" milestone
