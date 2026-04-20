@@ -1,16 +1,50 @@
+import * as vscode from 'vscode';
 import { BaseConfigManager } from 'copilot-chat-toolkit';
 import { WarpBridgeConfig, DEFAULT_CONFIG } from '../types/index.js';
+import { WorkspaceConfigResolver } from './workspaceConfigResolver.js';
 
-// IMPL: thin wrapper — delegates to toolkit's BaseConfigManager with Warp defaults
+// IMPL: thin wrapper — delegates to toolkit's BaseConfigManager with Warp
+// defaults, then layers an optional workspace YAML resolver on top so that
+// `.warp/warp-bridge.yaml` wins over VS Code settings.
 
 /**
  * Manages the `warpBridge.*` VS Code settings with an in-memory cache.
  *
- * Extends the toolkit's {@link BaseConfigManager} with the Warp-specific
- * configuration section name and default values.
+ * When a {@link WorkspaceConfigResolver} is supplied, the values it returns
+ * take precedence over the VS Code configuration — useful for
+ * committed-to-Git per-project defaults (shared profiles, MCP port, etc.).
+ *
+ * Precedence, highest first:
+ *   1. `.warp/warp-bridge.yaml` overrides
+ *   2. `warpBridge.*` VS Code settings
+ *   3. Compiled-in defaults
  */
 export class ConfigManager extends BaseConfigManager<WarpBridgeConfig> {
-  constructor() {
+  private readonly resolverSubscription: vscode.Disposable | undefined;
+
+  constructor(private readonly resolver?: WorkspaceConfigResolver) {
     super('warpBridge', DEFAULT_CONFIG);
+    if (resolver) {
+      // When the YAML file changes, invalidate the cached snapshot and
+      // fire the inherited `onConfigChanged` so downstream services (MCP
+      // lifecycle, status bar, …) react without a reload.
+      this.resolverSubscription = resolver.onDidChange(() => {
+        (this as unknown as { cachedConfig: WarpBridgeConfig | null }).cachedConfig = null;
+        (this as unknown as { emitter: vscode.EventEmitter<WarpBridgeConfig> })
+          .emitter.fire(this.getConfig());
+      });
+    }
+  }
+
+  protected readConfig(cfg: vscode.WorkspaceConfiguration): WarpBridgeConfig {
+    const base = super.readConfig(cfg);
+    if (!this.resolver) { return base; }
+    const overrides = this.resolver.getOverrides();
+    return { ...base, ...overrides } as WarpBridgeConfig;
+  }
+
+  dispose(): void {
+    this.resolverSubscription?.dispose();
+    super.dispose();
   }
 }

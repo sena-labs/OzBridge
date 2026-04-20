@@ -6,7 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-_No changes yet._
+### Added
+- **Per-workspace YAML config** (`v0.7` deliverable D) — an optional
+  `.warp/warp-bridge.yaml` file committed to the repo overrides the
+  `warpBridge.*` VS Code settings for every contributor. The override is
+  reloaded automatically via `vscode.workspace.createFileSystemWatcher`
+  on create/change/delete and fires `onConfigChanged` so downstream
+  services (MCP lifecycle, status bar, tree view) pick it up without
+  requiring a reload.
+  - New module `src/services/yamlParser.ts` — hand-rolled, safe,
+    flat-only YAML reader (scalars, quoted strings, comments, null/~).
+    Zero runtime dependencies.
+  - New module `src/services/workspaceConfigResolver.ts` — typed
+    resolver with an allow-list of 10 overridable keys. Rejects unknown
+    keys and type mismatches with a warning. Deliberately excludes
+    `ozPath` (platform-specific) and `mcpBearerToken` (secret).
+  - `ConfigManager` accepts an optional `WorkspaceConfigResolver` and
+    merges `overrides > VS Code settings > compiled-in defaults` on
+    every `getConfig()` call.
+  - `vscode` mock extended with `RelativePattern` and
+    `createFileSystemWatcher` surfaces.
+  - 25 new unit tests: `test/services/{yamlParser,
+    workspaceConfigResolver, configManagerPrecedence}.test.ts`
+    covering scalar parsing, comments, quoted strings, error
+    collection, file lifecycle (missing / present / refresh), the
+    secret exclusion guardrail, and the 3-layer precedence chain.
 ## [0.6.0] — 2026-04-20
 Second public release under the `sena-labs` publisher. Ships the
 **MCP Server Export** milestone: any Model Context Protocol client

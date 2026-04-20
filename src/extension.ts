@@ -1,5 +1,9 @@
 import * as vscode from 'vscode';
 import { ConfigManager } from './services/configManager.js';
+import {
+  WorkspaceConfigResolver,
+  firstWorkspaceFolderPath,
+} from './services/workspaceConfigResolver.js';
 import { ContextCollector } from './services/contextCollector.js';
 import { OzCliService } from './services/ozCliService.js';
 import { RunPoller } from './services/runPoller.js';
@@ -26,6 +30,7 @@ import { initLogger, logInfo, logError } from './services/logger.js';
 /** Module-level state — encapsulates extension lifecycle objects. */
 const state: {
   configManager?: ConfigManager;
+  workspaceConfigResolver?: WorkspaceConfigResolver;
   runPoller?: RunPoller;
   tracker?: ActiveRunsTracker;
   mcp?: McpLifecycle;
@@ -41,7 +46,11 @@ export function activate(context: vscode.ExtensionContext): void {
   initLogger(outputChannel, '[warp-vsc-bridge]');
 
   // Inizializza servizi
-  state.configManager = new ConfigManager();
+  // Il WorkspaceConfigResolver legge `.warp/warp-bridge.yaml` dal workspace
+  // corrente e offre override typed che vincono sui settings VS Code.
+  state.workspaceConfigResolver = new WorkspaceConfigResolver(firstWorkspaceFolderPath());
+  context.subscriptions.push(state.workspaceConfigResolver);
+  state.configManager = new ConfigManager(state.workspaceConfigResolver);
   context.subscriptions.push(state.configManager);
 
   const cli = new OzCliService(state.configManager);
