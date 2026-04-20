@@ -1,0 +1,43 @@
+# Activation performance budget gate.
+#
+# v1.0 deliverable R. Runs the perf harness in
+# `test/activationPerf.test.ts` on a fresh runner so PR authors get
+# explicit feedback when a change pushes activate() over the
+# CI-environment budget (see BUDGETS in that file). Kept separate
+# from the main CI matrix so the perf signal isn't masked by other
+# unrelated failures.
+name: Performance budgets
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  activation-budget:
+    name: activate() perf budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run activation perf suite
+        run: npm test -- --run test/activationPerf.test.ts

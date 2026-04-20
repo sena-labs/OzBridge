@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Activation performance budget (v1.0 deliverable R).** New
+  `test/activationPerf.test.ts` measures `activate()` over 25
+  iterations on a fresh state (warm-up excluded), prints a
+  `[perf] activate()` summary line and asserts both p50 and p95
+  against the published budget (`BUDGETS.p50Ms = 800`,
+  `BUDGETS.p95Ms = 1500`). The envelope is calibrated for the
+  vitest harness with the mocked `vscode` host — real editor
+  activation is ~5× faster — so the gate trips on a 2× regression of
+  the synchronous path. New CI workflow
+  `.github/workflows/perf.yml` (`activation-budget` job) runs the
+  perf suite in isolation on every PR + main push, with a 60 s test
+  timeout and concurrency cancellation.
 - **Security gates (v1.0 deliverable Q).** New CI workflows
   `.github/workflows/codeql.yml` (CodeQL `security-extended` +
   `security-and-quality` query suites for JavaScript/TypeScript, weekly
