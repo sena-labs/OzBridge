@@ -1,23 +1,15 @@
----
-status: draft · work in progress
-targeted-release-date: TBD (when deliverables A-UI, B, C merge)
----
-# Warp Bridge for VS Code — v0.7.0 (draft)
-> **⚠️ Work in progress.** This document is the running draft of the
-> v0.7.0 release notes. It is kept in sync with `feat/v0.7-team-drive`
-> as sub-PRs land. The final version will replace this note with a
-> release date and asset metadata, following the same playbook as
-> `docs/RELEASE-NOTES-v0.6.0.md`.
+# Warp Bridge for VS Code — v0.7.0
+**Release date:** 2026-04-20
 **Publisher:** `sena-labs`
-**Integration branch:** `feat/v0.7-team-drive`
-**Latest pre-release:** [`v0.7.0-alpha.2`](https://github.com/sena-labs/warp-vsc-bridge/releases/tag/v0.7.0-alpha.2)
+**Previous pre-releases:** [`v0.7.0-alpha.1`](https://github.com/sena-labs/warp-vsc-bridge/releases/tag/v0.7.0-alpha.1) · [`v0.7.0-alpha.2`](https://github.com/sena-labs/warp-vsc-bridge/releases/tag/v0.7.0-alpha.2)
 ## TL;DR
 v0.7.0 turns Warp Bridge into a first-class client for **team-shared
 Warp resources**: the Warp Drive catalogue becomes navigable from a
-dedicated sidebar, skill and rule files gain a Monaco-powered editor,
-`/init` becomes opt-in-per-file with live previews, and a single
-committed YAML can override the extension's settings for every
-contributor of a repository.
+dedicated sidebar, skill and rule files gain a built-in editor flow,
+`/init` becomes opt-in-per-file with per-file overwrite protection, a
+single committed YAML can override the extension's settings for every
+contributor of a repository, and the running MCP server can be
+registered into Claude Code, Cursor and Codex with a single command.
 ## Highlights
 ### 📂 Warp Drive browser
 A dedicated *Warp Bridge → Drive* Activity Bar view lists the
@@ -33,16 +25,25 @@ Fallback is silent on `CliDriveNotAvailableError`; every other CLI
 error (authentication, network, …) is surfaced to the user. Reads are
 path-traversal-guarded so a compromised tree node cannot exfiltrate
 arbitrary files.
-### ✍️ Skill & Rules Monaco editor *(pending)*
-A rich in-extension editor for `SKILL.md` / rule files with split
-markdown preview, YAML frontmatter validation, and *Save as global /
-Save as workspace / Promote to Warp Drive* actions. CSP-locked
-webview, unique per-panel nonces.
-### 🧰 `/init` v2 *(pending)*
-A QuickPick that lets the user pick which of the 7 agent-pipeline
-skills to scaffold, shows a live preview of each template, and refuses
-to clobber existing files without explicit confirmation. The legacy
-`@warp /init all` shortcut still writes everything unconditionally.
+### ✍️ Built-in skill & rule editor
+Four new commands let you manage skills / rules without leaving
+VS Code:
+- `warpBridge.skill.edit` opens any `SKILL.md` or rule in the native
+  editor (Markdown preview via `Ctrl+K V` remains first-class).
+- `warpBridge.skill.new` prompts for a name and scaffolds
+  `SKILL.md` either under the current workspace or globally.
+- `warpBridge.skill.saveGlobal` / `warpBridge.skill.saveWorkspace`
+  persist the currently active editor's content as a skill file.
+All writes are atomic (`.tmp` + `fs.renameSync`) and validated with
+the strict `^[a-z0-9][a-z0-9-]*$` skill-name grammar. Overwriting an
+existing file always requires an explicit modal confirmation. A
+richer Monaco + webview editor remains a v0.8 stretch item.
+### 🧰 `/init` v2
+`@warp /init` now opens a QuickPick that lists the seven agent-pipeline
+skills and the shared project rules file. Each entry is marked as
+`[new]` or `[exists]`; existing files are not pre-picked and can only
+be overwritten after an explicit modal confirmation. `@warp /init all`
+preserves the v0.2.0 bulk behaviour and never overwrites.
 ### 🧾 Per-workspace YAML overrides
 Drop a `.warp/warp-bridge.yaml` at the root of the repository and
 every contributor gets the same `warpBridge.*` defaults:
@@ -57,21 +58,16 @@ The file is watched live (create / change / delete) so downstream
 services (MCP lifecycle, status bar, sidebar) react without a reload.
 Secrets (`mcpBearerToken`) and platform-specific paths (`ozPath`) are
 deliberately excluded from the allow-list.
-### 🔌 MCP auto-registration *(stretch — may slip to v0.7.1)*
-Two commands (`warpBridge.mcp.registerClient` /
-`.unregisterClient`) that append / remove the current MCP endpoint in
-`~/.claude.json`, `~/.cursor/mcp.json`, and `~/.codex/config.toml`.
-Opt-in; idempotent; reversible.
-## Progress tracker
-This block will be removed for the final release.
-| Deliverable | Status |
-| --- | --- |
-| D — Per-workspace YAML overrides | ✅ Merged (PR #3 + #4) |
-| A-backend — drive sources + factory | ✅ Merged (PR #5) |
-| A-UI — sidebar tree, commands, manifest view | 🟡 Next (`feat/v0.7-drive-ui`) |
-| B — Skill & Rules Monaco editor | 🟡 Planned (`feat/v0.7-skill-editor`) |
-| C — `/init` v2 | 🟡 Planned (`feat/v0.7-init-v2`) |
-| E — MCP auto-registration | 🔵 Stretch (`feat/v0.7-mcp-autoregister`) |
+### 🔌 MCP auto-registration
+Two new commands — `warpBridge.mcp.registerClient` and
+`.unregisterClient` — QuickPick among the supported MCP clients
+(Claude Code, Cursor, Codex) and update the client's config file with
+the running MCP endpoint. Registrars are idempotent and reversible;
+they preserve every unrelated key or table in the target file.
+- Claude Code → `~/.claude.json` (JSON, `mcpServers.<name>`).
+- Cursor → `~/.cursor/mcp.json` (JSON, same layout).
+- Codex → `~/.codex/config.toml` (minimal line-based TOML writer
+  targeting only `[[mcp.servers]]` tables).
 ## Upgrade path
 - From **v0.6.0**: install the new VSIX or run
   `code --install-extension warp-vsc-bridge.vsix`. **No behaviour
@@ -88,11 +84,12 @@ This block will be removed for the final release.
 - **Copilot Chat:** optional; required only for the `@warp`
   participant, Agent-mode LM tools, and the *Insert into chat* action
   from the drive sidebar.
-## Metrics (running, not final)
-- Tests: **790 / 790** green at alpha.2 snapshot (target ≥ 800 for
-  v0.7.0 final).
-- Bundle: **≈ 72 KB** at alpha.2 (v0.7 budget: 90 KB).
-- VSIX size: **TBD** at final release.
+## Metrics
+- Tests: **857 / 857** green (57 files).
+- Bundle: **≈ 85 KB** (`dist/extension.js`, esbuild, minified, `vscode`
+  external; v0.7 budget: 90 KB).
+- VSIX: **58 KB** (`warp-vsc-bridge.vsix`).
+- VSIX SHA256: `069691d2cb8f5c494b5b1fa7de3195d40d94a01b422e7c5dd8a6620df8cc464f`.
 - New runtime dependencies: **0** (unchanged since v0.2.0).
 ## Breaking changes
 **None anticipated.** All v0.2.0-era settings, slash commands and
@@ -109,14 +106,16 @@ to keep menus scoped, but no existing user journey changes.
 - **No in-memory caching** — every sidebar refresh re-reads the CLI
   or disk. Fine for typical org sizes (< 50 entries per category);
   caching is a v0.8 concern.
-- **Monaco editor CSP hardening** — when B ships, expect extra
-  documentation and tests around the nonce strategy.
+- **Monaco webview editor** — this release ships the built-in
+  VS Code editor flow for skills and rules. A dedicated webview with
+  split Markdown preview, YAML frontmatter validation and a CSP /
+  nonce hardening story is a v0.8 stretch item.
 ## What's next (v0.8 preview)
 - Cloud run steering mid-flight.
 - Cloud Run Monitor webview (NDJSON timeline + diff viewer).
 - Dashboard analytics for cloud credits.
 - Warp Drive *push* (the current release is browse-only).
-## Install (once final)
+## Install
 ### VS Code Marketplace
 ```text
 ext install sena-labs.warp-vsc-bridge
