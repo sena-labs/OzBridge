@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Run statistics aggregator (`v0.8` deliverable G).** New
+  `RunStatsService` + pure helpers (`bucketByDate`, `successRate`,
+  `extractCreatedAt`, `formatLocalDate`, `isTerminalStatus`) that
+  produce a dashboard-ready `RunStatsSummary` from `runList()` +
+  `runGet()` payloads:
+  - In-memory cache keyed by `runId` for **terminal** runs only;
+    non-terminal runs are always re-fetched so status transitions are
+    picked up on the next `computeSummary()` call.
+  - Public `invalidate(runId?)` for explicit cache busting.
+  - Local-time bucketing with TZ-safe day boundaries; pre-seeded zero
+    buckets for the full window so missing days render as gaps in the
+    upcoming dashboard.
+  - 27 new tests (`test/services/runStats.test.ts`).
 - **Run steering abstraction (`v0.8` deliverable F).** New
   `IRunSteerer` contract + `ProgressiveRunSteerer` implementation with
   the documented progressive fallback (decision log 2026-04-20):
