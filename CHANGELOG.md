@@ -36,7 +36,7 @@ HTTP+SSE end-to-end smoke tests.
 - 58 test files, **868** unit tests, all green.
 - `dist/extension.js` bundled at **86.22 KB** (esbuild, minified,
   `vscode` external) — within the 90 KB performance budget.
-- VSIX packaged at **60.08 KB**.
+- VSIX packaged at **60.67 KB**.
 
 ## [0.7.0] — 2026-04-20
 Third public release under the `sena-labs` publisher. Ships the
