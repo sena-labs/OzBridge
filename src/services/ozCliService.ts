@@ -256,6 +256,36 @@ export class OzCliService implements IOzCliService {
   }
 
   // =========================================================================
+  // Run steering (v0.8 deliverable F)
+  // =========================================================================
+
+  async agentContinue(opts: {
+    runId: string;
+    prompt: string;
+    cancellation?: vscode.CancellationToken;
+  }): Promise<OzRunResult> {
+    if (!opts.prompt?.trim()) {
+      throw new OzCliError(OzCliErrorKind.CLI_ERROR, 'Prompt cannot be empty');
+    }
+    this.sanitizeId(opts.runId, 'runId');
+
+    const args = [
+      'agent', 'run',
+      '--continue', opts.runId,
+      '--prompt', opts.prompt,
+      '--output-format', 'json',
+    ];
+
+    const result = await this.exec(args, undefined, opts.cancellation);
+    return this.toRunResult(result);
+  }
+
+  async helpAgentRun(): Promise<string> {
+    const result = await this.exec(['agent', 'run', '--help']);
+    return result.stdout;
+  }
+
+  // =========================================================================
   // Internals
   // =========================================================================
 
