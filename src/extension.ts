@@ -23,6 +23,8 @@ import { registerDriveCommands } from './ui/driveCommands.js';
 import { registerSkillEditorCommands } from './ui/skillEditor.js';
 import { DashboardPanel } from './ui/dashboardPanel.js';
 import { RunStatsService } from './services/runStats.js';
+import { FailureTriageService } from './services/failureTriage.js';
+import { createVsCodeLanguageModelClient } from './services/languageModelClient.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -140,6 +142,47 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('warpBridge.dashboard.open', () => {
       DashboardPanel.createOrShow(runStats);
+    }),
+  );
+
+  // Failure triage (v0.8 deliverable I) — opt-in: requires vscode.lm host.
+  const lmClient = createVsCodeLanguageModelClient();
+  context.subscriptions.push(
+    vscode.commands.registerCommand('warpBridge.triageFailure', async (runId?: string) => {
+      if (!lmClient) {
+        await vscode.window.showWarningMessage('Failure triage requires VS Code 1.96+ with a Copilot chat model installed.');
+        return;
+      }
+      const id = typeof runId === 'string' && runId
+        ? runId
+        : await vscode.window.showInputBox({ prompt: 'Run id to triage', ignoreFocusOut: true });
+      if (!id) {
+        return;
+      }
+      const triage = new FailureTriageService(cli, lmClient);
+      try {
+        const suggestion = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: `Warp: triaging ${id}…`, cancellable: true },
+          (_progress, token) => triage.triage(id, token),
+        );
+        const doc = await vscode.workspace.openTextDocument({
+          language: 'markdown',
+          content: [
+            `# Warp Bridge — Failure triage`,
+            `Run: \`${id}\``,
+            '',
+            `**Summary:** ${suggestion.summary}`,
+            '',
+            '## Suggested actions',
+            ...(suggestion.actions.length === 0 ? ['(none provided)'] : suggestion.actions.map((a) => `- ${a}`)),
+          ].join('\n'),
+        });
+        await vscode.window.showTextDocument(doc, { preview: true });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logError(`Triage failed: ${message}`);
+        await vscode.window.showErrorMessage(`Warp triage failed: ${message}`);
+      }
     }),
   );
 

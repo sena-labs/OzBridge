@@ -354,6 +354,12 @@
         "title": "Warp: Open Dashboard",
         "category": "Warp",
         "icon": "$(graph)"
+      },
+      {
+        "command": "warpBridge.triageFailure",
+        "title": "Warp: Triage Failed Run…",
+        "category": "Warp",
+        "icon": "$(lightbulb)"
       }
     ],
     "menus": {

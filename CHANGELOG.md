@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Failure triage (`v0.8` deliverable I).** New
+  `FailureTriageService` + `warpBridge.triageFailure` command (`Warp:
+  Triage Failed Run…`):
+  - Pure helpers `extractStackFrames` (Node, Python, generic
+    file:line:col), `tailLines` (line-boundary aware), `buildTriagePrompt`,
+    `parseTriageResponse` (`SUMMARY:` / `ACTIONS:` protocol, ≤3
+    bullets, tolerant of missing markers).
+  - Pluggable `ILanguageModelClient` abstraction; default adapter wires
+    `vscode.lm.selectChatModels({ vendor: 'copilot' })` with graceful
+    fallback when the host lacks the language-model API.
+  - Output cap (4 KB tail) + cancellation-token honoured before model
+    request to keep cost predictable.
+  - Result rendered as a markdown preview tab (run id, summary,
+    actionable bullet list).
+  - 21 new tests (`test/services/failureTriage.test.ts`).
 - **Observability dashboard (`v0.8` deliverable H).** New webview panel
   surfaced via the `warpBridge.dashboard.open` command (`Warp: Open
   Dashboard`):
