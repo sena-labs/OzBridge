@@ -312,6 +312,30 @@
         "title": "Warp Drive: Open in editor",
         "category": "Warp Drive",
         "icon": "$(go-to-file)"
+      },
+      {
+        "command": "warpBridge.skill.edit",
+        "title": "Warp Skill: Edit…",
+        "category": "Warp Skill",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "warpBridge.skill.new",
+        "title": "Warp Skill: New…",
+        "category": "Warp Skill",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "warpBridge.skill.saveGlobal",
+        "title": "Warp Skill: Save current as global skill…",
+        "category": "Warp Skill",
+        "icon": "$(save)"
+      },
+      {
+        "command": "warpBridge.skill.saveWorkspace",
+        "title": "Warp Skill: Save current as project skill…",
+        "category": "Warp Skill",
+        "icon": "$(save-as)"
       }
     ],
     "menus": {

@@ -19,6 +19,7 @@ import { createWarpDriveSource } from './drive/driveSourceFactory.js';
 import { IWarpDriveSource } from './drive/warpDriveSource.js';
 import { WarpDriveTreeProvider } from './ui/driveTreeProvider.js';
 import { registerDriveCommands } from './ui/driveCommands.js';
+import { registerSkillEditorCommands } from './ui/skillEditor.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -122,6 +123,11 @@ export function activate(context: vscode.ExtensionContext): void {
     source: state.driveSource,
     provider: driveTreeProvider,
   })) {
+    context.subscriptions.push(disposable);
+  }
+
+  // Skill & Rules editor commands (new / edit / save-as-global / save-as-workspace).
+  for (const disposable of registerSkillEditorCommands()) {
     context.subscriptions.push(disposable);
   }
 
