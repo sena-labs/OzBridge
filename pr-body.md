@@ -1,3 +1,20 @@
+# v1.0 bootstrap — "GA" milestone planning
+
+Plans the path from `v0.9.0` to `v1.0.0` ("Enterprise-ready") with the same deliverable-PR cadence used through v0.7 / v0.8 / v0.9.
+
+## What
+- Added `docs/MILESTONE-v1.0.md` describing the 5 deliverables P–T (telemetry opt-in, security gates, performance budgets, WCAG 2.1 AA accessibility, kill-switch + LTS), with contracts, risk log and out-of-scope list.
+- Added `docs/NEXT-STEPS-v1.0.md` operational sequence (one PR per deliverable + release ceremony), referencing the deliverable-PR playbook in `CONTRIBUTING.md`.
+- Prepended a `[Unreleased]` Changed entry to `CHANGELOG.md`.
+- Added `test/milestoneV1Bootstrap.test.ts` (8 tests) guarding deliverable enumeration, telemetry deny-list invariant, performance budget table, and the step ordering.
+
+## Verification
+- `npm run compile` — clean.
+- `npm test -- --run` — **1037 / 1037** green (+8 vs main).
+- No source/runtime changes → bundle untouched (≤ 125 KB budget).
+
+## Next
+- **Deliverable P** (`feat/v1.0-telemetry`): wire `@vscode/extension-telemetry` with the documented event set + deny-list test, ship `PRIVACY.md`.
 # Release v0.9.0 — "Reach"
 
 Promotes deliverables **K · L · M · N · O** to the v0.9.0 stable line.
