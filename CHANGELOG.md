@@ -6,34 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+_No changes yet._
+## [0.5.0] — 2026-04-20
+First public release cycle under the `sena-labs` publisher. Combines the
+work originally scoped across the v0.3 / v0.4 / v0.5 milestones into a
+single ship.
 ### Added
-- **v0.5 Context & Handoff**:
-  - Prompt-variable expander (`src/participant/promptExpander.ts`) for `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>`. Resolution happens inside the extension before the prompt is forwarded to the Oz CLI. Tokens not recognised are passed through unchanged, and CLI failures during resolution are inlined as `_error resolving <token>: <msg>_` so the user's prompt is never lost.
-  - Integrated `expandPromptVariables` into the `/run` and `/cloud` command handlers. When any token is substituted the chat stream prints an `_Expanded N prompt variables_` marker before the run starts.
-  - `warpBridge.handoff` (Command Palette) and `warpBridge.tree.handoff` (sidebar context menu on run nodes) that open a real Warp terminal via the `warp://action/new_tab?path=…&command=…` URI scheme. POSIX-safe shell quoting for all embedded strings. Graceful fallback to a modal with the exact command when the URL scheme isn't registered.
-  - New `contributes.commands` / `contributes.menus` entries for the two handoff commands, plus the matching `view/item/context` entry gated on `viewItem =~ /^warpRun/`.
-  - 28 new unit tests: `test/ui/handoff.test.ts` (15) and `test/participant/promptExpander.test.ts` (13) covering URI building, shell quoting (`"`, `\`, `$`, `` ` ``), the palette/tree command flows, fallback modal, static token resolution, dynamic history/run tokens, empty-list fallback, output truncation, CLI error handling and token deduplication.
-  - `vscode` mock extended with `window.showInputBox`.
-- **v0.4 Surfaces** — native VS Code UI for Warp resources:
-  - Dedicated **Activity Bar view** (`warpBridge.runsView`) with five categories: Active Runs, History, Schedules, Environments, MCP Servers. Each category renders live data from the Oz CLI via the new `ActiveRunsTracker` (Active Runs / History) or direct CLI calls (Schedules / Environments / MCP).
-  - **Status Bar indicator** `$(cloud) Warp: N active` (right-aligned, priority 100) that colour-codes the active-run count (`default` / `warningBackground` / `errorBackground`) and falls back to `$(cloud-outline) Warp: unavailable` when the tracker fires an error.
-  - Context-menu commands on tree nodes: `warpBridge.tree.refresh`, `.copyId`, `.openInBrowser` (run nodes → `app.warp.dev/agents/<id>`), `.pauseSchedule`, `.unpauseSchedule`, `.deleteSchedule` (with modal confirmation), plus `.showRun` to pre-fill `@warp /status <runId>` in Copilot chat.
-  - `contributes.viewsContainers`, `contributes.views`, `contributes.commands`, `contributes.menus` entries in `package.json` wiring the sidebar and its context menus.
-  - New service `ActiveRunsTracker` (10 s default cadence) with `onDidChange` / `onDidError` events, consumed by both the status bar and the tree provider.
-  - 32 new unit tests across `test/services/activeRunsTracker.test.ts` and `test/ui/*` covering the tracker lifecycle (start/stop/dispose/idempotency), status bar rendering & colour thresholds, tree categories, and every context-menu command.
-  - `vscode` mock extended with `StatusBarAlignment`, `StatusBarItem`, `ThemeColor`, `ThemeIcon`, `TreeItem`, `TreeItemCollapsibleState`, `window.createStatusBarItem`, `window.registerTreeDataProvider`, `window.createTreeView`, `env.clipboard`, and a functional `commands.executeCommand` that dispatches to registered handlers.
-- **Agent-Native Language Model Tools** — GitHub Copilot **Agent mode** can now invoke Warp Oz directly, without typing `@warp`. Four tools registered via `vscode.lm.registerTool`:
-  - `warp_run_local` (`#warpRunLocal`) — run an Oz agent locally in the current workspace; injects IDE context by default.
-  - `warp_run_cloud` (`#warpRunCloud`) — launch a cloud Oz agent with a credit-consumption confirmation dialog; polls until terminal state unless `wait: false`.
-  - `warp_get_run` (`#warpGetRun`) — fetch status/output of a run by id (read-only).
-  - `warp_list_runs` (`#warpListRuns`) — list recent runs with `all` / `active` / `completed` / raw `OzRunStatus` filters and an optional `limit`.
-- Each tool is declared under `contributes.languageModelTools` in `package.json` with a JSON `inputSchema`, `modelDescription`, `userDescription`, `tags`, and `canBeReferencedInPrompt: true`.
-- Graceful fallback in `activate()` when running on a VS Code build that does not expose `vscode.lm.registerTool` (older than 1.96): the Chat Participant keeps working, only the LM tools are skipped.
-- 39 new unit tests under `test/tools/` covering each tool's `prepareInvocation`, happy paths, missing-input validation, CLI-unavailable fallback, error hints (`NOT_FOUND`, `NOT_AUTHENTICATED`, `TIMEOUT`), polling, and filter semantics.
-- Mock surface for `vscode.lm`, `MarkdownString`, `LanguageModelTextPart`, and `LanguageModelToolResult` in `test/mocks/vscode.ts`.
+#### Agent-Native integration (originally v0.3)
+- Four **Language Model Tools** registered via `vscode.lm.registerTool`, so GitHub Copilot **Agent mode** can invoke Warp Oz directly without typing `@warp`:
+  - `warp_run_local` (`#warpRunLocal`) — runs an Oz agent locally with IDE context injection.
+  - `warp_run_cloud` (`#warpRunCloud`) — launches a cloud Oz agent with a credit-consumption confirmation dialog; polls to terminal state unless `wait: false` is passed.
+  - `warp_get_run` (`#warpGetRun`) — fetches status/output of a run by id (read-only).
+  - `warp_list_runs` (`#warpListRuns`) — lists recent runs with `all` / `active` / `completed` / raw `OzRunStatus` filters and an optional `limit`.
+- Each tool declares a strict JSON `inputSchema`, `modelDescription`, `userDescription`, `tags`, `canBeReferencedInPrompt: true` and `toolReferenceName` under `contributes.languageModelTools` in `package.json`.
+- Graceful fallback in `activate()` when running on a VS Code build that does not expose `vscode.lm.registerTool`: the `@warp` Chat Participant keeps working, only the LM tools are skipped.
+- 39 new unit tests under `test/tools/` covering each tool's `prepareInvocation`, happy paths, missing-input validation, CLI-unavailable fallback, error hints (`NOT_FOUND`, `NOT_AUTHENTICATED`, `TIMEOUT`), polling and filter semantics.
+#### UI Surfaces (originally v0.4)
+- Dedicated **Activity Bar view** `warpBridge.runsView` with five categories (`ActiveRuns`, `History`, `Schedules`, `Environments`, `MCP Servers`). Each category renders live data from the Oz CLI via the new `ActiveRunsTracker` (Active Runs / History) or direct CLI calls (Schedules / Environments / MCP).
+- **Status Bar indicator** `$(cloud) Warp: N active` (right-aligned, priority 100) that colour-codes the active-run count (default / `warningBackground` for 1–2 / `errorBackground` for 3+) and falls back to `$(cloud-outline) Warp: unavailable` when the tracker fires an error. Clicking focuses the Warp Bridge sidebar.
+- Context-menu commands on tree nodes: `warpBridge.tree.refresh`, `.copyId`, `.openInBrowser` (run nodes → `app.warp.dev/agents/<id>`), `.pauseSchedule`, `.unpauseSchedule`, `.deleteSchedule` (with modal confirmation), plus `.showRun` to pre-fill `@warp /status <runId>` in Copilot chat.
+- `contributes.viewsContainers`, `contributes.views`, `contributes.commands`, `contributes.menus` entries in `package.json` wiring the sidebar and its context menus.
+- New service `ActiveRunsTracker` (10 s default cadence) with `onDidChange` / `onDidError` events, consumed by both the status bar and the tree provider.
+- 32 new unit tests across `test/services/activeRunsTracker.test.ts` and `test/ui/*` covering the tracker lifecycle (start/stop/dispose/idempotency), status bar rendering & colour thresholds, tree categories and every context-menu command.
+#### Context & Handoff (v0.5)
+- **Prompt-variable expander** (`src/participant/promptExpander.ts`) resolves `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` before the prompt is sent to the Oz CLI. Tokens not recognised are passed through unchanged; CLI failures during resolution are inlined as `_error resolving <token>: <msg>_` so the user's intent is never dropped. Each unique token is resolved at most once per expansion.
+- Integrated `expandPromptVariables` into the `/run` and `/cloud` command handlers. When at least one token is substituted the chat stream emits `_Expanded N prompt variables_` before the run starts.
+- Commands `warpBridge.handoff` (Command Palette) and `warpBridge.tree.handoff` (sidebar context menu on run nodes) open a real Warp terminal via the `warp://action/new_tab?path=…&command=…` URI scheme. POSIX-safe shell quoting for all embedded strings (`"`, `\`, `$`, `` ` ``). Graceful fallback modal with a Copy button when the URL scheme isn't registered on the platform.
+- 28 new unit tests: `test/ui/handoff.test.ts` (15) and `test/participant/promptExpander.test.ts` (13) covering URI building, shell quoting, the palette/tree command flows, fallback modal, static token resolution, dynamic history/run tokens, empty-list fallback, output truncation, CLI error handling and token deduplication.
+#### Test infrastructure
+- `vscode` mock extended with: `lm`, `MarkdownString`, `LanguageModelTextPart`, `LanguageModelToolResult`, `StatusBarAlignment`, `StatusBarItem`, `ThemeColor`, `ThemeIcon`, `TreeItem`, `TreeItemCollapsibleState`, `window.createStatusBarItem`, `window.registerTreeDataProvider`, `window.createTreeView`, `window.showInputBox`, `env.clipboard`, and a functional `commands.executeCommand` that dispatches to registered handlers.
+#### Publishing infrastructure
+- `docs/PUBLISHING.md` documents the publisher setup (VS Code Marketplace + Open VSX), token management, and manual / CI publishing flows.
+- `.github/workflows/publish.yml` publishes the VSIX to both registries on every tag matching `v*.*.*`.
+- `scripts/publish.ps1` and `scripts/publish.sh` cover manual publishing on Windows and Unix shells.
 ### Changed
-- `package.json` version bumped to `0.3.0-dev` for the in-progress v0.3 milestone.
-- `RunCloudTool` now normalises an empty `warpBridge.defaultEnvironment` to `undefined` before calling the CLI, so a misconfigured default cannot yield a bogus `--environment ''` argument.
+- `RunCloudTool` normalises an empty `warpBridge.defaultEnvironment` to `undefined` before calling the CLI, so a misconfigured default cannot yield a bogus `--environment ''` argument.
+- `.vscodeignore` excludes `scripts/**` from VSIX packaging (publishing helpers are not shipped to end-users).
+### Fixed
+- Tree view `when`-clauses now use `viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/` so generic commands (copy id, open in browser) only appear on the right node kinds.
+### Compatibility
+- Requires **VS Code ≥ 1.96.0** (stable Chat Participant API). Language Model Tools additionally require `vscode.lm.registerTool` which ships with VS Code 1.96+; older hosts degrade gracefully to Chat Participant only.
+- Runs on macOS, Linux and Windows. Warp handoff requires Warp ≥ 0.2024.x (or a shell fallback via the Copy-command modal).
+### Metrics
+- 41 test files, **660** unit tests, all green.
+- `dist/extension.js` bundled at **≈ 50 KB** (esbuild, minified, `vscode` external).
 ## [0.2.0] — 2026-04-19
 
 ### Added

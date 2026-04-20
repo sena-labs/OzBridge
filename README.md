@@ -34,9 +34,9 @@ that Copilot Agent mode can invoke autonomously.
 ## Features
 
 - **`@warp` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel.
-- **Agent-Native Language Model Tools** (v0.3+) — Copilot Agent mode can invoke Warp Oz directly, without typing `@warp`.
-- **Warp sidebar + status bar** (v0.4+) — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
-- **Context variables & Warp handoff** (v0.5+) — inline `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
+- **Agent-Native Language Model Tools** — Copilot Agent mode can invoke Warp Oz directly, without typing `@warp`.
+- **Warp sidebar + status bar** — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
+- **Context variables & Warp handoff** — inline `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
 - **9 slash commands** covering the full agent workflow: `/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`.
 - **IDE context injection** — automatically includes workspace path, active file, selection and diagnostics in every prompt.
 - **Agent skill detection** — maps prompt keywords to the 7-agent pipeline (spec, design, implement, review, test, deploy, maintenance).

@@ -2,7 +2,7 @@
   "name": "warp-vsc-bridge",
   "displayName": "Warp Bridge",
   "description": "Run Warp Oz agents from VS Code Copilot Chat",
-  "version": "0.3.0-dev",
+  "version": "0.5.0",
   "publisher": "sena-labs",
   "license": "MIT",
   "workspaces": ["packages/*"],
