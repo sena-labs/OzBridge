@@ -1,3 +1,18 @@
+# v0.9 deliverable N — CI matrix & bundle-budget workflow
+
+## What
+- Rewrote `.github/workflows/ci.yml` as a **2 × 3 matrix** (Node `20.19` / `22.12` × `ubuntu-latest` / `windows-latest` / `macos-latest`) with `fail-fast: false` and `concurrency.cancel-in-progress: true`.
+- Added `.github/workflows/bundle-budget.yml`: on every push/PR builds the production bundle, asserts `dist/extension.js` ≤ **125 KB**, and emits a size summary to `$GITHUB_STEP_SUMMARY`. Cancel-in-progress enabled.
+- Added `test/ciMatrix.test.ts` (9 tests) asserting matrix shape, OS coverage, fail-fast flag, concurrency policy, test invocation and the 125 KB threshold.
+
+## Verification
+- `npm run compile` — clean.
+- `npm test -- --run` — **1021 / 1021** green (+9 vs main).
+- Workflow YAMLs inspected via regex-based tests (no extra deps).
+
+## Next
+- Deliverable O — CONTRIBUTING rewrite (stretch).
+- v0.9.0 release ceremony (version bump, CHANGELOG promote, tag).
 # Deliverable M — Open VSX publishing & release pipeline
 
 Third deliverable of the v0.9 "Reach" milestone
