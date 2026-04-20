@@ -37,6 +37,7 @@ that Copilot Agent mode can invoke autonomously.
 - **Agent-Native Language Model Tools** — Copilot Agent mode can invoke Warp Oz directly, without typing `@warp`.
 - **Warp sidebar + status bar** — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
 - **Context variables & Warp handoff** — inline `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
+- **MCP server export** (opt-in) — Warp Bridge can expose its Oz tools as a Model Context Protocol server over HTTP+SSE so Claude Code, Cursor and Codex can drive Oz too. See [`docs/MCP.md`](docs/MCP.md).
 - **9 slash commands** covering the full agent workflow: `/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`.
 - **IDE context injection** — automatically includes workspace path, active file, selection and diagnostics in every prompt.
 - **Agent skill detection** — maps prompt keywords to the 7-agent pipeline (spec, design, implement, review, test, deploy, maintenance).
