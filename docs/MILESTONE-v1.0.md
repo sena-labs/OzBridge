@@ -66,7 +66,7 @@ telemetry (`telemetry.telemetryLevel === 'all' | 'usage'`).
   matching `/prompt|content|output|path|workspace|runId/i` fails the
   build.
 - `PRIVACY.md` at repo root, linked from the walkthrough's last step.
-- Endpoint configurable via `warpBridge.telemetry.connectionString`
+- Endpoint configurable via `ozBridge.telemetry.connectionString`
   setting (Sena Labs Application Insights workspace by default,
   empty = no transport even if VS Code telemetry is on).
 
@@ -178,7 +178,7 @@ support**.
 - New service `IFeatureFlags` with implementations:
   - `StaticFlags` (default — all enabled).
   - `RemoteFlags` (HTTP GET against
-    `warpBridge.featureFlags.endpoint` setting, 5-minute cache, fail-
+    `ozBridge.featureFlags.endpoint` setting, 5-minute cache, fail-
     open).
 - Each major v1.0 feature reads `flags.isEnabled('<key>')` before
   activating its handler.

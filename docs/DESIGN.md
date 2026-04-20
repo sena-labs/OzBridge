@@ -14,7 +14,7 @@
 graph TB
     subgraph VSCode["VS Code"]
         User["Utente (Copilot Chat)"]
-        CP["Chat Participant<br/>@warp"]
+        CP["Chat Participant<br/>@oz"]
         CH["CommandHandler<br/>(route /run, /cloud, /status...)"]
         CTX["ContextCollector<br/>(file aperto, errori, selezione)"]
         CFG["ConfigManager<br/>(VS Code settings)"]
@@ -39,7 +39,7 @@ graph TB
         RULES[".warp/rules/<br/>PROJECT.md"]
     end
 
-    User -->|"@warp /run ..."| CP
+    User -->|"@oz /run ..."| CP
     CP --> CH
     CH -->|"context injection"| CTX
     CH -->|"settings read"| CFG
@@ -62,10 +62,10 @@ graph TB
 
 | Livello | Componente | Responsabilità singola |
 | --- | --- | --- |
-| **VS Code** | `ChatParticipant` (`@warp`) | Registrazione come chat participant, ricezione prompt, dispatch del comando |
+| **VS Code** | `ChatParticipant` (`@oz`) | Registrazione come chat participant, ricezione prompt, dispatch del comando |
 | **VS Code** | `CommandHandler` | Routing degli 8 slash commands al service appropriato |
 | **VS Code** | `ContextCollector` | Raccolta contesto IDE (file aperto, selezione, diagnostics, workspace path) |
-| **VS Code** | `ConfigManager` | Lettura/validazione `vscode.workspace.getConfiguration('warpBridge')` |
+| **VS Code** | `ConfigManager` | Lettura/validazione `vscode.workspace.getConfiguration('ozBridge')` |
 | **VS Code** | `OutputFormatter` | Trasformazione `OzRunResult` → `ChatResponseStream` (markdown, progress, button, reference) |
 | **Bridge** | `OzCliService` | Esecuzione Oz CLI via `child_process.spawn`, parsing JSON, gestione errori |
 | **Bridge** | `RunPoller` | Polling periodico `oz run get` per task cloud asincroni, con timeout e backoff |
@@ -114,7 +114,7 @@ src/
 ```mermaid
 sequenceDiagram
     actor U as Utente
-    participant CP as @warp ChatParticipant
+    participant CP as @oz ChatParticipant
     participant CH as CommandHandler
     participant CTX as ContextCollector
     participant CFG as ConfigManager
@@ -122,7 +122,7 @@ sequenceDiagram
     participant OZ as oz CLI (child_process)
     participant OUT as OutputFormatter
 
-    U->>CP: @warp /run "fix linting errors"
+    U->>CP: @oz /run "fix linting errors"
     CP->>CH: route(command="/run", prompt)
     CH->>CTX: gather(activeEditor, selection, diagnostics)
     CTX-->>CH: contextPayload
@@ -146,7 +146,7 @@ sequenceDiagram
 
 **Passi chiave**:
 
-1. **Input**: l'utente digita `@warp /run "fix linting errors"` in Copilot Chat
+1. **Input**: l'utente digita `@oz /run "fix linting errors"` in Copilot Chat
 2. **Route**: `ChatParticipant` → `CommandHandler.route("/run", prompt)`
 3. **Context**: `ContextCollector.gather()` produce `ContextPayload` con:
    - `activeFilePath`: path file corrente
@@ -163,14 +163,14 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor U as Utente
-    participant CP as @warp ChatParticipant
+    participant CP as @oz ChatParticipant
     participant CH as CommandHandler
     participant CLI as OzCliService
     participant OZ as oz CLI
     participant POLL as RunPoller
     participant OUT as OutputFormatter
 
-    U->>CP: @warp /cloud "run full test suite"
+    U->>CP: @oz /cloud "run full test suite"
     CP->>CH: route(command="/cloud", prompt)
     CH->>OUT: stream.progress("Lancio agente cloud...")
     
@@ -535,9 +535,9 @@ interface IOutputFormatter {
 {
   "contributes": {
     "chatParticipants": [{
-      "id": "warp-vsc-bridge.warp",
+      "id": "ozbridge.oz",
       "name": "warp",
-      "fullName": "Warp Bridge",
+      "fullName": "OzBridge",
       "description": "Run Warp Oz agents from VS Code",
       "isSticky": true,
       "commands": [
@@ -547,7 +547,7 @@ interface IOutputFormatter {
         { "name": "schedule", "description": "Create and manage scheduled agent runs" },
         { "name": "models",   "description": "List available AI models" },
         { "name": "mcp",      "description": "List configured MCP servers" },
-        { "name": "config",   "description": "Show current Warp Bridge configuration" },
+        { "name": "config",   "description": "Show current OzBridge configuration" },
         { "name": "init",     "description": "Scaffold Warp Skills and Rules for this workspace" }
       ]
     }]
@@ -561,44 +561,44 @@ interface IOutputFormatter {
 {
   "contributes": {
     "configuration": {
-      "title": "Warp Bridge",
+      "title": "OzBridge",
       "properties": {
-        "warpBridge.ozPath": {
+        "ozBridge.ozPath": {
           "type": "string",
           "default": "oz",
           "description": "Path to the Oz CLI executable"
         },
-        "warpBridge.defaultModel": {
+        "ozBridge.defaultModel": {
           "type": "string",
           "default": "auto",
           "description": "Default AI model for agent runs"
         },
-        "warpBridge.defaultProfile": {
+        "ozBridge.defaultProfile": {
           "type": "string",
           "default": "Default",
           "description": "Default Oz agent profile"
         },
-        "warpBridge.defaultEnvironment": {
+        "ozBridge.defaultEnvironment": {
           "type": "string",
           "default": "",
           "description": "Default cloud environment name (empty = none)"
         },
-        "warpBridge.cloudPollingIntervalMs": {
+        "ozBridge.cloudPollingIntervalMs": {
           "type": "number",
           "default": 5000,
           "description": "Initial polling interval for cloud runs (ms)"
         },
-        "warpBridge.cloudPollingTimeoutMs": {
+        "ozBridge.cloudPollingTimeoutMs": {
           "type": "number",
           "default": 1800000,
           "description": "Max polling duration for cloud runs (ms, default 30 min)"
         },
-        "warpBridge.timeoutMs": {
+        "ozBridge.timeoutMs": {
           "type": "number",
           "default": 300000,
           "description": "Timeout for local agent runs (ms, default 5 min)"
         },
-        "warpBridge.maxOutputChars": {
+        "ozBridge.maxOutputChars": {
           "type": "number",
           "default": 5000,
           "description": "Max characters shown in chat before truncation"
@@ -638,7 +638,7 @@ interface IOutputFormatter {
 
 ### D4 — Un Chat Participant vs più participant
 
-**Decisione**: singolo participant `@warp` con 8 slash commands.  
+**Decisione**: singolo participant `@oz` con 8 slash commands.  
 **Motivazione**: VS Code raccomanda "one participant per extension".
 
 ### D5 — Context injection: path + selezione + diagnostics (decisione Q1)
@@ -670,7 +670,7 @@ Diagnostics: 2 errors, 1 warning
 
 ### D8 — Scaffolding via `/init` (decisione Q4)
 
-**Decisione**: comando `@warp /init` crea:
+**Decisione**: comando `@oz /init` crea:
 - `.agents/skills/{1-spec-agent,...,7-maintenance-agent}/SKILL.md` — 7 file
 - `.warp/rules/PROJECT.md` — regole di progetto base
 - Non sovrascrive file esistenti
@@ -713,7 +713,7 @@ Diagnostics: 2 errors, 1 warning
 | **Q1** | Contesto iniettato | Path + selezione + diagnostics (no file intero) |
 | **Q2** | Conferma per `/cloud` | Sempre conferma |
 | **Q3** | Troncamento output | 5000 caratteri con "Mostra tutto" |
-| **Q4** | Scaffolding skills/rules | Comando `@warp /init` (8° slash command) |
+| **Q4** | Scaffolding skills/rules | Comando `@oz /init` (8° slash command) |
 
 ---
 

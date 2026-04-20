@@ -1,4 +1,4 @@
-# Contributing to Warp Bridge for VS Code
+# Contributing to OzBridge for VS Code
 
 Thanks for wanting to contribute! This document is intentionally
 opinionated: it codifies the **deliverable-PR playbook** the
@@ -239,7 +239,7 @@ and include:
 - Warp / Oz CLI version (`oz --version`).
 - Steps to reproduce.
 - Expected vs. actual behavior.
-- Relevant logs from the **Warp Bridge** output channel.
+- Relevant logs from the **OzBridge** output channel.
 
 ## Suggesting features
 
@@ -252,4 +252,4 @@ and describe:
 
 ---
 
-Thanks for helping improve Warp Bridge! 🚀
+Thanks for helping improve OzBridge! 🚀

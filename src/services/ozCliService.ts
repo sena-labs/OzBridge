@@ -703,6 +703,8 @@ export function isInsufficientCreditsError(
     'no credits left',
     'credit balance',
     'quota exceeded',
+    'quota limit',         // Warp Cloud: "Error: Quota limit reached."
+    'quota reached',
     'usage limit',
     'rate limit',
     'payment required',

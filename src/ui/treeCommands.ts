@@ -8,13 +8,13 @@ import { WarpRunsTreeProvider, WarpTreeNode } from './runsTreeProvider.js';
  * the `contributes.commands` manifest and the handlers stay in sync.
  */
 export const TREE_COMMANDS = {
-  refresh: 'warpBridge.tree.refresh',
-  copyId: 'warpBridge.tree.copyId',
-  openInBrowser: 'warpBridge.tree.openInBrowser',
-  showRun: 'warpBridge.tree.showRun',
-  pauseSchedule: 'warpBridge.tree.pauseSchedule',
-  unpauseSchedule: 'warpBridge.tree.unpauseSchedule',
-  deleteSchedule: 'warpBridge.tree.deleteSchedule',
+  refresh: 'ozBridge.tree.refresh',
+  copyId: 'ozBridge.tree.copyId',
+  openInBrowser: 'ozBridge.tree.openInBrowser',
+  showRun: 'ozBridge.tree.showRun',
+  pauseSchedule: 'ozBridge.tree.pauseSchedule',
+  unpauseSchedule: 'ozBridge.tree.unpauseSchedule',
+  deleteSchedule: 'ozBridge.tree.deleteSchedule',
 } as const;
 
 export interface TreeCommandDeps {
@@ -39,7 +39,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
     vscode.commands.registerCommand(TREE_COMMANDS.copyId, async (node?: WarpTreeNode) => {
       const id = extractId(node);
       if (!id) {
-        await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: nothing to copy for this item.'));
+        await vscode.window.showWarningMessage(vscode.l10n.t('OzBridge: nothing to copy for this item.'));
         return;
       }
       await vscode.env.clipboard.writeText(id);
@@ -49,7 +49,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
     vscode.commands.registerCommand(TREE_COMMANDS.openInBrowser, async (node?: WarpTreeNode) => {
       const url = extractUrl(node);
       if (!url) {
-        await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: no browser URL for this item.'));
+        await vscode.window.showWarningMessage(vscode.l10n.t('OzBridge: no browser URL for this item.'));
         return;
       }
       await vscode.env.openExternal(vscode.Uri.parse(url));
@@ -60,7 +60,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       // Delegate to the chat participant: open the chat with a /status <id> prompt.
       // The user can hit Enter to execute, giving them a chance to inspect first.
       await vscode.commands.executeCommand('workbench.action.chat.open', {
-        query: `@warp /status ${runId}`,
+        query: `@oz /status ${runId}`,
       });
     }),
 

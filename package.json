@@ -1,9 +1,9 @@
 {
-  "name": "warp-vsc-bridge",
+  "name": "ozbridge",
   "displayName": "%displayName%",
   "description": "%description%",
   "l10n": "./l10n",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "publisher": "sena-labs",
   "license": "MIT",
   "workspaces": ["packages/*"],
@@ -27,9 +27,9 @@
   "contributes": {
     "chatParticipants": [
       {
-        "id": "warp-vsc-bridge.warp",
-        "name": "warp",
-        "fullName": "Warp Bridge",
+        "id": "ozbridge.oz",
+        "name": "oz",
+        "fullName": "OzBridge",
         "description": "Run Warp Oz agents from VS Code",
         "isSticky": true,
         "commands": [
@@ -63,7 +63,7 @@
           },
           {
             "name": "config",
-            "description": "Show current Warp Bridge configuration"
+            "description": "Show current OzBridge configuration"
           },
           {
             "name": "init",
@@ -74,11 +74,11 @@
     ],
     "languageModelTools": [
       {
-        "name": "warp_run_local",
+        "name": "oz_run_local",
         "displayName": "Run Warp Oz agent (local)",
-        "toolReferenceName": "warpRunLocal",
+        "toolReferenceName": "ozRunLocal",
         "modelDescription": "Runs a Warp Oz agent locally in the current VS Code workspace and returns its output. Use when the user asks to execute, refactor, test, or debug code using Warp without consuming cloud credits. Automatically injects IDE context (workspace path, active file, selection, diagnostics) unless `includeIdeContext: false` is passed.",
-        "userDescription": "Let Copilot invoke Warp Oz agents locally without typing @warp.",
+        "userDescription": "Let Copilot invoke Warp Oz agents locally without typing @oz.",
         "canBeReferencedInPrompt": true,
         "icon": "$(warp)",
         "tags": ["warp", "oz", "agent", "local"],
@@ -92,11 +92,11 @@
             },
             "model": {
               "type": "string",
-              "description": "Optional AI model override (e.g. `gpt-4o`). Defaults to `warpBridge.defaultModel`."
+              "description": "Optional AI model override (e.g. `gpt-4o`). Defaults to `ozBridge.defaultModel`."
             },
             "profile": {
               "type": "string",
-              "description": "Optional Oz agent profile name. Defaults to `warpBridge.defaultProfile`."
+              "description": "Optional Oz agent profile name. Defaults to `ozBridge.defaultProfile`."
             },
             "skill": {
               "type": "string",
@@ -110,10 +110,10 @@
         }
       },
       {
-        "name": "warp_run_cloud",
+        "name": "oz_run_cloud",
         "displayName": "Run Warp Oz agent (cloud)",
-        "toolReferenceName": "warpRunCloud",
-        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS \u2014 always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `warp_get_run`.",
+        "toolReferenceName": "ozRunCloud",
+        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS \u2014 always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `oz_get_run`.",
         "userDescription": "Let Copilot launch cloud Warp Oz runs (with explicit confirmation to consume credits).",
         "canBeReferencedInPrompt": true,
         "icon": "$(cloud)",
@@ -128,11 +128,11 @@
             },
             "model": {
               "type": "string",
-              "description": "Optional AI model override. Defaults to `warpBridge.defaultModel`."
+              "description": "Optional AI model override. Defaults to `ozBridge.defaultModel`."
             },
             "environment": {
               "type": "string",
-              "description": "Optional cloud environment name or id. Defaults to `warpBridge.defaultEnvironment`; if both are empty the extension auto-picks the first available environment."
+              "description": "Optional cloud environment name or id. Defaults to `ozBridge.defaultEnvironment`; if both are empty the extension auto-picks the first available environment."
             },
             "skill": {
               "type": "string",
@@ -150,10 +150,10 @@
         }
       },
       {
-        "name": "warp_get_run",
+        "name": "oz_get_run",
         "displayName": "Get Warp Oz run",
-        "toolReferenceName": "warpGetRun",
-        "modelDescription": "Fetches the status and output of a Warp Oz run by its id. Read-only; safe to invoke without confirmation. Use it after `warp_run_cloud` with `wait: false`, or when the user references a run id.",
+        "toolReferenceName": "ozGetRun",
+        "modelDescription": "Fetches the status and output of a Warp Oz run by its id. Read-only; safe to invoke without confirmation. Use it after `oz_run_cloud` with `wait: false`, or when the user references a run id.",
         "userDescription": "Look up a Warp Oz run by id.",
         "canBeReferencedInPrompt": true,
         "icon": "$(search)",
@@ -164,15 +164,15 @@
           "properties": {
             "runId": {
               "type": "string",
-              "description": "Warp run identifier (as returned by `warp_run_cloud`, `warp_list_runs`, or the Warp UI)."
+              "description": "Warp run identifier (as returned by `oz_run_cloud`, `oz_list_runs`, or the Warp UI)."
             }
           }
         }
       },
       {
-        "name": "warp_list_runs",
+        "name": "oz_list_runs",
         "displayName": "List Warp Oz runs",
-        "toolReferenceName": "warpListRuns",
+        "toolReferenceName": "ozListRuns",
         "modelDescription": "Lists recent Warp Oz runs. Supports filters: `all` (default), `active` (QUEUED + INPROGRESS), `completed` (SUCCEEDED + FAILED), or a specific `OzRunStatus` value. Read-only.",
         "userDescription": "List recent Warp Oz runs with an optional status filter.",
         "canBeReferencedInPrompt": true,
@@ -197,173 +197,173 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "warpBridgeSidebar",
-          "title": "Warp Bridge",
+          "id": "ozBridgeSidebar",
+          "title": "OzBridge",
           "icon": "media/warp-icon.png"
         }
       ]
     },
     "views": {
-      "warpBridgeSidebar": [
+      "ozBridgeSidebar": [
         {
-          "id": "warpBridge.runsView",
+          "id": "ozBridge.runsView",
           "name": "Runs & Resources",
           "icon": "media/warp-icon.png",
-          "contextualTitle": "Warp Bridge"
+          "contextualTitle": "OzBridge"
         },
         {
-          "id": "warpBridge.driveView",
+          "id": "ozBridge.driveView",
           "name": "Warp Drive",
           "icon": "media/warp-icon.png",
-          "contextualTitle": "Warp Bridge"
+          "contextualTitle": "OzBridge"
         }
       ]
     },
     "commands": [
       {
-        "command": "warpBridge.tree.refresh",
+        "command": "ozBridge.tree.refresh",
         "title": "%command.tree.refresh.title%",
         "icon": "$(refresh)"
       },
       {
-        "command": "warpBridge.tree.copyId",
+        "command": "ozBridge.tree.copyId",
         "title": "%command.tree.copyId.title%",
         "icon": "$(copy)"
       },
       {
-        "command": "warpBridge.tree.openInBrowser",
+        "command": "ozBridge.tree.openInBrowser",
         "title": "%command.tree.openInBrowser.title%",
         "icon": "$(link-external)"
       },
       {
-        "command": "warpBridge.tree.showRun",
+        "command": "ozBridge.tree.showRun",
         "title": "%command.tree.showRun.title%"
       },
       {
-        "command": "warpBridge.tree.pauseSchedule",
+        "command": "ozBridge.tree.pauseSchedule",
         "title": "%command.tree.pauseSchedule.title%",
         "icon": "$(debug-pause)"
       },
       {
-        "command": "warpBridge.tree.unpauseSchedule",
+        "command": "ozBridge.tree.unpauseSchedule",
         "title": "%command.tree.unpauseSchedule.title%",
         "icon": "$(play)"
       },
       {
-        "command": "warpBridge.tree.deleteSchedule",
+        "command": "ozBridge.tree.deleteSchedule",
         "title": "%command.tree.deleteSchedule.title%",
         "icon": "$(trash)"
       },
       {
-        "command": "warpBridge.handoff",
+        "command": "ozBridge.handoff",
         "title": "%command.handoff.title%",
         "category": "%category.warp%",
         "icon": "$(terminal)"
       },
       {
-        "command": "warpBridge.tree.handoff",
+        "command": "ozBridge.tree.handoff",
         "title": "%command.tree.handoff.title%",
         "category": "%category.warp%",
         "icon": "$(terminal)"
       },
       {
-        "command": "warpBridge.mcp.start",
+        "command": "ozBridge.mcp.start",
         "title": "%command.mcp.start.title%",
         "category": "%category.warpMcp%",
         "icon": "$(plug)"
       },
       {
-        "command": "warpBridge.mcp.stop",
+        "command": "ozBridge.mcp.stop",
         "title": "%command.mcp.stop.title%",
         "category": "%category.warpMcp%",
         "icon": "$(debug-disconnect)"
       },
       {
-        "command": "warpBridge.mcp.status",
+        "command": "ozBridge.mcp.status",
         "title": "%command.mcp.status.title%",
         "category": "%category.warpMcp%",
         "icon": "$(info)"
       },
       {
-        "command": "warpBridge.mcp.copyEndpointUrl",
+        "command": "ozBridge.mcp.copyEndpointUrl",
         "title": "%command.mcp.copyEndpointUrl.title%",
         "category": "%category.warpMcp%",
         "icon": "$(copy)"
       },
       {
-        "command": "warpBridge.mcp.registerClient",
+        "command": "ozBridge.mcp.registerClient",
         "title": "%command.mcp.registerClient.title%",
         "category": "%category.warpMcp%",
         "icon": "$(add)"
       },
       {
-        "command": "warpBridge.mcp.unregisterClient",
+        "command": "ozBridge.mcp.unregisterClient",
         "title": "%command.mcp.unregisterClient.title%",
         "category": "%category.warpMcp%",
         "icon": "$(close)"
       },
       {
-        "command": "warpBridge.drive.refresh",
+        "command": "ozBridge.drive.refresh",
         "title": "%command.drive.refresh.title%",
         "category": "%category.warpDrive%",
         "icon": "$(refresh)"
       },
       {
-        "command": "warpBridge.drive.insertIntoChat",
+        "command": "ozBridge.drive.insertIntoChat",
         "title": "%command.drive.insertIntoChat.title%",
         "category": "%category.warpDrive%",
         "icon": "$(comment-discussion)"
       },
       {
-        "command": "warpBridge.drive.copyContent",
+        "command": "ozBridge.drive.copyContent",
         "title": "%command.drive.copyContent.title%",
         "category": "%category.warpDrive%",
         "icon": "$(copy)"
       },
       {
-        "command": "warpBridge.drive.openInEditor",
+        "command": "ozBridge.drive.openInEditor",
         "title": "%command.drive.openInEditor.title%",
         "category": "%category.warpDrive%",
         "icon": "$(go-to-file)"
       },
       {
-        "command": "warpBridge.skill.edit",
+        "command": "ozBridge.skill.edit",
         "title": "%command.skill.edit.title%",
         "category": "%category.warpSkill%",
         "icon": "$(edit)"
       },
       {
-        "command": "warpBridge.skill.new",
+        "command": "ozBridge.skill.new",
         "title": "%command.skill.new.title%",
         "category": "%category.warpSkill%",
         "icon": "$(new-file)"
       },
       {
-        "command": "warpBridge.skill.saveGlobal",
+        "command": "ozBridge.skill.saveGlobal",
         "title": "%command.skill.saveGlobal.title%",
         "category": "%category.warpSkill%",
         "icon": "$(save)"
       },
       {
-        "command": "warpBridge.skill.saveWorkspace",
+        "command": "ozBridge.skill.saveWorkspace",
         "title": "%command.skill.saveWorkspace.title%",
         "category": "%category.warpSkill%",
         "icon": "$(save-as)"
       },
       {
-        "command": "warpBridge.dashboard.open",
+        "command": "ozBridge.dashboard.open",
         "title": "%command.dashboard.open.title%",
         "category": "%category.warp%",
         "icon": "$(graph)"
       },
       {
-        "command": "warpBridge.triageFailure",
+        "command": "ozBridge.triageFailure",
         "title": "%command.triageFailure.title%",
         "category": "%category.warp%",
         "icon": "$(lightbulb)"
       },
       {
-        "command": "warpBridge.exportDataset",
+        "command": "ozBridge.exportDataset",
         "title": "%command.exportDataset.title%",
         "category": "%category.warp%",
         "icon": "$(export)"
@@ -372,202 +372,202 @@
     "menus": {
       "view/title": [
         {
-          "command": "warpBridge.tree.refresh",
-          "when": "view == warpBridge.runsView",
+          "command": "ozBridge.tree.refresh",
+          "when": "view == ozBridge.runsView",
           "group": "navigation"
         },
         {
-          "command": "warpBridge.drive.refresh",
-          "when": "view == warpBridge.driveView",
+          "command": "ozBridge.drive.refresh",
+          "when": "view == ozBridge.driveView",
           "group": "navigation"
         }
       ],
       "view/item/context": [
         {
-          "command": "warpBridge.tree.copyId",
-          "when": "view == warpBridge.runsView && viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/",
+          "command": "ozBridge.tree.copyId",
+          "when": "view == ozBridge.runsView && viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/",
           "group": "warpGeneric@1"
         },
         {
-          "command": "warpBridge.tree.openInBrowser",
-          "when": "view == warpBridge.runsView && viewItem =~ /^warpRun/",
+          "command": "ozBridge.tree.openInBrowser",
+          "when": "view == ozBridge.runsView && viewItem =~ /^warpRun/",
           "group": "warpGeneric@2"
         },
         {
-          "command": "warpBridge.tree.pauseSchedule",
-          "when": "view == warpBridge.runsView && viewItem == warpSchedule:running",
+          "command": "ozBridge.tree.pauseSchedule",
+          "when": "view == ozBridge.runsView && viewItem == warpSchedule:running",
           "group": "warpSchedule@1"
         },
         {
-          "command": "warpBridge.tree.unpauseSchedule",
-          "when": "view == warpBridge.runsView && viewItem == warpSchedule:paused",
+          "command": "ozBridge.tree.unpauseSchedule",
+          "when": "view == ozBridge.runsView && viewItem == warpSchedule:paused",
           "group": "warpSchedule@1"
         },
         {
-          "command": "warpBridge.tree.deleteSchedule",
-          "when": "view == warpBridge.runsView && viewItem =~ /^warpSchedule/",
+          "command": "ozBridge.tree.deleteSchedule",
+          "when": "view == ozBridge.runsView && viewItem =~ /^warpSchedule/",
           "group": "warpSchedule@2"
         },
         {
-          "command": "warpBridge.tree.handoff",
-          "when": "view == warpBridge.runsView && viewItem =~ /^warpRun/",
+          "command": "ozBridge.tree.handoff",
+          "when": "view == ozBridge.runsView && viewItem =~ /^warpRun/",
           "group": "warpGeneric@3"
         },
         {
-          "command": "warpBridge.drive.insertIntoChat",
-          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "command": "ozBridge.drive.insertIntoChat",
+          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
           "group": "warpDrive@1"
         },
         {
-          "command": "warpBridge.drive.copyContent",
-          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "command": "ozBridge.drive.copyContent",
+          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
           "group": "warpDrive@2"
         },
         {
-          "command": "warpBridge.drive.openInEditor",
-          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "command": "ozBridge.drive.openInEditor",
+          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
           "group": "warpDrive@3"
         }
       ]
     },
     "configuration": {
-      "title": "Warp Bridge",
+      "title": "OzBridge",
       "properties": {
-        "warpBridge.ozPath": {
+        "ozBridge.ozPath": {
           "type": "string",
           "default": "oz",
           "description": "Path to the Oz CLI executable"
         },
-        "warpBridge.defaultModel": {
+        "ozBridge.defaultModel": {
           "type": "string",
           "default": "auto",
           "description": "Default AI model for agent runs"
         },
-        "warpBridge.defaultProfile": {
+        "ozBridge.defaultProfile": {
           "type": "string",
           "default": "Default",
           "description": "Default Oz agent profile"
         },
-        "warpBridge.defaultEnvironment": {
+        "ozBridge.defaultEnvironment": {
           "type": "string",
           "default": "",
           "description": "Default cloud environment name (empty = none)"
         },
-        "warpBridge.cloudPollingIntervalMs": {
+        "ozBridge.cloudPollingIntervalMs": {
           "type": "number",
           "default": 5000,
           "description": "Initial polling interval for cloud runs (ms)"
         },
-        "warpBridge.cloudPollingTimeoutMs": {
+        "ozBridge.cloudPollingTimeoutMs": {
           "type": "number",
           "default": 1800000,
           "description": "Max polling duration for cloud runs (ms, default 30 min)"
         },
-        "warpBridge.timeoutMs": {
+        "ozBridge.timeoutMs": {
           "type": "number",
           "default": 300000,
           "description": "Timeout for local agent runs (ms, default 5 min)"
         },
-        "warpBridge.idleTimeoutMs": {
+        "ozBridge.idleTimeoutMs": {
           "type": "number",
           "default": 90000,
           "description": "Idle timeout for the Oz CLI subprocess (ms). Aborts the run if no stdout/stderr is received for this long \u2014 prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to 0 to disable. Default 90 s."
         },
-        "warpBridge.maxOutputChars": {
+        "ozBridge.maxOutputChars": {
           "type": "number",
           "default": 15000,
           "description": "Max characters shown in chat before truncation"
         },
-        "warpBridge.mcpEnabled": {
+        "ozBridge.mcpEnabled": {
           "type": "boolean",
           "default": false,
           "description": "Start an embedded MCP server at activation so Claude Code, Cursor and Codex can drive Oz."
         },
-        "warpBridge.mcpPort": {
+        "ozBridge.mcpPort": {
           "type": "number",
           "default": 3847,
           "description": "TCP port the MCP server listens on when enabled."
         },
-        "warpBridge.mcpBindAddress": {
+        "ozBridge.mcpBindAddress": {
           "type": "string",
           "default": "127.0.0.1",
           "description": "Network interface the MCP server binds to. Keep 127.0.0.1 unless you explicitly want to expose it."
         },
-        "warpBridge.mcpBearerToken": {
+        "ozBridge.mcpBearerToken": {
           "type": "string",
           "default": "",
           "markdownDescription": "Optional bearer token required on every MCP request. Empty string disables auth. Set via **Settings** or `settings.json`.",
           "scope": "machine-overridable"
         },
-        "warpBridge.telemetry.connectionString": {
+        "ozBridge.telemetry.connectionString": {
           "type": "string",
           "default": "",
           "markdownDescription": "Application Insights connection string (`InstrumentationKey=...;IngestionEndpoint=...`) for opt-in telemetry. Empty string keeps the transport disabled even when VS Code's `telemetry.telemetryLevel` is on. See [`PRIVACY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/PRIVACY.md) for what is and isn't collected.",
           "scope": "machine-overridable"
         },
-        "warpBridge.killSwitch.enabled": {
+        "ozBridge.killSwitch.enabled": {
           "type": "boolean",
           "default": false,
           "markdownDescription": "**Emergency kill-switch.** When `true`, the extension's `activate()` skips every wiring step (no commands, tools, MCP server, chat participant or trees are registered) and surfaces a single warning notification. Use only as an operator escape hatch for a critical regression or a supply-chain incident. See [`SECURITY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/SECURITY.md#kill-switch-v10-deliverable-t) for the policy.",
           "scope": "machine-overridable"
         },
-        "warpBridge.killSwitch.reason": {
+        "ozBridge.killSwitch.reason": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Optional message displayed in the kill-switch notification (e.g. an incident URL). Ignored unless `#warpBridge.killSwitch.enabled#` is `true`.",
+          "markdownDescription": "Optional message displayed in the kill-switch notification (e.g. an incident URL). Ignored unless `#ozBridge.killSwitch.enabled#` is `true`.",
           "scope": "machine-overridable"
         }
       }
     },
     "walkthroughs": [
       {
-        "id": "warpBridge.gettingStarted",
+        "id": "ozBridge.gettingStarted",
         "title": "%walkthrough.gettingStarted.title%",
         "description": "%walkthrough.gettingStarted.description%",
         "steps": [
           {
-            "id": "warpBridge.gettingStarted.installCli",
+            "id": "ozBridge.gettingStarted.installCli",
             "title": "%walkthrough.step.installCli.title%",
             "description": "%walkthrough.step.installCli.description%",
             "media": {
               "markdown": "media/walkthrough/install-cli.md"
             },
             "completionEvents": [
-              "onCommand:warpBridge.tree.refresh"
+              "onCommand:ozBridge.tree.refresh"
             ]
           },
           {
-            "id": "warpBridge.gettingStarted.firstAgent",
+            "id": "ozBridge.gettingStarted.firstAgent",
             "title": "%walkthrough.step.firstAgent.title%",
             "description": "%walkthrough.step.firstAgent.description%",
             "media": {
               "markdown": "media/walkthrough/first-agent.md"
             },
             "completionEvents": [
-              "onChatParticipant:warp-vsc-bridge.warp"
+              "onChatParticipant:ozbridge.oz"
             ]
           },
           {
-            "id": "warpBridge.gettingStarted.exploreViews",
+            "id": "ozBridge.gettingStarted.exploreViews",
             "title": "%walkthrough.step.exploreViews.title%",
             "description": "%walkthrough.step.exploreViews.description%",
             "media": {
               "markdown": "media/walkthrough/explore-views.md"
             },
             "completionEvents": [
-              "onView:warpBridge.runsView"
+              "onView:ozBridge.runsView"
             ]
           },
           {
-            "id": "warpBridge.gettingStarted.enableMcp",
+            "id": "ozBridge.gettingStarted.enableMcp",
             "title": "%walkthrough.step.enableMcp.title%",
             "description": "%walkthrough.step.enableMcp.description%",
             "media": {
               "markdown": "media/walkthrough/enable-mcp.md"
             },
             "completionEvents": [
-              "onSettingChanged:warpBridge.mcpEnabled",
-              "onCommand:warpBridge.mcp.start"
+              "onSettingChanged:ozBridge.mcpEnabled",
+              "onCommand:ozBridge.mcp.start"
             ]
           }
         ]
@@ -584,7 +584,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "package": "npx @vscode/vsce package --no-dependencies -o warp-vsc-bridge.vsix"
+    "package": "npx @vscode/vsce package --no-dependencies -o ozbridge.vsix"
   },
   "dependencies": {
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"

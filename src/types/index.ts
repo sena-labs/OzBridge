@@ -24,10 +24,10 @@ export type OzListResult<T> = ListResult<T>;
 export type { DiagnosticEntry, ContextPayload, SlashCommandHandler };
 
 // ============================================================================
-// Warp Bridge Configuration (extends toolkit's BridgeConfig)
+// OzBridge Configuration (extends toolkit's BridgeConfig)
 // ============================================================================
 
-/** Extension settings read from `vscode.workspace.getConfiguration('warpBridge')`. */
+/** Extension settings read from `vscode.workspace.getConfiguration('ozBridge')`. */
 export interface WarpBridgeConfig extends BridgeConfig {
   /** Path to the `oz` CLI executable. */
   ozPath: string;
@@ -231,7 +231,7 @@ export interface IOzCliService {
 export interface IConfigManager {
   /** Returns the current configuration snapshot (cached until next change). */
   getConfig(): WarpBridgeConfig;
-  /** Fires when `warpBridge.*` settings change, with the new configuration. */
+  /** Fires when `ozBridge.*` settings change, with the new configuration. */
   onConfigChanged: vscode.Event<WarpBridgeConfig>;
   /** Disposes the configuration change listener. */
   dispose(): void;

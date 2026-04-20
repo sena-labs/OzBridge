@@ -52,10 +52,10 @@ Branch: **`feat/v0.9-l10n`**
 Branch: **`feat/v0.9-walkthrough`**
 
 1. Add `contributes.walkthroughs` entry (id
-   `warpBridge.gettingStarted`) with 4 steps.
+   `ozBridge.gettingStarted`) with 4 steps.
 2. Author markdown content under `media/walkthrough/`.
 3. Implement first-activation gating via global state
-   (`warpBridge.walkthrough.shown`).
+   (`ozBridge.walkthrough.shown`).
 4. Tests (≥ 8): gating, per-step completion, markdown sanitisation.
 5. Validate, PR, merge.
 

@@ -3,7 +3,7 @@
  *
  * Privacy contract — see {@link FORBIDDEN_KEY_REGEX}:
  *   - **Off by default** until *both* `vscode.env.isTelemetryEnabled === true`
- *     **and** `warpBridge.telemetry.connectionString !== ""`.
+ *     **and** `ozBridge.telemetry.connectionString !== ""`.
  *   - Only the event names declared in {@link TelemetryEventName} are
  *     accepted at the type level.
  *   - Every payload property name is asserted against

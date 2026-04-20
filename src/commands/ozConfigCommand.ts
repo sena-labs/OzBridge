@@ -10,7 +10,7 @@ import { logWarn, logError } from '../services/logger.js';
 /**
  * Creates the `/config` slash-command handler.
  *
- * Displays the active Warp Bridge configuration, Oz CLI status, and
+ * Displays the active OzBridge configuration, Oz CLI status, and
  * additional info (profiles, environments, integrations) when available.
  *
  * @param cli - Oz CLI service for profile/env/integration queries.
@@ -25,7 +25,7 @@ export function createConfigCommand(
   return async (_prompt, stream, _token) => {
     const config = cfgMgr.getConfig();
 
-    stream.markdown('## ⚙️ Warp Bridge Configuration\n\n');
+    stream.markdown('## ⚙️ OzBridge Configuration\n\n');
 
     // VS Code Settings
     stream.markdown('### Extension Settings\n\n');

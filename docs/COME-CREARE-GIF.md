@@ -14,10 +14,10 @@ Questa nota spiega come registrarle e inserirle.
 | 3 | `gif-03-oz-login.gif` | Terminale: `oz auth login` → apertura browser → callback riuscito | 8–12 s |
 | 4 | `gif-04-install-vsix.gif` | Terminale VS Code: `code --install-extension warp-vsc-bridge-0.1.0.vsix` → conferma | 5–8 s |
 | 5 | `gif-05-reload-window.gif` | Ctrl+Shift+P → digitare "Reload" → click su Reload Window | 4–6 s |
-| 6 | `gif-06-first-config.gif` | Aprire chat Copilot → digitare `@warp /config` → vedere risposta ✅ | 6–10 s |
-| 7 | `gif-07-run-local.gif` | Chat: `@warp /run <prompt>` → risposta dell'agente con output | 8–15 s |
-| 8 | `gif-08-init.gif` | Chat: `@warp /init` → file creati nel workspace | 6–8 s |
-| 9 | `gif-09-settings.gif` | Ctrl+, → cercare "warpBridge" → modificare un parametro | 6–8 s |
+| 6 | `gif-06-first-config.gif` | Aprire chat Copilot → digitare `@oz /config` → vedere risposta ✅ | 6–10 s |
+| 7 | `gif-07-run-local.gif` | Chat: `@oz /run <prompt>` → risposta dell'agente con output | 8–15 s |
+| 8 | `gif-08-init.gif` | Chat: `@oz /init` → file creati nel workspace | 6–8 s |
+| 9 | `gif-09-settings.gif` | Ctrl+, → cercare "ozBridge" → modificare un parametro | 6–8 s |
 
 ## Strumenti consigliati
 
@@ -71,7 +71,7 @@ con il nome del file. Per attivare la GIF, aggiungi un tag `<img>` dentro il
 
 <!-- Dopo (con GIF) -->
 <div class="media-placeholder" data-media="gif-06-first-config.gif">
-  <img src="media/gif-06-first-config.gif" alt="Primo avvio — @warp /config">
+  <img src="media/gif-06-first-config.gif" alt="Primo avvio — @oz /config">
 </div>
 ```
 

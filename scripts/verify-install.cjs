@@ -1,6 +1,6 @@
 /* eslint-disable */
 /**
- * Verification harness for the installed Warp Bridge VSIX.
+ * Verification harness for the installed OzBridge VSIX.
  *
  * Loads the bundled `dist/extension.js` with a minimal `vscode` stub that
  * mirrors the surface the extension expects at activation time, then calls
@@ -42,14 +42,14 @@ function assert(cond, label, detail) {
 
 console.log('--- Manifest checks ---');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-assert(manifest.name === 'warp-vsc-bridge', 'name', manifest.name);
+assert(manifest.name === 'ozbridge', 'name', manifest.name);
 assert(manifest.publisher === 'sena-labs', 'publisher', manifest.publisher);
 assert(manifest.version === '0.5.0', 'version', manifest.version);
 assert(/^[\^~]?1\.96/.test(manifest.engines.vscode), 'engines.vscode', manifest.engines.vscode);
 assert(manifest.main === './dist/extension.js', 'main', manifest.main);
 assert(Array.isArray(manifest.contributes.chatParticipants), 'chatParticipants declared');
 assert(
-  manifest.contributes.chatParticipants[0].id === 'warp-vsc-bridge.warp',
+  manifest.contributes.chatParticipants[0].id === 'ozbridge.oz',
   'chat participant id', manifest.contributes.chatParticipants[0].id,
 );
 const slashCommands = (manifest.contributes.chatParticipants[0].commands || []).map((c) => c.name).sort();
@@ -60,28 +60,28 @@ assert(
 );
 
 const tools = (manifest.contributes.languageModelTools || []).map((t) => t.name).sort();
-const expectedTools = ['warp_get_run', 'warp_list_runs', 'warp_run_cloud', 'warp_run_local'];
+const expectedTools = ['oz_get_run', 'oz_list_runs', 'oz_run_cloud', 'oz_run_local'];
 assert(
   JSON.stringify(tools) === JSON.stringify(expectedTools),
   'languageModelTools', tools.join(','),
 );
 
 const viewContainer = manifest.contributes.viewsContainers?.activitybar?.[0];
-assert(viewContainer?.id === 'warpBridgeSidebar', 'Activity Bar container', viewContainer?.id);
-const view = manifest.contributes.views?.warpBridgeSidebar?.[0];
-assert(view?.id === 'warpBridge.runsView', 'Sidebar view id', view?.id);
+assert(viewContainer?.id === 'ozBridgeSidebar', 'Activity Bar container', viewContainer?.id);
+const view = manifest.contributes.views?.ozBridgeSidebar?.[0];
+assert(view?.id === 'ozBridge.runsView', 'Sidebar view id', view?.id);
 
 const commandIds = (manifest.contributes.commands || []).map((c) => c.command).sort();
 const mustHaveCommands = [
-  'warpBridge.handoff',
-  'warpBridge.tree.copyId',
-  'warpBridge.tree.deleteSchedule',
-  'warpBridge.tree.handoff',
-  'warpBridge.tree.openInBrowser',
-  'warpBridge.tree.pauseSchedule',
-  'warpBridge.tree.refresh',
-  'warpBridge.tree.showRun',
-  'warpBridge.tree.unpauseSchedule',
+  'ozBridge.handoff',
+  'ozBridge.tree.copyId',
+  'ozBridge.tree.deleteSchedule',
+  'ozBridge.tree.handoff',
+  'ozBridge.tree.openInBrowser',
+  'ozBridge.tree.pauseSchedule',
+  'ozBridge.tree.refresh',
+  'ozBridge.tree.showRun',
+  'ozBridge.tree.unpauseSchedule',
 ];
 for (const id of mustHaveCommands) {
   assert(commandIds.includes(id), `declares command ${id}`);
@@ -89,12 +89,12 @@ for (const id of mustHaveCommands) {
 
 const props = manifest.contributes.configuration?.properties || {};
 for (const key of [
-  'warpBridge.ozPath',
-  'warpBridge.defaultModel',
-  'warpBridge.defaultProfile',
-  'warpBridge.defaultEnvironment',
-  'warpBridge.timeoutMs',
-  'warpBridge.maxOutputChars',
+  'ozBridge.ozPath',
+  'ozBridge.defaultModel',
+  'ozBridge.defaultProfile',
+  'ozBridge.defaultEnvironment',
+  'ozBridge.timeoutMs',
+  'ozBridge.maxOutputChars',
 ]) {
   assert(Object.prototype.hasOwnProperty.call(props, key), `configuration ${key}`);
 }
@@ -102,9 +102,9 @@ for (const key of [
 console.log('\n--- Bundle load + activate() ---');
 const bundleSrc = fs.readFileSync(bundlePath, 'utf8');
 assert(bundleSrc.length > 10_000, 'bundle size > 10 KB', `${bundleSrc.length}B`);
-assert(bundleSrc.includes('warp-vsc-bridge.warp'), 'bundle mentions participant id');
-assert(bundleSrc.includes('warpBridge.runsView'), 'bundle mentions sidebar view id');
-assert(bundleSrc.includes('warp_run_local'), 'bundle mentions warp_run_local');
+assert(bundleSrc.includes('ozbridge.oz'), 'bundle mentions participant id');
+assert(bundleSrc.includes('ozBridge.runsView'), 'bundle mentions sidebar view id');
+assert(bundleSrc.includes('oz_run_local'), 'bundle mentions oz_run_local');
 assert(bundleSrc.includes('warp://action/new_tab'), 'bundle embeds Warp URL scheme');
 
 // ---------------------------------------------------------------------------
@@ -263,18 +263,18 @@ try {
   log('  ✗', 'activate(context) throws', err.message);
   process.exit(1);
 }
-assert(registry.participants.some((p) => p.id === 'warp-vsc-bridge.warp'), 'registers @warp participant');
-assert(registry.tools.has('warp_run_local'), 'registers warp_run_local tool');
-assert(registry.tools.has('warp_run_cloud'), 'registers warp_run_cloud tool');
-assert(registry.tools.has('warp_get_run'), 'registers warp_get_run tool');
-assert(registry.tools.has('warp_list_runs'), 'registers warp_list_runs tool');
-assert(registry.treeProviders.has('warpBridge.runsView'), 'registers sidebar tree provider');
+assert(registry.participants.some((p) => p.id === 'ozbridge.oz'), 'registers @oz participant');
+assert(registry.tools.has('oz_run_local'), 'registers oz_run_local tool');
+assert(registry.tools.has('oz_run_cloud'), 'registers oz_run_cloud tool');
+assert(registry.tools.has('oz_get_run'), 'registers oz_get_run tool');
+assert(registry.tools.has('oz_list_runs'), 'registers oz_list_runs tool');
+assert(registry.treeProviders.has('ozBridge.runsView'), 'registers sidebar tree provider');
 assert(registry.statusBarItems.length >= 1, 'creates status bar item', `count=${registry.statusBarItems.length}`);
 for (const id of mustHaveCommands) {
   assert(registry.commands.has(id), `command ${id} is live`);
 }
-assert(registry.commands.has('warpBridge.sidebar.focus'), 'command warpBridge.sidebar.focus is live');
-assert(registry.commands.has('warpBridge.openConversation'), 'command warpBridge.openConversation is live');
+assert(registry.commands.has('ozBridge.sidebar.focus'), 'command ozBridge.sidebar.focus is live');
+assert(registry.commands.has('ozBridge.openConversation'), 'command ozBridge.openConversation is live');
 assert(ctx.subscriptions.length > 10, 'subscriptions registered', `count=${ctx.subscriptions.length}`);
 
 // ---------------------------------------------------------------------------
@@ -285,11 +285,11 @@ console.log('\n--- Functional smoke tests ---');
   // 1) Handoff palette invocation with cancelled input box → must be a no-op
   vscode.window.showInputBox = () => Promise.resolve(undefined);
   const before = registry.externalsOpened.length;
-  await vscode.commands.executeCommand('warpBridge.handoff');
+  await vscode.commands.executeCommand('ozBridge.handoff');
   assert(registry.externalsOpened.length === before, 'palette handoff no-op on cancel');
 
   // 2) Handoff tree invocation with a run node → opens warp:// URI
-  await vscode.commands.executeCommand('warpBridge.tree.handoff', {
+  await vscode.commands.executeCommand('ozBridge.tree.handoff', {
     kind: 'run', id: 'run:r1', label: 'r1', runId: 'r1', status: 'SUCCEEDED', active: false,
   });
   const openedUri = registry.externalsOpened[registry.externalsOpened.length - 1];
@@ -302,7 +302,7 @@ console.log('\n--- Functional smoke tests ---');
   assert(decoded.includes('oz run get'), 'handoff command=oz run get …', decoded.slice(0, 120));
 
   // 3) Tree provider returns the 5 expected categories
-  const provider = registry.treeProviders.get('warpBridge.runsView');
+  const provider = registry.treeProviders.get('ozBridge.runsView');
   const roots = await provider.getChildren();
   const categoryIds = roots.map((n) => n.id).sort();
   const expected = [

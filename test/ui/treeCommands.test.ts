@@ -41,13 +41,13 @@ beforeEach(() => {
 
 describe('tree commands', () => {
   it('exports a stable set of command ids', () => {
-    expect(TREE_COMMANDS.refresh).toBe('warpBridge.tree.refresh');
-    expect(TREE_COMMANDS.copyId).toBe('warpBridge.tree.copyId');
-    expect(TREE_COMMANDS.openInBrowser).toBe('warpBridge.tree.openInBrowser');
-    expect(TREE_COMMANDS.showRun).toBe('warpBridge.tree.showRun');
-    expect(TREE_COMMANDS.pauseSchedule).toBe('warpBridge.tree.pauseSchedule');
-    expect(TREE_COMMANDS.unpauseSchedule).toBe('warpBridge.tree.unpauseSchedule');
-    expect(TREE_COMMANDS.deleteSchedule).toBe('warpBridge.tree.deleteSchedule');
+    expect(TREE_COMMANDS.refresh).toBe('ozBridge.tree.refresh');
+    expect(TREE_COMMANDS.copyId).toBe('ozBridge.tree.copyId');
+    expect(TREE_COMMANDS.openInBrowser).toBe('ozBridge.tree.openInBrowser');
+    expect(TREE_COMMANDS.showRun).toBe('ozBridge.tree.showRun');
+    expect(TREE_COMMANDS.pauseSchedule).toBe('ozBridge.tree.pauseSchedule');
+    expect(TREE_COMMANDS.unpauseSchedule).toBe('ozBridge.tree.unpauseSchedule');
+    expect(TREE_COMMANDS.deleteSchedule).toBe('ozBridge.tree.deleteSchedule');
   });
 
   it('registerTreeCommands registers every TREE_COMMANDS id', () => {

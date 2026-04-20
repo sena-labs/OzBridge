@@ -75,8 +75,8 @@ describe('MCP client registration commands', () => {
     lifecycle = new McpLifecycle(createMockCli(), cfgMgr, '0.7.0-dev');
     for (const d of registerMcpCommands(lifecycle, cfgMgr)) { void d; }
     const cmds = vscodeMock.commands._listCommands();
-    expect(cmds).toContain('warpBridge.mcp.registerClient');
-    expect(cmds).toContain('warpBridge.mcp.unregisterClient');
+    expect(cmds).toContain('ozBridge.mcp.registerClient');
+    expect(cmds).toContain('ozBridge.mcp.unregisterClient');
   });
 
   it('warns instead of registering when the server is not running', async () => {
@@ -84,7 +84,7 @@ describe('MCP client registration commands', () => {
     lifecycle = new McpLifecycle(createMockCli(), cfgMgr, '0.7.0-dev');
     for (const d of registerMcpCommands(lifecycle, cfgMgr)) { void d; }
 
-    await vscodeMock.commands.executeCommand('warpBridge.mcp.registerClient');
+    await vscodeMock.commands.executeCommand('ozBridge.mcp.registerClient');
 
     expect(vscodeMock.window.showWarningMessage).toHaveBeenCalledTimes(1);
     expect(vscodeMock.window.showQuickPick).not.toHaveBeenCalled();
@@ -103,7 +103,7 @@ describe('MCP client registration commands', () => {
       registrar: cursor,
     } as any);
 
-    await vscodeMock.commands.executeCommand('warpBridge.mcp.registerClient');
+    await vscodeMock.commands.executeCommand('ozBridge.mcp.registerClient');
 
     expect(cursor.registered).toBeDefined();
     expect(cursor.registered!.name).toBe(MCP_SERVER_NAME);
@@ -120,7 +120,7 @@ describe('MCP client registration commands', () => {
     await lifecycle.start();
 
     vscodeMock.window.showQuickPick.mockResolvedValueOnce(undefined as any);
-    await vscodeMock.commands.executeCommand('warpBridge.mcp.registerClient');
+    await vscodeMock.commands.executeCommand('ozBridge.mcp.registerClient');
 
     expect(claude.registered).toBeUndefined();
     expect(cursor.registered).toBeUndefined();
@@ -139,7 +139,7 @@ describe('MCP client registration commands', () => {
       registrar: codex,
     } as any);
 
-    await vscodeMock.commands.executeCommand('warpBridge.mcp.unregisterClient');
+    await vscodeMock.commands.executeCommand('ozBridge.mcp.unregisterClient');
     expect(codex.unregisteredName).toBe(MCP_SERVER_NAME);
   });
 
@@ -158,7 +158,7 @@ describe('MCP client registration commands', () => {
       registrar: failingCodex,
     } as any);
 
-    await vscodeMock.commands.executeCommand('warpBridge.mcp.registerClient');
+    await vscodeMock.commands.executeCommand('ozBridge.mcp.registerClient');
 
     expect(vscodeMock.window.showErrorMessage).toHaveBeenCalledTimes(1);
     const arg = vscodeMock.window.showErrorMessage.mock.calls[0][0] as string;

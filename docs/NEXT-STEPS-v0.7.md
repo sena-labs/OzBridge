@@ -23,14 +23,14 @@ Branch: **`feat/v0.7-drive-browser`**
    the view + commands in `src/extension.ts` next to the existing
    run tree wiring.
 4. Extend `package.json`:
-   - new view `warpBridge.driveView` under `warpBridgeSidebar`;
+   - new view `ozBridge.driveView` under `ozBridgeSidebar`;
    - new commands + menu entries (see milestone doc).
 5. Write the four test suites targeting **≥ 25** new tests.
 6. Validate: `npm run compile`, `npm test`, `npm run build`.
 7. Commit, push, open PR → `feat/v0.7-team-drive`. Self-review.
 8. After merge, cut `v0.7.0-alpha.2`.
 **Success criteria**
-- `@warp /drive` / Command Palette → *Warp Drive: Browse* opens the view.
+- `@oz /drive` / Command Palette → *Warp Drive: Browse* opens the view.
 - Right-click *Insert into chat* pre-fills the Copilot Chat editor.
 - No regression on the existing 723 tests.
 ### Step 2 — Deliverable B (Skill & Rules Monaco editor)
@@ -55,7 +55,7 @@ Branch: **`feat/v0.7-skill-editor`**
 ### Step 3 — Deliverable C (`/init` v2 QuickPick)
 Branch: **`feat/v0.7-init-v2`**
 1. Rewrite `src/commands/initCommand.ts` as `initV2Command.ts`.
-   Preserve the legacy `@warp /init all` behaviour with a guard in
+   Preserve the legacy `@oz /init all` behaviour with a guard in
    the new handler.
 2. Extract the skill templates into `src/scaffold/skillTemplates.ts`.
 3. Implement `src/scaffold/skillWriter.ts` with atomic rename.

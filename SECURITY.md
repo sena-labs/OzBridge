@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Warp Bridge follows an **18-month LTS** policy on the latest minor
+OzBridge follows an **18-month LTS** policy on the latest minor
 release and best-effort backports on the previous one.
 
 | Version | Status              | Security fixes  |
@@ -16,7 +16,7 @@ The v1.0 line will become the active LTS upon GA; 0.9.x will move to
 
 ## Reporting a Vulnerability
 
-We take the security of Warp Bridge for VS Code seriously. If you discover a security vulnerability, please report it responsibly.
+We take the security of OzBridge for VS Code seriously. If you discover a security vulnerability, please report it responsibly.
 
 ### How to Report
 
@@ -87,8 +87,8 @@ For incident response we ship an operator escape hatch. Setting
 ```jsonc
 // VS Code settings.json (per-user or per-workspace)
 {
-  "warpBridge.killSwitch.enabled": true,
-  "warpBridge.killSwitch.reason": "Investigating SEC-2026-04-21"
+  "ozBridge.killSwitch.enabled": true,
+  "ozBridge.killSwitch.reason": "Investigating SEC-2026-04-21"
 }
 ```
 

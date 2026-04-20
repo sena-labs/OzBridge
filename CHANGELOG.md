@@ -1,11 +1,54 @@
 # Changelog
 
-All notable changes to **Warp Bridge for VS Code** will be documented in this file.
+All notable changes to **OzBridge for VS Code** will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.1.0] — 2026-04-21
+
+### Changed (BREAKING)
+- **Rebranding: Warp Bridge → OzBridge.** The extension has been
+  renamed end-to-end:
+  - npm/marketplace identifier: `sena-labs.warp-vsc-bridge` →
+    `sena-labs.ozbridge`
+  - Chat participant: `@warp` → `@oz` (all `/run`, `/cloud`, `/status`,
+    `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`
+    sub-commands work the same way under the new mention)
+  - VS Code settings namespace: `warpBridge.*` → `ozBridge.*` (any
+    user-level setting like `warpBridge.ozPath`, `warpBridge.timeoutMs`
+    must be migrated manually — VS Code will silently ignore the old
+    keys)
+  - Activity bar container: `warpBridgeSidebar` → `ozBridgeSidebar`
+  - All command IDs (`warpBridge.tree.refresh`, `warpBridge.mcp.start`,
+    …) renamed under the `ozBridge.` prefix; any custom keybindings or
+    `tasks.json` references must be updated
+  - Language-model tool names: `warp_run_local`, `warp_run_cloud`,
+    `warp_get_run`, `warp_list_runs` → `oz_run_local`, `oz_run_cloud`,
+    `oz_get_run`, `oz_list_runs`
+  - Display name everywhere: "Warp Bridge" → "OzBridge"
+  - VSIX filename: `warp-vsc-bridge-X.Y.Z.vsix` → `ozbridge-X.Y.Z.vsix`
+
+  The upstream Warp product (Warp.dev terminal, Warp Cloud, Warp Oz CLI,
+  Warp Drive) is **not** renamed — only this extension changes. The
+  existing GitHub repo URL (`sena-labs/warp-vsc-bridge`) is retained
+  to preserve issue/PR/commit history.
+
+### Fixed
+- **Duplicate `stderr` block in CLI errors.** When `OzCliError` was
+  thrown with `message = stderr` (the typical non-zero-exit path), the
+  default formatter printed the same payload twice — once under
+  `❌ CLI Error` and again under `**stderr:**`. The formatter now
+  compares the trimmed strings and skips the second block when they
+  match.
+- **Credit detection for `Quota limit reached.`** Warp Cloud emits
+  `Error: Quota limit reached.` on out-of-credits runs, but the
+  classifier only matched `quota exceeded`. Added `quota limit` and
+  `quota reached` to the keyword list so the error is now correctly
+  surfaced as `INSUFFICIENT_CREDITS` with the actionable billing
+  button instead of a generic CLI error.
 
 ## [1.0.1] — 2026-04-21
 
@@ -20,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   actionable “Open Warp billing” button instead of the timeout. The
   `TIMEOUT` message itself was also rewritten to call out
   out-of-credits as the most common cause when the CLI hangs without
-  output. (`@warp /run` regression spotted in v1.0.0 GA.)
+  output. (`@oz /run` regression spotted in v1.0.0 GA.)
 
 ### Added
 - New `OzCliErrorKind.INSUFFICIENT_CREDITS` enum value (re-exported
@@ -30,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 18 unit tests covering the keyword detector, exit-code 402/429
   reclassification, and the end-to-end `agentRun` path.
 - **Idle-timeout fail-fast.** New `OzCliErrorKind.STALLED` kind +
-  `warpBridge.idleTimeoutMs` setting (default `90000` ms, also
+  `ozBridge.idleTimeoutMs` setting (default `90000` ms, also
   overridable per-workspace via `.warp/config.yaml`). When the Oz CLI
   produces no stdout/stderr for the configured window, the process is
   terminated and the error is raised immediately instead of waiting
@@ -85,8 +128,8 @@ green**; **0 production CVEs**. Full deliverable list in
   document outline. Pure-metadata change — zero runtime cost.
 - **Kill-switch + LTS policy (v1.0 deliverable T).** Two new
   `machine-overridable` settings ship the operator escape hatch:
-  `warpBridge.killSwitch.enabled` (boolean, default `false`) and
-  `warpBridge.killSwitch.reason` (string, default `""`). When the
+  `ozBridge.killSwitch.enabled` (boolean, default `false`) and
+  `ozBridge.killSwitch.reason` (string, default `""`). When the
   switch is on, `activate()` short-circuits before any wiring step
   (no commands, tools, MCP server, chat participant or trees are
   registered) and surfaces a single warning notification including
@@ -137,7 +180,7 @@ green**; **0 production CVEs**. Full deliverable list in
   the AppInsights ingestion endpoint via the host's global `fetch`
   (no new runtime dependency). The reporter is **doubly gated**:
   active only when **both** `vscode.env.isTelemetryEnabled === true`
-  **and** the new setting `warpBridge.telemetry.connectionString`
+  **and** the new setting `ozBridge.telemetry.connectionString`
   carries a valid `InstrumentationKey=...;IngestionEndpoint=...`
   string; either gate closed ⇒ noop. A hard-coded deny-list
   (`prompt|content|output|path|workspace|runid|message|stack|email|user|token`)
@@ -209,10 +252,10 @@ Delivers the full v0.9 scope (deliverables K–O) defined in
   fields, icon existence, workflow job graph, secret wiring and README
   copy.
 - **Get-Started walkthrough (`v0.9` deliverable L).** Contributes a
-  four-step `warpBridge.gettingStarted` walkthrough (install Warp CLI,
-  run `@warp`, explore the Warp views, enable the MCP bridge) under
+  four-step `ozBridge.gettingStarted` walkthrough (install Warp CLI,
+  run `@oz`, explore the Warp views, enable the MCP bridge) under
   `media/walkthrough/*.md`. The walkthrough opens automatically on the
-  first activation, gated by the `warpBridge.walkthrough.shown` key in
+  first activation, gated by the `ozBridge.walkthrough.shown` key in
   `context.globalState`; users can re-open it anytime from
   **Help → Get Started**. Titles/descriptions are fully localised via
   `package.nls{,.it,.es}.json`. 12 new tests
@@ -248,7 +291,7 @@ Delivers the full v0.8 scope (deliverables F–J) defined in
 `docs/MILESTONE-v0.8.md`.
 ### Added
 - **Run dataset export (`v0.8` deliverable J, stretch).** New
-  `DatasetExportService` + `warpBridge.exportDataset` command (`Warp:
+  `DatasetExportService` + `ozBridge.exportDataset` command (`Warp:
   Export Run Dataset…`) that serialises terminal runs to **JSON
   Lines** or **RFC 4180 CSV**:
   - Pure helpers `csvQuote` (correct quoting of comma/quote/newline),
@@ -260,7 +303,7 @@ Delivers the full v0.8 scope (deliverables F–J) defined in
     non-preview text document tagged with the right language id.
   - 16 new tests (`test/services/datasetExport.test.ts`).
 - **Failure triage (`v0.8` deliverable I).** New
-  `FailureTriageService` + `warpBridge.triageFailure` command (`Warp:
+  `FailureTriageService` + `ozBridge.triageFailure` command (`Warp:
   Triage Failed Run…`):
   - Pure helpers `extractStackFrames` (Node, Python, generic
     file:line:col), `tailLines` (line-boundary aware), `buildTriagePrompt`,
@@ -275,7 +318,7 @@ Delivers the full v0.8 scope (deliverables F–J) defined in
     actionable bullet list).
   - 21 new tests (`test/services/failureTriage.test.ts`).
 - **Observability dashboard (`v0.8` deliverable H).** New webview panel
-  surfaced via the `warpBridge.dashboard.open` command (`Warp: Open
+  surfaced via the `ozBridge.dashboard.open` command (`Warp: Open
   Dashboard`):
   - Default 14-day window, summary cards (total runs, success rate),
     inline SVG sparkline, and per-day breakdown table.
@@ -370,18 +413,18 @@ for Claude Code, Cursor and Codex.
     categories (Prompts / Rules / Skills), per-category cache that
     drops on `refresh()`, error branches surfaced as message nodes.
   - `src/ui/driveCommands.ts` — four new commands
-    (`warpBridge.drive.refresh`, `.insertIntoChat`, `.copyContent`,
+    (`ozBridge.drive.refresh`, `.insertIntoChat`, `.copyContent`,
     `.openInEditor`). Filesystem entries open via `Uri.file`; CLI
     entries open as untitled markdown documents.
-  - New view container entry `warpBridge.driveView` contributed under
-    the existing `warpBridgeSidebar` Activity Bar container.
+  - New view container entry `ozBridge.driveView` contributed under
+    the existing `ozBridgeSidebar` Activity Bar container.
   - Context-menu entries gated on the `warpDrive(Prompt|Rule|Skill)`
     `viewItem` kinds.
   - **67 backend tests** (drive/ source, factory, filesystem,
     CLI wrapper) plus **15 UI tests** (tree provider + commands).
 - **Built-in skill & rule editor** (`v0.7` deliverable B):
   - `src/ui/skillEditor.ts` with four commands:
-    `warpBridge.skill.edit` (opens any skill / rule in the built-in
+    `ozBridge.skill.edit` (opens any skill / rule in the built-in
     VS Code editor), `.skill.new` (prompts for a name and target —
     Project or Global — then scaffolds `SKILL.md`),
     `.skill.saveGlobal` / `.skill.saveWorkspace` (save the active
@@ -402,7 +445,7 @@ for Claude Code, Cursor and Codex.
     each item as `[new]` or `[exists]`, pre-picks only missing
     templates, and asks for per-file confirmation before overwriting.
     Reports a rich `created / overwritten / skipped / errored` summary
-    in the chat transcript. `@warp /init all` preserves the legacy
+    in the chat transcript. `@oz /init all` preserves the legacy
     bulk behaviour (never overwrites).
   - All writes go through the shared `atomicWrite` helper.
   - 19 new tests in `test/commands/initV2Command.test.ts`.
@@ -410,7 +453,7 @@ for Claude Code, Cursor and Codex.
     removed; router swapped to the v2 factory.
 - **Per-workspace YAML config** (`v0.7` deliverable D) — an optional
   `.warp/warp-bridge.yaml` file committed to the repo overrides the
-  `warpBridge.*` VS Code settings for every contributor. The override is
+  `ozBridge.*` VS Code settings for every contributor. The override is
   reloaded automatically via `vscode.workspace.createFileSystemWatcher`
   on create/change/delete and fires `onConfigChanged` so downstream
   services (MCP lifecycle, status bar, tree view) pick it up without
@@ -443,7 +486,7 @@ for Claude Code, Cursor and Codex.
   - `src/mcp/registrars/codexRegistrar.ts` — minimal line-based TOML
     writer targeting only `[[mcp.servers]]` array-of-tables; every
     other byte of `~/.codex/config.toml` is preserved verbatim.
-  - Two new commands (`warpBridge.mcp.registerClient`,
+  - Two new commands (`ozBridge.mcp.registerClient`,
     `.unregisterClient`) QuickPick among the three registrars and
     call the selected one with an endpoint derived from the running
     MCP server (or the user's configured bind address / port when
@@ -459,7 +502,7 @@ for Claude Code, Cursor and Codex.
 - Requires **VS Code ≥ 1.96.0** (same floor as v0.5 / v0.6).
 - All v0.2.0-era settings, slash commands and Language Model Tools
   remain supported.
-- MCP server is still **opt-in** via `warpBridge.mcpEnabled`; MCP
+- MCP server is still **opt-in** via `ozBridge.mcpEnabled`; MCP
   client auto-registration is a manual command (never runs on
   activation) and is idempotent + reversible.
 - Zero new runtime dependencies; `dist/extension.js` stays within
@@ -478,15 +521,15 @@ tool surface Copilot sees inside VS Code.
   - New module `src/mcp/server.ts` implementing the MCP JSON-RPC 2.0 protocol (protocol versions `2025-03-26` and `2024-11-05`) with `initialize`, `ping`, `tools/list`, `tools/call`. Transport layout: `GET /sse`, `POST /messages?sessionId=<uuid>`, plus `GET /health`. Zero third-party dependencies — uses Node's built-in `http` / `crypto` modules only.
   - New module `src/mcp/tools.ts` exposing 4 tools (`oz_agent_run`, `oz_agent_run_cloud`, `oz_run_get`, `oz_run_list`) with strict JSON input schemas and structured text results. Tool handlers route errors as `{ isError: true }` content blocks per the MCP spec.
   - New lifecycle controller `src/mcp/lifecycle.ts` (`McpLifecycle`) with idempotent `start()` / `stop()`, optional config-driven auto-start, and graceful disposal on `deactivate()`.
-  - Four new commands: `warpBridge.mcp.start`, `warpBridge.mcp.stop`, `warpBridge.mcp.status`, `warpBridge.mcp.copyEndpointUrl`, under the `Warp MCP` Command Palette category.
-  - Four new settings: `warpBridge.mcpEnabled` (opt-in, default `false`), `warpBridge.mcpPort` (default `3847`, `0` = ephemeral), `warpBridge.mcpBindAddress` (default `127.0.0.1` — loopback), `warpBridge.mcpBearerToken` (default empty; when set, every request must carry `Authorization: Bearer <token>`, validated in constant time via `crypto.timingSafeEqual`).
+  - Four new commands: `ozBridge.mcp.start`, `ozBridge.mcp.stop`, `ozBridge.mcp.status`, `ozBridge.mcp.copyEndpointUrl`, under the `Warp MCP` Command Palette category.
+  - Four new settings: `ozBridge.mcpEnabled` (opt-in, default `false`), `ozBridge.mcpPort` (default `3847`, `0` = ephemeral), `ozBridge.mcpBindAddress` (default `127.0.0.1` — loopback), `ozBridge.mcpBearerToken` (default empty; when set, every request must carry `Authorization: Bearer <token>`, validated in constant time via `crypto.timingSafeEqual`).
   - New documentation `docs/MCP.md` covering quick start, endpoints, protocol, tool surface, bearer auth, per-client integration examples (`~/.claude.json`, `~/.cursor/mcp.json`, `~/.codex/config.toml`), raw `curl` cheatsheet, troubleshooting, security posture and known limitations.
   - 34 new unit tests across `test/mcp/{server,tools,lifecycle}.test.ts` covering JSON-RPC dispatch, initialize/version negotiation, `tools/list`, `tools/call` happy and error paths, malformed requests, bearer auth match/mismatch, `/health` response, lifecycle `start`/`stop`/`restart` idempotency, and command-palette wiring.
 ### Changed
 - `package.json` version bumped to `0.6.0`.
 ### Compatibility
 - Requires **VS Code ≥ 1.96.0** (same as v0.5.0).
-- MCP server is **opt-in**; existing users upgrading from v0.5.0 see no behavioural change until they flip `warpBridge.mcpEnabled = true`.
+- MCP server is **opt-in**; existing users upgrading from v0.5.0 see no behavioural change until they flip `ozBridge.mcpEnabled = true`.
 - Zero new runtime dependencies; `dist/extension.js` remains under the 100 KB performance budget.
 ### Metrics
 - 44 test files, **694** unit tests, all green.
@@ -497,25 +540,25 @@ work originally scoped across the v0.3 / v0.4 / v0.5 milestones into a
 single ship.
 ### Added
 #### Agent-Native integration (originally v0.3)
-- Four **Language Model Tools** registered via `vscode.lm.registerTool`, so GitHub Copilot **Agent mode** can invoke Warp Oz directly without typing `@warp`:
-  - `warp_run_local` (`#warpRunLocal`) — runs an Oz agent locally with IDE context injection.
-  - `warp_run_cloud` (`#warpRunCloud`) — launches a cloud Oz agent with a credit-consumption confirmation dialog; polls to terminal state unless `wait: false` is passed.
-  - `warp_get_run` (`#warpGetRun`) — fetches status/output of a run by id (read-only).
-  - `warp_list_runs` (`#warpListRuns`) — lists recent runs with `all` / `active` / `completed` / raw `OzRunStatus` filters and an optional `limit`.
+- Four **Language Model Tools** registered via `vscode.lm.registerTool`, so GitHub Copilot **Agent mode** can invoke Warp Oz directly without typing `@oz`:
+  - `oz_run_local` (`#ozRunLocal`) — runs an Oz agent locally with IDE context injection.
+  - `oz_run_cloud` (`#ozRunCloud`) — launches a cloud Oz agent with a credit-consumption confirmation dialog; polls to terminal state unless `wait: false` is passed.
+  - `oz_get_run` (`#ozGetRun`) — fetches status/output of a run by id (read-only).
+  - `oz_list_runs` (`#ozListRuns`) — lists recent runs with `all` / `active` / `completed` / raw `OzRunStatus` filters and an optional `limit`.
 - Each tool declares a strict JSON `inputSchema`, `modelDescription`, `userDescription`, `tags`, `canBeReferencedInPrompt: true` and `toolReferenceName` under `contributes.languageModelTools` in `package.json`.
-- Graceful fallback in `activate()` when running on a VS Code build that does not expose `vscode.lm.registerTool`: the `@warp` Chat Participant keeps working, only the LM tools are skipped.
+- Graceful fallback in `activate()` when running on a VS Code build that does not expose `vscode.lm.registerTool`: the `@oz` Chat Participant keeps working, only the LM tools are skipped.
 - 39 new unit tests under `test/tools/` covering each tool's `prepareInvocation`, happy paths, missing-input validation, CLI-unavailable fallback, error hints (`NOT_FOUND`, `NOT_AUTHENTICATED`, `TIMEOUT`), polling and filter semantics.
 #### UI Surfaces (originally v0.4)
-- Dedicated **Activity Bar view** `warpBridge.runsView` with five categories (`ActiveRuns`, `History`, `Schedules`, `Environments`, `MCP Servers`). Each category renders live data from the Oz CLI via the new `ActiveRunsTracker` (Active Runs / History) or direct CLI calls (Schedules / Environments / MCP).
-- **Status Bar indicator** `$(cloud) Warp: N active` (right-aligned, priority 100) that colour-codes the active-run count (default / `warningBackground` for 1–2 / `errorBackground` for 3+) and falls back to `$(cloud-outline) Warp: unavailable` when the tracker fires an error. Clicking focuses the Warp Bridge sidebar.
-- Context-menu commands on tree nodes: `warpBridge.tree.refresh`, `.copyId`, `.openInBrowser` (run nodes → `app.warp.dev/agents/<id>`), `.pauseSchedule`, `.unpauseSchedule`, `.deleteSchedule` (with modal confirmation), plus `.showRun` to pre-fill `@warp /status <runId>` in Copilot chat.
+- Dedicated **Activity Bar view** `ozBridge.runsView` with five categories (`ActiveRuns`, `History`, `Schedules`, `Environments`, `MCP Servers`). Each category renders live data from the Oz CLI via the new `ActiveRunsTracker` (Active Runs / History) or direct CLI calls (Schedules / Environments / MCP).
+- **Status Bar indicator** `$(cloud) Warp: N active` (right-aligned, priority 100) that colour-codes the active-run count (default / `warningBackground` for 1–2 / `errorBackground` for 3+) and falls back to `$(cloud-outline) Warp: unavailable` when the tracker fires an error. Clicking focuses the OzBridge sidebar.
+- Context-menu commands on tree nodes: `ozBridge.tree.refresh`, `.copyId`, `.openInBrowser` (run nodes → `app.warp.dev/agents/<id>`), `.pauseSchedule`, `.unpauseSchedule`, `.deleteSchedule` (with modal confirmation), plus `.showRun` to pre-fill `@oz /status <runId>` in Copilot chat.
 - `contributes.viewsContainers`, `contributes.views`, `contributes.commands`, `contributes.menus` entries in `package.json` wiring the sidebar and its context menus.
 - New service `ActiveRunsTracker` (10 s default cadence) with `onDidChange` / `onDidError` events, consumed by both the status bar and the tree provider.
 - 32 new unit tests across `test/services/activeRunsTracker.test.ts` and `test/ui/*` covering the tracker lifecycle (start/stop/dispose/idempotency), status bar rendering & colour thresholds, tree categories and every context-menu command.
 #### Context & Handoff (v0.5)
 - **Prompt-variable expander** (`src/participant/promptExpander.ts`) resolves `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` before the prompt is sent to the Oz CLI. Tokens not recognised are passed through unchanged; CLI failures during resolution are inlined as `_error resolving <token>: <msg>_` so the user's intent is never dropped. Each unique token is resolved at most once per expansion.
 - Integrated `expandPromptVariables` into the `/run` and `/cloud` command handlers. When at least one token is substituted the chat stream emits `_Expanded N prompt variables_` before the run starts.
-- Commands `warpBridge.handoff` (Command Palette) and `warpBridge.tree.handoff` (sidebar context menu on run nodes) open a real Warp terminal via the `warp://action/new_tab?path=…&command=…` URI scheme. POSIX-safe shell quoting for all embedded strings (`"`, `\`, `$`, `` ` ``). Graceful fallback modal with a Copy button when the URL scheme isn't registered on the platform.
+- Commands `ozBridge.handoff` (Command Palette) and `ozBridge.tree.handoff` (sidebar context menu on run nodes) open a real Warp terminal via the `warp://action/new_tab?path=…&command=…` URI scheme. POSIX-safe shell quoting for all embedded strings (`"`, `\`, `$`, `` ` ``). Graceful fallback modal with a Copy button when the URL scheme isn't registered on the platform.
 - 28 new unit tests: `test/ui/handoff.test.ts` (15) and `test/participant/promptExpander.test.ts` (13) covering URI building, shell quoting, the palette/tree command flows, fallback modal, static token resolution, dynamic history/run tokens, empty-list fallback, output truncation, CLI error handling and token deduplication.
 #### Test infrastructure
 - `vscode` mock extended with: `lm`, `MarkdownString`, `LanguageModelTextPart`, `LanguageModelToolResult`, `StatusBarAlignment`, `StatusBarItem`, `ThemeColor`, `ThemeIcon`, `TreeItem`, `TreeItemCollapsibleState`, `window.createStatusBarItem`, `window.registerTreeDataProvider`, `window.createTreeView`, `window.showInputBox`, `env.clipboard`, and a functional `commands.executeCommand` that dispatches to registered handlers.
@@ -524,7 +567,7 @@ single ship.
 - `.github/workflows/publish.yml` publishes the VSIX to both registries on every tag matching `v*.*.*`.
 - `scripts/publish.ps1` and `scripts/publish.sh` cover manual publishing on Windows and Unix shells.
 ### Changed
-- `RunCloudTool` normalises an empty `warpBridge.defaultEnvironment` to `undefined` before calling the CLI, so a misconfigured default cannot yield a bogus `--environment ''` argument.
+- `RunCloudTool` normalises an empty `ozBridge.defaultEnvironment` to `undefined` before calling the CLI, so a misconfigured default cannot yield a bogus `--environment ''` argument.
 - `.vscodeignore` excludes `scripts/**` from VSIX packaging (publishing helpers are not shipped to end-users).
 ### Fixed
 - Tree view `when`-clauses now use `viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/` so generic commands (copy id, open in browser) only appear on the right node kinds.
@@ -553,7 +596,7 @@ single ship.
 
 ### Removed
 
-- **DevForge plugin-system infrastructure** (`src/core/`, `test/core/`): `HierarchicalRouter`, `PluginRegistry`, `AggregatedFollowupProvider`, `/plugins` / `/help` / `/config` core handlers and 10 locale catalogs. None of this code was wired into the live `@warp` Chat Participant and it carried dead-code risk for the release.
+- **DevForge plugin-system infrastructure** (`src/core/`, `test/core/`): `HierarchicalRouter`, `PluginRegistry`, `AggregatedFollowupProvider`, `/plugins` / `/help` / `/config` core handlers and 10 locale catalogs. None of this code was wired into the live `@oz` Chat Participant and it carried dead-code risk for the release.
 - **i18n subsystem** (`I18nService`, `MessageCatalog`, `LocaleBundle` and `src/core/locales/`): the extension is now shipped in English only with hard-coded strings, simplifying maintenance. The toolkit (`copilot-chat-toolkit`) no longer exports i18n symbols or `IPlugin`/`PluginContext` plugin types.
 - `docs/ARCHITECTURE-DEVFORGE.md`, `docs/SPEC-DEVFORGE.md`, `docs/IMPLEMENTATION-PLAN.md`, `docs/BRIEFING-IMPLEMENT-AGENT.md` — stale design documents no longer relevant to the shipped product.
 - Stale VSIX artifacts checked into the working tree (`*.vsix` already in `.gitignore`; release VSIX is now a build artifact, not a commit).
@@ -599,7 +642,7 @@ single ship.
 
 ### Added
 
-- **Chat Participant**: `@warp` Chat Participant for VS Code Copilot Chat, fully registered via the stable `vscode.chat` API
+- **Chat Participant**: `@oz` Chat Participant for VS Code Copilot Chat, fully registered via the stable `vscode.chat` API
 - **Slash Commands**:
   - `/run` — execute a local Warp Oz agent in the current workspace with IDE context injection
   - `/cloud` — start a cloud agent run with interactive credit confirmation and async polling
@@ -607,7 +650,7 @@ single ship.
   - `/schedule` — manage Warp cron jobs (create, list, pause, unpause, delete) with regex validation
   - `/models` — list available AI models in the Oz platform
   - `/mcp` — list configured MCP servers
-  - `/config` — show active Warp Bridge configuration, Oz CLI status, profiles, environments, and integrations
+  - `/config` — show active OzBridge configuration, Oz CLI status, profiles, environments, and integrations
   - `/init` — scaffold `.agents/skills/<skill>/SKILL.md` (7 files) and `.warp/rules/PROJECT.md`
 - **Oz CLI Integration**: `OzCliService` wraps `child_process.spawn` with `--output-format json`, per-command timeout, VS Code `CancellationToken` support, and input sanitization (`sanitizeId()`)
 - **Context Injection**: `ContextCollector` gathers workspace path, active file, selection (capped at 2000 chars), and diagnostics; formats as `[CONTEXT]...[/CONTEXT]` block
@@ -615,7 +658,7 @@ single ship.
 - **Cloud Polling**: `RunPoller` implements exponential backoff (5s → 30s, ×1.5 factor) with 30-minute timeout and `AbortController` integration
 - **JSON Parsing**: 5-level robust parser (`parse<T>`, `parseOrThrow<T>`) handles plain text, direct JSON, multi-line JSON blocks, and single-line JSON extraction
 - **Output Formatting**: `OutputFormatter` renders Markdown with truncation (configurable `maxOutputChars`), action buttons, and error-specific guidance (install, login, syntax)
-- **Configuration**: `ConfigManager` wraps `vscode.workspace.getConfiguration('warpBridge')` with in-memory cache, `onConfigChanged` event, and 8 configurable settings
+- **Configuration**: `ConfigManager` wraps `vscode.workspace.getConfiguration('ozBridge')` with in-memory cache, `onConfigChanged` event, and 8 configurable settings
 - **Contextual Follow-ups**: `FollowupProvider` suggests relevant next commands based on the command just executed
 - **Logging**: Centralized `logger.ts` with `initLogger()`, `logInfo()`, `logWarn()`, `logError()` — all write to `OutputChannel` and developer console
 - **Test Suite**: 256 tests across 17 files (1.5:1 test-to-code ratio), using Vitest with interface-based mocks
@@ -642,7 +685,7 @@ single ship.
 ### Added
 
 - Initial project scaffolding with TypeScript strict mode and esbuild
-- `@warp` Chat Participant registration via `vscode.chat` API
+- `@oz` Chat Participant registration via `vscode.chat` API
 - `/run` slash command for local agent execution
 - `/status`, `/models`, `/mcp`, `/config` read-only commands
 - `OzCliService` wrapping `child_process.spawn` with JSON output parsing

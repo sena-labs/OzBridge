@@ -3,7 +3,7 @@ import { IOzCliService } from '../types/index.js';
 import { errorResult, filterRunsByStatus, StatusFilter, textResult } from './baseTool.js';
 
 /**
- * Input schema for `warp_list_runs`.
+ * Input schema for `oz_list_runs`.
  */
 export interface ListRunsInput {
   status?: StatusFilter;
@@ -17,7 +17,7 @@ export interface ListRunsInput {
  * `completed` (SUCCEEDED + FAILED), plus the raw OzRunStatus values.
  */
 export class ListRunsTool implements vscode.LanguageModelTool<ListRunsInput> {
-  static readonly name = 'warp_list_runs';
+  static readonly name = 'oz_list_runs';
 
   constructor(private readonly cli: IOzCliService) {}
 

@@ -69,7 +69,7 @@ interface MessageNode extends BaseNode {
  * 5. **MCP Servers** — `oz mcp list`.
  *
  * The tree is refreshed whenever the tracker fires `onDidChange`, when the
- * user invokes the `warpBridge.tree.refresh` command, or when a schedule /
+ * user invokes the `ozBridge.tree.refresh` command, or when a schedule /
  * environment mutation happens.
  */
 export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNode>, vscode.Disposable {
@@ -126,7 +126,7 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
         item.tooltip = `Run ${element.runId} — ${element.status}`;
         item.contextValue = element.active ? 'warpRun:active' : 'warpRun:completed';
         item.command = {
-          command: 'warpBridge.tree.showRun',
+          command: 'ozBridge.tree.showRun',
           title: 'Show Run',
           arguments: [element.runId],
         };

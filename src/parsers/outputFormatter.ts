@@ -146,7 +146,7 @@ export class OutputFormatter {
           + '- Warp account out of credits (top up at https://app.warp.dev/settings/billing)\n'
           + '- Network outage or upstream Warp service degradation\n'
           + '- Warp desktop app waiting for an interactive prompt outside VS Code.\n\n'
-          + 'Adjust **Settings → Warp Bridge → Idle Timeout Ms** if your prompts are legitimately long-running with periods of silence.\n',
+          + 'Adjust **Settings → OzBridge → Idle Timeout Ms** if your prompts are legitimately long-running with periods of silence.\n',
         );
         break;
 
@@ -156,7 +156,7 @@ export class OutputFormatter {
           + 'Common causes:\n'
           + '- Warp account out of credits (the CLI may hang waiting for an interactive prompt)\n'
           + '- Slow network or upstream service degradation\n'
-          + '- Prompt is genuinely large — increase the limit in **Settings → Warp Bridge → Timeout**.\n',
+          + '- Prompt is genuinely large — increase the limit in **Settings → OzBridge → Timeout**.\n',
         );
         break;
 
@@ -176,7 +176,9 @@ export class OutputFormatter {
           `❌ **CLI Error** (exit code ${error.exitCode ?? '?'}):\n\n` +
           `\`\`\`\n${error.message}\n\`\`\`\n`,
         );
-        if (error.stderr) {
+        // Avoid printing the same payload twice when OzCliError was
+        // constructed with `message = stderr` (typical non-zero exits).
+        if (error.stderr && error.stderr.trim() !== error.message.trim()) {
           stream.markdown(`\n**stderr:**\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n`);
         }
         break;

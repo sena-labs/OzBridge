@@ -77,7 +77,7 @@ export function errorHint(kind: OzCliErrorKind): string | undefined {
     case OzCliErrorKind.STALLED:
       return 'The Oz CLI produced no output for the idle window. Check Warp credits, network, and whether the Warp desktop app is waiting on an interactive prompt outside VS Code.';
     case OzCliErrorKind.TIMEOUT:
-      return 'Increase `warpBridge.timeoutMs` or `warpBridge.cloudPollingTimeoutMs` in settings. Also check whether the Warp account has credits left — a depleted account can cause the CLI to hang until the timeout fires.';
+      return 'Increase `ozBridge.timeoutMs` or `ozBridge.cloudPollingTimeoutMs` in settings. Also check whether the Warp account has credits left — a depleted account can cause the CLI to hang until the timeout fires.';
     case OzCliErrorKind.CANCELLED:
       return 'The operation was cancelled by the user.';
     case OzCliErrorKind.PARSE_ERROR:

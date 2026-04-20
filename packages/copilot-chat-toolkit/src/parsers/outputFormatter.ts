@@ -153,7 +153,9 @@ export class OutputFormatter {
           `❌ **CLI error** (exit code ${error.exitCode ?? '?'}):\n\n` +
           `\`\`\`\n${error.message}\n\`\`\`\n`,
         );
-        if (error.stderr) {
+        // Avoid printing the same payload twice when OzCliError was
+        // constructed with `message = stderr` (typical non-zero exits).
+        if (error.stderr && error.stderr.trim() !== error.message.trim()) {
           stream.markdown(`\n**stderr:**\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n`);
         }
         break;

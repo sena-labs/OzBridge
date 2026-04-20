@@ -19,7 +19,7 @@ beforeEach(() => {
 
 describe('RunLocalTool.name', () => {
   it('matches the contributes.languageModelTools entry', () => {
-    expect(RunLocalTool.name).toBe('warp_run_local');
+    expect(RunLocalTool.name).toBe('oz_run_local');
   });
 });
 

@@ -119,7 +119,7 @@ export function createCloudCommand(
           const statusMsg = finalResult.status === 'SUCCEEDED'
             ? vscode.l10n.t('✅ Cloud agent completed successfully')
             : vscode.l10n.t('❌ Cloud agent failed');
-          vscode.window.showInformationMessage(vscode.l10n.t('Warp Bridge: {0} ({1})', statusMsg, result.runId));
+          vscode.window.showInformationMessage(vscode.l10n.t('OzBridge: {0} ({1})', statusMsg, result.runId));
         } catch (pollErr) {
           if (pollErr instanceof OzCliError) {
             formatter.formatError(pollErr, stream);
