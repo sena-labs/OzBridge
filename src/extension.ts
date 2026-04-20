@@ -10,6 +10,7 @@ import { StatusBarManager } from './ui/statusBarItem.js';
 import { WarpRunsTreeProvider } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
+import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -27,7 +28,11 @@ const state: {
   configManager?: ConfigManager;
   runPoller?: RunPoller;
   tracker?: ActiveRunsTracker;
+  mcp?: McpLifecycle;
 } = {};
+
+/** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
+const EXTENSION_VERSION = '0.6.0-dev';
 
 export function activate(context: vscode.ExtensionContext): void {
   // Startup log
@@ -87,6 +92,16 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(disposable);
   }
 
+  // MCP server export — opt-in via warpBridge.mcpEnabled.
+  state.mcp = new McpLifecycle(cli, state.configManager, EXTENSION_VERSION);
+  context.subscriptions.push({ dispose: () => { void state.mcp?.dispose(); } });
+  for (const disposable of registerMcpCommands(state.mcp, state.configManager)) {
+    context.subscriptions.push(disposable);
+  }
+  if (state.configManager.getConfig().mcpEnabled) {
+    void state.mcp.start();
+  }
+
   // Comando aggiuntivo: focus sulla sidebar — usato dal click sulla Status Bar.
   context.subscriptions.push(
     vscode.commands.registerCommand(StatusBarManager.FOCUS_COMMAND, () =>
@@ -98,6 +113,14 @@ export function activate(context: vscode.ExtensionContext): void {
   // quindi i cambi si applicano automaticamente alla prossima invocazione.
   state.configManager.onConfigChanged((newConfig) => {
     logInfo(`Configuration changed: model=${newConfig.defaultModel}, timeout=${newConfig.timeoutMs}`);
+    // React to mcp-specific toggles without requiring an extension reload.
+    if (state.mcp) {
+      if (newConfig.mcpEnabled && !state.mcp.running) {
+        void state.mcp.start();
+      } else if (!newConfig.mcpEnabled && state.mcp.running) {
+        void state.mcp.stop();
+      }
+    }
   });
 
   logInfo('Extension activated');
@@ -130,9 +153,12 @@ export function activate(context: vscode.ExtensionContext): void {
  * `disposeAll()` is idempotent, so calling it here (in addition to
  * `context.subscriptions`) is safe.
  */
-export function deactivate(): void {
+export function deactivate(): Promise<void> | void {
   // RunPoller è ora disposto anche via context.subscriptions,
   // ma disposeAll() è idempotente — sicuro chiamare in entrambi i punti.
   state.runPoller?.disposeAll();
   state.tracker?.dispose();
+  // The MCP server owns an open socket; await its disposal so the host can
+  // exit cleanly on reload/uninstall.
+  return state.mcp?.dispose();
 }

@@ -6,7 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-_No changes yet._
+### Added
+- **MCP server export** (opt-in) — Warp Bridge can now expose its Oz CLI integration as a **Model Context Protocol** server over HTTP+SSE, so third-party MCP clients (Claude Code, Cursor, Codex…) can drive Oz through the same tool surface Copilot sees inside VS Code.
+  - New module `src/mcp/server.ts` implementing the MCP JSON-RPC 2.0 protocol (protocol versions `2025-03-26` and `2024-11-05`) with `initialize`, `ping`, `tools/list`, `tools/call`. Transport layout: `GET /sse`, `POST /messages?sessionId=<uuid>`, plus `GET /health`. Zero third-party dependencies — uses Node's built-in `http` / `crypto` modules only.
+  - New module `src/mcp/tools.ts` exposing 4 tools (`oz_agent_run`, `oz_agent_run_cloud`, `oz_run_get`, `oz_run_list`) with strict JSON input schemas and structured text results. Tool handlers route errors as `{ isError: true }` content blocks per the MCP spec.
+  - New lifecycle controller `src/mcp/lifecycle.ts` (`McpLifecycle`) with idempotent `start()` / `stop()`, optional config-driven auto-start, and graceful disposal on `deactivate()`.
+  - Four new commands: `warpBridge.mcp.start`, `warpBridge.mcp.stop`, `warpBridge.mcp.status`, `warpBridge.mcp.copyEndpointUrl`, under the `Warp MCP` Command Palette category.
+  - Four new settings: `warpBridge.mcpEnabled` (opt-in, default `false`), `warpBridge.mcpPort` (default `3847`, `0` = ephemeral), `warpBridge.mcpBindAddress` (default `127.0.0.1` — loopback), `warpBridge.mcpBearerToken` (default empty; when set, every request must carry `Authorization: Bearer <token>`, validated in constant time via `crypto.timingSafeEqual`).
+  - New documentation `docs/MCP.md` covering quick start, endpoints, protocol, tool surface, bearer auth, per-client integration examples (`~/.claude.json`, `~/.cursor/mcp.json`, `~/.codex/config.toml`), raw `curl` cheatsheet, troubleshooting, security posture and known limitations.
+  - 34 new unit tests across `test/mcp/{server,tools,lifecycle}.test.ts` covering JSON-RPC dispatch, initialize/version negotiation, `tools/list`, `tools/call` happy and error paths, malformed requests, bearer auth match/mismatch, `/health` response, lifecycle `start`/`stop`/`restart` idempotency, and command-palette wiring.
+### Changed
+- `package.json` version bumped to `0.6.0-dev` for the in-progress MCP milestone.
 ## [0.5.0] — 2026-04-20
 First public release cycle under the `sena-labs` publisher. Combines the
 work originally scoped across the v0.3 / v0.4 / v0.5 milestones into a

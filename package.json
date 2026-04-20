@@ -2,7 +2,7 @@
   "name": "warp-vsc-bridge",
   "displayName": "Warp Bridge",
   "description": "Run Warp Oz agents from VS Code Copilot Chat",
-  "version": "0.5.0",
+  "version": "0.6.0-dev",
   "publisher": "sena-labs",
   "license": "MIT",
   "workspaces": ["packages/*"],
@@ -258,6 +258,30 @@
         "title": "Warp: Hand off run to Warp terminal",
         "category": "Warp",
         "icon": "$(terminal)"
+      },
+      {
+        "command": "warpBridge.mcp.start",
+        "title": "Warp: Start MCP server",
+        "category": "Warp MCP",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "warpBridge.mcp.stop",
+        "title": "Warp: Stop MCP server",
+        "category": "Warp MCP",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "warpBridge.mcp.status",
+        "title": "Warp: Show MCP server status",
+        "category": "Warp MCP",
+        "icon": "$(info)"
+      },
+      {
+        "command": "warpBridge.mcp.copyEndpointUrl",
+        "title": "Warp: Copy MCP endpoint URL",
+        "category": "Warp MCP",
+        "icon": "$(copy)"
       }
     ],
     "menus": {
@@ -343,6 +367,27 @@
           "type": "number",
           "default": 15000,
           "description": "Max characters shown in chat before truncation"
+        },
+        "warpBridge.mcpEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Start an embedded MCP server at activation so Claude Code, Cursor and Codex can drive Oz."
+        },
+        "warpBridge.mcpPort": {
+          "type": "number",
+          "default": 3847,
+          "description": "TCP port the MCP server listens on when enabled."
+        },
+        "warpBridge.mcpBindAddress": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Network interface the MCP server binds to. Keep 127.0.0.1 unless you explicitly want to expose it."
+        },
+        "warpBridge.mcpBearerToken": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional bearer token required on every MCP request. Empty string disables auth. Set via **Settings** or `settings.json`.",
+          "scope": "machine-overridable"
         }
       }
     }
