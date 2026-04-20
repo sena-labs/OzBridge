@@ -5,6 +5,34 @@ All notable changes to **Warp Bridge for VS Code** will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- **Warp Drive — Oz CLI source wired (`v0.7.1` RF-5).** The
+  `WarpDriveTreeProvider` now consumes a `CompositeDriveSource` that
+  prefers the Oz CLI and transparently falls back to the existing
+  filesystem source when the binary lacks the `drive` subcommand. No
+  user-visible change until the CLI ships the endpoints — the fallback
+  path is identical to v0.7.0 production behaviour.
+  - New `OzCliService.driveList(category)` and `driveGet(id)` methods
+    (sanitised id, JSON parsing, raw markdown body).
+  - New module `src/drive/ozCliDriveRunner.ts` — thin adapter
+    implementing `CliDriveRunner` over `IOzCliService`. Errors propagate
+    unchanged so `CliDriveSource.isNotAvailableError` can convert
+    "unknown command" stderr into the graceful filesystem fallback.
+- **MCP HTTP+SSE end-to-end smoke** (`test/mcp/integration.test.ts`):
+  3 new tests walking the full client handshake (open `/sse` →
+  consume the `endpoint` frame → POST a `tools/call` JSON-RPC
+  request → assert the SSE `message` frame carries the response),
+  plus rejection of unknown sessionId and malformed JSON body.
+### Changed
+- `IOzCliService` extended with `driveList` / `driveGet`. All test
+  helpers (`createMockCli()`) updated accordingly.
+### Metrics
+- 58 test files, **868** unit tests, all green.
+- `dist/extension.js` bundled at **86.22 KB** (esbuild, minified,
+  `vscode` external) — within the 90 KB performance budget.
+- VSIX packaged at **60.08 KB**.
+
 ## [0.7.0] — 2026-04-20
 Third public release under the `sena-labs` publisher. Ships the
 **Team & Drive** milestone: a navigable Warp Drive sidebar, a built-in
