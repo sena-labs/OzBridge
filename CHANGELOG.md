@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Security gates (v1.0 deliverable Q).** New CI workflows
+  `.github/workflows/codeql.yml` (CodeQL `security-extended` +
+  `security-and-quality` query suites for JavaScript/TypeScript, weekly
+  Monday cron, results published to the Security tab) and
+  `.github/workflows/security.yml` (two jobs: `npm audit
+  --omit=dev --audit-level=high` blocks PRs on high/critical CVEs in
+  the production closure; `gitleaks` scans full git history for
+  committed credentials). New `.github/dependabot.yml` watches root
+  npm, the `packages/copilot-chat-toolkit` workspace and GitHub
+  Actions on a weekly cadence with grouped updates and reviewer
+  auto-assignment. `SECURITY.md` rewritten with the v0.9 LTS support
+  matrix, a documented opt-out path linking to `PRIVACY.md`, and a
+  dedicated "Automated Security Gates" section enumerating the new
+  CI invariants. 15 new tests in `test/securityGates.test.ts` parse
+  the actual workflow / dependabot YAMLs and `SECURITY.md` to assert
+  the gates remain wired (CodeQL languages + suites + permissions,
+  npm-audit flags, gitleaks job + full-history checkout, weekly
+  cadence on every ecosystem, supported-versions table refresh).
 - **Telemetry opt-in pipeline (v1.0 deliverable P).** New
   `src/services/telemetry.ts` ships an `ITelemetryReporter` contract
   with two implementations: a default `NoopReporter` (zero network

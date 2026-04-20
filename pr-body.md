@@ -1,3 +1,79 @@
+# feat(security): supply-chain gates (v1.0 deliverable Q)
+
+## What
+
+Ships **deliverable Q** of the v1.0 milestone — automated security
+gates on every PR and every push to `main`.
+
+- **`.github/workflows/codeql.yml`** — GitHub CodeQL on the
+  `javascript-typescript` language pack with both `security-extended`
+  and `security-and-quality` query suites. Findings publish to the
+  repository's Security tab and block PRs at `error` severity. Weekly
+  Monday 06:00 UTC cron picks up CVEs that land between releases.
+  Permissions narrowed to `actions: read`, `contents: read`,
+  `security-events: write`.
+- **`.github/workflows/security.yml`** — two parallel jobs:
+  - `audit`: `npm audit --omit=dev --audit-level=high` fails the PR on
+    any high/critical advisory in the **production** dependency
+    closure. Dev dependencies are excluded because they don't ship in
+    the VSIX.
+  - `secret-scan`: `gitleaks/gitleaks-action@v2` against the full git
+    history (`fetch-depth: 0`) catches accidentally committed
+    credentials before they reach `main`.
+  - Weekly Monday 07:00 UTC cron + `concurrency` group prevent
+    duplicate runs on rebased PRs.
+- **`.github/dependabot.yml`** — schema v2 watching three ecosystems
+  on a weekly Monday cadence (Europe/Rome timezone):
+  - `npm` (root) with grouped updates for the TypeScript toolchain,
+    Vitest, and `@vscode/*`. `@types/vscode` major bumps ignored.
+  - `npm` (`packages/copilot-chat-toolkit` workspace).
+  - `github-actions` with grouped `actions/*` + `github/codeql-action`
+    bumps.
+  - PR caps at 5/3/3, reviewer auto-assignment to
+    `sena-labs/maintainers`, Conventional Commits prefixes
+    (`chore(deps)`, `chore(toolkit-deps)`, `chore(actions)`).
+- **`SECURITY.md`** rewrite:
+  - Refreshed support matrix: `0.9.x` active LTS, `0.8.x` critical
+    only, `≤ 0.7.x` EOL. v1.0 line will become active LTS at GA.
+  - New "Automated Security Gates (v1.0 deliverable Q)" section
+    enumerating each CI invariant.
+  - Telemetry opt-out documented and linked to `PRIVACY.md`.
+- **`test/securityGates.test.ts`** — 15 structural assertions parsing
+  the actual workflow + dependabot YAMLs and `SECURITY.md`. Guards
+  against drift: presence of CodeQL language + query suites + write
+  permission, `npm audit` flags + `gitleaks` job + full-history
+  checkout + weekly cron, dependabot v2 schema with all three
+  ecosystems on a weekly cadence, refreshed supported-versions table.
+
+## Verification
+
+```
+npm run compile     # → 0 TypeScript errors
+npm test -- --run   # → 1069/1069 green (75 files; 15 new gate tests)
+npm run build       # → dist/extension.js = 105,347 B (102.88 KB)
+                    #   unchanged: deliverable Q is CI-only, no
+                    #   runtime code path.
+```
+
+The two new workflows and the dependabot config will activate on the
+next push to `main` (this PR's merge). Findings, CVE alerts and
+weekly Dependabot PRs will flow into the Security and Pull Requests
+tabs from then on.
+
+## Next
+
+- **Deliverable R (v1.0):** activation perf budgets enforced in CI
+  (`activate < 200 ms` on a perf-bench harness). Will likely add a
+  third job to `ci.yml` and a vitest perf suite.
+- **Deliverable S (v1.0):** WCAG 2.1 AA pass on tree views, status
+  bar, walkthrough.
+- **Deliverable T (v1.0):** kill-switch setting + 18-month LTS
+  policy formalisation (the support matrix in `SECURITY.md` is the
+  first half).
+- **v1.0.0 release ceremony:** bump → CHANGELOG promote → release
+  notes → tag `v1.0.0` → `release/v1.0.x` branch → ship to
+  Marketplace + Open VSX (pending external blockers in
+  `docs/NEXT-STEPS-v1.0.md`).
 # feat(telemetry): opt-in reporter (v1.0 deliverable P)
 
 ## What
