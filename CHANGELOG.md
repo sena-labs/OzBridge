@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.1] — 2026-04-20
+Hardening release on top of v0.7.0. Wires the Warp Drive sidebar to the
+Oz CLI behind a graceful filesystem fallback and adds the first MCP
+HTTP+SSE end-to-end smoke tests.
 ### Added
 - **Warp Drive — Oz CLI source wired (`v0.7.1` RF-5).** The
   `WarpDriveTreeProvider` now consumes a `CompositeDriveSource` that
