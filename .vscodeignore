@@ -29,5 +29,9 @@ node_modules/**
 # Source maps (exclude after !dist re-include)
 dist/**/*.map
 
+# VSIX artifacts (avoid recursive packaging)
+dist/**/*.vsix
+*.vsix
+
 # Publishing scripts (not needed by end-users)
 scripts/**
