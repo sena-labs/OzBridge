@@ -125,7 +125,7 @@ for Claude Code, Cursor and Codex.
 - Zero new runtime dependencies; `dist/extension.js` stays within
   the v0.7 bundle budget.
 ### Metrics
-- 57 test files, **857** unit tests, all green.
+- 57 test files, **860** unit tests, all green.
 - `dist/extension.js` bundled at **≈ 85 KB** (esbuild, minified,
   `vscode` external; v0.7 budget: 90 KB).
 ## [0.6.0] — 2026-04-20

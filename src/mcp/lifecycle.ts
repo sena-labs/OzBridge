@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { IConfigManager, IOzCliService, WarpBridgeConfig } from '../types/index.js';
-import { McpServer, McpServerOptions } from './server.js';
+import { McpServer } from './server.js';
 import { buildToolRegistry } from './tools.js';
-import { logError, logInfo } from '../services/logger.js';
+import { logError, logInfo, logWarn } from '../services/logger.js';
 import { IMcpClientRegistrar, McpClientEndpoint } from './clientRegistration.js';
 import { ClaudeCodeRegistrar } from './registrars/claudeCodeRegistrar.js';
 import { CursorRegistrar } from './registrars/cursorRegistrar.js';
@@ -74,24 +74,47 @@ export class McpLifecycle implements vscode.Disposable {
     if (this.disposed) { return; }
     await this.stop();
     const cfg = readMcpConfig(this.cfgMgr.getConfig() as unknown as WarpBridgeConfig);
-    this.current = cfg;
+    this.current = { ...cfg };
 
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
-    const options: McpServerOptions = {
-      port: cfg.port,
-      bindAddress: cfg.bindAddress,
-      bearerToken: cfg.bearerToken || undefined,
-    };
-    this.server = new McpServer(
-      registry,
-      { name: 'warp-vsc-bridge', version: this.extensionVersion },
-      options,
-    );
+    const serverInfo = { name: 'warp-vsc-bridge', version: this.extensionVersion };
+
     try {
-      await this.server.start();
+      const server = new McpServer(registry, serverInfo, {
+        port: cfg.port,
+        bindAddress: cfg.bindAddress,
+        bearerToken: cfg.bearerToken || undefined,
+      });
+      await server.start();
+      this.server = server;
       const ep = this.server.endpoint;
       logInfo(`MCP server listening on http://${ep?.address}:${ep?.port}/sse (${registry.size} tools)`);
+      return;
     } catch (err) {
+      if (isPortInUseError(err) && cfg.port !== 0) {
+        logWarn(`MCP port ${cfg.port} is busy; retrying on an ephemeral port.`);
+        try {
+          const fallbackServer = new McpServer(registry, serverInfo, {
+            port: 0,
+            bindAddress: cfg.bindAddress,
+            bearerToken: cfg.bearerToken || undefined,
+          });
+          await fallbackServer.start();
+          this.server = fallbackServer;
+          const ep = this.server.endpoint;
+          if (ep?.port && this.current) {
+            this.current.port = ep.port;
+          }
+          logInfo(`MCP server listening on fallback endpoint http://${ep?.address}:${ep?.port}/sse (${registry.size} tools)`);
+          return;
+        } catch (fallbackErr) {
+          const msg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+          logError(`MCP server fallback start failed: ${msg}`);
+          this.server = undefined;
+          return;
+        }
+      }
+
       const msg = err instanceof Error ? err.message : String(err);
       logError(`MCP server failed to start: ${msg}`);
       this.server = undefined;
@@ -117,6 +140,11 @@ export class McpLifecycle implements vscode.Disposable {
     this.disposed = true;
     await this.stop();
   }
+}
+
+function isPortInUseError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') { return false; }
+  return (err as { code?: unknown }).code === 'EADDRINUSE';
 }
 
 /**

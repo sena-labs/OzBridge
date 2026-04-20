@@ -185,6 +185,19 @@ describe('OzCliService exec() — coverage gaps', () => {
   // Lines 260-261 + 287-292: Cancellation → killed=true → CANCELLED on close
   // =========================================================================
   describe('cancellation handling', () => {
+    it('dovrebbe short-circuitare se il token è già cancellato prima dello spawn', async () => {
+      const token = {
+        isCancellationRequested: true,
+        onCancellationRequested: vi.fn(() => ({ dispose: vi.fn() })),
+      };
+
+      await expect(cli.agentRun({ prompt: 'already-cancelled', cancellation: token as any }))
+        .rejects.toMatchObject({ kind: OzCliErrorKind.CANCELLED });
+
+      expect(mockSpawn).not.toHaveBeenCalled();
+      expect(token.onCancellationRequested).not.toHaveBeenCalled();
+    });
+
     it('dovrebbe rigettare con CANCELLED quando il token viene cancellato', async () => {
       const proc = createControllableProcess();
 

@@ -78,7 +78,7 @@ describe('McpLifecycle', () => {
     expect(lifecycle.endpoint).toBeUndefined();
   });
 
-  it('start failure (port busy) does not leave the instance half-initialised', async () => {
+  it('falls back to an ephemeral port when configured port is busy', async () => {
     const cfgMgr = createMockConfigManager({ mcpPort: 0 } as any);
     const first = new McpLifecycle(createMockCli(), cfgMgr, '0.6.0-dev');
     await first.start();
@@ -88,8 +88,10 @@ describe('McpLifecycle', () => {
       const busyCfgMgr = createMockConfigManager({ mcpPort: port, mcpBindAddress: '127.0.0.1' } as any);
       lifecycle = new McpLifecycle(createMockCli(), busyCfgMgr, '0.6.0-dev');
       await lifecycle.start();
-      // Bind should have failed; lifecycle must report not running.
-      expect(lifecycle.running).toBe(false);
+      expect(lifecycle.running).toBe(true);
+      expect(lifecycle.endpoint?.port).toBeGreaterThan(0);
+      expect(lifecycle.endpoint?.port).not.toBe(port);
+      expect(lifecycle.config?.port).toBe(lifecycle.endpoint?.port);
     } finally {
       await first.dispose();
     }

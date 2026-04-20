@@ -244,6 +244,11 @@ export class OzCliService implements IOzCliService {
     cancellation?: vscode.CancellationToken,
   ): Promise<ExecResult> {
     return new Promise((resolve, reject) => {
+      if (cancellation?.isCancellationRequested) {
+        reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
+        return;
+      }
+
       const startTime = Date.now();
 
       // Determina il path dell'eseguibile
@@ -274,6 +279,26 @@ export class OzCliService implements IOzCliService {
       let stderr = '';
       let killed = false;
       let settled = false;
+      let forceKillHandle: NodeJS.Timeout | undefined;
+
+      const terminateProcess = () => {
+        killed = true;
+        try { proc.kill('SIGTERM'); } catch { /* ignore */ }
+
+        // If the process ignores SIGTERM, force kill after a short grace period.
+        forceKillHandle = setTimeout(() => {
+          if (settled) { return; }
+          try { proc.kill('SIGKILL'); } catch { /* ignore */ }
+        }, 1_500);
+      };
+
+      const cleanup = () => {
+        clearTimeout(timeoutHandle);
+        if (forceKillHandle) {
+          clearTimeout(forceKillHandle);
+        }
+        cancelListener?.dispose();
+      };
 
       proc.stdout?.on('data', (chunk: Buffer) => {
         stdout += chunk.toString();
@@ -285,19 +310,16 @@ export class OzCliService implements IOzCliService {
 
       // Timeout
       const timeoutHandle = setTimeout(() => {
-        killed = true;
-        proc.kill('SIGTERM');
+        terminateProcess();
       }, this.config.timeoutMs);
 
       // CancellationToken
       const cancelListener = cancellation?.onCancellationRequested(() => {
-        killed = true;
-        proc.kill('SIGTERM');
+        terminateProcess();
       });
 
       proc.on('error', (err) => {
-        clearTimeout(timeoutHandle);
-        cancelListener?.dispose();
+        cleanup();
         if (settled) { return; }
         settled = true;
 
@@ -309,8 +331,7 @@ export class OzCliService implements IOzCliService {
       });
 
       proc.on('close', (code) => {
-        clearTimeout(timeoutHandle);
-        cancelListener?.dispose();
+        cleanup();
         if (settled) { return; }
         settled = true;
 

@@ -64,7 +64,7 @@ export class FileSystemDriveSource implements IWarpDriveSource {
     this.rulesDir = opts.rulesDir ?? path.join(home, '.agents', 'rules');
     this.skillsDir = opts.skillsDir ?? path.join(home, '.agents', 'skills');
     this.allowedRoots = [this.promptsDir, this.rulesDir, this.skillsDir].map(
-      (p) => path.resolve(p),
+      toCanonicalRoot,
     );
   }
 
@@ -95,15 +95,28 @@ export class FileSystemDriveSource implements IWarpDriveSource {
       throw new Error('FileSystemDriveSource.read: empty id');
     }
     const resolved = path.resolve(trimmed);
-    // Security: refuse reads outside the directories this source
-    // governs. Prevents a compromised tree node from asking the
-    // extension to leak arbitrary files.
-    const allowed = this.allowedRoots.some((root) => isInside(resolved, root));
-    if (!allowed) {
+    const allowedByResolvedPath = this.allowedRoots.some((root) => isInside(resolved, root));
+    if (!allowedByResolvedPath) {
       throw new Error(`FileSystemDriveSource.read: path outside allowed roots: ${resolved}`);
     }
+
+    let canonicalResolved: string;
     try {
-      return fs.readFileSync(resolved, 'utf8');
+      canonicalResolved = fs.realpathSync(resolved);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw new Error(`FileSystemDriveSource.read: ${msg}`);
+    }
+
+    // Security: refuse reads outside the directories this source
+    // governs. Prevents a compromised tree node from asking the
+    // extension to leak arbitrary files, including symlink escapes.
+    const allowed = this.allowedRoots.some((root) => isInside(canonicalResolved, root));
+    if (!allowed) {
+      throw new Error(`FileSystemDriveSource.read: path outside allowed roots: ${canonicalResolved}`);
+    }
+    try {
+      return fs.readFileSync(canonicalResolved, 'utf8');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       throw new Error(`FileSystemDriveSource.read: ${msg}`);
@@ -300,6 +313,15 @@ function splitTags(raw: unknown): string[] | undefined {
   if (typeof raw !== 'string') { return undefined; }
   const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
   return parts.length > 0 ? parts : undefined;
+}
+
+function toCanonicalRoot(p: string): string {
+  const resolved = path.resolve(p);
+  try {
+    return fs.realpathSync(resolved);
+  } catch {
+    return resolved;
+  }
 }
 
 function isInside(target: string, root: string): boolean {
