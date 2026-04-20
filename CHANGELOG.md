@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.0] — 2026-04-20
+"GA" milestone. Promotes deliverables **P · Q · R · S · T** to the
+v1.0.0 stable line: opt-in telemetry pipeline (doubly gated by
+`vscode.env.isTelemetryEnabled` AND a configured connection string,
+with a hard-coded deny-list that makes prompt content / run IDs /
+output / paths / workspace paths untransmittable), supply-chain
+security gates (CodeQL `security-extended`, npm audit blocking on
+high/critical, full-history gitleaks, Dependabot on three ecosystems),
+activation performance budget enforced in CI (p50 ≤ 800 ms, p95 ≤
+1500 ms in the harness — ~5× faster on a real editor), WCAG 2.1 AA
+accessibility pass on every UI surface (tree views + status bar +
+walkthrough images, locked in by an invariant test), and an operator
+kill-switch + formal 18-month LTS policy with `release/v<major>.<minor>.x`
+maintenance branches. Bundle 104.46 KB / 125 KB; **1089 / 1089 tests
+green**; **0 production CVEs**. Full deliverable list in
+`docs/MILESTONE-v1.0.md`; release notes in
+`docs/RELEASE-NOTES-v1.0.0.md`.
+
 ### Added
 - **WCAG 2.1 AA accessibility pass (v1.0 deliverable S).** Every
   `TreeItem` produced by `WarpRunsTreeProvider` and

@@ -1,3 +1,71 @@
+# chore(release): v1.0.0 — GA
+
+Promotes deliverables **P · Q · R · S · T** to the **v1.0.0 GA** stable
+line. Closes the v0.3 → v1.0 competitive roadmap drafted six months
+ago: every deliverable from A through T has shipped.
+
+## What
+
+- Bumped `package.json` and `EXTENSION_VERSION` to `1.0.0`.
+- Promoted `[Unreleased]` to `## [1.0.0] — 2026-04-20` in
+  `CHANGELOG.md` with a milestone summary.
+- Authored `docs/RELEASE-NOTES-v1.0.0.md` covering all 5
+  deliverables (P/Q/R/S/T), footprint table (1089 tests, 104.46 KB
+  bundle, 0 prod CVEs), settings added since 0.9, install snippets
+  (Marketplace / Open VSX / VSIX from GitHub Release), known issues
+  (VSCE_PAT + OVSX_PAT pending, AppInsights connector pending), LTS
+  commitment table, and outlook (post-1.0 work continues in `main`).
+- Refreshed lockfile.
+
+## Pre-release audit
+
+Multidisciplinary audit performed against `release/v1.0.0` HEAD:
+
+| Axis | Status |
+|---|---|
+| `tsc --noEmit` | ✅ clean |
+| `npm test -- --run` | ✅ **1089 / 1089** (78 files) |
+| `npm run build` (esbuild) | ✅ **104.46 KB / 125 KB** budget |
+| `npm audit --omit=dev` | ✅ **0 vulnerabilities** (all severities) |
+| Production runtime deps | ✅ 3 (unchanged from v0.9) |
+| CI workflows present | ✅ ci, publish, codeql, security, perf, bundle-budget |
+| Dependabot | ✅ root npm + workspace + actions, weekly |
+| Required docs | ✅ SECURITY, PRIVACY, LICENSE, CHANGELOG, CONTRIBUTING, README, PUBLISHING |
+| Walkthrough | ✅ 4 steps (install-cli, first-agent, explore-views, enable-mcp) |
+| Localization | ✅ en (`bundle.l10n.json`), it, es |
+| Commands registered | ✅ 26 |
+| VS Code engine | ✅ `^1.96.0` |
+| Publisher | ✅ `sena-labs` |
+
+## v1.0 milestone — final state
+
+| ID | Deliverable | PR | Status |
+|----|-------------|----|--------|
+| P  | Telemetry opt-in (App Insights) | #26 | ✅ |
+| Q  | Security gates (CodeQL + audit + gitleaks + Dependabot) | #27 | ✅ |
+| R  | Activation perf CI budget | #33 | ✅ |
+| T  | Kill-switch + LTS policy | #34 | ✅ |
+| S  | WCAG 2.1 AA accessibility pass | #35 | ✅ |
+
+## Next steps after merge
+
+1. `git tag v1.0.0 -m "v1.0.0 — GA"` and `git push --tags` (triggers
+   `.github/workflows/publish.yml`).
+2. Cut maintenance branch: `git checkout -b release/v1.0.x v1.0.0;
+   git push -u origin release/v1.0.x`.
+3. Marketplace + Open VSX publication: blocked on operational secrets
+   (`VSCE_PAT`, `OVSX_PAT`) — see `docs/RELEASE-NOTES-v1.0.0.md`
+   "Known issues". The publish workflow soft-fails so the GitHub
+   Release VSIX always lands.
+
+## Verification
+
+- `npm run compile` ✅
+- `npm test -- --run` → **1089 / 1089 green**
+- `npm run build` → **104.46 KB / 125 KB**
+- `npm audit --omit=dev` → **0 vulnerabilities**
+
+End of v1.0 roadmap. 🎯
 # feat(a11y): WCAG 2.1 AA pass (v1.0 deliverable S)
 
 ## What
