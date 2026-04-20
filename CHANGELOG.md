@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+_No changes yet._
+## [0.6.0] — 2026-04-20
+Second public release under the `sena-labs` publisher. Ships the
+**MCP Server Export** milestone: any Model Context Protocol client
+(Claude Code, Cursor, Codex…) can now drive Warp Oz through the same
+tool surface Copilot sees inside VS Code.
 ### Added
-- **MCP server export** (opt-in) — Warp Bridge can now expose its Oz CLI integration as a **Model Context Protocol** server over HTTP+SSE, so third-party MCP clients (Claude Code, Cursor, Codex…) can drive Oz through the same tool surface Copilot sees inside VS Code.
+- **MCP server export** (opt-in):
   - New module `src/mcp/server.ts` implementing the MCP JSON-RPC 2.0 protocol (protocol versions `2025-03-26` and `2024-11-05`) with `initialize`, `ping`, `tools/list`, `tools/call`. Transport layout: `GET /sse`, `POST /messages?sessionId=<uuid>`, plus `GET /health`. Zero third-party dependencies — uses Node's built-in `http` / `crypto` modules only.
   - New module `src/mcp/tools.ts` exposing 4 tools (`oz_agent_run`, `oz_agent_run_cloud`, `oz_run_get`, `oz_run_list`) with strict JSON input schemas and structured text results. Tool handlers route errors as `{ isError: true }` content blocks per the MCP spec.
   - New lifecycle controller `src/mcp/lifecycle.ts` (`McpLifecycle`) with idempotent `start()` / `stop()`, optional config-driven auto-start, and graceful disposal on `deactivate()`.
@@ -16,7 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New documentation `docs/MCP.md` covering quick start, endpoints, protocol, tool surface, bearer auth, per-client integration examples (`~/.claude.json`, `~/.cursor/mcp.json`, `~/.codex/config.toml`), raw `curl` cheatsheet, troubleshooting, security posture and known limitations.
   - 34 new unit tests across `test/mcp/{server,tools,lifecycle}.test.ts` covering JSON-RPC dispatch, initialize/version negotiation, `tools/list`, `tools/call` happy and error paths, malformed requests, bearer auth match/mismatch, `/health` response, lifecycle `start`/`stop`/`restart` idempotency, and command-palette wiring.
 ### Changed
-- `package.json` version bumped to `0.6.0-dev` for the in-progress MCP milestone.
+- `package.json` version bumped to `0.6.0`.
+### Compatibility
+- Requires **VS Code ≥ 1.96.0** (same as v0.5.0).
+- MCP server is **opt-in**; existing users upgrading from v0.5.0 see no behavioural change until they flip `warpBridge.mcpEnabled = true`.
+- Zero new runtime dependencies; `dist/extension.js` remains under the 100 KB performance budget.
+### Metrics
+- 44 test files, **694** unit tests, all green.
+- `dist/extension.js` bundled at **≈ 59 KB** (esbuild, minified, `vscode` external).
 ## [0.5.0] — 2026-04-20
 First public release cycle under the `sena-labs` publisher. Combines the
 work originally scoped across the v0.3 / v0.4 / v0.5 milestones into a
