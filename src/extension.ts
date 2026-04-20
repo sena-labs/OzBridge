@@ -21,6 +21,8 @@ import { IWarpDriveSource } from './drive/warpDriveSource.js';
 import { WarpDriveTreeProvider } from './ui/driveTreeProvider.js';
 import { registerDriveCommands } from './ui/driveCommands.js';
 import { registerSkillEditorCommands } from './ui/skillEditor.js';
+import { DashboardPanel } from './ui/dashboardPanel.js';
+import { RunStatsService } from './services/runStats.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -132,6 +134,14 @@ export function activate(context: vscode.ExtensionContext): void {
   for (const disposable of registerSkillEditorCommands()) {
     context.subscriptions.push(disposable);
   }
+
+  // Observability dashboard (v0.8 deliverable H).
+  const runStats = new RunStatsService(cli);
+  context.subscriptions.push(
+    vscode.commands.registerCommand('warpBridge.dashboard.open', () => {
+      DashboardPanel.createOrShow(runStats);
+    }),
+  );
 
   // MCP server export — opt-in via warpBridge.mcpEnabled.
   state.mcp = new McpLifecycle(cli, state.configManager, EXTENSION_VERSION);

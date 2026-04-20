@@ -348,6 +348,12 @@
         "title": "Warp Skill: Save current as project skill…",
         "category": "Warp Skill",
         "icon": "$(save-as)"
+      },
+      {
+        "command": "warpBridge.dashboard.open",
+        "title": "Warp: Open Dashboard",
+        "category": "Warp",
+        "icon": "$(graph)"
       }
     ],
     "menus": {
