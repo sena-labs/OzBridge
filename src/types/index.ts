@@ -191,6 +191,31 @@ export interface IOzCliService {
    * Same error semantics as {@link driveList} for unavailable subcommand.
    */
   driveGet(id: string): Promise<string>;
+
+  /**
+   * Invokes `oz agent run --continue <runId> --prompt <text> --output-format json`.
+   *
+   * Used by {@link IRunSteerer} when the underlying CLI exposes the
+   * `--continue` flag. Implementations MUST sanitise `runId` and reject
+   * empty `prompt`.
+   *
+   * Throws {@link OzCliError} with kind `NOT_FOUND` or `CLI_ERROR` (with
+   * `unknown command`/`unknown option` stderr) when the flag is not
+   * available, so the caller can fall back to the inlined strategy.
+   */
+  agentContinue(opts: {
+    runId: string;
+    prompt: string;
+    cancellation?: vscode.CancellationToken;
+  }): Promise<OzRunResult>;
+
+  /**
+   * Returns the raw stdout of `oz agent run --help`.
+   *
+   * Used by {@link IRunSteerer} to probe whether the `--continue` flag
+   * is exposed by the installed Oz CLI version. Cached by callers.
+   */
+  helpAgentRun(): Promise<string>;
 }
 
 /** Reactive wrapper around VS Code extension settings with caching and change events. */
@@ -201,6 +226,60 @@ export interface IConfigManager {
   onConfigChanged: vscode.Event<WarpBridgeConfig>;
   /** Disposes the configuration change listener. */
   dispose(): void;
+}
+
+// ============================================================================
+// Run steering (v0.8 deliverable F)
+// ============================================================================
+
+/** Strategy actually used by an {@link IRunSteerer} to deliver the follow-up. */
+export type SteerStrategy = 'native-continue' | 'inlined-fallback';
+
+/** Input for {@link IRunSteerer.steer}. */
+export interface SteerRunOptions {
+  /** Identifier of the cloud run to steer. */
+  runId: string;
+  /** Follow-up text to send. Must be non-empty after trimming. */
+  prompt: string;
+  /** Optional cancellation token forwarded to the underlying CLI call. */
+  cancellation?: vscode.CancellationToken;
+}
+
+/** Outcome of a {@link IRunSteerer.steer} call. */
+export interface SteerRunResult {
+  /** Run id of the resulting in-flight run (may differ from input). */
+  runId: string | null;
+  /** Strategy actually used to deliver the prompt. */
+  strategy: SteerStrategy;
+  /** Raw {@link OzRunResult} returned by the CLI. */
+  raw: OzRunResult;
+}
+
+/** Capabilities probed by {@link IRunSteerer.capabilities}. */
+export interface SteerCapabilities {
+  /** Whether the CLI exposes the `--continue` flag on `oz agent run`. */
+  nativeContinue: boolean;
+  /** Wall-clock timestamp (ms) at which the probe was performed. */
+  detectedAt: number;
+}
+
+/**
+ * Sends follow-up prompts to in-flight cloud runs with a documented
+ * progressive fallback (see roadmap decision log, 2026-04-20):
+ *
+ * 1. **Primary** — `oz agent run --continue <runId> --prompt <text>`
+ *    when the CLI exposes the flag.
+ * 2. **Fallback** — `oz agent run-cloud --prompt "[CONTINUING <runId>] <text>"`
+ *    with the run id inlined in the prompt.
+ *
+ * The implementation MUST cache the capability probe result, since
+ * `oz agent run --help` is a moderately expensive sub-process call.
+ */
+export interface IRunSteerer {
+  /** Sends a follow-up prompt to a still-running cloud run. */
+  steer(opts: SteerRunOptions): Promise<SteerRunResult>;
+  /** Returns (and caches) the underlying CLI capabilities. */
+  capabilities(): Promise<SteerCapabilities>;
 }
 
 /** Gathers IDE context (workspace, file, selection, diagnostics) for prompt injection. */

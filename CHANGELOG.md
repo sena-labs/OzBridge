@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- **Run steering abstraction (`v0.8` deliverable F).** New
+  `IRunSteerer` contract + `ProgressiveRunSteerer` implementation with
+  the documented progressive fallback (decision log 2026-04-20):
+  primary path uses `oz agent run --continue <runId> --prompt <text>`
+  when the CLI exposes the flag, otherwise inlines the run id into a
+  fresh `oz agent run-cloud` prompt. Capability probe via
+  `oz agent run --help` is cached per-instance.
+  - New `OzCliService.agentContinue()` and `helpAgentRun()`.
+  - New module `src/services/runSteerer.ts` with exported
+    `hasContinueFlag()` helper for unit tests.
+  - `IOzCliService` extended with the two methods; `createMockCli()`
+    updated.
+- **Roadmap docs.** `docs/MILESTONE-v0.8.md` + `docs/NEXT-STEPS-v0.8.md`
+  bootstrap the v0.8 "Observability" milestone (deliverables F-J).
 
 ## [0.7.1] — 2026-04-20
 Hardening release on top of v0.7.0. Wires the Warp Drive sidebar to the
