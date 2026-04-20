@@ -290,6 +290,18 @@
         "icon": "$(copy)"
       },
       {
+        "command": "warpBridge.mcp.registerClient",
+        "title": "Warp: Register MCP client (Claude Code / Cursor / Codex)",
+        "category": "Warp MCP",
+        "icon": "$(add)"
+      },
+      {
+        "command": "warpBridge.mcp.unregisterClient",
+        "title": "Warp: Unregister MCP client",
+        "category": "Warp MCP",
+        "icon": "$(close)"
+      },
+      {
         "command": "warpBridge.drive.refresh",
         "title": "Warp Drive: Refresh",
         "category": "Warp Drive",
