@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -7,6 +7,22 @@ import {
   WORKSPACE_CONFIG_PATH,
   ALLOWED_OVERRIDE_KEYS,
 } from '../../src/services/workspaceConfigResolver.js';
+import { workspace } from '../mocks/vscode.js';
+
+/**
+ * Grab the last-created mock FileSystemWatcher. The mock is a `vi.fn`
+ * that returns a helper object exposing `_fireCreate / _fireChange /
+ * _fireDelete`, so we can drive the watcher from tests.
+ */
+function lastWatcher(): {
+  _fireCreate: () => void;
+  _fireChange: () => void;
+  _fireDelete: () => void;
+} | undefined {
+  const calls = workspace.createFileSystemWatcher.mock.results;
+  if (calls.length === 0) { return undefined; }
+  return calls[calls.length - 1].value as ReturnType<typeof lastWatcher>;
+}
 
 let workspaceRoot: string;
 
@@ -125,5 +141,81 @@ describe('WorkspaceConfigResolver — guardrails', () => {
 
   it('constant matches the canonical relative path', () => {
     expect(WORKSPACE_CONFIG_PATH).toBe(path.join('.warp', 'warp-bridge.yaml'));
+  });
+});
+
+describe('WorkspaceConfigResolver — watcher integration', () => {
+  beforeEach(() => {
+    workspace.createFileSystemWatcher.mockClear();
+  });
+
+  it('fires onDidChange and refreshes overrides when the watcher reports a change', () => {
+    writeYaml('defaultProfile: first');
+    const resolver = new WorkspaceConfigResolver(workspaceRoot);
+    const watcher = lastWatcher();
+    expect(watcher).toBeDefined();
+
+    const events: Array<Partial<{ defaultProfile: string }>> = [];
+    resolver.onDidChange((snapshot) => events.push(snapshot));
+
+    // Simulate an external edit to the YAML followed by the watcher
+    // firing — this mirrors what VS Code does when the file is saved.
+    writeYaml('defaultProfile: second');
+    watcher!._fireChange();
+
+    expect(events).toHaveLength(1);
+    expect(events[0].defaultProfile).toBe('second');
+    expect(resolver.getOverrides().defaultProfile).toBe('second');
+    resolver.dispose();
+  });
+
+  it('emits on onDidCreate when the YAML is created after the watcher is up', () => {
+    // Start without a YAML file — resolver reads `{}` initially.
+    const resolver = new WorkspaceConfigResolver(workspaceRoot);
+    expect(resolver.getOverrides()).toEqual({});
+    const watcher = lastWatcher();
+    expect(watcher).toBeDefined();
+
+    const fired = vi.fn();
+    resolver.onDidChange(fired);
+
+    writeYaml('mcpEnabled: true');
+    watcher!._fireCreate();
+
+    expect(fired).toHaveBeenCalledTimes(1);
+    expect(resolver.getOverrides().mcpEnabled).toBe(true);
+    resolver.dispose();
+  });
+
+  it('clears overrides on onDidDelete', () => {
+    writeYaml('defaultProfile: gone-soon');
+    const resolver = new WorkspaceConfigResolver(workspaceRoot);
+    expect(resolver.getOverrides().defaultProfile).toBe('gone-soon');
+    const watcher = lastWatcher();
+
+    const snapshots: Array<Partial<{ defaultProfile: string }>> = [];
+    resolver.onDidChange((s) => snapshots.push(s));
+
+    fs.rmSync(path.join(workspaceRoot, WORKSPACE_CONFIG_PATH), { force: true });
+    watcher!._fireDelete();
+
+    expect(snapshots).toHaveLength(1);
+    expect(snapshots[0]).toEqual({});
+    expect(resolver.getOverrides()).toEqual({});
+    resolver.dispose();
+  });
+
+  it('stops dispatching events after dispose()', () => {
+    writeYaml('defaultProfile: first');
+    const resolver = new WorkspaceConfigResolver(workspaceRoot);
+    const watcher = lastWatcher();
+    const fired = vi.fn();
+    resolver.onDidChange(fired);
+
+    resolver.dispose();
+    // After dispose, internal reloadAndEmit is a no-op. Even if a stray
+    // event arrives (e.g. during VS Code shutdown), nothing fires.
+    watcher!._fireChange();
+    expect(fired).not.toHaveBeenCalled();
   });
 });

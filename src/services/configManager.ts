@@ -27,11 +27,11 @@ export class ConfigManager extends BaseConfigManager<WarpBridgeConfig> {
     if (resolver) {
       // When the YAML file changes, invalidate the cached snapshot and
       // fire the inherited `onConfigChanged` so downstream services (MCP
-      // lifecycle, status bar, …) react without a reload.
+      // lifecycle, status bar, …) react without a reload. We use the
+      // toolkit's protected hooks rather than poking private fields.
       this.resolverSubscription = resolver.onDidChange(() => {
-        (this as unknown as { cachedConfig: WarpBridgeConfig | null }).cachedConfig = null;
-        (this as unknown as { emitter: vscode.EventEmitter<WarpBridgeConfig> })
-          .emitter.fire(this.getConfig());
+        this.invalidate();
+        this.fireChange();
       });
     }
   }
