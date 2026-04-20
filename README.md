@@ -38,6 +38,7 @@ that Copilot Agent mode can invoke autonomously.
 - **Warp sidebar + status bar** — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
 - **Context variables & Warp handoff** — inline `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
 - **MCP server export** (opt-in) — Warp Bridge can expose its Oz tools as a Model Context Protocol server over HTTP+SSE so Claude Code, Cursor and Codex can drive Oz too. See [`docs/MCP.md`](docs/MCP.md).
+- **Per-workspace config** — optional `.warp/warp-bridge.yaml` committed to the repo overrides `warpBridge.*` settings for everyone who opens the project. Precedence: YAML > VS Code settings > defaults. Secrets like `mcpBearerToken` and platform-specific `ozPath` are deliberately excluded.
 - **9 slash commands** covering the full agent workflow: `/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`.
 - **IDE context injection** — automatically includes workspace path, active file, selection and diagnostics in every prompt.
 - **Agent skill detection** — maps prompt keywords to the 7-agent pipeline (spec, design, implement, review, test, deploy, maintenance).
@@ -233,7 +234,35 @@ shell as a fallback.
 ## Configuration
 
 All settings live under `warpBridge.*` in VS Code Settings
-(**File → Preferences → Settings**) or can be edited in `settings.json`:
+(**File → Preferences → Settings**) or can be edited in `settings.json`.
+
+### Per-workspace overrides (`.warp/warp-bridge.yaml`)
+
+Commit a `.warp/warp-bridge.yaml` at the root of your repository and Warp
+Bridge will merge its values on top of the VS Code settings for everyone
+who opens the project. The file is reloaded automatically when it is
+created, changed or deleted — no VS Code reload required.
+
+```yaml
+# .warp/warp-bridge.yaml — committed to Git, shared across the team.
+defaultProfile: team-shared
+defaultEnvironment: staging
+timeoutMs: 600000
+mcpEnabled: true
+mcpPort: 3900
+mcpBindAddress: "127.0.0.1"
+```
+
+**Supported keys:** `defaultModel`, `defaultProfile`, `defaultEnvironment`,
+`timeoutMs`, `maxOutputChars`, `cloudPollingIntervalMs`,
+`cloudPollingTimeoutMs`, `mcpEnabled`, `mcpPort`, `mcpBindAddress`.
+
+**Deliberately excluded:**
+- `ozPath` — platform-specific, must live in user settings.
+- `mcpBearerToken` — secret, should never be committed.
+
+Unknown keys and keys with the wrong type are logged to the *Warp Bridge*
+output channel and ignored, so a typo never breaks the extension.
 
 | Setting | Default | Description |
 | --- | --- | --- |
