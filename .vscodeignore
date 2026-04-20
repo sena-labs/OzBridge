@@ -39,3 +39,6 @@ dist/**/*.vsix
 
 # Publishing scripts (not needed by end-users)
 scripts/**
+
+# PR body scratchpad (local-only, never ships to Marketplace)
+pr-body.md
