@@ -88,6 +88,16 @@ export enum CliErrorKind {
    * waiting for an interactive Warp prompt.
    */
   INSUFFICIENT_CREDITS = 'INSUFFICIENT_CREDITS',
+  /**
+   * The CLI subprocess produced no stdout/stderr for the configured
+   * idle window (`idleTimeoutMs`). Indicates the underlying process
+   * is hung — typically because the upstream Warp service is not
+   * responding (out of credits with no fail-fast signal, network
+   * partition, or Warp app waiting for an interactive prompt).
+   * Surfaced separately from `TIMEOUT` so the message can be sharper
+   * and the wait window much shorter than the global timeout.
+   */
+  STALLED = 'STALLED',
   TIMEOUT = 'TIMEOUT',
   PARSE_ERROR = 'PARSE_ERROR',
   CLI_ERROR = 'CLI_ERROR',

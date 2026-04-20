@@ -139,6 +139,17 @@ export class OutputFormatter {
         });
         break;
 
+      case OzCliErrorKind.STALLED:
+        stream.markdown(
+          `🛑 **Oz CLI unresponsive.** No output for ${this.config.idleTimeoutMs / 1000}s — the process was terminated to avoid waiting the full ${this.config.timeoutMs / 1000}s timeout.\n\n`
+          + 'Most common causes:\n'
+          + '- Warp account out of credits (top up at https://app.warp.dev/settings/billing)\n'
+          + '- Network outage or upstream Warp service degradation\n'
+          + '- Warp desktop app waiting for an interactive prompt outside VS Code.\n\n'
+          + 'Adjust **Settings → Warp Bridge → Idle Timeout Ms** if your prompts are legitimately long-running with periods of silence.\n',
+        );
+        break;
+
       case OzCliErrorKind.TIMEOUT:
         stream.markdown(
           `⏰ **Timeout.** Operation exceeded the ${this.config.timeoutMs / 1000}s limit.\n\n`

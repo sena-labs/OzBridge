@@ -41,6 +41,14 @@ export interface WarpBridgeConfig extends BridgeConfig {
   cloudPollingIntervalMs: number;
   /** Maximum total polling duration for cloud runs, in milliseconds. */
   cloudPollingTimeoutMs: number;
+  /**
+   * Idle timeout for the local Oz CLI subprocess (ms). When no
+   * stdout/stderr data is received for this long the process is
+   * killed and a `STALLED` error is raised so the user sees an
+   * actionable message immediately instead of waiting for
+   * `timeoutMs`. Set to `0` to disable. Default 90s.
+   */
+  idleTimeoutMs: number;
   /** Whether to auto-start the embedded MCP server at activation. */
   mcpEnabled: boolean;
   /** Port the MCP server listens on when enabled. */
@@ -60,6 +68,7 @@ export const DEFAULT_CONFIG: WarpBridgeConfig = {
   cloudPollingIntervalMs: 5_000,
   cloudPollingTimeoutMs: 1_800_000,
   timeoutMs: 300_000,
+  idleTimeoutMs: 90_000,
   maxOutputChars: 15_000,
   mcpEnabled: false,
   mcpPort: 3847,

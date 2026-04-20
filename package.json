@@ -468,6 +468,11 @@
           "default": 300000,
           "description": "Timeout for local agent runs (ms, default 5 min)"
         },
+        "warpBridge.idleTimeoutMs": {
+          "type": "number",
+          "default": 90000,
+          "description": "Idle timeout for the Oz CLI subprocess (ms). Aborts the run if no stdout/stderr is received for this long \u2014 prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to 0 to disable. Default 90 s."
+        },
         "warpBridge.maxOutputChars": {
           "type": "number",
           "default": 15000,

@@ -305,12 +305,14 @@ interface ContextPayload {
 
 // === Errori ===
 enum OzCliErrorKind {
-  NOT_FOUND       = 'NOT_FOUND',
-  NOT_AUTHENTICATED = 'NOT_AUTHENTICATED',
-  TIMEOUT         = 'TIMEOUT',
-  PARSE_ERROR     = 'PARSE_ERROR',
-  CLI_ERROR       = 'CLI_ERROR',
-  CANCELLED       = 'CANCELLED',
+  NOT_FOUND             = 'NOT_FOUND',
+  NOT_AUTHENTICATED     = 'NOT_AUTHENTICATED',
+  INSUFFICIENT_CREDITS  = 'INSUFFICIENT_CREDITS', // v1.0.1: rilevato da stderr / HTTP 402-429
+  STALLED               = 'STALLED',              // v1.0.1: nessun output per `idleTimeoutMs`
+  TIMEOUT               = 'TIMEOUT',
+  PARSE_ERROR           = 'PARSE_ERROR',
+  CLI_ERROR             = 'CLI_ERROR',
+  CANCELLED             = 'CANCELLED',
 }
 
 class OzCliError extends Error {
@@ -699,7 +701,7 @@ Diagnostics: 2 errors, 1 warning
 | **R1** | `oz run list` ritorna testo puro quando vuoto | Parse failure → crash | Alta (verificato) | `JsonParser` con fallback (D2) |
 | **R2** | ID profilo `"Unsynced"` non è UUID | Type mismatch se si assume UUID | Media | Tipo `string` generico |
 | **R3** | Cloud agent consuma crediti (BYOK non supportato) | Run costose involontarie | Media | Conferma esplicita (D6) |
-| **R4** | Output agent molto lungo | Timeout/freeze chat VS Code | Media | Troncamento a 5000 char (D7) |
+| **R4** | Output agent molto lungo | Timeout/freeze chat VS Code | Media | Troncamento a 15000 char (D7) |
 | **R5** | Evoluzione rapida Oz CLI (nuovi comandi, cambi JSON) | Rottura parser | Bassa | `--output-format json` è stabile. Test di regressione. |
 | **R6** | Cancellazione task cloud impossibile via CLI | Run continua dopo cancel | Alta (design Warp) | Documentare: cancel ferma solo polling |
 | **R7** | `oz agent run` sincrono e bloccante | No progresso granulare locale | Media | Streaming stdout con `readline` |

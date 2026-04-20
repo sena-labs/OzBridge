@@ -131,6 +131,7 @@ describe('WorkspaceConfigResolver — guardrails', () => {
       'defaultEnvironment',
       'defaultModel',
       'defaultProfile',
+      'idleTimeoutMs',
       'maxOutputChars',
       'mcpBindAddress',
       'mcpEnabled',

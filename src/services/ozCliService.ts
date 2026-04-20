@@ -330,8 +330,22 @@ export class OzCliService implements IOzCliService {
       let stdout = '';
       let stderr = '';
       let killed = false;
+      let stalled = false;
       let settled = false;
       let forceKillHandle: NodeJS.Timeout | undefined;
+      let idleHandle: NodeJS.Timeout | undefined;
+
+      const idleMs = this.config.idleTimeoutMs ?? 0;
+
+      const armIdleTimer = () => {
+        if (idleMs <= 0) { return; }
+        if (idleHandle) { clearTimeout(idleHandle); }
+        idleHandle = setTimeout(() => {
+          if (settled) { return; }
+          stalled = true;
+          terminateProcess();
+        }, idleMs);
+      };
 
       const terminateProcess = () => {
         killed = true;
@@ -349,16 +363,26 @@ export class OzCliService implements IOzCliService {
         if (forceKillHandle) {
           clearTimeout(forceKillHandle);
         }
+        if (idleHandle) {
+          clearTimeout(idleHandle);
+        }
         cancelListener?.dispose();
       };
 
       proc.stdout?.on('data', (chunk: Buffer) => {
         stdout += chunk.toString();
+        armIdleTimer();
       });
 
       proc.stderr?.on('data', (chunk: Buffer) => {
         stderr += chunk.toString();
+        armIdleTimer();
       });
+
+      // Idle timer starts immediately so a CLI that never emits anything
+      // is detected as stalled within `idleMs` instead of waiting for the
+      // global `timeoutMs`.
+      armIdleTimer();
 
       // Timeout
       const timeoutHandle = setTimeout(() => {
@@ -393,6 +417,27 @@ export class OzCliService implements IOzCliService {
         if (killed) {
           if (cancellation?.isCancellationRequested) {
             reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
+          } else if (stalled) {
+            // IMPL: idle-timeout fail-fast. Run the credits classifier on
+            // anything we *did* manage to capture so we can be even more
+            // specific when stderr contained a credits/quota signal but
+            // the CLI then hung instead of exiting.
+            const combined = (stderr + stdout).toLowerCase();
+            if (isInsufficientCreditsError(combined, exitCode)) {
+              reject(new OzCliError(
+                OzCliErrorKind.INSUFFICIENT_CREDITS,
+                'Warp account is out of credits or has hit its quota',
+                exitCode,
+                stderr,
+              ));
+            } else {
+              reject(new OzCliError(
+                OzCliErrorKind.STALLED,
+                `Oz CLI produced no output for ${idleMs / 1000}s and was terminated`,
+                exitCode,
+                stderr,
+              ));
+            }
           } else {
             reject(new OzCliError(OzCliErrorKind.TIMEOUT, `Operation timed out after ${this.config.timeoutMs}ms`));
           }

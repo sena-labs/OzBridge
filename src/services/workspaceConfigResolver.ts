@@ -21,6 +21,7 @@ export const ALLOWED_OVERRIDE_KEYS = new Set<keyof WarpBridgeConfig>([
   'defaultProfile',
   'defaultEnvironment',
   'timeoutMs',
+  'idleTimeoutMs',
   'maxOutputChars',
   'cloudPollingIntervalMs',
   'cloudPollingTimeoutMs',
@@ -46,6 +47,7 @@ function coerce(key: keyof WarpBridgeConfig, value: YamlScalar): unknown | undef
       if (typeof value === 'string') { return value; }
       break;
     case 'timeoutMs':
+    case 'idleTimeoutMs':
     case 'maxOutputChars':
     case 'cloudPollingIntervalMs':
     case 'cloudPollingTimeoutMs':
@@ -64,6 +66,7 @@ function expectedKind(key: keyof WarpBridgeConfig): string {
   switch (key) {
     case 'mcpEnabled': return 'boolean';
     case 'timeoutMs':
+    case 'idleTimeoutMs':
     case 'maxOutputChars':
     case 'cloudPollingIntervalMs':
     case 'cloudPollingTimeoutMs':

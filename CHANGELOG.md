@@ -29,6 +29,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `src/services/ozCliService.ts` for unit testing and reuse.
 - 18 unit tests covering the keyword detector, exit-code 402/429
   reclassification, and the end-to-end `agentRun` path.
+- **Idle-timeout fail-fast.** New `OzCliErrorKind.STALLED` kind +
+  `warpBridge.idleTimeoutMs` setting (default `90000` ms, also
+  overridable per-workspace via `.warp/config.yaml`). When the Oz CLI
+  produces no stdout/stderr for the configured window, the process is
+  terminated and the error is raised immediately instead of waiting
+  for the global `timeoutMs`. If the captured output matches the
+  credit-keyword heuristic the error is reclassified as
+  `INSUFFICIENT_CREDITS`; otherwise it surfaces as `STALLED` with an
+  actionable hint. Set `idleTimeoutMs` to `0` to disable. Covered by
+  4 new unit tests in `test/services/ozCliServiceIdleTimeout.test.ts`.
+
+### Docs
+- Updated `docs/DESIGN.md` `OzCliErrorKind` enum sample (now lists all
+  8 kinds including `INSUFFICIENT_CREDITS` and `STALLED`).
+- Fixed obsolete `5000 char` truncation note in `docs/DESIGN.md` risk
+  matrix (actual cap is `15000`).
+- Removed an accidental duplicated copy of `CONTRIBUTING.md` that
+  appended an older generic guide after the canonical playbook.
 
 ## [1.0.0] — 2026-04-20
 "GA" milestone. Promotes deliverables **P · Q · R · S · T** to the

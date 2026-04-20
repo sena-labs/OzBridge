@@ -121,6 +121,13 @@ export class OutputFormatter {
         }
         break;
 
+      case CliErrorKind.STALLED:
+        stream.markdown(
+          '🛑 **CLI unresponsive.** The process produced no output for the configured idle window and was terminated.\n\n'
+          + 'Most common causes: depleted account credits, network outage, or the CLI is waiting for an interactive prompt outside the editor.\n',
+        );
+        break;
+
       case CliErrorKind.TIMEOUT: {
         const secs = this.getConfig().timeoutMs / 1000;
         stream.markdown(
