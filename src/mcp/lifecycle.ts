@@ -1,8 +1,12 @@
 import * as vscode from 'vscode';
 import { IConfigManager, IOzCliService, WarpBridgeConfig } from '../types/index.js';
-import { McpServer, McpServerOptions } from './server.js';
+import { McpServer } from './server.js';
 import { buildToolRegistry } from './tools.js';
-import { logError, logInfo } from '../services/logger.js';
+import { logError, logInfo, logWarn } from '../services/logger.js';
+import { IMcpClientRegistrar, McpClientEndpoint } from './clientRegistration.js';
+import { ClaudeCodeRegistrar } from './registrars/claudeCodeRegistrar.js';
+import { CursorRegistrar } from './registrars/cursorRegistrar.js';
+import { CodexRegistrar } from './registrars/codexRegistrar.js';
 
 /** Settings block consumed by the lifecycle controller. */
 export interface McpConfig {
@@ -70,24 +74,47 @@ export class McpLifecycle implements vscode.Disposable {
     if (this.disposed) { return; }
     await this.stop();
     const cfg = readMcpConfig(this.cfgMgr.getConfig() as unknown as WarpBridgeConfig);
-    this.current = cfg;
+    this.current = { ...cfg };
 
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
-    const options: McpServerOptions = {
-      port: cfg.port,
-      bindAddress: cfg.bindAddress,
-      bearerToken: cfg.bearerToken || undefined,
-    };
-    this.server = new McpServer(
-      registry,
-      { name: 'warp-vsc-bridge', version: this.extensionVersion },
-      options,
-    );
+    const serverInfo = { name: 'warp-vsc-bridge', version: this.extensionVersion };
+
     try {
-      await this.server.start();
+      const server = new McpServer(registry, serverInfo, {
+        port: cfg.port,
+        bindAddress: cfg.bindAddress,
+        bearerToken: cfg.bearerToken || undefined,
+      });
+      await server.start();
+      this.server = server;
       const ep = this.server.endpoint;
       logInfo(`MCP server listening on http://${ep?.address}:${ep?.port}/sse (${registry.size} tools)`);
+      return;
     } catch (err) {
+      if (isPortInUseError(err) && cfg.port !== 0) {
+        logWarn(`MCP port ${cfg.port} is busy; retrying on an ephemeral port.`);
+        try {
+          const fallbackServer = new McpServer(registry, serverInfo, {
+            port: 0,
+            bindAddress: cfg.bindAddress,
+            bearerToken: cfg.bearerToken || undefined,
+          });
+          await fallbackServer.start();
+          this.server = fallbackServer;
+          const ep = this.server.endpoint;
+          if (ep?.port && this.current) {
+            this.current.port = ep.port;
+          }
+          logInfo(`MCP server listening on fallback endpoint http://${ep?.address}:${ep?.port}/sse (${registry.size} tools)`);
+          return;
+        } catch (fallbackErr) {
+          const msg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+          logError(`MCP server fallback start failed: ${msg}`);
+          this.server = undefined;
+          return;
+        }
+      }
+
       const msg = err instanceof Error ? err.message : String(err);
       logError(`MCP server failed to start: ${msg}`);
       this.server = undefined;
@@ -113,6 +140,11 @@ export class McpLifecycle implements vscode.Disposable {
     this.disposed = true;
     await this.stop();
   }
+}
+
+function isPortInUseError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') { return false; }
+  return (err as { code?: unknown }).code === 'EADDRINUSE';
 }
 
 /**
@@ -159,5 +191,104 @@ export function registerMcpCommands(
       await vscode.env.clipboard.writeText(url);
       await vscode.window.showInformationMessage(`Copied MCP endpoint URL: ${url}`);
     }),
+
+    vscode.commands.registerCommand('warpBridge.mcp.registerClient', async () => {
+      await runRegistrarCommand('register', lifecycle, cfgMgr);
+    }),
+
+    vscode.commands.registerCommand('warpBridge.mcp.unregisterClient', async () => {
+      await runRegistrarCommand('unregister', lifecycle, cfgMgr);
+    }),
   ];
+}
+
+// ===========================================================================
+// Client auto-registration orchestration
+// ===========================================================================
+
+/**
+ * Factory hook — overridable by tests to inject a deterministic set
+ * of registrars without touching the real `~/.claude.json` etc.
+ */
+let registrarFactory: () => IMcpClientRegistrar[] = defaultRegistrars;
+
+/** Test-only: swap the registrar factory. Pass `undefined` to reset. */
+export function __setRegistrarFactoryForTests(factory?: () => IMcpClientRegistrar[]): void {
+  registrarFactory = factory ?? defaultRegistrars;
+}
+
+function defaultRegistrars(): IMcpClientRegistrar[] {
+  return [new ClaudeCodeRegistrar(), new CursorRegistrar(), new CodexRegistrar()];
+}
+
+/** Server name advertised to every MCP client we register with. */
+export const MCP_SERVER_NAME = 'warp-vsc-bridge';
+
+/**
+ * Shared implementation behind the `registerClient` / `unregisterClient`
+ * commands. Presents a QuickPick of the available registrars and
+ * performs the corresponding side effect on the selection.
+ */
+async function runRegistrarCommand(
+  action: 'register' | 'unregister',
+  lifecycle: McpLifecycle,
+  cfgMgr: IConfigManager,
+): Promise<void> {
+  if (action === 'register' && !lifecycle.running) {
+    await vscode.window.showWarningMessage(
+      'Warp MCP server is not running. Start it first with "Warp: Start MCP server".',
+    );
+    return;
+  }
+  const registrars = registrarFactory();
+  const items = registrars.map((r) => ({
+    label: r.displayName,
+    description: r.configPath,
+    registrar: r,
+  }));
+  const picked = await vscode.window.showQuickPick(items, {
+    title: action === 'register'
+      ? 'Warp Bridge · Register MCP client'
+      : 'Warp Bridge · Unregister MCP client',
+    placeHolder: 'Choose the client whose config file should be updated',
+    canPickMany: false,
+  });
+  if (!picked || Array.isArray(picked)) { return; }
+  const target = (picked as { registrar: IMcpClientRegistrar }).registrar;
+
+  try {
+    if (action === 'register') {
+      const endpoint = buildLocalEndpoint(lifecycle, cfgMgr);
+      await target.register(endpoint);
+      await vscode.window.showInformationMessage(
+        `Registered ${MCP_SERVER_NAME} in ${target.displayName} (${target.configPath}).`,
+      );
+    } else {
+      await target.unregister(MCP_SERVER_NAME);
+      await vscode.window.showInformationMessage(
+        `Unregistered ${MCP_SERVER_NAME} from ${target.displayName}.`,
+      );
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    await vscode.window.showErrorMessage(`Warp MCP ${action} failed: ${msg}`);
+    logError(`mcp.${action}Client(${target.clientId}) failed: ${msg}`);
+  }
+}
+
+/**
+ * Computes the endpoint descriptor a client should store, based on
+ * the currently running MCP server and the user's bearer-token
+ * setting.
+ */
+export function buildLocalEndpoint(lifecycle: McpLifecycle, cfgMgr: IConfigManager): McpClientEndpoint {
+  const ep = lifecycle.endpoint;
+  const cfg = readMcpConfig(cfgMgr.getConfig() as unknown as WarpBridgeConfig);
+  const address = ep?.address ?? cfg.bindAddress;
+  const port = ep?.port ?? cfg.port;
+  return {
+    name: MCP_SERVER_NAME,
+    url: `http://${address}:${port}/sse`,
+    bearerToken: cfg.bearerToken || undefined,
+  };
 }

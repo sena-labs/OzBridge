@@ -13,7 +13,7 @@ import { createScheduleCommand } from './scheduleCommand.js';
 import { createModelsCommand } from './modelsCommand.js';
 import { createMcpCommand } from './mcpCommand.js';
 import { createConfigCommand } from './ozConfigCommand.js';
-import { createInitCommand } from './initCommand.js';
+import { createInitV2Command } from './initV2Command.js';
 import { createHistoryCommand } from './historyCommand.js';
 
 /**
@@ -40,7 +40,7 @@ export class CommandRouter {
       ['models', createModelsCommand(cli, cfgMgr)],
       ['mcp', createMcpCommand(cli, cfgMgr)],
       ['config', createConfigCommand(cli, cfgMgr)],
-      ['init', createInitCommand()],
+      ['init', createInitV2Command()],
     ]);
   }
 

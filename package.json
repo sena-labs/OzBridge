@@ -2,7 +2,7 @@
   "name": "warp-vsc-bridge",
   "displayName": "Warp Bridge",
   "description": "Run Warp Oz agents from VS Code Copilot Chat",
-  "version": "0.7.0-dev",
+  "version": "0.7.0",
   "publisher": "sena-labs",
   "license": "MIT",
   "workspaces": ["packages/*"],
@@ -209,6 +209,12 @@
           "name": "Runs & Resources",
           "icon": "media/warp-icon.png",
           "contextualTitle": "Warp Bridge"
+        },
+        {
+          "id": "warpBridge.driveView",
+          "name": "Warp Drive",
+          "icon": "media/warp-icon.png",
+          "contextualTitle": "Warp Bridge"
         }
       ]
     },
@@ -282,6 +288,66 @@
         "title": "Warp: Copy MCP endpoint URL",
         "category": "Warp MCP",
         "icon": "$(copy)"
+      },
+      {
+        "command": "warpBridge.mcp.registerClient",
+        "title": "Warp: Register MCP client (Claude Code / Cursor / Codex)",
+        "category": "Warp MCP",
+        "icon": "$(add)"
+      },
+      {
+        "command": "warpBridge.mcp.unregisterClient",
+        "title": "Warp: Unregister MCP client",
+        "category": "Warp MCP",
+        "icon": "$(close)"
+      },
+      {
+        "command": "warpBridge.drive.refresh",
+        "title": "Warp Drive: Refresh",
+        "category": "Warp Drive",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "warpBridge.drive.insertIntoChat",
+        "title": "Warp Drive: Insert into chat",
+        "category": "Warp Drive",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "warpBridge.drive.copyContent",
+        "title": "Warp Drive: Copy content",
+        "category": "Warp Drive",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "warpBridge.drive.openInEditor",
+        "title": "Warp Drive: Open in editor",
+        "category": "Warp Drive",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "warpBridge.skill.edit",
+        "title": "Warp Skill: Edit…",
+        "category": "Warp Skill",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "warpBridge.skill.new",
+        "title": "Warp Skill: New…",
+        "category": "Warp Skill",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "warpBridge.skill.saveGlobal",
+        "title": "Warp Skill: Save current as global skill…",
+        "category": "Warp Skill",
+        "icon": "$(save)"
+      },
+      {
+        "command": "warpBridge.skill.saveWorkspace",
+        "title": "Warp Skill: Save current as project skill…",
+        "category": "Warp Skill",
+        "icon": "$(save-as)"
       }
     ],
     "menus": {
@@ -289,6 +355,11 @@
         {
           "command": "warpBridge.tree.refresh",
           "when": "view == warpBridge.runsView",
+          "group": "navigation"
+        },
+        {
+          "command": "warpBridge.drive.refresh",
+          "when": "view == warpBridge.driveView",
           "group": "navigation"
         }
       ],
@@ -322,6 +393,21 @@
           "command": "warpBridge.tree.handoff",
           "when": "view == warpBridge.runsView && viewItem =~ /^warpRun/",
           "group": "warpGeneric@3"
+        },
+        {
+          "command": "warpBridge.drive.insertIntoChat",
+          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "group": "warpDrive@1"
+        },
+        {
+          "command": "warpBridge.drive.copyContent",
+          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "group": "warpDrive@2"
+        },
+        {
+          "command": "warpBridge.drive.openInEditor",
+          "when": "view == warpBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "group": "warpDrive@3"
         }
       ]
     },

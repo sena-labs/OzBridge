@@ -45,7 +45,7 @@ that Copilot Agent mode can invoke autonomously.
 - **Cloud run polling** — exponential-backoff polling with real-time progress updates in the chat stream.
 - **Robust JSON parser** — 5-level fallback for mixed text/JSON CLI output.
 - **Configurable** — every setting is exposed via the VS Code Settings UI under `warpBridge.*`.
-- **Zero runtime dependencies** — only the `vscode` API at runtime (bundled ≤ 35 KB).
+- **Zero runtime dependencies** — only the `vscode` API at runtime (bundled < 90 KB).
 
 ## Requirements
 
@@ -258,6 +258,7 @@ mcpBindAddress: "127.0.0.1"
 `cloudPollingTimeoutMs`, `mcpEnabled`, `mcpPort`, `mcpBindAddress`.
 
 **Deliberately excluded:**
+
 - `ozPath` — platform-specific, must live in user settings.
 - `mcpBearerToken` — secret, should never be committed.
 
@@ -360,7 +361,7 @@ npm run package
 
 ### Test Suite
 
-- **600 tests** across 35 files
+- **860 tests** across 57 files
 - **~2.3:1** test-to-code ratio
 - Framework: [Vitest](https://vitest.dev/) v4.0.18
 
@@ -461,6 +462,7 @@ and active.
 **Q: How do I update the Oz CLI?**
 A: The Oz CLI ships with Warp. Updating Warp to the latest version
 automatically updates the Oz CLI.
+
 - macOS: `brew upgrade warp`
 - Windows/Linux: download the latest installer from [warp.dev](https://www.warp.dev/).
 

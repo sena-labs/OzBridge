@@ -172,6 +172,40 @@ describe('FileSystemDriveSource.read', () => {
     const missing = path.join(promptsDir, 'nope.md');
     await expect(source.read(missing)).rejects.toThrow('FileSystemDriveSource.read');
   });
+
+  it('rejects symlink escapes that resolve outside allowed roots', async () => {
+    const outsideDir = path.join(root, 'outside');
+    fs.mkdirSync(outsideDir, { recursive: true });
+    const secret = path.join(outsideDir, 'secret.md');
+    fs.writeFileSync(secret, 'top secret', 'utf8');
+
+    const linkDir = path.join(promptsDir, 'linked-outside');
+    try {
+      fs.symlinkSync(outsideDir, linkDir, process.platform === 'win32' ? 'junction' : 'dir');
+    } catch {
+      // Symlinks may be disallowed on some Windows setups without dev mode/admin.
+      expect(true).toBe(true);
+      return;
+    }
+
+    const escapedPath = path.join(linkDir, 'secret.md');
+    await expect(source.read(escapedPath)).rejects.toThrow('outside allowed roots');
+  });
+
+  it('allows reading a symlink that still resolves inside an allowed root', async () => {
+    const target = writePrompt('target', 'name: target', '# target body');
+    const alias = path.join(promptsDir, 'alias.md');
+    try {
+      fs.symlinkSync(target, alias, 'file');
+    } catch {
+      // Symlinks may be disallowed on some Windows setups without dev mode/admin.
+      expect(true).toBe(true);
+      return;
+    }
+
+    const content = await source.read(alias);
+    expect(content).toContain('# target body');
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -5,10 +5,69 @@ All notable changes to **Warp Bridge for VS Code** will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
+## [0.7.0] — 2026-04-20
+Third public release under the `sena-labs` publisher. Ships the
+**Team & Drive** milestone: a navigable Warp Drive sidebar, a built-in
+skill / rule editor, an interactive `/init` v2 QuickPick, team-shared
+per-workspace YAML overrides, and one-command MCP auto-registration
+for Claude Code, Cursor and Codex.
 ### Added
-
+- **Warp Drive sidebar** (`v0.7` deliverable A):
+  - Backend abstraction `src/drive/warpDriveSource.ts`
+    (`IWarpDriveSource` contract, `parseDriveEntry` / `…Strict` type
+    guards) with two implementations:
+    `src/drive/cliDriveSource.ts` (wraps a future Oz CLI `drive`
+    subcommand via the `CliDriveRunner` abstraction, surfacing
+    `CliDriveNotAvailableError` as a soft fallback; enforces a
+    `LIST_SOFT_LIMIT = 200` per category) and
+    `src/drive/fileSystemDriveSource.ts` (reads `~/.warp/drive/`,
+    `~/.agents/rules/`, `~/.agents/skills/*/SKILL.md` with YAML
+    frontmatter parsing and a path-traversal guard).
+  - `src/drive/driveSourceFactory.ts` composes both into a
+    `CompositeDriveSource` that falls back only on
+    `CliDriveNotAvailableError`; every other error bubbles up.
+  - `src/ui/driveTreeProvider.ts` — `WarpDriveTreeProvider` with 3
+    categories (Prompts / Rules / Skills), per-category cache that
+    drops on `refresh()`, error branches surfaced as message nodes.
+  - `src/ui/driveCommands.ts` — four new commands
+    (`warpBridge.drive.refresh`, `.insertIntoChat`, `.copyContent`,
+    `.openInEditor`). Filesystem entries open via `Uri.file`; CLI
+    entries open as untitled markdown documents.
+  - New view container entry `warpBridge.driveView` contributed under
+    the existing `warpBridgeSidebar` Activity Bar container.
+  - Context-menu entries gated on the `warpDrive(Prompt|Rule|Skill)`
+    `viewItem` kinds.
+  - **67 backend tests** (drive/ source, factory, filesystem,
+    CLI wrapper) plus **15 UI tests** (tree provider + commands).
+- **Built-in skill & rule editor** (`v0.7` deliverable B):
+  - `src/ui/skillEditor.ts` with four commands:
+    `warpBridge.skill.edit` (opens any skill / rule in the built-in
+    VS Code editor), `.skill.new` (prompts for a name and target —
+    Project or Global — then scaffolds `SKILL.md`),
+    `.skill.saveGlobal` / `.skill.saveWorkspace` (save the active
+    editor's content into `~/.agents/skills/<name>/SKILL.md` or
+    `<workspace>/.agents/skills/<name>/SKILL.md` respectively).
+  - Scoped to the native VS Code editor (Markdown preview via
+    `Ctrl+K V` is first-class there); a richer Monaco + webview
+    editor remains a v0.8 stretch item.
+  - Shared `atomicWrite` helper (`.tmp` + `fs.renameSync`) and a
+    strict `^[a-z0-9][a-z0-9-]*$` skill-name validator.
+  - Overwrite protection via a modal confirmation prompt.
+  - 11 new tests in `test/ui/skillEditor.test.ts`.
+- **`/init` v2** (`v0.7` deliverable C):
+  - New `src/scaffold/skillTemplates.ts` registry of 8 templates
+    (7 `AGENT_SKILL_MAP` skills + `.warp/rules/PROJECT.md`) with a
+    data-only layout shared with future editors.
+  - New `src/commands/initV2Command.ts` drives a QuickPick that marks
+    each item as `[new]` or `[exists]`, pre-picks only missing
+    templates, and asks for per-file confirmation before overwriting.
+    Reports a rich `created / overwritten / skipped / errored` summary
+    in the chat transcript. `@warp /init all` preserves the legacy
+    bulk behaviour (never overwrites).
+  - All writes go through the shared `atomicWrite` helper.
+  - 19 new tests in `test/commands/initV2Command.test.ts`.
+  - Legacy `src/commands/initCommand.ts` and its two test files
+    removed; router swapped to the v2 factory.
 - **Per-workspace YAML config** (`v0.7` deliverable D) — an optional
   `.warp/warp-bridge.yaml` file committed to the repo overrides the
   `warpBridge.*` VS Code settings for every contributor. The override is
@@ -28,21 +87,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     every `getConfig()` call.
   - `vscode` mock extended with `RelativePattern` and
     `createFileSystemWatcher` surfaces.
-  - 25 new unit tests: `test/services/{yamlParser,
-    workspaceConfigResolver, configManagerPrecedence}.test.ts`
-    covering scalar parsing, comments, quoted strings, error
-    collection, file lifecycle (missing / present / refresh), the
-    secret exclusion guardrail, and the 3-layer precedence chain.
-
+  - 29 new unit tests across `yamlParser`, `workspaceConfigResolver`
+    and `configManagerPrecedence` suites.
+- **MCP auto-registration** (`v0.7` deliverable E):
+  - New module `src/mcp/clientRegistration.ts` defining
+    `IMcpClientRegistrar`, `McpClientEndpoint`, `McpRegistrationStatus`
+    — a narrow, uniform contract for register / unregister / status.
+  - `src/mcp/registrars/jsonRegistrarBase.ts` — shared base class +
+    `atomicWriteJson` helper for the two JSON-backed clients.
+    Preserves every unrelated top-level key in the target file.
+  - `src/mcp/registrars/claudeCodeRegistrar.ts` writes to
+    `~/.claude.json`.
+  - `src/mcp/registrars/cursorRegistrar.ts` writes to
+    `~/.cursor/mcp.json`.
+  - `src/mcp/registrars/codexRegistrar.ts` — minimal line-based TOML
+    writer targeting only `[[mcp.servers]]` array-of-tables; every
+    other byte of `~/.codex/config.toml` is preserved verbatim.
+  - Two new commands (`warpBridge.mcp.registerClient`,
+    `.unregisterClient`) QuickPick among the three registrars and
+    call the selected one with an endpoint derived from the running
+    MCP server (or the user's configured bind address / port when
+    stopped).
+  - **38 new tests** across `test/mcp/{claudeCode, cursor, codex,
+    clientRegistrationOrchestration}.test.ts`.
+### Changed
+- `package.json` version bumped to `0.7.0`.
+- `EXTENSION_VERSION` in `src/extension.ts` bumped to `0.7.0`; it is
+  now baked into every MCP `serverInfo.version` payload.
+- `CommandRouter` routes `/init` to the new v2 factory.
+### Compatibility
+- Requires **VS Code ≥ 1.96.0** (same floor as v0.5 / v0.6).
+- All v0.2.0-era settings, slash commands and Language Model Tools
+  remain supported.
+- MCP server is still **opt-in** via `warpBridge.mcpEnabled`; MCP
+  client auto-registration is a manual command (never runs on
+  activation) and is idempotent + reversible.
+- Zero new runtime dependencies; `dist/extension.js` stays within
+  the v0.7 bundle budget.
+### Metrics
+- 57 test files, **860** unit tests, all green.
+- `dist/extension.js` bundled at **≈ 85 KB** (esbuild, minified,
+  `vscode` external; v0.7 budget: 90 KB).
 ## [0.6.0] — 2026-04-20
-
 Second public release under the `sena-labs` publisher. Ships the
 **MCP Server Export** milestone: any Model Context Protocol client
 (Claude Code, Cursor, Codex…) can now drive Warp Oz through the same
 tool surface Copilot sees inside VS Code.
-
 ### Added
-
 - **MCP server export** (opt-in):
   - New module `src/mcp/server.ts` implementing the MCP JSON-RPC 2.0 protocol (protocol versions `2025-03-26` and `2024-11-05`) with `initialize`, `ping`, `tools/list`, `tools/call`. Transport layout: `GET /sse`, `POST /messages?sessionId=<uuid>`, plus `GET /health`. Zero third-party dependencies — uses Node's built-in `http` / `crypto` modules only.
   - New module `src/mcp/tools.ts` exposing 4 tools (`oz_agent_run`, `oz_agent_run_cloud`, `oz_run_get`, `oz_run_list`) with strict JSON input schemas and structured text results. Tool handlers route errors as `{ isError: true }` content blocks per the MCP spec.
@@ -51,32 +142,21 @@ tool surface Copilot sees inside VS Code.
   - Four new settings: `warpBridge.mcpEnabled` (opt-in, default `false`), `warpBridge.mcpPort` (default `3847`, `0` = ephemeral), `warpBridge.mcpBindAddress` (default `127.0.0.1` — loopback), `warpBridge.mcpBearerToken` (default empty; when set, every request must carry `Authorization: Bearer <token>`, validated in constant time via `crypto.timingSafeEqual`).
   - New documentation `docs/MCP.md` covering quick start, endpoints, protocol, tool surface, bearer auth, per-client integration examples (`~/.claude.json`, `~/.cursor/mcp.json`, `~/.codex/config.toml`), raw `curl` cheatsheet, troubleshooting, security posture and known limitations.
   - 34 new unit tests across `test/mcp/{server,tools,lifecycle}.test.ts` covering JSON-RPC dispatch, initialize/version negotiation, `tools/list`, `tools/call` happy and error paths, malformed requests, bearer auth match/mismatch, `/health` response, lifecycle `start`/`stop`/`restart` idempotency, and command-palette wiring.
-
 ### Changed
-
 - `package.json` version bumped to `0.6.0`.
-
 ### Compatibility
-
 - Requires **VS Code ≥ 1.96.0** (same as v0.5.0).
 - MCP server is **opt-in**; existing users upgrading from v0.5.0 see no behavioural change until they flip `warpBridge.mcpEnabled = true`.
 - Zero new runtime dependencies; `dist/extension.js` remains under the 100 KB performance budget.
-
 ### Metrics
-
 - 44 test files, **694** unit tests, all green.
 - `dist/extension.js` bundled at **≈ 59 KB** (esbuild, minified, `vscode` external).
-
 ## [0.5.0] — 2026-04-20
-
 First public release cycle under the `sena-labs` publisher. Combines the
 work originally scoped across the v0.3 / v0.4 / v0.5 milestones into a
 single ship.
-
 ### Added
-
 #### Agent-Native integration (originally v0.3)
-
 - Four **Language Model Tools** registered via `vscode.lm.registerTool`, so GitHub Copilot **Agent mode** can invoke Warp Oz directly without typing `@warp`:
   - `warp_run_local` (`#warpRunLocal`) — runs an Oz agent locally with IDE context injection.
   - `warp_run_cloud` (`#warpRunCloud`) — launches a cloud Oz agent with a credit-consumption confirmation dialog; polls to terminal state unless `wait: false` is passed.
@@ -85,52 +165,35 @@ single ship.
 - Each tool declares a strict JSON `inputSchema`, `modelDescription`, `userDescription`, `tags`, `canBeReferencedInPrompt: true` and `toolReferenceName` under `contributes.languageModelTools` in `package.json`.
 - Graceful fallback in `activate()` when running on a VS Code build that does not expose `vscode.lm.registerTool`: the `@warp` Chat Participant keeps working, only the LM tools are skipped.
 - 39 new unit tests under `test/tools/` covering each tool's `prepareInvocation`, happy paths, missing-input validation, CLI-unavailable fallback, error hints (`NOT_FOUND`, `NOT_AUTHENTICATED`, `TIMEOUT`), polling and filter semantics.
-
 #### UI Surfaces (originally v0.4)
-
 - Dedicated **Activity Bar view** `warpBridge.runsView` with five categories (`ActiveRuns`, `History`, `Schedules`, `Environments`, `MCP Servers`). Each category renders live data from the Oz CLI via the new `ActiveRunsTracker` (Active Runs / History) or direct CLI calls (Schedules / Environments / MCP).
 - **Status Bar indicator** `$(cloud) Warp: N active` (right-aligned, priority 100) that colour-codes the active-run count (default / `warningBackground` for 1–2 / `errorBackground` for 3+) and falls back to `$(cloud-outline) Warp: unavailable` when the tracker fires an error. Clicking focuses the Warp Bridge sidebar.
 - Context-menu commands on tree nodes: `warpBridge.tree.refresh`, `.copyId`, `.openInBrowser` (run nodes → `app.warp.dev/agents/<id>`), `.pauseSchedule`, `.unpauseSchedule`, `.deleteSchedule` (with modal confirmation), plus `.showRun` to pre-fill `@warp /status <runId>` in Copilot chat.
 - `contributes.viewsContainers`, `contributes.views`, `contributes.commands`, `contributes.menus` entries in `package.json` wiring the sidebar and its context menus.
 - New service `ActiveRunsTracker` (10 s default cadence) with `onDidChange` / `onDidError` events, consumed by both the status bar and the tree provider.
 - 32 new unit tests across `test/services/activeRunsTracker.test.ts` and `test/ui/*` covering the tracker lifecycle (start/stop/dispose/idempotency), status bar rendering & colour thresholds, tree categories and every context-menu command.
-
 #### Context & Handoff (v0.5)
-
 - **Prompt-variable expander** (`src/participant/promptExpander.ts`) resolves `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` before the prompt is sent to the Oz CLI. Tokens not recognised are passed through unchanged; CLI failures during resolution are inlined as `_error resolving <token>: <msg>_` so the user's intent is never dropped. Each unique token is resolved at most once per expansion.
 - Integrated `expandPromptVariables` into the `/run` and `/cloud` command handlers. When at least one token is substituted the chat stream emits `_Expanded N prompt variables_` before the run starts.
 - Commands `warpBridge.handoff` (Command Palette) and `warpBridge.tree.handoff` (sidebar context menu on run nodes) open a real Warp terminal via the `warp://action/new_tab?path=…&command=…` URI scheme. POSIX-safe shell quoting for all embedded strings (`"`, `\`, `$`, `` ` ``). Graceful fallback modal with a Copy button when the URL scheme isn't registered on the platform.
 - 28 new unit tests: `test/ui/handoff.test.ts` (15) and `test/participant/promptExpander.test.ts` (13) covering URI building, shell quoting, the palette/tree command flows, fallback modal, static token resolution, dynamic history/run tokens, empty-list fallback, output truncation, CLI error handling and token deduplication.
-
 #### Test infrastructure
-
 - `vscode` mock extended with: `lm`, `MarkdownString`, `LanguageModelTextPart`, `LanguageModelToolResult`, `StatusBarAlignment`, `StatusBarItem`, `ThemeColor`, `ThemeIcon`, `TreeItem`, `TreeItemCollapsibleState`, `window.createStatusBarItem`, `window.registerTreeDataProvider`, `window.createTreeView`, `window.showInputBox`, `env.clipboard`, and a functional `commands.executeCommand` that dispatches to registered handlers.
-
 #### Publishing infrastructure
-
 - `docs/PUBLISHING.md` documents the publisher setup (VS Code Marketplace + Open VSX), token management, and manual / CI publishing flows.
 - `.github/workflows/publish.yml` publishes the VSIX to both registries on every tag matching `v*.*.*`.
 - `scripts/publish.ps1` and `scripts/publish.sh` cover manual publishing on Windows and Unix shells.
-
 ### Changed
-
 - `RunCloudTool` normalises an empty `warpBridge.defaultEnvironment` to `undefined` before calling the CLI, so a misconfigured default cannot yield a bogus `--environment ''` argument.
 - `.vscodeignore` excludes `scripts/**` from VSIX packaging (publishing helpers are not shipped to end-users).
-
 ### Fixed
-
 - Tree view `when`-clauses now use `viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/` so generic commands (copy id, open in browser) only appear on the right node kinds.
-
 ### Compatibility
-
 - Requires **VS Code ≥ 1.96.0** (stable Chat Participant API). Language Model Tools additionally require `vscode.lm.registerTool` which ships with VS Code 1.96+; older hosts degrade gracefully to Chat Participant only.
 - Runs on macOS, Linux and Windows. Warp handoff requires Warp ≥ 0.2024.x (or a shell fallback via the Copy-command modal).
-
 ### Metrics
-
 - 41 test files, **660** unit tests, all green.
 - `dist/extension.js` bundled at **≈ 50 KB** (esbuild, minified, `vscode` external).
-
 ## [0.2.0] — 2026-04-19
 
 ### Added
