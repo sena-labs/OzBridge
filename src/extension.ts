@@ -15,6 +15,8 @@ import { WarpRunsTreeProvider } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
+import { createWarpDriveSource } from './drive/driveSourceFactory.js';
+import { IWarpDriveSource } from './drive/warpDriveSource.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -34,6 +36,7 @@ const state: {
   runPoller?: RunPoller;
   tracker?: ActiveRunsTracker;
   mcp?: McpLifecycle;
+  driveSource?: IWarpDriveSource;
 } = {};
 
 /** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
@@ -100,6 +103,12 @@ export function activate(context: vscode.ExtensionContext): void {
   for (const disposable of registerHandoffCommands({ cfgMgr: state.configManager })) {
     context.subscriptions.push(disposable);
   }
+
+  // Warp Drive source — filesystem-backed until the Oz CLI exposes
+  // `drive` subcommands, in which case the factory can be re-invoked
+  // with a runner in a future patch without changing downstream
+  // consumers (sidebar tree, editor, …).
+  state.driveSource = createWarpDriveSource();
 
   // MCP server export — opt-in via warpBridge.mcpEnabled.
   state.mcp = new McpLifecycle(cli, state.configManager, EXTENSION_VERSION);
