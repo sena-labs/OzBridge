@@ -1,0 +1,68 @@
+# Supply-chain security gates.
+#
+# v1.0 deliverable Q. Two parallel jobs:
+#   * `audit`     — fails the PR on any high/critical CVE in the
+#                   production dependency closure.
+#   * `secret-scan` — runs gitleaks against the working tree to catch
+#                   accidentally committed credentials before they reach
+#                   main.
+#
+# Both jobs are quick (< 60 s) so they run on every PR and every push.
+name: Security gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly Monday 07:00 UTC — picks up new advisories.
+    - cron: '0 7 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: npm audit (production)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fails the job (non-zero exit) on any high or critical advisory
+      # in the *production* closure. Dev dependencies are intentionally
+      # excluded — they don't ship in the VSIX.
+      - name: npm audit (production, high+critical)
+        run: npm audit --omit=dev --audit-level=high
+
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history for accurate scanning
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: 'false'
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'true'

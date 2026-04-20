@@ -1,0 +1,71 @@
+# Dependabot configuration.
+#
+# v1.0 deliverable Q (security gates). Dependabot watches three
+# ecosystems on a weekly cadence and groups related updates so PR
+# noise stays manageable.
+version: 2
+
+updates:
+  # ── Root package.json (devDeps + the single workspace runtime dep) ──
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'Europe/Rome'
+    open-pull-requests-limit: 5
+    reviewers:
+      - 'sena-labs/maintainers'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    groups:
+      typescript-toolchain:
+        patterns:
+          - 'typescript'
+          - '@types/*'
+          - 'esbuild'
+          - 'tsx'
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+      vscode-platform:
+        patterns:
+          - '@vscode/*'
+    ignore:
+      # Pinned for compatibility with VS Code's stable runtime.
+      - dependency-name: '@types/vscode'
+        update-types: ['version-update:semver-major']
+
+  # ── packages/copilot-chat-toolkit workspace ─────────────────────────
+  - package-ecosystem: 'npm'
+    directory: '/packages/copilot-chat-toolkit'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:30'
+      timezone: 'Europe/Rome'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore(toolkit-deps)'
+      include: 'scope'
+
+  # ── GitHub Actions ──────────────────────────────────────────────────
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '07:00'
+      timezone: 'Europe/Rome'
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: 'chore(actions)'
+      include: 'scope'
+    groups:
+      gh-actions-core:
+        patterns:
+          - 'actions/*'
+          - 'github/codeql-action'

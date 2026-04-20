@@ -2,9 +2,17 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-|---------|--------------------|
-| 0.1.x   | :white_check_mark: |
+Warp Bridge follows an **18-month LTS** policy on the latest minor
+release and best-effort backports on the previous one.
+
+| Version | Status              | Security fixes  |
+| ------- | ------------------- | --------------- |
+| 0.9.x   | :white_check_mark:  | active LTS      |
+| 0.8.x   | :white_check_mark:  | critical only   |
+| ≤ 0.7.x | :x:                 | end-of-life     |
+
+The v1.0 line will become the active LTS upon GA; 0.9.x will move to
+`critical only` and 0.8.x to EOL.
 
 ## Reporting a Vulnerability
 
@@ -50,11 +58,21 @@ The following are in scope for security reports:
 
 This extension implements the following security practices:
 
-- **Input sanitization** — all user-supplied IDs are validated against `[a-zA-Z0-9_-]+` before passing to CLI
-- **No shell expansion** — `child_process.spawn` with explicit args (no shell interpolation on non-Windows)
-- **No credential storage** — authentication is delegated entirely to the Oz CLI
-- **Minimal permissions** — the extension requests only the VS Code Chat API
-- **Zero runtime dependencies** — reduces supply-chain attack surface
+- **Input sanitization** — all user-supplied IDs are validated against `[a-zA-Z0-9_-]+` before passing to CLI.
+- **No shell expansion** — `child_process.spawn` with explicit args (no shell interpolation on non-Windows).
+- **No credential storage** — authentication is delegated entirely to the Oz CLI.
+- **Minimal permissions** — the extension requests only the VS Code Chat API + LM Tools.
+- **Zero runtime dependencies** — reduces supply-chain attack surface (only the workspace package `copilot-chat-toolkit` is bundled).
+- **Telemetry off by default** — see [`PRIVACY.md`](./PRIVACY.md). Doubly gated by `vscode.env.isTelemetryEnabled` *and* an explicit AppInsights connection string; a hard-coded deny-list refuses to transmit prompt content, run IDs, output, file paths, workspace paths, stack traces or tokens.
+
+### Automated Security Gates (v1.0 deliverable Q)
+
+Every PR and every push to `main` runs:
+
+- **CodeQL** (`.github/workflows/codeql.yml`) — `security-extended` + `security-and-quality` query suites for JavaScript/TypeScript. Findings surface in the repository's Security tab and block PRs at `error` severity. Weekly cron on Monday 06:00 UTC catches CVEs landing between releases.
+- **`npm audit`** (`.github/workflows/security.yml` job `audit`) — fails the PR on any high or critical advisory in the *production* dependency closure (`--omit=dev --audit-level=high`). Dev dependencies are excluded because they don't ship in the VSIX.
+- **Secret scan** (`.github/workflows/security.yml` job `secret-scan`) — `gitleaks` against full git history. Any committed credential blocks the PR.
+- **Dependabot** (`.github/dependabot.yml`) — weekly grouped updates for npm, the `packages/copilot-chat-toolkit` workspace and GitHub Actions, with reviewer auto-assignment to `sena-labs/maintainers`.
 
 ## Disclosure Policy
 
