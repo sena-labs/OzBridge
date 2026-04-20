@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Observability dashboard (`v0.8` deliverable H).** New webview panel
+  surfaced via the `warpBridge.dashboard.open` command (`Warp: Open
+  Dashboard`):
+  - Default 14-day window, summary cards (total runs, success rate),
+    inline SVG sparkline, and per-day breakdown table.
+  - Strict CSP (`default-src 'none'`) with per-render nonce; refresh
+    button posts a message that invalidates the `RunStatsService`
+    cache and recomputes.
+  - Singleton panel (`createOrShow` reveals the existing tab); error
+    page rendered when `computeSummary()` fails.
+  - 20 new tests (`test/ui/dashboardPanel.test.ts`); the shared
+    `vscode` mock now supports `createWebviewPanel` and `ViewColumn`.
 - **Run statistics aggregator (`v0.8` deliverable G).** New
   `RunStatsService` + pure helpers (`bucketByDate`, `successRate`,
   `extractCreatedAt`, `formatLocalDate`, `isTerminalStatus`) that

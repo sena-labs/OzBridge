@@ -221,9 +221,35 @@ export const window = {
     visible: false,
     selection: [] as unknown[],
   })),
+  createWebviewPanel: vi.fn((_viewType: string, _title: string, _column: unknown, _options?: unknown) => {
+    const messageEmitter = new EventEmitter<unknown>();
+    const disposeEmitter = new EventEmitter<void>();
+    const panel = {
+      webview: {
+        cspSource: 'vscode-webview://mock',
+        html: '',
+        onDidReceiveMessage: messageEmitter.event,
+        postMessage: vi.fn(),
+        _fireMessage: (m: unknown) => messageEmitter.fire(m),
+      },
+      reveal: vi.fn(),
+      onDidDispose: disposeEmitter.event,
+      dispose: vi.fn(() => { disposeEmitter.fire(); }),
+      _disposeEmitter: disposeEmitter,
+    };
+    return panel;
+  }),
   /** Test-only: access the mock status bar items created so far. */
   _statusBarItems: statusBarItems,
 };
+
+export enum ViewColumn {
+  Active = -1,
+  Beside = -2,
+  One = 1,
+  Two = 2,
+  Three = 3,
+}
 
 // ---------------------------------------------------------------------------
 // languages
