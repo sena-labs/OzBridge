@@ -1,3 +1,69 @@
+# perf(activation): CI budget gate (v1.0 deliverable R)
+
+## What
+
+Ships **deliverable R** of the v1.0 milestone — an automated CI gate
+that catches activation-time regressions before they reach `main`.
+
+- **`test/activationPerf.test.ts`** — vitest perf harness. Runs a
+  warm-up activate/deactivate cycle (excluded from the sample), then
+  25 measured iterations using `performance.now()` deltas around
+  `activate()`. State is reset between iterations via `deactivate()`
+  to keep modules clean. Prints a `[perf] activate() — n=… min=…
+  p50=… p95=… max=…` summary line so regressions are easy to triage
+  from the CI log without re-running locally. Asserts both p50 and
+  p95 against the published budget; explicit 60 s test timeout
+  prevents 5 s default flake.
+- **`BUDGETS` envelope** (`p50 = 800 ms`, `p95 = 1500 ms`) is
+  *measurement-environment* calibrated, not user-facing latency. The
+  vitest harness with the mocked `vscode` host adds fixed overhead
+  absent from the real editor (real activate is ~5× faster).  The
+  gate is sized so a 2× slowdown of the synchronous activation path
+  trips it. JSDoc explicitly forbids silently bumping the budget —
+  any change must land in the same PR as the regression that
+  motivates it.
+- **`.github/workflows/perf.yml`** — new `activation-budget` job
+  isolated from the main matrix so the perf signal isn't masked by
+  unrelated failures. Runs on every PR + main push, 10-minute job
+  timeout, concurrency cancellation per `github.ref`.
+
+## Verification
+
+```
+npm run compile     # → 0 TypeScript errors
+npm test -- --run test/activationPerf.test.ts
+                    # → PASS — [perf] activate() — n=25 min=125.46ms
+                    #          p50=355.56ms p95=607.15ms max=687.56ms
+                    #   well below 800 / 1500 ms budgets, ≈55% headroom.
+npm test -- --run   # → 1070/1070 green (76 files, 1 new perf test)
+npm run build       # → dist/extension.js = 105,347 B (102.88 KB)
+                    #   unchanged: deliverable R is test+CI only, no
+                    #   runtime code path.
+```
+
+Observed perf distribution (local Windows dev, 25 iterations):
+
+| metric | value     | budget     | margin |
+| ------ | --------- | ---------- | ------ |
+| min    | 125.5 ms  | —          | —      |
+| p50    | 355.6 ms  | 800 ms     | 55%    |
+| p95    | 607.2 ms  | 1 500 ms   | 60%    |
+| max    | 687.6 ms  | —          | —      |
+
+CI Linux runners are typically faster than local Windows, so the
+GitHub Actions job will sit comfortably inside the envelope.
+
+## Next
+
+- **Deliverable S (v1.0):** WCAG 2.1 AA pass on tree views, status
+  bar, walkthrough.
+- **Deliverable T (v1.0):** kill-switch setting + 18-month LTS
+  policy formalisation (the support matrix in `SECURITY.md` is the
+  first half).
+- **v1.0.0 release ceremony:** bump → CHANGELOG promote → release
+  notes → tag `v1.0.0` → `release/v1.0.x` branch → ship to
+  Marketplace + Open VSX (pending external blockers in
+  `docs/NEXT-STEPS-v1.0.md`).
 # feat(security): supply-chain gates (v1.0 deliverable Q)
 
 ## What
