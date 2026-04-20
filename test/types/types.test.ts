@@ -102,11 +102,12 @@ describe('OzCliError', () => {
     const allKinds = Object.values(OzCliErrorKind);
     expect(allKinds).toContain('NOT_FOUND');
     expect(allKinds).toContain('NOT_AUTHENTICATED');
+    expect(allKinds).toContain('INSUFFICIENT_CREDITS');
     expect(allKinds).toContain('TIMEOUT');
     expect(allKinds).toContain('PARSE_ERROR');
     expect(allKinds).toContain('CLI_ERROR');
     expect(allKinds).toContain('CANCELLED');
-    expect(allKinds).toHaveLength(6);
+    expect(allKinds).toHaveLength(7);
   });
 });
 
@@ -114,8 +115,8 @@ describe('OzCliError', () => {
 // OzCliErrorKind
 // ============================================================================
 describe('OzCliErrorKind', () => {
-  it('dovrebbe avere 6 valori', () => {
-    expect(Object.keys(OzCliErrorKind)).toHaveLength(6);
+  it('dovrebbe avere 7 valori', () => {
+    expect(Object.keys(OzCliErrorKind)).toHaveLength(7);
   });
 
   it('dovrebbe avere valori stringa uguali alle chiavi', () => {

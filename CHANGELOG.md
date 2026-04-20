@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] — 2026-04-21
+
+### Fixed
+- **Out-of-credits detection.** When a Warp account has no credits
+  left, the Oz CLI used to hang waiting for a backend response that
+  never arrived, and the extension surfaced only a generic
+  `⏰ Timeout. Operation exceeded the 300s limit.` after five minutes.
+  The error pipeline now classifies stderr/stdout containing credit /
+  quota / billing keywords (and HTTP 402/429 exit codes) as a new
+  `INSUFFICIENT_CREDITS` error kind, surfaced in chat with an
+  actionable “Open Warp billing” button instead of the timeout. The
+  `TIMEOUT` message itself was also rewritten to call out
+  out-of-credits as the most common cause when the CLI hangs without
+  output. (`@warp /run` regression spotted in v1.0.0 GA.)
+
+### Added
+- New `OzCliErrorKind.INSUFFICIENT_CREDITS` enum value (re-exported
+  from `copilot-chat-toolkit`).
+- `isInsufficientCreditsError(stderr, exitCode)` helper exported from
+  `src/services/ozCliService.ts` for unit testing and reuse.
+- 18 unit tests covering the keyword detector, exit-code 402/429
+  reclassification, and the end-to-end `agentRun` path.
+
 ## [1.0.0] — 2026-04-20
 "GA" milestone. Promotes deliverables **P · Q · R · S · T** to the
 v1.0.0 stable line: opt-in telemetry pipeline (doubly gated by

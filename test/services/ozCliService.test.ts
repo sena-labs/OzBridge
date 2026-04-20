@@ -410,6 +410,27 @@ describe('OzCliService', () => {
       }
     });
 
+    it('dovrebbe rilevare "out of credits" come INSUFFICIENT_CREDITS', async () => {
+      createMockProcess({ stderr: 'Error: account is out of credits', exitCode: 1 });
+      try {
+        await cli.agentRun({ prompt: 'test' });
+        expect.fail('should throw');
+      } catch (err) {
+        expect(err).toBeInstanceOf(OzCliError);
+        expect((err as OzCliError).kind).toBe(OzCliErrorKind.INSUFFICIENT_CREDITS);
+      }
+    });
+
+    it('dovrebbe rilevare exit code 402 come INSUFFICIENT_CREDITS', async () => {
+      createMockProcess({ stderr: 'HTTP 402', exitCode: 402 });
+      try {
+        await cli.agentRun({ prompt: 'test' });
+        expect.fail('should throw');
+      } catch (err) {
+        expect((err as OzCliError).kind).toBe(OzCliErrorKind.INSUFFICIENT_CREDITS);
+      }
+    });
+
     it('dovrebbe tornare CLI_ERROR per exit code non-zero generico', async () => {
       createMockProcess({ stderr: 'Unknown error', exitCode: 2 });
       try {

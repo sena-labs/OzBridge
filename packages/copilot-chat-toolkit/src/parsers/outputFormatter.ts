@@ -111,9 +111,22 @@ export class OutputFormatter {
         }
         break;
 
+      case CliErrorKind.INSUFFICIENT_CREDITS:
+        stream.markdown(
+          '💳 **Account out of credits or quota.** The remote service rejected the request.\n\n'
+          + 'Top up your account or upgrade your plan, then retry.\n',
+        );
+        if (error.stderr) {
+          stream.markdown(`\n<details><summary>CLI output</summary>\n\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n\n</details>\n`);
+        }
+        break;
+
       case CliErrorKind.TIMEOUT: {
         const secs = this.getConfig().timeoutMs / 1000;
-        stream.markdown(`⏰ **Timeout.** The operation exceeded the ${secs}s limit.\n\n`);
+        stream.markdown(
+          `⏰ **Timeout.** The operation exceeded the ${secs}s limit.\n\n`
+          + 'Common causes: account out of credits (the CLI may hang waiting for an interactive prompt), slow network, or a genuinely long-running task.\n',
+        );
         break;
       }
 

@@ -78,6 +78,16 @@ export interface ContextPayload {
 export enum CliErrorKind {
   NOT_FOUND = 'NOT_FOUND',
   NOT_AUTHENTICATED = 'NOT_AUTHENTICATED',
+  /**
+   * The remote agent service rejected the request because the
+   * caller's account is out of credits / quota / billing seats.
+   * Detected from stderr keywords (`out of credits`, `quota`,
+   * `payment required`, HTTP 402/429) so that the UI layer can
+   * surface an actionable upgrade message instead of a generic
+   * `CLI_ERROR` or — worse — a `TIMEOUT` when the CLI hangs
+   * waiting for an interactive Warp prompt.
+   */
+  INSUFFICIENT_CREDITS = 'INSUFFICIENT_CREDITS',
   TIMEOUT = 'TIMEOUT',
   PARSE_ERROR = 'PARSE_ERROR',
   CLI_ERROR = 'CLI_ERROR',

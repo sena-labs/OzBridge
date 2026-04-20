@@ -72,8 +72,10 @@ export function errorHint(kind: OzCliErrorKind): string | undefined {
       return 'Install Warp from https://www.warp.dev/download and ensure `oz` is in PATH.';
     case OzCliErrorKind.NOT_AUTHENTICATED:
       return 'Run `oz login` in a terminal to authenticate with Warp.';
+    case OzCliErrorKind.INSUFFICIENT_CREDITS:
+      return 'Warp account is out of credits or quota. Top up at https://app.warp.dev/settings/billing then retry.';
     case OzCliErrorKind.TIMEOUT:
-      return 'Increase `warpBridge.timeoutMs` or `warpBridge.cloudPollingTimeoutMs` in settings.';
+      return 'Increase `warpBridge.timeoutMs` or `warpBridge.cloudPollingTimeoutMs` in settings. Also check whether the Warp account has credits left — a depleted account can cause the CLI to hang until the timeout fires.';
     case OzCliErrorKind.CANCELLED:
       return 'The operation was cancelled by the user.';
     case OzCliErrorKind.PARSE_ERROR:
