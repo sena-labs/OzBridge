@@ -54,6 +54,15 @@ jobs:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # gitleaks-action@v2 calls GET /pulls/:n/commits to scope the diff;
+    # the default repo token only has `contents: read`, so on PRs the
+    # call returns 403 ("Resource not accessible by integration") and
+    # the action exits non-zero before even running the scanner.
+    # Granting `pull-requests: read` is the minimum required scope —
+    # comment posting is still disabled via GITLEAKS_ENABLE_COMMENTS.
+    permissions:
+      contents: read
+      pull-requests: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
