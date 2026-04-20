@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **Get-Started walkthrough (`v0.9` deliverable L).** Contributes a
+  four-step `warpBridge.gettingStarted` walkthrough (install Warp CLI,
+  run `@warp`, explore the Warp views, enable the MCP bridge) under
+  `media/walkthrough/*.md`. The walkthrough opens automatically on the
+  first activation, gated by the `warpBridge.walkthrough.shown` key in
+  `context.globalState`; users can re-open it anytime from
+  **Help → Get Started**. Titles/descriptions are fully localised via
+  `package.nls{,.it,.es}.json`. 12 new tests
+  (`test/ui/walkthroughGating.test.ts`,
+  `test/ui/walkthroughManifest.test.ts`) assert gating behaviour, step
+  ids, completion events, markdown asset existence and sanitisation.
 - **Localization pipeline (`v0.9` deliverable K).** Wired the official
   `vscode.l10n` API end-to-end:
   - `l10n/bundle.l10n{,.it,.es}.json` — 51 runtime message keys (English

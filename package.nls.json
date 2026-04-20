@@ -30,5 +30,15 @@
   "command.skill.saveWorkspace.title": "Warp Skill: Save current as project skill…",
   "command.dashboard.open.title": "Warp: Open Dashboard",
   "command.triageFailure.title": "Warp: Triage Failed Run…",
-  "command.exportDataset.title": "Warp: Export Run Dataset…"
+  "command.exportDataset.title": "Warp: Export Run Dataset…",
+  "walkthrough.gettingStarted.title": "Get Started with Warp Bridge",
+  "walkthrough.gettingStarted.description": "Install Warp, run your first Oz agent from Copilot Chat, explore the Warp views and enable the MCP bridge.",
+  "walkthrough.step.installCli.title": "Install the Warp CLI",
+  "walkthrough.step.installCli.description": "Download Warp (≥ 0.2024.x) so Warp Bridge can locate the `oz` executable on your PATH. Run the Warp: Refresh command once installation is complete.",
+  "walkthrough.step.firstAgent.title": "Run your first @warp prompt",
+  "walkthrough.step.firstAgent.description": "Open a Copilot Chat view and invoke @warp with a short prompt to run an Oz agent end-to-end.",
+  "walkthrough.step.exploreViews.title": "Explore the Warp views",
+  "walkthrough.step.exploreViews.description": "Open the Warp Runs and Warp Drive views from the Activity Bar to manage runs, skills and prompts.",
+  "walkthrough.step.enableMcp.title": "Enable the MCP bridge (optional)",
+  "walkthrough.step.enableMcp.description": "Toggle warpBridge.mcpEnabled or run Warp: Start MCP server to let Claude Code, Cursor or Codex drive Warp Bridge over MCP."
 }

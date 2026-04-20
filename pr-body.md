@@ -1,3 +1,59 @@
+# Deliverable L — Get-Started walkthrough
+
+Second deliverable of the v0.9 "Reach" milestone
+(`docs/NEXT-STEPS-v0.9.md`).
+
+## What
+
+Contributes a first-class **Get Started with Warp Bridge** walkthrough
+that appears automatically the first time the extension activates and
+can be reopened from **Help → Get Started** at any time.
+
+### Manifest
+- `package.json#contributes.walkthroughs[0]` — `warpBridge.gettingStarted`
+  with four steps:
+  1. **Install the Warp CLI** (completion: `warpBridge.tree.refresh`).
+  2. **Run your first `@warp` prompt** (completion: chat participant
+     invocation).
+  3. **Explore the Warp views** (completion: opening `warpBridge.runsView`).
+  4. **Enable the MCP bridge (optional)** (completion: toggling
+     `warpBridge.mcpEnabled` or running `warpBridge.mcp.start`).
+- All titles/descriptions localised through
+  `package.nls{,.it,.es}.json` (10 new `walkthrough.*` keys per locale).
+
+### Markdown content
+- `media/walkthrough/install-cli.md`
+- `media/walkthrough/first-agent.md`
+- `media/walkthrough/explore-views.md`
+- `media/walkthrough/enable-mcp.md`
+
+### First-activation gate
+- `src/ui/walkthrough.ts` exposes `maybeOpenGettingStartedWalkthrough`
+  which reads/writes the `warpBridge.walkthrough.shown` key on
+  `context.globalState` so the wizard auto-opens at most once per
+  install. Failures from `workbench.action.openWalkthrough` are
+  swallowed (activation must never block on UX).
+- `src/extension.ts` wires the helper into `activate()` after logger
+  init and before the background CLI availability check.
+
+### Tests (+12)
+- `test/ui/walkthroughGating.test.ts` (7 tests): first-run opens, gate
+  flip is idempotent, re-activation skips, falsy stored values still
+  open once, qualified id is correct, rejected `executeCommand` does
+  not throw, `showProgress=false` is forwarded.
+- `test/ui/walkthroughManifest.test.ts` (5 tests): single walkthrough
+  contributed, exactly four ordered step ids, non-empty
+  `completionEvents`, markdown assets exist and are free of
+  `<script>` / `javascript:` URIs, every `%key%` resolves in
+  `package.nls.json`.
+
+## Verification
+- `npm run compile` — no TypeScript errors.
+- `npm test -- --run` — **1005/1005** (993 baseline + 12 new tests).
+- `npm run build` — bundle **99.93 KB** (budget 125 KB).
+
+## Next
+Deliverable M (`docs/NEXT-STEPS-v0.9.md`) — Open VSX publishing.
 # Deliverable K — `vscode.l10n` localization pipeline
 
 Closes the first item of the v0.9 "Reach" milestone defined in

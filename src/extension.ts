@@ -21,6 +21,7 @@ import { IWarpDriveSource } from './drive/warpDriveSource.js';
 import { WarpDriveTreeProvider } from './ui/driveTreeProvider.js';
 import { registerDriveCommands } from './ui/driveCommands.js';
 import { registerSkillEditorCommands } from './ui/skillEditor.js';
+import { maybeOpenGettingStartedWalkthrough } from './ui/walkthrough.js';
 import { DashboardPanel } from './ui/dashboardPanel.js';
 import { RunStatsService } from './services/runStats.js';
 import { FailureTriageService } from './services/failureTriage.js';
@@ -249,6 +250,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   logInfo('Extension activated');
   logInfo(`Oz CLI path: ${state.configManager.getConfig().ozPath}`);
+
+  // First-activation Getting Started walkthrough (gated via globalState so
+  // it opens at most once per install; failure is non-fatal).
+  void maybeOpenGettingStartedWalkthrough({ globalState: context.globalState });
 
   // Background availability check (does not block activation)
   cli.checkAvailability().then((avail) => {
