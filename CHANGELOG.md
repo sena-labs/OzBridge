@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- **v0.4 Surfaces** — native VS Code UI for Warp resources:
+  - Dedicated **Activity Bar view** (`warpBridge.runsView`) with five categories: Active Runs, History, Schedules, Environments, MCP Servers. Each category renders live data from the Oz CLI via the new `ActiveRunsTracker` (Active Runs / History) or direct CLI calls (Schedules / Environments / MCP).
+  - **Status Bar indicator** `$(cloud) Warp: N active` (right-aligned, priority 100) that colour-codes the active-run count (`default` / `warningBackground` / `errorBackground`) and falls back to `$(cloud-outline) Warp: unavailable` when the tracker fires an error.
+  - Context-menu commands on tree nodes: `warpBridge.tree.refresh`, `.copyId`, `.openInBrowser` (run nodes → `app.warp.dev/agents/<id>`), `.pauseSchedule`, `.unpauseSchedule`, `.deleteSchedule` (with modal confirmation), plus `.showRun` to pre-fill `@warp /status <runId>` in Copilot chat.
+  - `contributes.viewsContainers`, `contributes.views`, `contributes.commands`, `contributes.menus` entries in `package.json` wiring the sidebar and its context menus.
+  - New service `ActiveRunsTracker` (10 s default cadence) with `onDidChange` / `onDidError` events, consumed by both the status bar and the tree provider.
+  - 32 new unit tests across `test/services/activeRunsTracker.test.ts` and `test/ui/*` covering the tracker lifecycle (start/stop/dispose/idempotency), status bar rendering & colour thresholds, tree categories, and every context-menu command.
+  - `vscode` mock extended with `StatusBarAlignment`, `StatusBarItem`, `ThemeColor`, `ThemeIcon`, `TreeItem`, `TreeItemCollapsibleState`, `window.createStatusBarItem`, `window.registerTreeDataProvider`, `window.createTreeView`, `env.clipboard`, and a functional `commands.executeCommand` that dispatches to registered handlers.
 - **Agent-Native Language Model Tools** — GitHub Copilot **Agent mode** can now invoke Warp Oz directly, without typing `@warp`. Four tools registered via `vscode.lm.registerTool`:
   - `warp_run_local` (`#warpRunLocal`) — run an Oz agent locally in the current workspace; injects IDE context by default.
   - `warp_run_cloud` (`#warpRunCloud`) — launch a cloud Oz agent with a credit-consumption confirmation dialog; polls until terminal state unless `wait: false`.

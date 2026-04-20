@@ -35,6 +35,7 @@ that Copilot Agent mode can invoke autonomously.
 
 - **`@warp` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel.
 - **Agent-Native Language Model Tools** (v0.3+) — Copilot Agent mode can invoke Warp Oz directly, without typing `@warp`.
+- **Warp sidebar + status bar** (v0.4+) — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
 - **9 slash commands** covering the full agent workflow: `/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`.
 - **IDE context injection** — automatically includes workspace path, active file, selection and diagnostics in every prompt.
 - **Agent skill detection** — maps prompt keywords to the 7-agent pipeline (spec, design, implement, review, test, deploy, maintenance).
@@ -168,6 +169,28 @@ Each tool is declared in `package.json` under
 model receives accurate type hints at tool-call time. Cloud tools always
 show a confirmation dialog before running, regardless of the user's
 *Bypass Approvals* preference.
+
+### Sidebar & Status Bar
+
+The extension contributes a dedicated **Activity Bar view** (*Warp Bridge
+→ Runs & Resources*) with five collapsible categories:
+
+- **Active Runs** — `QUEUED` + `INPROGRESS` (live-refreshed every 10 s).
+- **History** — `SUCCEEDED` + `FAILED`, capped at 20 entries per refresh.
+- **Schedules** — cron jobs from `oz schedule list`.
+- **Environments** — cloud environments from `oz environment list`.
+- **MCP Servers** — MCP integrations from `oz mcp list`.
+
+Right-click menu actions:
+
+- *Copy ID* on any run / schedule / environment / MCP node.
+- *Open in Browser* on a run node (opens `app.warp.dev/agents/<id>`).
+- *Pause / Resume / Delete* on schedule nodes (delete asks for confirmation).
+
+A **status bar item** (`$(cloud) Warp: N active`, right-aligned) mirrors the
+Active Runs count in real time and switches to `warningBackground` at 1–2
+active runs or `errorBackground` at 3+. Clicking the indicator focuses the
+Warp Bridge sidebar.
 
 ## Configuration
 

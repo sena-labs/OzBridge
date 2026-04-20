@@ -3,8 +3,12 @@ import { ConfigManager } from './services/configManager.js';
 import { ContextCollector } from './services/contextCollector.js';
 import { OzCliService } from './services/ozCliService.js';
 import { RunPoller } from './services/runPoller.js';
+import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
 import { registerWarpTools } from './tools/index.js';
+import { StatusBarManager } from './ui/statusBarItem.js';
+import { WarpRunsTreeProvider } from './ui/runsTreeProvider.js';
+import { registerTreeCommands } from './ui/treeCommands.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 
 /**
@@ -18,7 +22,11 @@ import { initLogger, logInfo, logError } from './services/logger.js';
  */
 
 /** Module-level state — encapsulates extension lifecycle objects. */
-const state: { configManager?: ConfigManager; runPoller?: RunPoller } = {};
+const state: {
+  configManager?: ConfigManager;
+  runPoller?: RunPoller;
+  tracker?: ActiveRunsTracker;
+} = {};
 
 export function activate(context: vscode.ExtensionContext): void {
   // Startup log
@@ -53,6 +61,32 @@ export function activate(context: vscode.ExtensionContext): void {
   } else {
     logInfo('vscode.lm.registerTool not available — Language Model Tools not registered');
   }
+
+  // Avvia l'ActiveRunsTracker — feed event-driven per Status Bar e sidebar.
+  state.tracker = new ActiveRunsTracker(cli);
+  context.subscriptions.push(state.tracker);
+  state.tracker.start();
+
+  // Status Bar indicator $(cloud) Warp: N active
+  const statusBar = new StatusBarManager(state.tracker);
+  context.subscriptions.push(statusBar);
+
+  // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
+  const treeProvider = new WarpRunsTreeProvider(cli, state.tracker);
+  context.subscriptions.push(treeProvider);
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider('warpBridge.runsView', treeProvider),
+  );
+  for (const disposable of registerTreeCommands({ cli, tracker: state.tracker, provider: treeProvider })) {
+    context.subscriptions.push(disposable);
+  }
+
+  // Comando aggiuntivo: focus sulla sidebar — usato dal click sulla Status Bar.
+  context.subscriptions.push(
+    vscode.commands.registerCommand(StatusBarManager.FOCUS_COMMAND, () =>
+      vscode.commands.executeCommand('workbench.view.extension.warpBridgeSidebar'),
+    ),
+  );
 
   // I servizi leggono la config dinamicamente tramite IConfigManager,
   // quindi i cambi si applicano automaticamente alla prossima invocazione.
@@ -94,4 +128,5 @@ export function deactivate(): void {
   // RunPoller è ora disposto anche via context.subscriptions,
   // ma disposeAll() è idempotente — sicuro chiamare in entrambi i punti.
   state.runPoller?.disposeAll();
+  state.tracker?.dispose();
 }

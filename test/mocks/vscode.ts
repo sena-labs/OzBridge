@@ -96,6 +96,59 @@ export const workspace = {
 };
 
 // ---------------------------------------------------------------------------
+// StatusBar / ThemeColor / ThemeIcon / TreeItem
+// ---------------------------------------------------------------------------
+export enum StatusBarAlignment {
+  Left = 1,
+  Right = 2,
+}
+
+export class ThemeColor {
+  constructor(public readonly id: string) {}
+}
+
+export class ThemeIcon {
+  constructor(public readonly id: string, public readonly color?: ThemeColor) {}
+}
+
+export enum TreeItemCollapsibleState {
+  None = 0,
+  Collapsed = 1,
+  Expanded = 2,
+}
+
+export class TreeItem {
+  label: string | { label: string };
+  id?: string;
+  iconPath?: ThemeIcon | Uri | { light: Uri; dark: Uri };
+  description?: string | boolean;
+  tooltip?: string | MarkdownString;
+  contextValue?: string;
+  command?: { command: string; title: string; arguments?: unknown[] };
+  collapsibleState?: TreeItemCollapsibleState;
+  constructor(label: string | { label: string }, collapsibleState?: TreeItemCollapsibleState) {
+    this.label = label;
+    this.collapsibleState = collapsibleState;
+  }
+}
+
+interface MockStatusBarItem {
+  alignment: StatusBarAlignment;
+  priority?: number;
+  text: string;
+  tooltip?: string | MarkdownString;
+  command?: string | { command: string; title: string };
+  backgroundColor?: ThemeColor;
+  color?: string | ThemeColor;
+  name?: string;
+  show: ReturnType<typeof vi.fn>;
+  hide: ReturnType<typeof vi.fn>;
+  dispose: ReturnType<typeof vi.fn>;
+}
+
+const statusBarItems: MockStatusBarItem[] = [];
+
+// ---------------------------------------------------------------------------
 // window
 // ---------------------------------------------------------------------------
 export const window = {
@@ -108,6 +161,32 @@ export const window = {
   showWarningMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
   showInformationMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
   showErrorMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
+  createStatusBarItem: vi.fn((alignment?: StatusBarAlignment, priority?: number): MockStatusBarItem => {
+    const item: MockStatusBarItem = {
+      alignment: alignment ?? StatusBarAlignment.Right,
+      priority,
+      text: '',
+      show: vi.fn(),
+      hide: vi.fn(),
+      dispose: vi.fn(() => {
+        const i = statusBarItems.indexOf(item);
+        if (i >= 0) { statusBarItems.splice(i, 1); }
+      }),
+    };
+    statusBarItems.push(item);
+    return item;
+  }),
+  registerTreeDataProvider: vi.fn((_viewId: string, _provider: unknown) => ({ dispose: vi.fn() })),
+  createTreeView: vi.fn((_viewId: string, _options: unknown) => ({
+    dispose: vi.fn(),
+    reveal: vi.fn(),
+    onDidChangeSelection: vi.fn(() => ({ dispose: vi.fn() })),
+    onDidChangeVisibility: vi.fn(() => ({ dispose: vi.fn() })),
+    visible: false,
+    selection: [] as unknown[],
+  })),
+  /** Test-only: access the mock status bar items created so far. */
+  _statusBarItems: statusBarItems,
 };
 
 // ---------------------------------------------------------------------------
@@ -131,10 +210,26 @@ export const chat = {
 // ---------------------------------------------------------------------------
 // commands
 // ---------------------------------------------------------------------------
+const registeredCommands = new Map<string, (...args: unknown[]) => unknown>();
+
 export const commands = {
-  registerCommand: vi.fn((_command: string, _callback: (...args: any[]) => any) => ({
-    dispose: vi.fn(),
-  })),
+  registerCommand: vi.fn((command: string, callback: (...args: unknown[]) => unknown) => {
+    registeredCommands.set(command, callback);
+    return {
+      dispose: vi.fn(() => { registeredCommands.delete(command); }),
+    };
+  }),
+  executeCommand: vi.fn((command: string, ...args: unknown[]) => {
+    const handler = registeredCommands.get(command);
+    if (handler) {
+      return Promise.resolve(handler(...args));
+    }
+    return Promise.resolve(undefined);
+  }),
+  /** Test-only: introspection into currently registered commands. */
+  _getCommand: (name: string) => registeredCommands.get(name),
+  _listCommands: () => Array.from(registeredCommands.keys()),
+  _resetCommands: () => { registeredCommands.clear(); },
 };
 
 // ---------------------------------------------------------------------------
@@ -143,6 +238,10 @@ export const commands = {
 export const env = {
   language: 'en',
   openExternal: vi.fn(() => Promise.resolve(true)),
+  clipboard: {
+    writeText: vi.fn((_text: string) => Promise.resolve()),
+    readText: vi.fn(() => Promise.resolve('')),
+  },
 };
 
 // ---------------------------------------------------------------------------

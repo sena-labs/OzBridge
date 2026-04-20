@@ -193,6 +193,97 @@
         }
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "warpBridgeSidebar",
+          "title": "Warp Bridge",
+          "icon": "media/warp-icon.png"
+        }
+      ]
+    },
+    "views": {
+      "warpBridgeSidebar": [
+        {
+          "id": "warpBridge.runsView",
+          "name": "Runs & Resources",
+          "icon": "media/warp-icon.png",
+          "contextualTitle": "Warp Bridge"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "warpBridge.tree.refresh",
+        "title": "Warp: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "warpBridge.tree.copyId",
+        "title": "Warp: Copy ID",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "warpBridge.tree.openInBrowser",
+        "title": "Warp: Open in Browser",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "warpBridge.tree.showRun",
+        "title": "Warp: Show Run Details"
+      },
+      {
+        "command": "warpBridge.tree.pauseSchedule",
+        "title": "Warp: Pause Schedule",
+        "icon": "$(debug-pause)"
+      },
+      {
+        "command": "warpBridge.tree.unpauseSchedule",
+        "title": "Warp: Resume Schedule",
+        "icon": "$(play)"
+      },
+      {
+        "command": "warpBridge.tree.deleteSchedule",
+        "title": "Warp: Delete Schedule",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "warpBridge.tree.refresh",
+          "when": "view == warpBridge.runsView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "warpBridge.tree.copyId",
+          "when": "view == warpBridge.runsView && viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/",
+          "group": "warpGeneric@1"
+        },
+        {
+          "command": "warpBridge.tree.openInBrowser",
+          "when": "view == warpBridge.runsView && viewItem =~ /^warpRun/",
+          "group": "warpGeneric@2"
+        },
+        {
+          "command": "warpBridge.tree.pauseSchedule",
+          "when": "view == warpBridge.runsView && viewItem == warpSchedule:running",
+          "group": "warpSchedule@1"
+        },
+        {
+          "command": "warpBridge.tree.unpauseSchedule",
+          "when": "view == warpBridge.runsView && viewItem == warpSchedule:paused",
+          "group": "warpSchedule@1"
+        },
+        {
+          "command": "warpBridge.tree.deleteSchedule",
+          "when": "view == warpBridge.runsView && viewItem =~ /^warpSchedule/",
+          "group": "warpSchedule@2"
+        }
+      ]
+    },
     "configuration": {
       "title": "Warp Bridge",
       "properties": {
