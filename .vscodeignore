@@ -33,5 +33,9 @@ dist/**/*.map
 dist/**/*.vsix
 *.vsix
 
+# Localisation bundles must ship with the extension
+!l10n/**
+!package.nls*.json
+
 # Publishing scripts (not needed by end-users)
 scripts/**

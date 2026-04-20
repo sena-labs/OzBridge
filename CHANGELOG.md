@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- **Localization pipeline (`v0.9` deliverable K).** Wired the official
+  `vscode.l10n` API end-to-end:
+  - `l10n/bundle.l10n{,.it,.es}.json` — 51 runtime message keys (English
+    source as identity map, Italian, Spanish).
+  - `package.nls{,.it,.es}.json` — 32 manifest keys (display name,
+    description, command palette categories and titles).
+  - `package.json` declares `"l10n": "./l10n"` and references commands
+    via `%key%` placeholders.
+  - All 43 `vscode.window.show*Message` call sites across nine source
+    files now go through `vscode.l10n.t(...)` with positional `{N}`
+    placeholders.
+  - 15 new tests (`test/l10n/bundleConsistency.test.ts`,
+    `test/l10n/manifestConsistency.test.ts`) validate key parity,
+    placeholder counts, manifest references, and bundle declaration.
+  - Bundle: **99.58 KB** (well under the 125 KB budget).
 ### Changed
 - **v0.9 bootstrap.** Documented the "Reach" milestone (deliverables
   K–O) in `docs/MILESTONE-v0.9.md` and `docs/NEXT-STEPS-v0.9.md`.

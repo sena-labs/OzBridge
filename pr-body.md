@@ -1,3 +1,53 @@
+# Deliverable K — `vscode.l10n` localization pipeline
+
+Closes the first item of the v0.9 "Reach" milestone defined in
+`docs/MILESTONE-v0.9.md` / `docs/NEXT-STEPS-v0.9.md`.
+
+## What
+
+Wires the official **`vscode.l10n`** API end-to-end with two starter
+locales (Italian, Spanish) on top of the English source.
+
+### Runtime message bundles
+- `l10n/bundle.l10n.json` — 51 English source keys (identity map).
+- `l10n/bundle.l10n.it.json` — Italian translations.
+- `l10n/bundle.l10n.es.json` — Spanish translations.
+- `package.json` declares `"l10n": "./l10n"`.
+
+### Manifest localization
+- `package.nls.json` — 32 keys (displayName, description, 4 categories,
+  25 command titles).
+- `package.nls.it.json`, `package.nls.es.json` — full translations.
+- All `contributes.commands[]` entries now use `%key%` references.
+
+### Source migrations (43 call sites · 9 files)
+`src/extension.ts`, `src/commands/cloudCommand.ts`,
+`src/commands/initV2Command.ts`, `src/mcp/lifecycle.ts`,
+`src/ui/treeCommands.ts`, `src/ui/driveCommands.ts`,
+`src/ui/handoff.ts`, `src/ui/skillEditor.ts` — every
+`vscode.window.show*Message`/quickpick/inputbox/withProgress label now
+flows through `vscode.l10n.t(...)` with positional `{N}` placeholders.
+
+### Tests
+- `test/l10n/bundleConsistency.test.ts` — verifies `it`/`es` bundles
+  share the source key set, preserve `{N}` placeholder counts, and
+  contain non-empty translations.
+- `test/l10n/manifestConsistency.test.ts` — parses `package.json`,
+  collects every `%key%` reference, asserts presence in all three
+  manifest bundles, and confirms the `l10n` field declaration.
+
+### Test mock
+- `test/mocks/vscode.ts` — added a faithful `vscode.l10n` namespace
+  (`t()` with positional `{N}` interpolation, supporting both string
+  and object-form signatures).
+
+## Verification
+- `npm run compile` — no TypeScript errors.
+- `npm test -- --run` — **993/993** (978 baseline + 15 new l10n tests).
+- `npm run build` — bundle **99.58 KB** (budget 125 KB).
+
+## Next
+Deliverable L (`docs/NEXT-STEPS-v0.9.md`) — Get-Started walkthrough.
 # v0.7.0 — Team & Drive (remaining deliverables + release)
 
 Closes the v0.7 milestone by merging deliverables **A-UI**, **B**, **C** and **E** on top of the partial integration already in `main` (PR #6), and finalizes the `v0.7.0` release.

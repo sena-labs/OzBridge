@@ -39,17 +39,17 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
     vscode.commands.registerCommand(TREE_COMMANDS.copyId, async (node?: WarpTreeNode) => {
       const id = extractId(node);
       if (!id) {
-        await vscode.window.showWarningMessage('Warp Bridge: nothing to copy for this item.');
+        await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: nothing to copy for this item.'));
         return;
       }
       await vscode.env.clipboard.writeText(id);
-      await vscode.window.showInformationMessage(`Copied \`${id}\` to clipboard.`);
+      await vscode.window.showInformationMessage(vscode.l10n.t('Copied `{0}` to clipboard.', id));
     }),
 
     vscode.commands.registerCommand(TREE_COMMANDS.openInBrowser, async (node?: WarpTreeNode) => {
       const url = extractUrl(node);
       if (!url) {
-        await vscode.window.showWarningMessage('Warp Bridge: no browser URL for this item.');
+        await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: no browser URL for this item.'));
         return;
       }
       await vscode.env.openExternal(vscode.Uri.parse(url));
@@ -69,10 +69,10 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       if (!id) { return; }
       try {
         await cli.schedulePause(id);
-        await vscode.window.showInformationMessage(`Paused schedule \`${id}\`.`);
+        await vscode.window.showInformationMessage(vscode.l10n.t('Paused schedule `{0}`.', id));
         provider.refresh();
       } catch (err) {
-        await vscode.window.showErrorMessage(`Failed to pause schedule: ${errorMessage(err)}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Failed to pause schedule: {0}', errorMessage(err)));
       }
     }),
 
@@ -81,10 +81,10 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       if (!id) { return; }
       try {
         await cli.scheduleUnpause(id);
-        await vscode.window.showInformationMessage(`Resumed schedule \`${id}\`.`);
+        await vscode.window.showInformationMessage(vscode.l10n.t('Resumed schedule `{0}`.', id));
         provider.refresh();
       } catch (err) {
-        await vscode.window.showErrorMessage(`Failed to resume schedule: ${errorMessage(err)}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Failed to resume schedule: {0}', errorMessage(err)));
       }
     }),
 
@@ -92,17 +92,17 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       const id = scheduleId(node);
       if (!id) { return; }
       const confirm = await vscode.window.showWarningMessage(
-        `Delete schedule \`${id}\`? This cannot be undone.`,
+        vscode.l10n.t('Delete schedule `{0}`? This cannot be undone.', id),
         { modal: true },
-        'Delete',
+        vscode.l10n.t('Delete'),
       );
-      if (confirm !== 'Delete') { return; }
+      if (confirm !== vscode.l10n.t('Delete')) { return; }
       try {
         await cli.scheduleDelete(id);
-        await vscode.window.showInformationMessage(`Deleted schedule \`${id}\`.`);
+        await vscode.window.showInformationMessage(vscode.l10n.t('Deleted schedule `{0}`.', id));
         provider.refresh();
       } catch (err) {
-        await vscode.window.showErrorMessage(`Failed to delete schedule: ${errorMessage(err)}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Failed to delete schedule: {0}', errorMessage(err)));
       }
     }),
   ];

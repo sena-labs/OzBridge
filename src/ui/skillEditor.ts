@@ -71,7 +71,7 @@ export function registerSkillEditorCommands(deps: SkillEditorDeps = {}): vscode.
 
       const base = target === 'Project' ? getWorkspace() : getHome();
       if (!base) {
-        await vscode.window.showErrorMessage('Warp Bridge: no folder available for Project save.');
+        await vscode.window.showErrorMessage(vscode.l10n.t('Warp Bridge: no folder available for Project save.'));
         return;
       }
       const dir = target === 'Project'
@@ -83,17 +83,17 @@ export function registerSkillEditorCommands(deps: SkillEditorDeps = {}): vscode.
         await ensureDirectoryExists(dir);
         if (fs.existsSync(file)) {
           const overwrite = await vscode.window.showWarningMessage(
-            `${file} already exists. Overwrite?`,
+            vscode.l10n.t('{0} already exists. Overwrite?', file),
             { modal: true },
-            'Overwrite',
+            vscode.l10n.t('Overwrite'),
           );
-          if (overwrite !== 'Overwrite') { return; }
+          if (overwrite !== vscode.l10n.t('Overwrite')) { return; }
         }
         atomicWrite(file, skillTemplate(name.trim()));
         const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
         await vscode.window.showTextDocument(doc);
       } catch (err) {
-        await vscode.window.showErrorMessage(`Failed to create skill: ${errMsg(err)}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Failed to create skill: {0}', errMsg(err)));
       }
     }),
 
@@ -135,7 +135,7 @@ async function saveCurrentAs(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    await vscode.window.showWarningMessage('Warp Bridge: no active editor to save.');
+    await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: no active editor to save.'));
     return;
   }
   const content = editor.document.getText();
@@ -149,7 +149,7 @@ async function saveCurrentAs(
   if (!name) { return; }
   const base = target === 'Global' ? homeDir : workspaceDir;
   if (!base) {
-    await vscode.window.showErrorMessage(`Warp Bridge: no ${target.toLowerCase()} directory available.`);
+    await vscode.window.showErrorMessage(vscode.l10n.t('Warp Bridge: no {0} directory available.', target.toLowerCase()));
     return;
   }
   const dir = path.join(base, '.agents', 'skills', name.trim());
@@ -158,16 +158,16 @@ async function saveCurrentAs(
     await ensureDirectoryExists(dir);
     if (fs.existsSync(file)) {
       const overwrite = await vscode.window.showWarningMessage(
-        `${file} already exists. Overwrite?`,
+        vscode.l10n.t('{0} already exists. Overwrite?', file),
         { modal: true },
-        'Overwrite',
+        vscode.l10n.t('Overwrite'),
       );
-      if (overwrite !== 'Overwrite') { return; }
+      if (overwrite !== vscode.l10n.t('Overwrite')) { return; }
     }
     atomicWrite(file, content);
-    await vscode.window.showInformationMessage(`Saved ${target.toLowerCase()} skill to ${file}`);
+    await vscode.window.showInformationMessage(vscode.l10n.t('Saved {0} skill to {1}', target.toLowerCase(), file));
   } catch (err) {
-    await vscode.window.showErrorMessage(`Save failed: ${errMsg(err)}`);
+    await vscode.window.showErrorMessage(vscode.l10n.t('Save failed: {0}', errMsg(err)));
   }
 }
 

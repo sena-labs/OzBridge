@@ -382,3 +382,28 @@ export const lm = {
   _getTool: (name: string) => registeredTools.get(name),
   _reset: () => { registeredTools.clear(); },
 };
+
+// ---------------------------------------------------------------------------
+// l10n
+// ---------------------------------------------------------------------------
+/**
+ * Mock for `vscode.l10n`. Mirrors the runtime contract enough for unit tests:
+ * `t(message, ...args)` interpolates `{0}`, `{1}` placeholders into the
+ * source string. Falls back to identity when no args are passed.
+ */
+type L10nObjectArg = { message: string; args?: unknown[]; comment?: string | string[] };
+function interpolate(template: string, args: unknown[]): string {
+  if (args.length === 0) { return template; }
+  return template.replace(/\{(\d+)\}/g, (_, idx) => {
+    const v = args[Number(idx)];
+    return v === undefined ? '' : String(v);
+  });
+}
+export const l10n = {
+  t: vi.fn((message: string | L10nObjectArg, ...args: unknown[]): string => {
+    if (typeof message === 'string') { return interpolate(message, args); }
+    return interpolate(message.message, message.args ?? []);
+  }),
+  bundle: undefined as Record<string, string> | undefined,
+  uri: undefined as Uri | undefined,
+};

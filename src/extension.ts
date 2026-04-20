@@ -151,19 +151,19 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('warpBridge.triageFailure', async (runId?: string) => {
       if (!lmClient) {
-        await vscode.window.showWarningMessage('Failure triage requires VS Code 1.96+ with a Copilot chat model installed.');
+        await vscode.window.showWarningMessage(vscode.l10n.t('Failure triage requires VS Code 1.96+ with a Copilot chat model installed.'));
         return;
       }
       const id = typeof runId === 'string' && runId
         ? runId
-        : await vscode.window.showInputBox({ prompt: 'Run id to triage', ignoreFocusOut: true });
+        : await vscode.window.showInputBox({ prompt: vscode.l10n.t('Run id to triage'), ignoreFocusOut: true });
       if (!id) {
         return;
       }
       const triage = new FailureTriageService(cli, lmClient);
       try {
         const suggestion = await vscode.window.withProgress(
-          { location: vscode.ProgressLocation.Notification, title: `Warp: triaging ${id}…`, cancellable: true },
+          { location: vscode.ProgressLocation.Notification, title: vscode.l10n.t('Warp: triaging {0}…', id), cancellable: true },
           (_progress, token) => triage.triage(id, token),
         );
         const doc = await vscode.workspace.openTextDocument({
@@ -182,7 +182,7 @@ export function activate(context: vscode.ExtensionContext): void {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         logError(`Triage failed: ${message}`);
-        await vscode.window.showErrorMessage(`Warp triage failed: ${message}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Warp triage failed: {0}', message));
       }
     }),
   );
@@ -196,7 +196,7 @@ export function activate(context: vscode.ExtensionContext): void {
           { label: 'JSON Lines', value: 'jsonl' as DatasetFormat },
           { label: 'CSV', value: 'csv' as DatasetFormat },
         ],
-        { placeHolder: 'Choose dataset format' },
+        { placeHolder: vscode.l10n.t('Choose dataset format') },
       );
       if (!pick) {
         return;
@@ -211,7 +211,7 @@ export function activate(context: vscode.ExtensionContext): void {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         logError(`Dataset export failed: ${message}`);
-        await vscode.window.showErrorMessage(`Warp dataset export failed: ${message}`);
+        await vscode.window.showErrorMessage(vscode.l10n.t('Warp dataset export failed: {0}', message));
       }
     }),
   );
@@ -256,9 +256,9 @@ export function activate(context: vscode.ExtensionContext): void {
       logInfo(`Oz CLI available: ${avail.version}`);
     } else {
       logInfo('WARNING: Oz CLI not found in PATH');
-      const installLabel = 'Install Warp';
+      const installLabel = vscode.l10n.t('Install Warp');
       vscode.window.showWarningMessage(
-        'Warp Bridge: Oz CLI not found. Install Warp to use @warp in chat.',
+        vscode.l10n.t('Warp Bridge: Oz CLI not found. Install Warp to use @warp in chat.'),
         installLabel,
       ).then((action) => {
         if (action === installLabel) {

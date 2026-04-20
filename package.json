@@ -1,7 +1,8 @@
 {
   "name": "warp-vsc-bridge",
-  "displayName": "Warp Bridge",
-  "description": "Run Warp Oz agents from VS Code Copilot Chat",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "l10n": "./l10n",
   "version": "0.8.0",
   "publisher": "sena-labs",
   "license": "MIT",
@@ -221,150 +222,150 @@
     "commands": [
       {
         "command": "warpBridge.tree.refresh",
-        "title": "Warp: Refresh",
+        "title": "%command.tree.refresh.title%",
         "icon": "$(refresh)"
       },
       {
         "command": "warpBridge.tree.copyId",
-        "title": "Warp: Copy ID",
+        "title": "%command.tree.copyId.title%",
         "icon": "$(copy)"
       },
       {
         "command": "warpBridge.tree.openInBrowser",
-        "title": "Warp: Open in Browser",
+        "title": "%command.tree.openInBrowser.title%",
         "icon": "$(link-external)"
       },
       {
         "command": "warpBridge.tree.showRun",
-        "title": "Warp: Show Run Details"
+        "title": "%command.tree.showRun.title%"
       },
       {
         "command": "warpBridge.tree.pauseSchedule",
-        "title": "Warp: Pause Schedule",
+        "title": "%command.tree.pauseSchedule.title%",
         "icon": "$(debug-pause)"
       },
       {
         "command": "warpBridge.tree.unpauseSchedule",
-        "title": "Warp: Resume Schedule",
+        "title": "%command.tree.unpauseSchedule.title%",
         "icon": "$(play)"
       },
       {
         "command": "warpBridge.tree.deleteSchedule",
-        "title": "Warp: Delete Schedule",
+        "title": "%command.tree.deleteSchedule.title%",
         "icon": "$(trash)"
       },
       {
         "command": "warpBridge.handoff",
-        "title": "Warp: Hand off to Warp terminal…",
-        "category": "Warp",
+        "title": "%command.handoff.title%",
+        "category": "%category.warp%",
         "icon": "$(terminal)"
       },
       {
         "command": "warpBridge.tree.handoff",
-        "title": "Warp: Hand off run to Warp terminal",
-        "category": "Warp",
+        "title": "%command.tree.handoff.title%",
+        "category": "%category.warp%",
         "icon": "$(terminal)"
       },
       {
         "command": "warpBridge.mcp.start",
-        "title": "Warp: Start MCP server",
-        "category": "Warp MCP",
+        "title": "%command.mcp.start.title%",
+        "category": "%category.warpMcp%",
         "icon": "$(plug)"
       },
       {
         "command": "warpBridge.mcp.stop",
-        "title": "Warp: Stop MCP server",
-        "category": "Warp MCP",
+        "title": "%command.mcp.stop.title%",
+        "category": "%category.warpMcp%",
         "icon": "$(debug-disconnect)"
       },
       {
         "command": "warpBridge.mcp.status",
-        "title": "Warp: Show MCP server status",
-        "category": "Warp MCP",
+        "title": "%command.mcp.status.title%",
+        "category": "%category.warpMcp%",
         "icon": "$(info)"
       },
       {
         "command": "warpBridge.mcp.copyEndpointUrl",
-        "title": "Warp: Copy MCP endpoint URL",
-        "category": "Warp MCP",
+        "title": "%command.mcp.copyEndpointUrl.title%",
+        "category": "%category.warpMcp%",
         "icon": "$(copy)"
       },
       {
         "command": "warpBridge.mcp.registerClient",
-        "title": "Warp: Register MCP client (Claude Code / Cursor / Codex)",
-        "category": "Warp MCP",
+        "title": "%command.mcp.registerClient.title%",
+        "category": "%category.warpMcp%",
         "icon": "$(add)"
       },
       {
         "command": "warpBridge.mcp.unregisterClient",
-        "title": "Warp: Unregister MCP client",
-        "category": "Warp MCP",
+        "title": "%command.mcp.unregisterClient.title%",
+        "category": "%category.warpMcp%",
         "icon": "$(close)"
       },
       {
         "command": "warpBridge.drive.refresh",
-        "title": "Warp Drive: Refresh",
-        "category": "Warp Drive",
+        "title": "%command.drive.refresh.title%",
+        "category": "%category.warpDrive%",
         "icon": "$(refresh)"
       },
       {
         "command": "warpBridge.drive.insertIntoChat",
-        "title": "Warp Drive: Insert into chat",
-        "category": "Warp Drive",
+        "title": "%command.drive.insertIntoChat.title%",
+        "category": "%category.warpDrive%",
         "icon": "$(comment-discussion)"
       },
       {
         "command": "warpBridge.drive.copyContent",
-        "title": "Warp Drive: Copy content",
-        "category": "Warp Drive",
+        "title": "%command.drive.copyContent.title%",
+        "category": "%category.warpDrive%",
         "icon": "$(copy)"
       },
       {
         "command": "warpBridge.drive.openInEditor",
-        "title": "Warp Drive: Open in editor",
-        "category": "Warp Drive",
+        "title": "%command.drive.openInEditor.title%",
+        "category": "%category.warpDrive%",
         "icon": "$(go-to-file)"
       },
       {
         "command": "warpBridge.skill.edit",
-        "title": "Warp Skill: Edit…",
-        "category": "Warp Skill",
+        "title": "%command.skill.edit.title%",
+        "category": "%category.warpSkill%",
         "icon": "$(edit)"
       },
       {
         "command": "warpBridge.skill.new",
-        "title": "Warp Skill: New…",
-        "category": "Warp Skill",
+        "title": "%command.skill.new.title%",
+        "category": "%category.warpSkill%",
         "icon": "$(new-file)"
       },
       {
         "command": "warpBridge.skill.saveGlobal",
-        "title": "Warp Skill: Save current as global skill…",
-        "category": "Warp Skill",
+        "title": "%command.skill.saveGlobal.title%",
+        "category": "%category.warpSkill%",
         "icon": "$(save)"
       },
       {
         "command": "warpBridge.skill.saveWorkspace",
-        "title": "Warp Skill: Save current as project skill…",
-        "category": "Warp Skill",
+        "title": "%command.skill.saveWorkspace.title%",
+        "category": "%category.warpSkill%",
         "icon": "$(save-as)"
       },
       {
         "command": "warpBridge.dashboard.open",
-        "title": "Warp: Open Dashboard",
-        "category": "Warp",
+        "title": "%command.dashboard.open.title%",
+        "category": "%category.warp%",
         "icon": "$(graph)"
       },
       {
         "command": "warpBridge.triageFailure",
-        "title": "Warp: Triage Failed Run…",
-        "category": "Warp",
+        "title": "%command.triageFailure.title%",
+        "category": "%category.warp%",
         "icon": "$(lightbulb)"
       },
       {
         "command": "warpBridge.exportDataset",
-        "title": "Warp: Export Run Dataset…",
-        "category": "Warp",
+        "title": "%command.exportDataset.title%",
+        "category": "%category.warp%",
         "icon": "$(export)"
       }
     ],
