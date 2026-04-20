@@ -5,7 +5,6 @@ import {
   SlashCommandHandler,
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
-import { t } from '../core/i18n.js';
 
 /**
  * Creates the `/models` slash-command handler.
@@ -24,17 +23,17 @@ export function createModelsCommand(
   return async (_prompt, stream, _token) => {
     const config = cfgMgr.getConfig();
 
-    stream.progress(t('oz.models_progress'));
+    stream.progress('Fetching available models...');
 
     try {
       const list = await cli.modelList();
 
       if (list.items.length === 0) {
-        stream.markdown(t('oz.models_empty'));
+        stream.markdown('_No models found._\n');
       } else {
-        stream.markdown(t('oz.models_count', list.items.length));
+        stream.markdown(`**${list.items.length} models available:**\n\n`);
         formatter.formatList(list, ['id'], stream);
-        stream.markdown(t('oz.models_default', config.defaultModel));
+        stream.markdown(`\n_Default model: \`${config.defaultModel}\`_\n`);
       }
     } catch (err) {
       formatter.handleError(err, stream);

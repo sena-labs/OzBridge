@@ -30,7 +30,6 @@ import { OzCliService } from '../src/services/ozCliService.js';
 import { OzCliError, OzCliErrorKind } from '../src/types/index.js';
 import { OutputFormatter } from '../src/parsers/outputFormatter.js';
 import { createMockConfigManager, createMockStream, makeRunResult } from './helpers.js';
-import { initI18n, _resetI18n } from '../src/core/i18n.js';
 
 // ===========================================================================
 // Mock child_process
@@ -592,13 +591,8 @@ describe('OutputFormatter — extractSessionUrl edge cases', () => {
   let mock: ReturnType<typeof createMockStream>;
 
   beforeEach(() => {
-    initI18n('en');
     formatter = new OutputFormatter(createMockConfigManager());
     mock = createMockStream();
-  });
-
-  afterEach(() => {
-    _resetI18n();
   });
 
   it('should fallback to raw string when output is empty and raw is a string', () => {

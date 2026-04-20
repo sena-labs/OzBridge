@@ -6,7 +6,6 @@ import {
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
 import { logWarn, logError } from '../services/logger.js';
-import { t } from '../core/i18n.js';
 
 /**
  * Creates the `/config` slash-command handler.
@@ -26,32 +25,32 @@ export function createConfigCommand(
   return async (_prompt, stream, _token) => {
     const config = cfgMgr.getConfig();
 
-    stream.markdown(t('oz.oz_config_title'));
+    stream.markdown('## ⚙️ Warp Bridge Configuration\n\n');
 
-    // Settings VS Code
-    stream.markdown(t('oz.oz_config_settings_header'));
-    stream.markdown(t('oz.oz_config_table_header'));
+    // VS Code Settings
+    stream.markdown('### Extension Settings\n\n');
+    stream.markdown('| Parameter | Value |\n| --- | --- |\n');
     stream.markdown(`| Oz Path | \`${config.ozPath}\` |\n`);
     stream.markdown(`| Default Model | \`${config.defaultModel}\` |\n`);
     stream.markdown(`| Default Profile | \`${config.defaultProfile}\` |\n`);
     stream.markdown(`| Default Environment | \`${config.defaultEnvironment || '(none)'}\` |\n`);
-    stream.markdown(`| Timeout locale | ${config.timeoutMs / 1000}s |\n`);
+    stream.markdown(`| Local timeout | ${config.timeoutMs / 1000}s |\n`);
     stream.markdown(`| Cloud polling interval | ${config.cloudPollingIntervalMs / 1000}s |\n`);
     stream.markdown(`| Cloud polling timeout | ${config.cloudPollingTimeoutMs / 1000}s |\n`);
     stream.markdown(`| Max output chars | ${config.maxOutputChars} |\n\n`);
 
-    // Verifica CLI
+    // CLI check
     try {
       const avail = await cli.checkAvailability();
-      stream.markdown(t('oz.oz_config_cli_title'));
+      stream.markdown('### Oz CLI Status\n\n');
       if (avail.available) {
-        stream.markdown(t('oz.oz_config_available', avail.version ?? 'unknown'));
+        stream.markdown(`✅ **Available** — version: \`${avail.version ?? 'unknown'}\`\n\n`);
 
-        // Profili
+        // Profiles
         try {
           const profiles = await cli.profileList();
           if (profiles.items.length > 0) {
-            stream.markdown(t('oz.oz_config_profiles_header'));
+            stream.markdown('**Profiles:**\n');
             for (const p of profiles.items) {
               stream.markdown(`- \`${p.name}\` (${p.id})\n`);
             }
@@ -63,7 +62,7 @@ export function createConfigCommand(
         try {
           const envs = await cli.environmentList();
           if (envs.items.length > 0) {
-            stream.markdown(t('oz.oz_config_envs_header'));
+            stream.markdown('**Environments:**\n');
             for (const e of envs.items) {
               stream.markdown(`- \`${e.name}\` (${e.id}) — scope: ${e.scope}\n`);
             }
@@ -75,7 +74,7 @@ export function createConfigCommand(
         try {
           const integrations = await cli.integrationList();
           if (integrations.items.length > 0) {
-            stream.markdown(t('oz.oz_config_integrations_header'));
+            stream.markdown('**Integrations:**\n');
             for (const i of integrations.items) {
               const connected = !i.status.toLowerCase().includes('not connected');
               stream.markdown(`- ${connected ? '🟢' : '🔴'} ${i.provider}: ${i.status}\n`);
@@ -84,11 +83,11 @@ export function createConfigCommand(
           }
         } catch (e) { logWarn('Failed to list integrations', e); }
       } else {
-        stream.markdown(t('oz.oz_config_unavailable'));
+        stream.markdown('❌ **Not available** — install Warp and verify `oz` is in your PATH.\n');
         stream.button({
           command: 'vscode.open',
           arguments: [vscode.Uri.parse('https://www.warp.dev/download')],
-          title: t('oz.oz_config_install_button'),
+          title: '📥 Install Warp',
         });
       }
     } catch (err) {

@@ -5,7 +5,6 @@ import {
   SlashCommandHandler,
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
-import { t } from '../core/i18n.js';
 
 /**
  * Creates the `/mcp` slash-command handler.
@@ -23,15 +22,15 @@ export function createMcpCommand(
   const formatter = new OutputFormatter(cfgMgr);
   return async (_prompt, stream, _token) => {
 
-    stream.progress(t('oz.mcp_progress'));
+    stream.progress('Fetching MCP servers...');
 
     try {
       const list = await cli.mcpList();
 
       if (list.items.length === 0) {
-        stream.markdown(t('oz.mcp_empty'));
+        stream.markdown('_No MCP servers configured._\n');
       } else {
-        stream.markdown(t('oz.mcp_count', list.items.length));
+        stream.markdown(`**${list.items.length} MCP servers configured:**\n\n`);
         formatter.formatList(list, ['name', 'uuid'], stream);
       }
     } catch (err) {

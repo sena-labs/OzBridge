@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-// ── Types ───────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────
 export {
   // Config
   BridgeConfig,
@@ -31,21 +31,9 @@ export {
   SlashCommandHandler,
   FollowupMap,
   SkillMap,
-  // Plugin system  (IMPL: Phase 1)
-  IPlugin,
-  PluginContext,
-  IPluginLogger,
-  PluginRegistration,
-  PluginInfo,
-  PluginRegistryChangeEvent,
 } from './types.js';
 
-// ── i18n ────────────────────────────────────────────────────────────────────
-// IMPL: Phase 1 — i18n types + service
-export type { MessageCatalog, LocaleBundle, II18nService } from './i18n/types.js';
-export { I18nService } from './i18n/i18nService.js';
-
-// ── Parsers ─────────────────────────────────────────────────────────────────
+// ── Parsers ──────────────────────────────────────────────────────────
 export { parse, parseOrThrow, ParseResult } from './parsers/jsonParser.js';
 export { OutputFormatter, FormatterOptions } from './parsers/outputFormatter.js';
 

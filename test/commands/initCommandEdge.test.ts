@@ -12,7 +12,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { workspace } from '../mocks/vscode.js';
 import { createInitCommand } from '../../src/commands/initCommand.js';
 import { createMockStream, createMockToken } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 import { Uri } from '../mocks/vscode.js';
 
 let handler: ReturnType<typeof createInitCommand>;
@@ -20,7 +19,6 @@ let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('en');
   handler = createInitCommand();
   mock = createMockStream();
 
@@ -36,7 +34,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  _resetI18n();
   workspace.workspaceFolders = undefined;
 });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHistoryCommand } from '../../src/commands/historyCommand.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import {
@@ -9,24 +9,18 @@ import {
   makeRunResult,
   makeListResult,
 } from '../helpers.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let cli: ReturnType<typeof createMockCli>;
 let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('it');
   cli = createMockCli();
   mock = createMockStream();
 });
 
-afterEach(() => {
-  _resetI18n();
-});
-
 // ==========================================================================
-// /history
+// /history — focuses on completed runs (SUCCEEDED + FAILED)
 // ==========================================================================
 describe('/history command', () => {
   let handler: ReturnType<typeof createHistoryCommand>;
@@ -35,10 +29,11 @@ describe('/history command', () => {
     handler = createHistoryCommand(cli, createMockConfigManager());
   });
 
-  it('should list recent runs when prompt is empty', async () => {
+  it('should list completed runs (SUCCEEDED + FAILED) when prompt is empty', async () => {
     cli.runList.mockResolvedValue(makeListResult([
       { id: 'r1', status: 'SUCCEEDED' },
       { id: 'r2', status: 'FAILED' },
+      { id: 'r3', status: 'INPROGRESS' }, // should be filtered out
     ]));
 
     await handler('', mock.stream as any, createMockToken() as any);
@@ -47,7 +42,47 @@ describe('/history command', () => {
     const output = mock.getFullOutput();
     expect(output).toContain('r1');
     expect(output).toContain('r2');
-    expect(output).toContain('2 run recenti');
+    expect(output).not.toContain('r3');
+    expect(output).toContain('2 completed runs');
+  });
+
+  it('should use singular form when exactly one completed run matches', async () => {
+    cli.runList.mockResolvedValue(makeListResult([
+      { id: 'r1', status: 'SUCCEEDED' },
+      { id: 'r2', status: 'INPROGRESS' }, // filtered out
+    ]));
+
+    await handler('', mock.stream as any, createMockToken() as any);
+
+    expect(mock.getFullOutput()).toContain('1 completed run:');
+  });
+
+  it('should filter to succeeded runs only when filter is "succeeded"', async () => {
+    cli.runList.mockResolvedValue(makeListResult([
+      { id: 's1', status: 'SUCCEEDED' },
+      { id: 'f1', status: 'FAILED' },
+    ]));
+
+    await handler('succeeded', mock.stream as any, createMockToken() as any);
+
+    const output = mock.getFullOutput();
+    expect(output).toContain('s1');
+    expect(output).not.toContain('f1');
+    expect(output).toContain('1 succeeded run');
+  });
+
+  it('should filter to failed runs only when filter is "failed"', async () => {
+    cli.runList.mockResolvedValue(makeListResult([
+      { id: 's1', status: 'SUCCEEDED' },
+      { id: 'f1', status: 'FAILED' },
+    ]));
+
+    await handler('failed', mock.stream as any, createMockToken() as any);
+
+    const output = mock.getFullOutput();
+    expect(output).toContain('f1');
+    expect(output).not.toContain('s1');
+    expect(output).toContain('1 failed run');
   });
 
   it('should show run detail when prompt contains a runId', async () => {
@@ -67,12 +102,12 @@ describe('/history command', () => {
     expect(mock.getFullOutput()).toContain('No runs found.');
   });
 
-  it('should show i18n empty message when list is empty without rawText', async () => {
+  it('should show default empty message when list is empty without rawText', async () => {
     cli.runList.mockResolvedValue(makeListResult([]));
 
     await handler('', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Nessun run nella cronologia');
+    expect(mock.getFullOutput()).toContain('No runs in history');
   });
 
   it('should handle OzCliError on runList', async () => {
@@ -80,7 +115,7 @@ describe('/history command', () => {
 
     await handler('', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Errore CLI');
+    expect(mock.getFullOutput()).toContain('CLI Error');
   });
 
   it('should handle generic Error on runList', async () => {
@@ -96,7 +131,7 @@ describe('/history command', () => {
 
     await handler('run-xyz', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('non trovato');
+    expect(mock.getFullOutput()).toContain('not found');
   });
 
   it('should handle generic Error on runGet with runId', async () => {
@@ -121,7 +156,7 @@ describe('/history command', () => {
     await handler('', mock.stream as any, createMockToken() as any);
 
     expect(mock.progresses.length).toBeGreaterThan(0);
-    expect(mock.progresses[0]).toContain('cronologia');
+    expect(mock.progresses[0]).toContain('history');
   });
 
   it('should show progress indicator for detail', async () => {

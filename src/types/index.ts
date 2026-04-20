@@ -52,7 +52,7 @@ export const DEFAULT_CONFIG: WarpBridgeConfig = {
   cloudPollingIntervalMs: 5_000,
   cloudPollingTimeoutMs: 1_800_000,
   timeoutMs: 300_000,
-  maxOutputChars: 5_000,
+  maxOutputChars: 15_000,
 };
 
 // ============================================================================

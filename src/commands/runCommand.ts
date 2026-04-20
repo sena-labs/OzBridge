@@ -9,7 +9,6 @@ import {
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
 import { detectSkill } from './skillDetector.js';
-import { t } from '../core/i18n.js';
 
 /**
  * Creates the `/run` slash-command handler.
@@ -51,7 +50,7 @@ export function createRunCommand(
     // Rileva se il prompt menziona un agent skill specifico
     const skill = detectSkill(prompt);
 
-    stream.progress(t('oz.run_progress'));
+    stream.progress('Starting local Oz agent...');
 
     try {
       const result = await cli.agentRun({

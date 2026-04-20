@@ -1,6 +1,6 @@
 # Warp Bridge for VS Code
 
-[![Build](https://github.com/user/warp-vsc-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/user/warp-vsc-bridge/actions/workflows/ci.yml)
+[![Build](https://github.com/sena-labs/warp-vsc-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/warp-vsc-bridge/actions/workflows/ci.yml)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -30,7 +30,8 @@ Run **Warp Oz agents** directly from VS Code Copilot Chat via the `@warp` Chat P
 ## Features
 
 - **`@warp` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel
-- **8 slash commands** for complete agent workflow management
+- **Agent-Native Language Model Tools** (v0.3+) — Copilot **Agent mode** can invoke Warp Oz directly, without typing `@warp`
+- **9 slash commands** for complete agent workflow management
 - **IDE context injection** — automatically includes workspace, file, selection, and diagnostics in prompts
 - **Agent skill detection** — maps prompt keywords to the 7-agent pipeline (spec, design, implement, review, test, deploy, maintenance)
 - **Cloud run polling** — exponential backoff polling with real-time progress updates
@@ -88,12 +89,55 @@ Open the VS Code Chat panel and type `@warp` followed by your request:
 | --- | --- | --- |
 | `/run` | Run an Oz agent locally in the workspace | `@warp /run refactor this function` |
 | `/cloud` | Run an Oz agent in the cloud (credits) | `@warp /cloud deploy to staging` |
-| `/status` | Check status of agent runs | `@warp /status` or `@warp /status <runId>` |
+| `/status` | Show **active** runs (QUEUED / INPROGRESS) or detail by ID | `@warp /status` or `@warp /status <runId>` |
+| `/history` | Show **completed** runs (SUCCEEDED / FAILED) with optional filter | `@warp /history`, `@warp /history succeeded`, `@warp /history <runId>` |
 | `/schedule` | Create and manage scheduled runs | `@warp /schedule create daily "0 9 * * *" "Run linting"` |
 | `/models` | List available AI models | `@warp /models` |
 | `/mcp` | List configured MCP servers | `@warp /mcp` |
 | `/config` | Show current configuration | `@warp /config` |
 | `/init` | Scaffold Warp Skills and Rules files | `@warp /init` |
+
+#### `/history` filters
+
+```text
+/history               — list all completed runs (SUCCEEDED + FAILED)
+/history succeeded     — only SUCCEEDED runs
+/history failed        — only FAILED runs
+/history <runId>       — show details for a specific run
+```
+
+### Agent Mode — Language Model Tools (v0.3+)
+
+When you use **GitHub Copilot Chat in Agent mode**, Copilot can now invoke
+Warp Oz directly through registered **Language Model Tools**. You no longer
+need to prefix the request with `@warp`; Copilot picks the right tool based
+on the prompt.
+
+| Tool | Reference | Behaviour |
+| --- | --- | --- |
+| `warp_run_local` | `#warpRunLocal` | Runs a local Oz agent in the current workspace. IDE context is injected automatically unless `includeIdeContext: false`. |
+| `warp_run_cloud` | `#warpRunCloud` | Launches a **cloud** Oz agent. Shows a confirmation dialog before consuming Warp credits. Waits for the run to finish by default (`wait: false` to return immediately with the run id). |
+| `warp_get_run` | `#warpGetRun` | Fetches status and output of a specific run by id. Read-only. |
+| `warp_list_runs` | `#warpListRuns` | Lists recent runs with a status filter (`all`, `active`, `completed`, or a raw status). Read-only. |
+
+Examples:
+
+```text
+# Agent mode picks warp_run_local automatically:
+Run the unit tests locally via Oz.
+
+# Explicit tool reference (prefix with #):
+Run this refactor on cloud: #warpRunCloud refactor src/auth to hexagonal architecture
+
+# Query a previous run:
+Check run #warpGetRun for run id run-abc123.
+```
+
+Each tool entry is declared in `package.json` under
+`contributes.languageModelTools` with a JSON `inputSchema`, so models get
+accurate type hints at tool-call time. Cloud tools always show a
+confirmation dialog before running, regardless of the user's Bypass
+Approvals preference.
 
 #### Schedule sub-commands
 
@@ -118,7 +162,7 @@ All settings are under `warpBridge.*` in VS Code Settings:
 | `warpBridge.timeoutMs` | `300000` | Timeout for local agent runs (5 min) |
 | `warpBridge.cloudPollingIntervalMs` | `5000` | Initial cloud polling interval |
 | `warpBridge.cloudPollingTimeoutMs` | `1800000` | Max cloud polling duration (30 min) |
-| `warpBridge.maxOutputChars` | `5000` | Max characters shown before truncation |
+| `warpBridge.maxOutputChars` | `15000` | Max characters shown before truncation |
 
 ## Architecture
 
@@ -198,9 +242,8 @@ npm run package
 
 ### Test Suite
 
-- **534 tests** across 35 files
-- **~2.5:1** test-to-code ratio
-- **98.6%** branch coverage
+- **600 tests** across 35 files
+- **~2.3:1** test-to-code ratio
 - Framework: [Vitest](https://vitest.dev/) v4.0.18
 
 ## Contributing

@@ -6,6 +6,53 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- **Agent-Native Language Model Tools** — GitHub Copilot **Agent mode** can now invoke Warp Oz directly, without typing `@warp`. Four tools registered via `vscode.lm.registerTool`:
+  - `warp_run_local` (`#warpRunLocal`) — run an Oz agent locally in the current workspace; injects IDE context by default.
+  - `warp_run_cloud` (`#warpRunCloud`) — launch a cloud Oz agent with a credit-consumption confirmation dialog; polls until terminal state unless `wait: false`.
+  - `warp_get_run` (`#warpGetRun`) — fetch status/output of a run by id (read-only).
+  - `warp_list_runs` (`#warpListRuns`) — list recent runs with `all` / `active` / `completed` / raw `OzRunStatus` filters and an optional `limit`.
+- Each tool is declared under `contributes.languageModelTools` in `package.json` with a JSON `inputSchema`, `modelDescription`, `userDescription`, `tags`, and `canBeReferencedInPrompt: true`.
+- Graceful fallback in `activate()` when running on a VS Code build that does not expose `vscode.lm.registerTool` (older than 1.96): the Chat Participant keeps working, only the LM tools are skipped.
+- 39 new unit tests under `test/tools/` covering each tool's `prepareInvocation`, happy paths, missing-input validation, CLI-unavailable fallback, error hints (`NOT_FOUND`, `NOT_AUTHENTICATED`, `TIMEOUT`), polling, and filter semantics.
+- Mock surface for `vscode.lm`, `MarkdownString`, `LanguageModelTextPart`, and `LanguageModelToolResult` in `test/mocks/vscode.ts`.
+### Changed
+- `package.json` version bumped to `0.3.0-dev` for the in-progress v0.3 milestone.
+- `RunCloudTool` now normalises an empty `warpBridge.defaultEnvironment` to `undefined` before calling the CLI, so a misconfigured default cannot yield a bogus `--environment ''` argument.
+## [0.2.0] — 2026-04-19
+
+### Added
+
+- **`/history` slash command** — lists completed runs (SUCCEEDED / FAILED) with optional filter (`succeeded`, `failed`, `all`) and run-ID detail lookup
+- `bugs.url` and `homepage` fields in `package.json`
+
+### Changed
+
+- **Differentiated `/status` vs `/history`**:
+  - `/status` now focuses on **active** runs only (`QUEUED` / `INPROGRESS`) and points to `/history` when none are active
+  - `/history` focuses on **completed** runs and accepts a status filter
+- `DEFAULT_CONFIG.maxOutputChars` aligned to `15000` to match `package.json` declared default (was `5000` in code only)
+- `publisher` updated to `sena-labs` and `repository.url` to `https://github.com/sena-labs/warp-vsc-bridge`
+- `dependencies.copilot-chat-toolkit` pinned to the bundled workspace package via `file:./packages/copilot-chat-toolkit`
+- `package.json` bumped to `0.2.0`
+
+### Removed
+
+- **DevForge plugin-system infrastructure** (`src/core/`, `test/core/`): `HierarchicalRouter`, `PluginRegistry`, `AggregatedFollowupProvider`, `/plugins` / `/help` / `/config` core handlers and 10 locale catalogs. None of this code was wired into the live `@warp` Chat Participant and it carried dead-code risk for the release.
+- **i18n subsystem** (`I18nService`, `MessageCatalog`, `LocaleBundle` and `src/core/locales/`): the extension is now shipped in English only with hard-coded strings, simplifying maintenance. The toolkit (`copilot-chat-toolkit`) no longer exports i18n symbols or `IPlugin`/`PluginContext` plugin types.
+- `docs/ARCHITECTURE-DEVFORGE.md`, `docs/SPEC-DEVFORGE.md`, `docs/IMPLEMENTATION-PLAN.md`, `docs/BRIEFING-IMPLEMENT-AGENT.md` — stale design documents no longer relevant to the shipped product.
+- Stale VSIX artifacts checked into the working tree (`*.vsix` already in `.gitignore`; release VSIX is now a build artifact, not a commit).
+
+### Fixed
+
+- JSDoc typo `per-commandC` → `per-command` in `OzCliService`
+- Stale `decisione Q3 = 5000` comment in `OutputFormatter.truncate()`
+
+### Notes on publishing
+
+- First publish to the VS Code Marketplace requires creating the `sena-labs` publisher (`vsce create-publisher sena-labs`) and an Azure DevOps Personal Access Token with Marketplace “Manage” scope. See [publishing docs](https://code.visualstudio.com/api/working-with-extensions/publishing-extension).
+
+## [0.1.1-unreleased] — superseded by 0.2.0
 
 ### Added
 

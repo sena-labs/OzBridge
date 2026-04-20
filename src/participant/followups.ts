@@ -2,68 +2,71 @@ import {
   FollowupProvider as BaseFollowupProvider,
   type FollowupMap,
 } from 'copilot-chat-toolkit';
-import { t } from '../core/i18n.js';
 
-// IMPL: thin wrapper — configures toolkit's data-driven FollowupProvider with Warp followups
+// IMPL: thin wrapper — configures toolkit's data-driven FollowupProvider with Warp followups.
 
-/**
- * Builds the Warp-specific follow-up map using i18n labels.
- *
- * Must be called **after** {@link initI18n} so that `t()` returns localised strings.
- */
-function buildFollowups(): FollowupMap {
-  return {
-    run: [
-      { prompt: '', command: 'status', label: t('oz.followup_check_status') },
-      { prompt: '', command: 'models', label: t('oz.followup_list_models') },
-    ],
-    cloud: [
-      { prompt: '', command: 'status', label: t('oz.followup_check_status') },
-      { prompt: '', command: 'models', label: t('oz.followup_list_models') },
-    ],
-    status: [
-      { prompt: '', command: 'run', label: t('oz.followup_run_local') },
-      { prompt: '', command: 'cloud', label: t('oz.followup_run_cloud') },
-    ],
-    config: [
-      { prompt: '', command: 'run', label: t('oz.followup_run_agent') },
-      { prompt: '', command: 'init', label: t('oz.followup_scaffold') },
-    ],
-    init: [
-      { prompt: '', command: 'run', label: t('oz.followup_run_agent') },
-      { prompt: '', command: 'config', label: t('oz.followup_config') },
-    ],
-    schedule: [
-      { prompt: '', command: 'status', label: t('oz.followup_check_status') },
-      { prompt: '', command: 'config', label: t('oz.followup_config') },
-    ],
-    models: [
-      { prompt: '', command: 'run', label: t('oz.followup_run_local') },
-      { prompt: '', command: 'cloud', label: t('oz.followup_run_cloud') },
-    ],
-    mcp: [
-      { prompt: '', command: 'config', label: t('oz.followup_config') },
-      { prompt: '', command: 'models', label: t('oz.followup_list_models') },
-    ],
-  };
-}
+const L_CHECK_STATUS = '📊 Check run status';
+const L_LIST_MODELS  = '🤖 List models';
+const L_RUN_LOCAL    = '🚀 Run local agent';
+const L_RUN_CLOUD    = '☁️ Run cloud agent';
+const L_CONFIG       = '⚙️ Configuration';
+const L_SCAFFOLD     = '🏗️ Scaffold skill files';
+const L_RUN_AGENT    = '🚀 Run agent';
+const L_VIEW_HISTORY = '🗂️ View history';
+
+const WARP_FOLLOWUPS: FollowupMap = {
+  run: [
+    { prompt: '', command: 'status', label: L_CHECK_STATUS },
+    { prompt: '', command: 'models', label: L_LIST_MODELS },
+  ],
+  cloud: [
+    { prompt: '', command: 'status', label: L_CHECK_STATUS },
+    { prompt: '', command: 'models', label: L_LIST_MODELS },
+  ],
+  status: [
+    { prompt: '', command: 'run', label: L_RUN_LOCAL },
+    { prompt: '', command: 'history', label: L_VIEW_HISTORY },
+  ],
+  history: [
+    { prompt: '', command: 'run', label: L_RUN_LOCAL },
+    { prompt: '', command: 'status', label: L_CHECK_STATUS },
+  ],
+  config: [
+    { prompt: '', command: 'run', label: L_RUN_AGENT },
+    { prompt: '', command: 'init', label: L_SCAFFOLD },
+  ],
+  init: [
+    { prompt: '', command: 'run', label: L_RUN_AGENT },
+    { prompt: '', command: 'config', label: L_CONFIG },
+  ],
+  schedule: [
+    { prompt: '', command: 'status', label: L_CHECK_STATUS },
+    { prompt: '', command: 'config', label: L_CONFIG },
+  ],
+  models: [
+    { prompt: '', command: 'run', label: L_RUN_LOCAL },
+    { prompt: '', command: 'cloud', label: L_RUN_CLOUD },
+  ],
+  mcp: [
+    { prompt: '', command: 'config', label: L_CONFIG },
+    { prompt: '', command: 'models', label: L_LIST_MODELS },
+  ],
+};
+
+const WARP_DEFAULT_FOLLOWUPS = [
+  { prompt: '', command: 'status', label: L_CHECK_STATUS },
+  { prompt: '', command: 'models', label: L_LIST_MODELS },
+  { prompt: '', command: 'config', label: L_CONFIG },
+];
 
 /**
  * Contextual follow-up provider for the `@warp` Chat Participant.
  *
  * Extends the toolkit's data-driven {@link BaseFollowupProvider} with
- * Warp-specific follow-up suggestions.  The map is built lazily in the
- * constructor so that `t()` is available (after `initI18n()`).
- *
- * To add follow-ups for new commands, add an entry to {@link buildFollowups}
- * and a matching i18n key — no other code changes needed.
+ * Warp-specific follow-up suggestions.
  */
 export class FollowupProvider extends BaseFollowupProvider {
   constructor() {
-    super(buildFollowups(), [
-      { prompt: '', command: 'status', label: t('oz.followup_check_status') },
-      { prompt: '', command: 'models', label: t('oz.followup_list_models') },
-      { prompt: '', command: 'config', label: t('oz.followup_config') },
-    ]);
+    super(WARP_FOLLOWUPS, WARP_DEFAULT_FOLLOWUPS);
   }
 }

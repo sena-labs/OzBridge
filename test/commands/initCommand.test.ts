@@ -1,27 +1,21 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { workspace, Uri } from '../../test/mocks/vscode.js';
 import { createInitCommand } from '../../src/commands/initCommand.js';
 import { createMockStream, createMockToken } from '../helpers.js';
 import { AGENT_SKILL_MAP } from '../../src/types/index.js';
-import { initI18n, _resetI18n } from '../../src/core/i18n.js';
 
 let handler: ReturnType<typeof createInitCommand>;
 let mock: ReturnType<typeof createMockStream>;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  initI18n('it');
   handler = createInitCommand();
   mock = createMockStream();
   // Reset workspace folders
   workspace.workspaceFolders = undefined;
-  workspace.fs.stat.mockRejectedValue(new Error('not found')); // file non esiste
+  workspace.fs.stat.mockRejectedValue(new Error('not found')); // file does not exist
   workspace.fs.createDirectory.mockResolvedValue(undefined);
   workspace.fs.writeFile.mockResolvedValue(undefined);
-});
-
-afterEach(() => {
-  _resetI18n();
 });
 
 describe('/init command', () => {
@@ -30,7 +24,7 @@ describe('/init command', () => {
 
     await handler('', mock.stream as any, createMockToken() as any);
 
-    expect(mock.getFullOutput()).toContain('Nessun workspace');
+    expect(mock.getFullOutput()).toContain('No workspace open');
   });
 
   it('dovrebbe creare 7 SKILL.md + 1 PROJECT.md = 8 file', async () => {
@@ -44,7 +38,7 @@ describe('/init command', () => {
     expect(workspace.fs.writeFile).toHaveBeenCalledTimes(8);
 
     const output = mock.getFullOutput();
-    expect(output).toContain('Scaffolding completato');
+    expect(output).toContain('Scaffolding complete');
     expect(output).toContain('8');
   });
 
@@ -55,10 +49,10 @@ describe('/init command', () => {
 
     await handler('', mock.stream as any, createMockToken() as any);
 
-    // Nessun writeFile (tutti i file già esistono)
+    // No writeFile (all files already exist)
     expect(workspace.fs.writeFile).not.toHaveBeenCalled();
     const output = mock.getFullOutput();
-    expect(output).toContain('già esistenti');
+    expect(output).toContain('already exist');
   });
 
   it('dovrebbe contare separatamente file creati e saltati', async () => {

@@ -152,3 +152,72 @@ export class Disposable {
   constructor(private readonly callOnDispose: () => void) {}
   dispose() { this.callOnDispose(); }
 }
+
+// ---------------------------------------------------------------------------
+// MarkdownString
+// ---------------------------------------------------------------------------
+export class MarkdownString {
+  value: string;
+  isTrusted?: boolean;
+  supportThemeIcons?: boolean;
+  supportHtml?: boolean;
+
+  constructor(value = '', supportThemeIcons?: boolean) {
+    this.value = value;
+    this.supportThemeIcons = supportThemeIcons;
+  }
+
+  appendText(value: string): MarkdownString {
+    this.value += value;
+    return this;
+  }
+
+  appendMarkdown(value: string): MarkdownString {
+    this.value += value;
+    return this;
+  }
+
+  appendCodeblock(value: string, language = ''): MarkdownString {
+    this.value += '\n```' + language + '\n' + value + '\n```\n';
+    return this;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Language Model Tool primitives
+// ---------------------------------------------------------------------------
+export class LanguageModelTextPart {
+  constructor(public readonly value: string) {}
+}
+
+export class LanguageModelPromptTsxPart {
+  constructor(public readonly value: unknown) {}
+}
+
+export class LanguageModelToolResult {
+  constructor(public readonly content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart>) {}
+}
+
+/**
+ * In-memory registry of tools registered via `lm.registerTool`.
+ * Exposed so tests can grab a specific tool by name and invoke it directly.
+ */
+const registeredTools = new Map<string, unknown>();
+
+export const lm = {
+  registerTool: vi.fn((name: string, tool: unknown) => {
+    registeredTools.set(name, tool);
+    return {
+      dispose: vi.fn(() => {
+        registeredTools.delete(name);
+      }),
+    };
+  }),
+  tools: [] as Array<{ name: string }>,
+  invokeTool: vi.fn((_name: string, _options: unknown, _token?: unknown) =>
+    Promise.resolve(new LanguageModelToolResult([])),
+  ),
+  /** Test-only helpers — not part of the real VS Code API. */
+  _getTool: (name: string) => registeredTools.get(name),
+  _reset: () => { registeredTools.clear(); },
+};

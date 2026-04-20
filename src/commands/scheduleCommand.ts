@@ -5,7 +5,6 @@ import {
   SlashCommandHandler,
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
-import { t } from '../core/i18n.js';
 
 /**
  * Creates the `/schedule` slash-command handler.
@@ -34,10 +33,10 @@ export function createScheduleCommand(
       switch (subCommand) {
         case 'list':
         case '': {
-          stream.progress(t('oz.schedule_list_progress'));
+          stream.progress('Fetching schedules...');
           const list = await cli.scheduleList();
           if (list.items.length === 0) {
-            stream.markdown(t('oz.schedule_list_empty'));
+            stream.markdown('_No schedules found._\n');
           } else {
             formatter.formatList(list, ['id', 'name', 'cron', 'paused'], stream);
           }
@@ -45,63 +44,63 @@ export function createScheduleCommand(
         }
 
         case 'create': {
-          // Formato: create <name> <cron> <prompt>
-          // Es: create daily-lint "0 9 * * *" "Run linting"
+          // Format: create <name> <cron> <prompt>
+          // Ex: create daily-lint "0 9 * * *" "Run linting"
           const createMatch = trimmed.match(/^create\s+(\S+)\s+(["'])([^"']+)\2\s+(["'])([^"']+)\4$/i);
           if (!createMatch) {
-            stream.markdown(t('oz.schedule_create_usage'));
+            stream.markdown('**Usage**: `/schedule create <name> "<cron>" "<prompt>"`\n\nExample: `/schedule create daily-lint "0 9 * * *" "Run linting"`\n_You can use single or double quotes._\n');
             break;
           }
           const [, name, , cron, , schedPrompt] = createMatch;
-          stream.progress(t('oz.schedule_create_progress', name));
+          stream.progress(`Creating schedule "${name}"...`);
           const schedule = await cli.scheduleCreate({
             name,
             cron,
             prompt: schedPrompt,
             environment: config.defaultEnvironment || undefined,
           });
-          stream.markdown(t('oz.schedule_created', schedule.name, schedule.id, schedule.cron));
+          stream.markdown(`✅ **Schedule created**: \`${schedule.name}\` (ID: \`${schedule.id}\`)\n\nCron: \`${schedule.cron}\`\n`);
           break;
         }
 
         case 'pause': {
           const id = parts[1];
           if (!id) {
-            stream.markdown(t('oz.schedule_pause_usage'));
+            stream.markdown('**Usage**: `/schedule pause <id>`\n');
             break;
           }
-          stream.progress(t('oz.schedule_pause_progress', id));
+          stream.progress(`Pausing schedule ${id}...`);
           await cli.schedulePause(id);
-          stream.markdown(t('oz.schedule_paused', id));
+          stream.markdown(`⏸️ Schedule \`${id}\` paused.\n`);
           break;
         }
 
         case 'unpause': {
           const id = parts[1];
           if (!id) {
-            stream.markdown(t('oz.schedule_unpause_usage'));
+            stream.markdown('**Usage**: `/schedule unpause <id>`\n');
             break;
           }
-          stream.progress(t('oz.schedule_unpause_progress', id));
+          stream.progress(`Resuming schedule ${id}...`);
           await cli.scheduleUnpause(id);
-          stream.markdown(t('oz.schedule_unpaused', id));
+          stream.markdown(`▶️ Schedule \`${id}\` resumed.\n`);
           break;
         }
 
         case 'delete': {
           const id = parts[1];
           if (!id) {
-            stream.markdown(t('oz.schedule_delete_usage'));
+            stream.markdown('**Usage**: `/schedule delete <id>`\n');
             break;
           }
-          stream.progress(t('oz.schedule_delete_progress', id));
+          stream.progress(`Deleting schedule ${id}...`);
           await cli.scheduleDelete(id);
-          stream.markdown(t('oz.schedule_deleted', id));
+          stream.markdown(`🗑️ Schedule \`${id}\` deleted.\n`);
           break;
         }
 
         default:
-          stream.markdown(t('oz.schedule_help'));
+          stream.markdown('**Available commands**:\n- `/schedule list` — list all schedules\n- `/schedule create <name> "<cron>" "<prompt>"` — create a schedule\n- `/schedule pause <id>` — pause\n- `/schedule unpause <id>` — resume\n- `/schedule delete <id>` — delete\n');
           break;
       }
     } catch (err) {

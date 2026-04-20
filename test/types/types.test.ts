@@ -52,8 +52,8 @@ describe('DEFAULT_CONFIG', () => {
     expect(DEFAULT_CONFIG.timeoutMs).toBe(300_000);
   });
 
-  it('dovrebbe avere maxOutputChars = 5000', () => {
-    expect(DEFAULT_CONFIG.maxOutputChars).toBe(5_000);
+  it('dovrebbe avere maxOutputChars = 15000', () => {
+    expect(DEFAULT_CONFIG.maxOutputChars).toBe(15_000);
   });
 
   it('dovrebbe avere valori numerici strettamente positivi per timeout e polling', () => {
