@@ -176,6 +176,21 @@ export interface IOzCliService {
   profileList(): Promise<OzListResult<OzProfile>>;
   environmentList(): Promise<OzListResult<OzEnvironment>>;
   integrationList(): Promise<OzListResult<OzIntegration>>;
+
+  /**
+   * Invokes `oz drive list <category> --output-format json` and returns
+   * the parsed JSON payload (array, `{ items: [...] }`, or
+   * `{ <category>s: [...] }`). Throws {@link OzCliError} with kind
+   * `NOT_FOUND` or `CLI_ERROR`/"unknown command" stderr when the
+   * subcommand is unavailable, so the drive factory can fall back.
+   */
+  driveList(category: 'prompt' | 'rule' | 'skill'): Promise<unknown>;
+
+  /**
+   * Invokes `oz drive get --id <id>` and returns the raw markdown body.
+   * Same error semantics as {@link driveList} for unavailable subcommand.
+   */
+  driveGet(id: string): Promise<string>;
 }
 
 /** Reactive wrapper around VS Code extension settings with caching and change events. */

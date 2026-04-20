@@ -234,6 +234,28 @@ export class OzCliService implements IOzCliService {
   }
 
   // =========================================================================
+  // Warp Drive (RF-5)
+  // =========================================================================
+
+  async driveList(category: 'prompt' | 'rule' | 'skill'): Promise<unknown> {
+    if (category !== 'prompt' && category !== 'rule' && category !== 'skill') {
+      throw new OzCliError(
+        OzCliErrorKind.CLI_ERROR,
+        `Invalid drive category: ${String(category)}`,
+      );
+    }
+    const result = await this.exec(['drive', 'list', category, '--output-format', 'json']);
+    const { parsed, rawText } = parse<unknown>(result.stdout);
+    return parsed ?? rawText;
+  }
+
+  async driveGet(id: string): Promise<string> {
+    this.sanitizeId(id, 'drive id');
+    const result = await this.exec(['drive', 'get', '--id', id]);
+    return result.stdout;
+  }
+
+  // =========================================================================
   // Internals
   // =========================================================================
 

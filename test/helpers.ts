@@ -84,6 +84,8 @@ export function createMockCli(): IOzCliService & MockedCliService {
     profileList: vi.fn(),
     environmentList: vi.fn(),
     integrationList: vi.fn(),
+    driveList: vi.fn(),
+    driveGet: vi.fn(),
   } as unknown as IOzCliService & MockedCliService;
 }
 
