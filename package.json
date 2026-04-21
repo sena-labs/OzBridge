@@ -6,7 +6,9 @@
   "version": "1.0.0",
   "publisher": "sena-labs",
   "license": "MIT",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/sena-labs/warp-vsc-bridge"
@@ -22,7 +24,16 @@
   "categories": [
     "Chat"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onChatParticipant:warp-vsc-bridge.warp",
+    "onLanguageModelTool:warp_run_local",
+    "onLanguageModelTool:warp_run_cloud",
+    "onLanguageModelTool:warp_get_run",
+    "onLanguageModelTool:warp_list_runs",
+    "onView:warpBridge.runsView",
+    "onView:warpBridge.driveView",
+    "onCommand:warpBridge.dashboard.open"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "chatParticipants": [
@@ -81,10 +92,17 @@
         "userDescription": "Let Copilot invoke Warp Oz agents locally without typing @warp.",
         "canBeReferencedInPrompt": true,
         "icon": "$(warp)",
-        "tags": ["warp", "oz", "agent", "local"],
+        "tags": [
+          "warp",
+          "oz",
+          "agent",
+          "local"
+        ],
         "inputSchema": {
           "type": "object",
-          "required": ["prompt"],
+          "required": [
+            "prompt"
+          ],
           "properties": {
             "prompt": {
               "type": "string",
@@ -113,14 +131,21 @@
         "name": "warp_run_cloud",
         "displayName": "Run Warp Oz agent (cloud)",
         "toolReferenceName": "warpRunCloud",
-        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS \u2014 always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `warp_get_run`.",
+        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS — always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `warp_get_run`.",
         "userDescription": "Let Copilot launch cloud Warp Oz runs (with explicit confirmation to consume credits).",
         "canBeReferencedInPrompt": true,
         "icon": "$(cloud)",
-        "tags": ["warp", "oz", "agent", "cloud"],
+        "tags": [
+          "warp",
+          "oz",
+          "agent",
+          "cloud"
+        ],
         "inputSchema": {
           "type": "object",
-          "required": ["prompt"],
+          "required": [
+            "prompt"
+          ],
           "properties": {
             "prompt": {
               "type": "string",
@@ -157,10 +182,16 @@
         "userDescription": "Look up a Warp Oz run by id.",
         "canBeReferencedInPrompt": true,
         "icon": "$(search)",
-        "tags": ["warp", "oz", "agent"],
+        "tags": [
+          "warp",
+          "oz",
+          "agent"
+        ],
         "inputSchema": {
           "type": "object",
-          "required": ["runId"],
+          "required": [
+            "runId"
+          ],
           "properties": {
             "runId": {
               "type": "string",
@@ -177,13 +208,26 @@
         "userDescription": "List recent Warp Oz runs with an optional status filter.",
         "canBeReferencedInPrompt": true,
         "icon": "$(list-unordered)",
-        "tags": ["warp", "oz", "agent"],
+        "tags": [
+          "warp",
+          "oz",
+          "agent"
+        ],
         "inputSchema": {
           "type": "object",
           "properties": {
             "status": {
               "type": "string",
-              "enum": ["all", "active", "completed", "QUEUED", "INPROGRESS", "SUCCEEDED", "FAILED", "UNKNOWN"],
+              "enum": [
+                "all",
+                "active",
+                "completed",
+                "QUEUED",
+                "INPROGRESS",
+                "SUCCEEDED",
+                "FAILED",
+                "UNKNOWN"
+              ],
               "description": "Filter by status. `active` = QUEUED or INPROGRESS. `completed` = SUCCEEDED or FAILED."
             },
             "limit": {
@@ -588,7 +632,7 @@
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.96.0",
     "@vitest/coverage-v8": "^4.0.18",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.28.0",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   }

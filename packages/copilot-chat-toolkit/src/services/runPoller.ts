@@ -59,16 +59,16 @@ export class BaseRunPoller implements IRunPoller {
     const backoffFactor = 1.5;
 
     while (!signal.aborted) {
+      await this.sleep(interval, signal);
+      if (signal.aborted) {
+        break;
+      }
+
       if (Date.now() - startTime > config.timeoutMs) {
         throw new CliError(
           CliErrorKind.TIMEOUT,
           `Polling timeout after ${config.timeoutMs / 1000}s for run ${runId}`,
         );
-      }
-
-      await this.sleep(interval, signal);
-      if (signal.aborted) {
-        break;
       }
 
       const result = await this.provider.runGet(runId);
