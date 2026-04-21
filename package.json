@@ -588,7 +588,7 @@
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.96.0",
     "@vitest/coverage-v8": "^4.0.18",
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.25.0",
     "typescript": "^5.7.0",
     "vitest": "^4.0.18"
   }
