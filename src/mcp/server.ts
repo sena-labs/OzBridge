@@ -220,8 +220,17 @@ export class McpServer {
       try { res.write(': keepalive\n\n'); } catch { /* ignore */ }
     }, 15_000);
 
+    // Add maximum lifetime timer to prevent indefinite keepalive (30 minutes)
+    // This prevents resource leaks if the client never properly closes the connection
+    const maxLifetime = setTimeout(() => {
+      clearInterval(keepalive);
+      this.sessions.delete(sessionId);
+      try { res.end(); } catch { /* ignore */ }
+    }, 1_800_000);
+
     res.on('close', () => {
       clearInterval(keepalive);
+      clearTimeout(maxLifetime);
       this.sessions.delete(sessionId);
     });
   }
@@ -320,13 +329,24 @@ async function readBody(req: http.IncomingMessage, maxBytes = 1_048_576): Promis
 }
 
 /**
- * Constant-time comparison for bearer tokens. Falls back to a simple equal
- * when the input lengths differ (still constant-time for same-length
- * inputs, which is the common case for tokens).
+ * Improved constant-time comparison for bearer tokens that doesn't leak
+ * information about token length. Pads shorter buffer to match longer one.
  */
 function timingSafeEqual(a: string, b: string): boolean {
   const aBuf = Buffer.from(a, 'utf8');
   const bBuf = Buffer.from(b, 'utf8');
-  if (aBuf.length !== bBuf.length) { return false; }
-  return crypto.timingSafeEqual(aBuf, bBuf);
+
+  // Always perform constant-time comparison on same-length buffers
+  const maxLen = Math.max(aBuf.length, bBuf.length);
+  const aPadded = Buffer.alloc(maxLen);
+  const bPadded = Buffer.alloc(maxLen);
+
+  aBuf.copy(aPadded);
+  bBuf.copy(bPadded);
+
+  // Length check must also be done after comparison to maintain constant time
+  const lengthMatch = aBuf.length === bBuf.length;
+  const bufferMatch = crypto.timingSafeEqual(aPadded, bPadded);
+
+  return lengthMatch && bufferMatch;
 }

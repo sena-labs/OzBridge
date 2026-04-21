@@ -18,6 +18,7 @@ import {
   IConfigManager,
 } from '../types/index.js';
 import { parse } from '../parsers/jsonParser.js';
+import { getErrorMessage } from '../utils/error.js';
 
 /**
  * Wraps the Warp Oz CLI (`oz`) via `child_process.spawn`.
@@ -337,16 +338,31 @@ export class OzCliService implements IOzCliService {
         // names (like 'oz') so cmd.exe can locate them.  Only skip the
         // shell when we resolved to a concrete .exe path.
         const needsShell = process.platform === 'win32' && !/\.exe$/i.test(ozPath);
+
+        // Filter environment variables to only pass what's necessary for CLI operation
+        // This prevents potential exposure of sensitive env vars to the spawned process
+        const safeEnv: Record<string, string | undefined> = {
+          PATH: process.env.PATH,
+          HOME: process.env.HOME,
+          USERPROFILE: process.env.USERPROFILE,  // Windows equivalent of HOME
+          APPDATA: process.env.APPDATA,          // Windows app data
+          LOCALAPPDATA: process.env.LOCALAPPDATA,
+          TEMP: process.env.TEMP,
+          TMP: process.env.TMP,
+          LANG: process.env.LANG,
+          LC_ALL: process.env.LC_ALL,
+        };
+
         proc = spawn(ozPath, args, {
           cwd: spawnCwd,
           shell: needsShell,
           windowsHide: true,
-          env: { ...process.env },
+          env: safeEnv,
         });
       } catch (err) {
         reject(new OzCliError(
           OzCliErrorKind.NOT_FOUND,
-          `Failed to spawn '${ozPath}': ${err instanceof Error ? err.message : String(err)}`,
+          `Failed to spawn '${ozPath}': ${getErrorMessage(err)}`,
         ));
         return;
       }
