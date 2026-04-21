@@ -114,12 +114,15 @@ export class McpServer {
     const id = message.id ?? null;
     try {
       switch (message.method) {
-        case 'initialize':
+        case 'initialize': {
+          // Safe extraction of protocol version from params
+          const protocolVersion = extractProtocolVersion(message.params);
           return jsonRpcResult(id, {
-            protocolVersion: pickProtocolVersion((message.params as any)?.protocolVersion),
+            protocolVersion: pickProtocolVersion(protocolVersion),
             capabilities: SERVER_CAPABILITIES,
             serverInfo: this.serverInfo,
           });
+        }
         case 'ping':
           return jsonRpcResult(id, {});
         case 'tools/list':
@@ -127,18 +130,15 @@ export class McpServer {
             tools: Array.from(this.tools.values()).map((e) => e.descriptor),
           });
         case 'tools/call': {
-          const params = (message.params ?? {}) as { name?: unknown; arguments?: unknown };
-          if (typeof params.name !== 'string') {
+          const toolParams = extractToolCallParams(message.params);
+          if (!toolParams.name) {
             return jsonRpcError(id, -32602, 'Missing tool name');
           }
-          const entry = this.tools.get(params.name);
+          const entry = this.tools.get(toolParams.name);
           if (!entry) {
-            return jsonRpcError(id, -32601, `Unknown tool: ${params.name}`);
+            return jsonRpcError(id, -32601, `Unknown tool: ${toolParams.name}`);
           }
-          const args = (params.arguments && typeof params.arguments === 'object')
-            ? params.arguments as Record<string, unknown>
-            : {};
-          const result = await entry.invoke(args);
+          const result = await entry.invoke(toolParams.arguments);
           return jsonRpcResult(id, result);
         }
         default:
@@ -303,6 +303,36 @@ function pickProtocolVersion(requested: unknown): string {
     return requested;
   }
   return SUPPORTED_PROTOCOL_VERSIONS[0];
+}
+
+/**
+ * Type-safe extraction of protocol version from initialize params.
+ * Avoids unsafe 'as any' casts.
+ */
+function extractProtocolVersion(params: unknown): unknown {
+  if (params && typeof params === 'object' && 'protocolVersion' in params) {
+    return params.protocolVersion;
+  }
+  return undefined;
+}
+
+/**
+ * Type-safe extraction of tool call parameters.
+ * Returns name and arguments with proper validation.
+ */
+function extractToolCallParams(params: unknown): { name: string | undefined; arguments: Record<string, unknown> } {
+  if (!params || typeof params !== 'object') {
+    return { name: undefined, arguments: {} };
+  }
+
+  const name = 'name' in params && typeof params.name === 'string' ? params.name : undefined;
+  let arguments_: Record<string, unknown> = {};
+
+  if ('arguments' in params && params.arguments && typeof params.arguments === 'object') {
+    arguments_ = params.arguments as Record<string, unknown>;
+  }
+
+  return { name, arguments: arguments_ };
 }
 
 function sendJson(res: http.ServerResponse, status: number, payload: unknown): void {

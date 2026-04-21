@@ -43,6 +43,7 @@ export class ActiveRunsTracker implements vscode.Disposable {
 
   private timer: ReturnType<typeof setInterval> | undefined;
   private disposed = false;
+  private starting = false;  // Guard flag to prevent multiple start() calls from running concurrently
   /** Last raw CLI snapshot (lower-cased ids). */
   private lastCli: TrackedRun[] = [];
   /** Merged view: CLI snapshot + sticky overrides (exposed via {@link latest}). */
@@ -100,12 +101,18 @@ export class ActiveRunsTracker implements vscode.Disposable {
    * interval, dispose and re-create the tracker.
    */
   start(): void {
-    if (this.timer || this.disposed) {
+    // Check all guard conditions - disposed, already started, or currently starting
+    if (this.disposed || this.timer || this.starting) {
       return;
     }
+    // Set flag to prevent concurrent start() calls
+    this.starting = true;
+
     // Fire an immediate tick so consumers get data without waiting a full interval.
     // Then start the interval only if not disposed after the tick completes.
     void this.tick().then(() => {
+      // Clear starting flag
+      this.starting = false;
       // Re-check disposed state after async tick completes to prevent race condition
       // where dispose() is called while tick() is in progress
       if (!this.disposed && !this.timer) {
@@ -113,6 +120,7 @@ export class ActiveRunsTracker implements vscode.Disposable {
       }
     }).catch(() => {
       // tick() already emits errors via onDidError, just prevent unhandled rejection
+      this.starting = false;
     });
   }
 
@@ -122,6 +130,8 @@ export class ActiveRunsTracker implements vscode.Disposable {
       clearInterval(this.timer);
       this.timer = undefined;
     }
+    // Also clear starting flag in case stop() is called while start() is in progress
+    this.starting = false;
   }
 
   /** Manually triggers a poll (e.g. from a user-driven `Refresh` command). */
