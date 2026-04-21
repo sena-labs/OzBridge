@@ -43,6 +43,7 @@ export class ActiveRunsTracker implements vscode.Disposable {
 
   private timer: ReturnType<typeof setInterval> | undefined;
   private disposed = false;
+  private starting = false;  // Guard flag to prevent multiple start() calls from running concurrently
   /** Last raw CLI snapshot (lower-cased ids). */
   private lastCli: TrackedRun[] = [];
   /** Merged view: CLI snapshot + sticky overrides (exposed via {@link latest}). */
@@ -100,16 +101,27 @@ export class ActiveRunsTracker implements vscode.Disposable {
    * interval, dispose and re-create the tracker.
    */
   start(): void {
-    if (this.timer || this.disposed) {
+    // Check all guard conditions - disposed, already started, or currently starting
+    if (this.disposed || this.timer || this.starting) {
       return;
     }
+    // Set flag to prevent concurrent start() calls
+    this.starting = true;
+
     // Fire an immediate tick so consumers get data without waiting a full interval.
-    void this.tick();
-    // Check disposed state again after async tick to prevent race condition
-    if (this.disposed) {
-      return;
-    }
-    this.timer = setInterval(() => { void this.tick(); }, this.intervalMs);
+    // Then start the interval only if not disposed after the tick completes.
+    void this.tick().then(() => {
+      // Clear starting flag
+      this.starting = false;
+      // Re-check disposed state after async tick completes to prevent race condition
+      // where dispose() is called while tick() is in progress
+      if (!this.disposed && !this.timer) {
+        this.timer = setInterval(() => { void this.tick(); }, this.intervalMs);
+      }
+    }).catch(() => {
+      // tick() already emits errors via onDidError, just prevent unhandled rejection
+      this.starting = false;
+    });
   }
 
   /** Stops polling. The tracker can be restarted with {@link start}. */
@@ -118,6 +130,8 @@ export class ActiveRunsTracker implements vscode.Disposable {
       clearInterval(this.timer);
       this.timer = undefined;
     }
+    // Also clear starting flag in case stop() is called while start() is in progress
+    this.starting = false;
   }
 
   /** Manually triggers a poll (e.g. from a user-driven `Refresh` command). */
@@ -138,17 +152,22 @@ export class ActiveRunsTracker implements vscode.Disposable {
     try {
       const result = await this.cli.runList();
       // Normalise all ids to lower-case so they match banner-extracted UUIDs.
-      const cliRuns: TrackedRun[] = result.items.map((r) => ({
-        id: r.id.toLowerCase(),
-        status: r.status,
-      }));
+      // Filter out any runs with invalid IDs
+      const cliRuns: TrackedRun[] = result.items
+        .filter((r) => r.id && typeof r.id === 'string' && r.id.length > 0)
+        .map((r) => ({
+          id: r.id.toLowerCase(),
+          status: r.status,
+        }));
       this.lastCli = cliRuns;
 
       // Remove stale overrides: once the CLI reports a terminal status for a
       // run we no longer need the synthetic entry — the CLI source is now
       // authoritative.
+      // Build a Map for O(1) lookups instead of O(n) find() in loop
+      const cliRunsById = new Map(cliRuns.map((r) => [r.id, r]));
       for (const [id] of this.stickyOverrides) {
-        const cliRun = cliRuns.find((r) => r.id === id);
+        const cliRun = cliRunsById.get(id);
         if (cliRun && TERMINAL_STATUSES.has(cliRun.status)) {
           this.stickyOverrides.delete(id);
         }

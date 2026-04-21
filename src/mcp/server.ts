@@ -114,12 +114,15 @@ export class McpServer {
     const id = message.id ?? null;
     try {
       switch (message.method) {
-        case 'initialize':
+        case 'initialize': {
+          // Safe extraction of protocol version from params
+          const protocolVersion = extractProtocolVersion(message.params);
           return jsonRpcResult(id, {
-            protocolVersion: pickProtocolVersion((message.params as any)?.protocolVersion),
+            protocolVersion: pickProtocolVersion(protocolVersion),
             capabilities: SERVER_CAPABILITIES,
             serverInfo: this.serverInfo,
           });
+        }
         case 'ping':
           return jsonRpcResult(id, {});
         case 'tools/list':
@@ -127,18 +130,15 @@ export class McpServer {
             tools: Array.from(this.tools.values()).map((e) => e.descriptor),
           });
         case 'tools/call': {
-          const params = (message.params ?? {}) as { name?: unknown; arguments?: unknown };
-          if (typeof params.name !== 'string') {
+          const toolParams = extractToolCallParams(message.params);
+          if (!toolParams.name) {
             return jsonRpcError(id, -32602, 'Missing tool name');
           }
-          const entry = this.tools.get(params.name);
+          const entry = this.tools.get(toolParams.name);
           if (!entry) {
-            return jsonRpcError(id, -32601, `Unknown tool: ${params.name}`);
+            return jsonRpcError(id, -32601, `Unknown tool: ${toolParams.name}`);
           }
-          const args = (params.arguments && typeof params.arguments === 'object')
-            ? params.arguments as Record<string, unknown>
-            : {};
-          const result = await entry.invoke(args);
+          const result = await entry.invoke(toolParams.arguments);
           return jsonRpcResult(id, result);
         }
         default:
@@ -220,8 +220,17 @@ export class McpServer {
       try { res.write(': keepalive\n\n'); } catch { /* ignore */ }
     }, 15_000);
 
+    // Add maximum lifetime timer to prevent indefinite keepalive (30 minutes)
+    // This prevents resource leaks if the client never properly closes the connection
+    const maxLifetime = setTimeout(() => {
+      clearInterval(keepalive);
+      this.sessions.delete(sessionId);
+      try { res.end(); } catch { /* ignore */ }
+    }, 1_800_000);
+
     res.on('close', () => {
       clearInterval(keepalive);
+      clearTimeout(maxLifetime);
       this.sessions.delete(sessionId);
     });
   }
@@ -296,6 +305,36 @@ function pickProtocolVersion(requested: unknown): string {
   return SUPPORTED_PROTOCOL_VERSIONS[0];
 }
 
+/**
+ * Type-safe extraction of protocol version from initialize params.
+ * Avoids unsafe 'as any' casts.
+ */
+function extractProtocolVersion(params: unknown): unknown {
+  if (params && typeof params === 'object' && 'protocolVersion' in params) {
+    return params.protocolVersion;
+  }
+  return undefined;
+}
+
+/**
+ * Type-safe extraction of tool call parameters.
+ * Returns name and arguments with proper validation.
+ */
+function extractToolCallParams(params: unknown): { name: string | undefined; arguments: Record<string, unknown> } {
+  if (!params || typeof params !== 'object') {
+    return { name: undefined, arguments: {} };
+  }
+
+  const name = 'name' in params && typeof params.name === 'string' ? params.name : undefined;
+  let arguments_: Record<string, unknown> = {};
+
+  if ('arguments' in params && params.arguments && typeof params.arguments === 'object') {
+    arguments_ = params.arguments as Record<string, unknown>;
+  }
+
+  return { name, arguments: arguments_ };
+}
+
 function sendJson(res: http.ServerResponse, status: number, payload: unknown): void {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(payload));
@@ -320,13 +359,24 @@ async function readBody(req: http.IncomingMessage, maxBytes = 1_048_576): Promis
 }
 
 /**
- * Constant-time comparison for bearer tokens. Falls back to a simple equal
- * when the input lengths differ (still constant-time for same-length
- * inputs, which is the common case for tokens).
+ * Improved constant-time comparison for bearer tokens that doesn't leak
+ * information about token length. Pads shorter buffer to match longer one.
  */
 function timingSafeEqual(a: string, b: string): boolean {
   const aBuf = Buffer.from(a, 'utf8');
   const bBuf = Buffer.from(b, 'utf8');
-  if (aBuf.length !== bBuf.length) { return false; }
-  return crypto.timingSafeEqual(aBuf, bBuf);
+
+  // Always perform constant-time comparison on same-length buffers
+  const maxLen = Math.max(aBuf.length, bBuf.length);
+  const aPadded = Buffer.alloc(maxLen);
+  const bPadded = Buffer.alloc(maxLen);
+
+  aBuf.copy(aPadded);
+  bBuf.copy(bPadded);
+
+  // Length check must also be done after comparison to maintain constant time
+  const lengthMatch = aBuf.length === bBuf.length;
+  const bufferMatch = crypto.timingSafeEqual(aPadded, bPadded);
+
+  return lengthMatch && bufferMatch;
 }

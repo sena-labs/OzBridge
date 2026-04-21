@@ -29,6 +29,7 @@ import { createVsCodeLanguageModelClient } from './services/languageModelClient.
 import { DatasetExportService, DatasetFormat } from './services/datasetExport.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 import { createTelemetryReporter, ITelemetryReporter } from './services/telemetry.js';
+import { getErrorMessage } from './utils/error.js';
 
 /**
  * Entry point of the Warp Bridge extension.
@@ -209,7 +210,7 @@ export function activate(context: vscode.ExtensionContext): void {
         });
         await vscode.window.showTextDocument(doc, { preview: true });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         logError(`Triage failed: ${message}`);
         await vscode.window.showErrorMessage(vscode.l10n.t('Warp triage failed: {0}', message));
       }
@@ -238,7 +239,7 @@ export function activate(context: vscode.ExtensionContext): void {
         });
         await vscode.window.showTextDocument(doc, { preview: false });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         logError(`Dataset export failed: ${message}`);
         await vscode.window.showErrorMessage(vscode.l10n.t('Warp dataset export failed: {0}', message));
       }
@@ -317,11 +318,11 @@ export function activate(context: vscode.ExtensionContext): void {
           vscode.env.openExternal(vscode.Uri.parse('https://www.warp.dev/download'));
         }
       }).catch((err: unknown) => {
-        logError(`Failed to show install warning: ${err instanceof Error ? err.message : String(err)}`);
+        logError(`Failed to show install warning: ${getErrorMessage(err)}`);
       });
     }
   }).catch((err) => {
-    logError(`Availability check failed: ${err instanceof Error ? err.message : String(err)}`);
+    logError(`Availability check failed: ${getErrorMessage(err)}`);
     state.telemetry?.track('errorRaised', { kind: 'availabilityCheck' });
   });
 }
