@@ -97,6 +97,13 @@ export function activate(context: vscode.ExtensionContext): void {
   state.runPoller = new RunPoller(cli, state.configManager);
   context.subscriptions.push({ dispose: () => state.runPoller?.disposeAll() });
 
+  // Avvia l'ActiveRunsTracker — feed event-driven per Status Bar e sidebar.
+  // Created here (before the chat participant) so it can be threaded into
+  // the cloud command, enabling immediate sidebar updates on terminal status.
+  state.tracker = new ActiveRunsTracker(cli);
+  context.subscriptions.push(state.tracker);
+  state.tracker.start();
+
   // Registra comando per aprire conversazioni direttamente in Warp (bypassa il browser)
   const openConvCmd = vscode.commands.registerCommand(
     'warpBridge.openConversation',
@@ -105,7 +112,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(openConvCmd);
 
   // Registra Chat Participant
-  registerChatParticipant(context, cli, ctx, state.configManager, state.runPoller);
+  registerChatParticipant(context, cli, ctx, state.configManager, state.runPoller, state.tracker);
 
   // Registra Language Model Tools — Agent-Native integration.
   // Questi tool permettono a Copilot Agent mode di invocare Oz senza @warp.
@@ -115,11 +122,6 @@ export function activate(context: vscode.ExtensionContext): void {
   } else {
     logInfo('vscode.lm.registerTool not available — Language Model Tools not registered');
   }
-
-  // Avvia l'ActiveRunsTracker — feed event-driven per Status Bar e sidebar.
-  state.tracker = new ActiveRunsTracker(cli);
-  context.subscriptions.push(state.tracker);
-  state.tracker.start();
 
   // Status Bar indicator $(cloud) Warp: N active
   const statusBar = new StatusBarManager(state.tracker);

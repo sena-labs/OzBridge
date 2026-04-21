@@ -289,4 +289,68 @@ describe('/cloud command', () => {
     const callArgs = cli.agentRunCloud.mock.calls[0][0];
     expect(callArgs.environment).toBe('staging');
   });
+
+  // =========================================================================
+  // Regression: open: false (issue — orphan warp.exe processes)
+  // =========================================================================
+
+  it('dovrebbe NON passare open: true a agentRunCloud (nessun warp.exe orfano)', async () => {
+    cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
+    cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null }));
+
+    await handler('test', mock.stream as any, createMockToken() as any);
+
+    const callArgs = cli.agentRunCloud.mock.calls[0][0];
+    expect(callArgs.open).not.toBe(true);
+  });
+
+  // =========================================================================
+  // Regression: tracker integration — immediate sidebar updates
+  // =========================================================================
+
+  it('dovrebbe chiamare tracker.markRunStatus(INPROGRESS) quando il cloud run inizia', async () => {
+    const tracker = { markRunStatus: vi.fn() };
+    handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector(), tracker);
+    cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
+    cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-track-1', status: 'QUEUED' }));
+    (pollerMock.poll as any).mockResolvedValue(makeRunResult({ runId: 'run-track-1', status: 'SUCCEEDED' }));
+
+    await handler('test', mock.stream as any, createMockToken() as any);
+
+    expect(tracker.markRunStatus).toHaveBeenCalledWith('run-track-1', 'INPROGRESS');
+  });
+
+  it('dovrebbe chiamare tracker.markRunStatus(SUCCEEDED) alla fine del polling', async () => {
+    const tracker = { markRunStatus: vi.fn() };
+    handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector(), tracker);
+    cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
+    cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-track-2', status: 'QUEUED' }));
+    (pollerMock.poll as any).mockResolvedValue(makeRunResult({ runId: 'run-track-2', status: 'SUCCEEDED' }));
+
+    await handler('test', mock.stream as any, createMockToken() as any);
+
+    expect(tracker.markRunStatus).toHaveBeenCalledWith('run-track-2', 'SUCCEEDED');
+  });
+
+  it('dovrebbe chiamare tracker.markRunStatus(FAILED) su errore di polling', async () => {
+    const tracker = { markRunStatus: vi.fn() };
+    handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector(), tracker);
+    cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
+    cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-track-err', status: 'QUEUED' }));
+    (pollerMock.poll as any).mockRejectedValue(new Error('polling failed'));
+
+    await handler('test', mock.stream as any, createMockToken() as any);
+
+    expect(tracker.markRunStatus).toHaveBeenCalledWith('run-track-err', 'FAILED');
+  });
+
+  it('dovrebbe funzionare senza tracker (parametro opzionale)', async () => {
+    // No tracker — should not throw
+    handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector());
+    cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
+    cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-no-tracker', status: 'QUEUED' }));
+    (pollerMock.poll as any).mockResolvedValue(makeRunResult({ runId: 'run-no-tracker', status: 'SUCCEEDED' }));
+
+    await expect(handler('test', mock.stream as any, createMockToken() as any)).resolves.not.toThrow();
+  });
 });
