@@ -7,6 +7,9 @@ export interface TrackedRun {
   status: OzRunStatus;
 }
 
+/** Terminal run statuses — a run in these states will never change status again. */
+const TERMINAL_STATUSES = new Set<OzRunStatus>(['SUCCEEDED', 'FAILED']);
+
 /**
  * Periodically polls `oz run list` and emits events whenever the set of runs
  * changes or when a polling error occurs. Used by the Status Bar indicator
@@ -16,6 +19,18 @@ export interface TrackedRun {
  * exists to poll a single run until terminal state. Here we poll the full
  * list on a fixed cadence to keep activity surfaces live without assuming a
  * specific run id.
+ *
+ * ### Sticky overrides
+ * Call {@link markRunStatus} to immediately reflect a known terminal status
+ * (e.g. from the cloud-command poller) without waiting for the next `runList`
+ * poll cycle. The override is removed once the CLI snapshot itself reports a
+ * terminal status for the same run id, or when {@link clearOverride} is called.
+ *
+ * ### ID normalisation
+ * All run ids are normalised to lower-case so that the UUID returned by the
+ * CLI banner (`Spawned ambient agent with run ID: <UUID>`) always matches the
+ * corresponding entry in `oz run list`, regardless of the case used by each
+ * source.
  */
 export class ActiveRunsTracker implements vscode.Disposable {
   private readonly _onDidChange = new vscode.EventEmitter<TrackedRun[]>();
@@ -28,16 +43,56 @@ export class ActiveRunsTracker implements vscode.Disposable {
 
   private timer: ReturnType<typeof setInterval> | undefined;
   private disposed = false;
+  /** Last raw CLI snapshot (lower-cased ids). */
+  private lastCli: TrackedRun[] = [];
+  /** Merged view: CLI snapshot + sticky overrides (exposed via {@link latest}). */
   private last: TrackedRun[] = [];
+  /**
+   * Sticky status overrides keyed by normalised (lower-case) run id.
+   * These are applied on top of the CLI snapshot until the CLI itself
+   * reports a terminal status for the same id.
+   */
+  private readonly stickyOverrides = new Map<string, OzRunStatus>();
 
   constructor(
     private readonly cli: IOzCliService,
     private readonly intervalMs: number = 10_000,
   ) {}
 
-  /** Most recent snapshot returned by the CLI. */
+  /** Most recent merged snapshot (CLI + sticky overrides). */
   get latest(): ReadonlyArray<TrackedRun> {
     return this.last;
+  }
+
+  /**
+   * Immediately overrides the status of a run in the tracker's merged view
+   * and fires {@link onDidChange}.
+   *
+   * Used by the cloud-command poller so the sidebar reflects a terminal status
+   * without waiting up to {@link intervalMs} for the next `oz run list` poll.
+   *
+   * The override persists until the CLI's own `runList` snapshot reports a
+   * terminal status for `runId`, at which point it is automatically removed.
+   *
+   * @param runId - Run identifier (case-insensitive; normalised to lower-case internally).
+   * @param status - The status to apply immediately.
+   */
+  markRunStatus(runId: string, status: OzRunStatus): void {
+    if (this.disposed) { return; }
+    const id = runId.toLowerCase();
+    this.stickyOverrides.set(id, status);
+    const merged = this.applyOverrides(this.lastCli);
+    this.last = merged;
+    this._onDidChange.fire([...merged]);
+  }
+
+  /**
+   * Removes a sticky override without firing a change event.
+   * Prefer letting {@link tick} clean up overrides automatically via
+   * terminal-status detection from the CLI snapshot.
+   */
+  clearOverride(runId: string): void {
+    this.stickyOverrides.delete(runId.toLowerCase());
   }
 
   /**
@@ -82,14 +137,54 @@ export class ActiveRunsTracker implements vscode.Disposable {
     if (this.disposed) { return; }
     try {
       const result = await this.cli.runList();
-      const next: TrackedRun[] = result.items.map((r) => ({ id: r.id, status: r.status }));
+      // Normalise all ids to lower-case so they match banner-extracted UUIDs.
+      const cliRuns: TrackedRun[] = result.items.map((r) => ({
+        id: r.id.toLowerCase(),
+        status: r.status,
+      }));
+      this.lastCli = cliRuns;
+
+      // Remove stale overrides: once the CLI reports a terminal status for a
+      // run we no longer need the synthetic entry — the CLI source is now
+      // authoritative.
+      for (const [id] of this.stickyOverrides) {
+        const cliRun = cliRuns.find((r) => r.id === id);
+        if (cliRun && TERMINAL_STATUSES.has(cliRun.status)) {
+          this.stickyOverrides.delete(id);
+        }
+      }
+
+      const next = this.applyOverrides(cliRuns);
       if (!sameList(next, this.last)) {
         this.last = next;
-        this._onDidChange.fire(next);
+        this._onDidChange.fire([...next]);
       }
     } catch (err) {
       this._onDidError.fire(err);
     }
+  }
+
+  /**
+   * Merges the CLI snapshot with the sticky overrides.
+   *
+   * - For runs present in both, the override status wins.
+   * - Runs only in the overrides map (not yet visible in `oz run list`) are
+   *   appended as synthetic entries so the sidebar shows them immediately.
+   */
+  private applyOverrides(cliRuns: TrackedRun[]): TrackedRun[] {
+    const merged: TrackedRun[] = cliRuns.map((r) => {
+      const override = this.stickyOverrides.get(r.id);
+      return override ? { id: r.id, status: override } : r;
+    });
+
+    // Append synthetic entries for runs only known via sticky overrides.
+    for (const [id, status] of this.stickyOverrides) {
+      if (!merged.some((r) => r.id === id)) {
+        merged.push({ id, status });
+      }
+    }
+
+    return merged;
   }
 }
 

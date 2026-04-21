@@ -128,7 +128,31 @@ export class OzCliService implements IOzCliService {
     args.push('--output-format', 'json');
 
     const result = await this.exec(args, undefined, opts.cancellation);
-    return this.toRunResult(result);
+    const base = this.toRunResult(result);
+
+    // The CLI banner "Spawned ambient agent with run ID: <UUID>" is the
+    // authoritative source for the run id. It takes precedence over any
+    // JSON `id` field that may belong to a different entity (e.g. session).
+    const combined = result.stdout + '\n' + result.stderr;
+    const bannerRunId = OzCliService.extractCloudBannerRunId(combined);
+    if (bannerRunId) {
+      return { ...base, runId: bannerRunId };
+    }
+    return base;
+  }
+
+  /**
+   * Extracts the run ID from the CLI banner line emitted by `agent run-cloud`.
+   *
+   * The CLI prints: "Spawned ambient agent with run ID: <UUID>"
+   * This ID is the canonical run identifier and must be used with `run get`
+   * and in all sidebar/history entries.
+   *
+   * @internal Exported for testing.
+   */
+  static extractCloudBannerRunId(text: string): string | null {
+    const match = /spawned ambient agent with run id[:\s]+([a-zA-Z0-9_-]+)/i.exec(text);
+    return match ? match[1].toLowerCase() : null;
   }
 
   // =========================================================================
@@ -142,7 +166,7 @@ export class OzCliService implements IOzCliService {
 
   async runGet(runId: string): Promise<OzRunResult> {
     this.sanitizeId(runId, 'runId');
-    const result = await this.exec(['run', 'get', '--id', runId, '--output-format', 'json']);
+    const result = await this.exec(['run', 'get', runId, '--output-format', 'json']);
     return this.toRunResult(result);
   }
 
