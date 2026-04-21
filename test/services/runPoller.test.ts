@@ -244,6 +244,12 @@ describe('RunPoller', () => {
   // =========================================================================
   describe('backoff esponenziale', () => {
     it('dovrebbe aumentare l\'intervallo fino a maxInterval (30s)', async () => {
+      // Create a poller with a longer timeout for this backoff test
+      const backoffPoller = new RunPoller(cli, createMockConfigManager({
+        cloudPollingIntervalMs: 100,
+        cloudPollingTimeoutMs: 100_000, // 100 seconds to allow full backoff test
+      }));
+
       let callCount = 0;
       cli.runGet.mockImplementation(async () => {
         callCount++;
@@ -251,7 +257,7 @@ describe('RunPoller', () => {
         return makeRunResult({ status: 'INPROGRESS' });
       });
 
-      const pollPromise = poller.poll('run-backoff', vi.fn());
+      const pollPromise = backoffPoller.poll('run-backoff', vi.fn());
 
       // Avanziamo abbastanza per completare 10 cicli con backoff
       for (let i = 0; i < 15; i++) {
@@ -261,6 +267,8 @@ describe('RunPoller', () => {
       const result = await pollPromise;
       expect(result.status).toBe('SUCCEEDED');
       expect(callCount).toBe(10);
+
+      backoffPoller.disposeAll();
     });
   });
 });

@@ -307,13 +307,15 @@ export function activate(context: vscode.ExtensionContext): void {
     } else {
       logInfo('WARNING: Oz CLI not found in PATH');
       const installLabel = vscode.l10n.t('Install Warp');
-      vscode.window.showWarningMessage(
+      Promise.resolve(vscode.window.showWarningMessage(
         vscode.l10n.t('Warp Bridge: Oz CLI not found. Install Warp to use @warp in chat.'),
         installLabel,
-      ).then((action) => {
+      )).then((action) => {
         if (action === installLabel) {
           vscode.env.openExternal(vscode.Uri.parse('https://www.warp.dev/download'));
         }
+      }).catch((err: unknown) => {
+        logError(`Failed to show install warning: ${err instanceof Error ? err.message : String(err)}`);
       });
     }
   }).catch((err) => {

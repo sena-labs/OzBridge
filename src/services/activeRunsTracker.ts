@@ -50,6 +50,10 @@ export class ActiveRunsTracker implements vscode.Disposable {
     }
     // Fire an immediate tick so consumers get data without waiting a full interval.
     void this.tick();
+    // Check disposed state again after async tick to prevent race condition
+    if (this.disposed) {
+      return;
+    }
     this.timer = setInterval(() => { void this.tick(); }, this.intervalMs);
   }
 

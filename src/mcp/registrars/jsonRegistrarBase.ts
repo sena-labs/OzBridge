@@ -113,9 +113,14 @@ function buildServerEntry(endpoint: McpClientEndpoint): Record<string, unknown> 
  * indentation. Parent directories are created recursively.
  */
 export function atomicWriteJson(file: string, value: unknown): void {
-  const dir = path.dirname(file);
-  fs.mkdirSync(dir, { recursive: true });
-  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-  fs.renameSync(tmp, file);
+  try {
+    const dir = path.dirname(file);
+    fs.mkdirSync(dir, { recursive: true });
+    const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
+    fs.writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+    fs.renameSync(tmp, file);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to write config file ${file}: ${msg}`);
+  }
 }
