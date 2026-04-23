@@ -3,7 +3,7 @@ import {
   type FollowupMap,
 } from 'copilot-chat-toolkit';
 
-// IMPL: thin wrapper — configures toolkit's data-driven FollowupProvider with Warp followups.
+// IMPL: thin wrapper — configures toolkit's data-driven FollowupProvider with Oz followups.
 
 const L_CHECK_STATUS = '📊 Check run status';
 const L_LIST_MODELS  = '🤖 List models';
@@ -14,7 +14,7 @@ const L_SCAFFOLD     = '🏗️ Scaffold skill files';
 const L_RUN_AGENT    = '🚀 Run agent';
 const L_VIEW_HISTORY = '🗂️ View history';
 
-const WARP_FOLLOWUPS: FollowupMap = {
+const OZ_FOLLOWUPS: FollowupMap = {
   run: [
     { prompt: '', command: 'status', label: L_CHECK_STATUS },
     { prompt: '', command: 'models', label: L_LIST_MODELS },
@@ -53,7 +53,7 @@ const WARP_FOLLOWUPS: FollowupMap = {
   ],
 };
 
-const WARP_DEFAULT_FOLLOWUPS = [
+const OZ_DEFAULT_FOLLOWUPS = [
   { prompt: '', command: 'status', label: L_CHECK_STATUS },
   { prompt: '', command: 'models', label: L_LIST_MODELS },
   { prompt: '', command: 'config', label: L_CONFIG },
@@ -63,10 +63,10 @@ const WARP_DEFAULT_FOLLOWUPS = [
  * Contextual follow-up provider for the `@oz` Chat Participant.
  *
  * Extends the toolkit's data-driven {@link BaseFollowupProvider} with
- * Warp-specific follow-up suggestions.
+ * Oz-specific follow-up suggestions.
  */
 export class FollowupProvider extends BaseFollowupProvider {
   constructor() {
-    super(WARP_FOLLOWUPS, WARP_DEFAULT_FOLLOWUPS);
+    super(OZ_FOLLOWUPS, OZ_DEFAULT_FOLLOWUPS);
   }
 }

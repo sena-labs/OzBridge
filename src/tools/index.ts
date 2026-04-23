@@ -20,7 +20,7 @@ export type { GetRunInput } from './getRunTool.js';
 export type { ListRunsInput } from './listRunsTool.js';
 
 /**
- * Registers the 4 Warp Language Model Tools with VS Code.
+ * Registers the 4 Oz Language Model Tools with VS Code.
  *
  * Each `registerTool` call returns a `vscode.Disposable` that we push into
  * `context.subscriptions`, so the tools are automatically unregistered when
@@ -35,7 +35,7 @@ export type { ListRunsInput } from './listRunsTool.js';
  * @param ctx      IDE context collector (workspace, file, selection, diagnostics).
  * @param poller   Cloud run poller with exponential backoff.
  */
-export function registerWarpTools(
+export function registerOzTools(
   context: vscode.ExtensionContext,
   cli: IOzCliService,
   cfgMgr: IConfigManager,

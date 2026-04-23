@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as vscodeMock from '../mocks/vscode.js';
-import { registerWarpTools, RunLocalTool, RunCloudTool, GetRunTool, ListRunsTool } from '../../src/tools/index.js';
+import { registerOzTools, RunLocalTool, RunCloudTool, GetRunTool, ListRunsTool } from '../../src/tools/index.js';
 import {
   createMockCli,
   createMockConfigManager,
@@ -17,11 +17,11 @@ beforeEach(() => {
   vscodeMock.lm.registerTool.mockClear();
 });
 
-describe('registerWarpTools()', () => {
-  it('registers the 4 Warp tools under their public names', () => {
+describe('registerOzTools()', () => {
+  it('registers the 4 Oz tools under their public names', () => {
     const ctx = makeContext();
-    registerWarpTools(
-      ctx as unknown as Parameters<typeof registerWarpTools>[0],
+    registerOzTools(
+      ctx as unknown as Parameters<typeof registerOzTools>[0],
       createMockCli(),
       createMockConfigManager(),
       createMockContextCollector(),
@@ -37,8 +37,8 @@ describe('registerWarpTools()', () => {
 
   it('pushes one disposable per tool into context.subscriptions', () => {
     const ctx = makeContext();
-    registerWarpTools(
-      ctx as unknown as Parameters<typeof registerWarpTools>[0],
+    registerOzTools(
+      ctx as unknown as Parameters<typeof registerOzTools>[0],
       createMockCli(),
       createMockConfigManager(),
       createMockContextCollector(),

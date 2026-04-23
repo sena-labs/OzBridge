@@ -1,5 +1,5 @@
 {
-  "OzBridge: Oz CLI not found. Install Warp to use @ozbridge in chat.": "OzBridge: Oz CLI nicht gefunden. Installieren Sie Warp, um @warp im Chat zu verwenden.",
+  "OzBridge: Oz CLI not found. Install Warp to use @oz in chat.": "OzBridge: Oz CLI nicht gefunden. Installieren Sie Warp, um @oz im Chat zu verwenden.",
   "Install Warp": "Warp installieren",
   "Failure triage requires VS Code 1.96+ with a Copilot chat model installed.": "Fehleranalyse erfordert VS Code 1.96+ mit installiertem Copilot-Chat-Modell.",
   "Run id to triage": "Run-ID zur Analyse",

@@ -25,14 +25,14 @@
     "Chat"
   ],
   "activationEvents": [
-    "onChatParticipant:warp-vsc-bridge.warp",
-    "onLanguageModelTool:warp_run_local",
-    "onLanguageModelTool:warp_run_cloud",
-    "onLanguageModelTool:warp_get_run",
-    "onLanguageModelTool:warp_list_runs",
-    "onView:warpBridge.runsView",
-    "onView:warpBridge.driveView",
-    "onCommand:warpBridge.dashboard.open"
+    "onChatParticipant:ozbridge.oz",
+    "onLanguageModelTool:oz_run_local",
+    "onLanguageModelTool:oz_run_cloud",
+    "onLanguageModelTool:oz_get_run",
+    "onLanguageModelTool:oz_list_runs",
+    "onView:ozBridge.runsView",
+    "onView:ozBridge.driveView",
+    "onCommand:ozBridge.dashboard.open"
   ],
   "main": "./dist/extension.js",
   "contributes": {
