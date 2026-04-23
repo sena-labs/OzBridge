@@ -27,10 +27,10 @@ jobs:
       vsix: ${{ steps.pkg.outputs.vsix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -59,7 +59,7 @@ jobs:
           echo "vsix=$VSIX" >> "$GITHUB_OUTPUT"
 
       - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ozbridge-${{ steps.pkg.outputs.version }}
           path: ${{ steps.pkg.outputs.vsix }}
@@ -77,7 +77,7 @@ jobs:
           name: ozbridge-${{ needs.build.outputs.version }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -103,7 +103,7 @@ jobs:
           name: ozbridge-${{ needs.build.outputs.version }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -155,10 +155,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
@@ -208,7 +208,7 @@ jobs:
           generate_release_notes: true
 
       - name: Upload VSIX as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ozbridge-${{ env.VERSION }}
           path: ozbridge-*.vsix
