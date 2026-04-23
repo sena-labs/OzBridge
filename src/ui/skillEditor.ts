@@ -53,7 +53,7 @@ export function registerSkillEditorCommands(deps: SkillEditorDeps = {}): vscode.
 
     vscode.commands.registerCommand(SKILL_EDITOR_COMMANDS.newSkill, async () => {
       const name = await vscode.window.showInputBox({
-        title: 'Warp Bridge · New Skill',
+        title: 'OzBridge · New Skill',
         prompt: 'Name of the new skill (lower-case, hyphen-separated)',
         placeHolder: 'e.g. 9-security-agent',
         validateInput: (v) => {
@@ -71,7 +71,7 @@ export function registerSkillEditorCommands(deps: SkillEditorDeps = {}): vscode.
 
       const base = target === 'Project' ? getWorkspace() : getHome();
       if (!base) {
-        await vscode.window.showErrorMessage(vscode.l10n.t('Warp Bridge: no folder available for Project save.'));
+        await vscode.window.showErrorMessage(vscode.l10n.t('OzBridge: no folder available for Project save.'));
         return;
       }
       const dir = target === 'Project'
@@ -118,7 +118,7 @@ async function resolveEditTarget(target?: string | vscode.Uri): Promise<vscode.U
     canSelectFiles: true,
     canSelectMany: false,
     filters: { Markdown: ['md'] },
-    title: 'Warp Bridge · Edit skill / rule',
+    title: 'OzBridge · Edit skill / rule',
   });
   return picked?.[0];
 }
@@ -135,7 +135,7 @@ async function saveCurrentAs(
 ): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: no active editor to save.'));
+    await vscode.window.showWarningMessage(vscode.l10n.t('OzBridge: no active editor to save.'));
     return;
   }
   const content = editor.document.getText();
@@ -149,7 +149,7 @@ async function saveCurrentAs(
   if (!name) { return; }
   const base = target === 'Global' ? homeDir : workspaceDir;
   if (!base) {
-    await vscode.window.showErrorMessage(vscode.l10n.t('Warp Bridge: no {0} directory available.', target.toLowerCase()));
+    await vscode.window.showErrorMessage(vscode.l10n.t('OzBridge: no {0} directory available.', target.toLowerCase()));
     return;
   }
   const dir = path.join(base, '.agents', 'skills', name.trim());

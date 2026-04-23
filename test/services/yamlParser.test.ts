@@ -46,7 +46,7 @@ describe('parseFlatYaml — happy paths', () => {
 
   it('ignores blank and comment-only lines', () => {
     const src = [
-      '# Warp Bridge per-workspace overrides',
+      '# OzBridge per-workspace overrides',
       '',
       'defaultModel: gpt-4o  # inline comment',
       '   ',

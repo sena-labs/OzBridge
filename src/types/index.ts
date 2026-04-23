@@ -24,7 +24,7 @@ export type OzListResult<T> = ListResult<T>;
 export type { DiagnosticEntry, ContextPayload, SlashCommandHandler };
 
 // ============================================================================
-// Warp Bridge Configuration (extends toolkit's BridgeConfig)
+// OzBridge Configuration (extends toolkit's BridgeConfig)
 // ============================================================================
 
 /** Extension settings read from `vscode.workspace.getConfiguration('ozBridge')`. */

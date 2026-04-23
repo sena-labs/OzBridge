@@ -74,6 +74,6 @@ describe('Publishing readiness (deliverable M)', () => {
     const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
     expect(readme).toMatch(/marketplace\.visualstudio\.com/i);
     expect(readme).toMatch(/open-vsx\.org/i);
-    expect(readme).toMatch(/sena-labs\.warp-vsc-bridge/);
+    expect(readme).toMatch(/sena-labs\.oz-bridge/);
   });
 });

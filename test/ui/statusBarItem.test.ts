@@ -48,7 +48,7 @@ describe('StatusBarManager', () => {
     expect(item.command).toBe(StatusBarManager.FOCUS_COMMAND);
     expect(item.name).toBe('OzBridge');
     expect(item.show).toHaveBeenCalledTimes(1);
-    expect(item.text).toBe('$(cloud) Warp: 0 active');
+    expect(item.text).toBe('$(cloud) OzBridge: 0 active');
     expect(item.backgroundColor).toBeUndefined();
   });
 
@@ -62,7 +62,7 @@ describe('StatusBarManager', () => {
     ]);
 
     const item = manager.statusBarItem as any;
-    expect(item.text).toBe('$(cloud) Warp: 0 active');
+    expect(item.text).toBe('$(cloud) OzBridge: 0 active');
     expect(item.backgroundColor).toBeUndefined();
     expect((item.tooltip as any).value).toContain('r1');
     expect((item.tooltip as any).value).toContain('r2');
@@ -78,7 +78,7 @@ describe('StatusBarManager', () => {
     ]);
 
     const item = manager.statusBarItem as any;
-    expect(item.text).toBe('$(cloud) Warp: 1 active');
+    expect(item.text).toBe('$(cloud) OzBridge: 1 active');
     expect(item.backgroundColor).toBeInstanceOf(vscodeMock.ThemeColor);
     expect(item.backgroundColor.id).toBe('statusBarItem.warningBackground');
   });
@@ -94,7 +94,7 @@ describe('StatusBarManager', () => {
     ]);
 
     const item = manager.statusBarItem as any;
-    expect(item.text).toBe('$(cloud) Warp: 3 active');
+    expect(item.text).toBe('$(cloud) OzBridge: 3 active');
     expect(item.backgroundColor.id).toBe('statusBarItem.errorBackground');
   });
 

@@ -124,7 +124,7 @@ export class OutputFormatter {
         break;
 
       case OzCliErrorKind.TIMEOUT:
-        stream.markdown(`⏰ **Timeout.** Operation exceeded the ${this.config.timeoutMs / 1000}s limit.\n\nYou can increase the timeout in Settings → Warp Bridge → Timeout.\n`);
+        stream.markdown(`⏰ **Timeout.** Operation exceeded the ${this.config.timeoutMs / 1000}s limit.\n\nYou can increase the timeout in Settings → OzBridge → Timeout.\n`);
         break;
 
       case OzCliErrorKind.CANCELLED:

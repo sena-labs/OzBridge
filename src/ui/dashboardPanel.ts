@@ -83,7 +83,7 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
 <head>
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; img-src ${cspSource} data:;" />
-<title>Warp Bridge — Dashboard</title>
+<title>OzBridge — Dashboard</title>
 <style nonce="${nonce}">
   body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background: var(--vscode-editor-background); margin: 0; padding: 16px; }
   h1 { font-size: 1.2em; margin: 0 0 12px 0; }
@@ -106,7 +106,7 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
 </style>
 </head>
 <body>
-<h1>Warp Bridge — Dashboard</h1>
+<h1>OzBridge — Dashboard</h1>
 <div class="meta">Window: ${summary.windowDays} days · Generated: ${escapeHtml(generatedAt)}${summary.undatedCount > 0 ? ` · Undated runs: ${summary.undatedCount}` : ''}</div>
 <div class="actions"><button id="refresh" type="button">Refresh</button></div>
 <div class="cards">
@@ -169,7 +169,7 @@ export class DashboardPanel {
     }
     const panel = vscode.window.createWebviewPanel(
       DashboardPanel.viewType,
-      'Warp Bridge — Dashboard',
+      'OzBridge — Dashboard',
       vscode.ViewColumn.Active,
       { enableScripts: true, retainContextWhenHidden: true },
     );

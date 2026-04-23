@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 /**
  * Global-state key set when the Getting Started walkthrough is opened
- * automatically on the user's first activation of Warp Bridge.
+ * automatically on the user's first activation of OzBridge.
  *
  * Once the key is `true` the extension never auto-opens the walkthrough
  * again — users can still launch it manually from **Help → Get Started**.

@@ -52,12 +52,12 @@ export class StatusBarManager implements vscode.Disposable {
 
   private render(runs: ReadonlyArray<TrackedRun>): void {
     const activeCount = runs.filter((r) => isActive(r.status)).length;
-    this.item.text = `$(cloud) Warp: ${activeCount} active`;
+    this.item.text = `$(cloud) OzBridge: ${activeCount} active`;
     this.item.tooltip = buildTooltip(runs);
     // v1.0 deliverable S — WCAG 2.1 AA: codicon glyphs ($cloud) are
     // not announced by screen readers; expose a plain-language label.
     this.item.accessibilityInformation = {
-      label: `Warp Bridge: ${activeCount} active run${activeCount === 1 ? '' : 's'}`,
+      label: `OzBridge: ${activeCount} active run${activeCount === 1 ? '' : 's'}`,
       role: 'button',
     };
 
@@ -73,11 +73,11 @@ export class StatusBarManager implements vscode.Disposable {
   private renderError(): void {
     // Keep the last-known count but mark the tooltip so the user knows
     // polling is currently failing (e.g. Oz CLI missing or logged out).
-    this.item.text = `$(cloud-outline) Warp: unavailable`;
-    this.item.tooltip = 'Warp Bridge: unable to list runs. Check Oz CLI availability and authentication.';
+    this.item.text = `$(cloud-outline) OzBridge: unavailable`;
+    this.item.tooltip = 'OzBridge: unable to list runs. Check Oz CLI availability and authentication.';
     this.item.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
     this.item.accessibilityInformation = {
-      label: 'Warp Bridge: unavailable. Check Oz CLI availability and authentication.',
+      label: 'OzBridge: unavailable. Check Oz CLI availability and authentication.',
       role: 'button',
     };
   }
@@ -90,7 +90,7 @@ function isActive(status: OzRunStatus): boolean {
 function buildTooltip(runs: ReadonlyArray<TrackedRun>): vscode.MarkdownString {
   const md = new vscode.MarkdownString(undefined, true);
   md.isTrusted = true;
-  md.appendMarkdown('**Warp Bridge** — active & recent runs\n\n');
+  md.appendMarkdown('**OzBridge** — active & recent runs\n\n');
 
   if (runs.length === 0) {
     md.appendMarkdown('_No runs reported by Oz CLI._\n\n');
@@ -104,7 +104,7 @@ function buildTooltip(runs: ReadonlyArray<TrackedRun>): vscode.MarkdownString {
     }
   }
 
-  md.appendMarkdown('\n\nClick to focus the Warp sidebar.');
+  md.appendMarkdown('\n\nClick to focus the OzBridge sidebar.');
   return md;
 }
 

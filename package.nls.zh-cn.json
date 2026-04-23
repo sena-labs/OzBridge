@@ -1,8 +1,8 @@
 {
   "displayName": "OzBridge",
   "description": "从 VS Code Copilot Chat 运行 Warp Oz 代理",
-  "category.warp": "Warp",
-  "category.warpMcp": "Warp MCP",
+  "category.warp": "OzBridge",
+  "category.warpMcp": "OzBridge MCP",
   "category.warpDrive": "Warp Drive",
   "category.warpSkill": "Warp Skill",
   "command.tree.refresh.title": "Warp：刷新",

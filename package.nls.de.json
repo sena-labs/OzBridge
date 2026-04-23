@@ -1,8 +1,8 @@
 {
   "displayName": "OzBridge",
   "description": "Warp Oz-Agenten aus VS Code Copilot Chat ausführen",
-  "category.warp": "Warp",
-  "category.warpMcp": "Warp MCP",
+  "category.warp": "OzBridge",
+  "category.warpMcp": "OzBridge MCP",
   "category.warpDrive": "Warp Drive",
   "category.warpSkill": "Warp Skill",
   "command.tree.refresh.title": "Warp: Aktualisieren",

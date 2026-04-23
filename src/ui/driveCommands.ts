@@ -45,7 +45,7 @@ export function registerDriveCommands(deps: DriveCommandDeps): vscode.Disposable
       }
       const preview = body.length > 1500 ? `${body.slice(0, 1500)}\n… (truncated)` : body;
       await vscode.commands.executeCommand('workbench.action.chat.open', {
-        query: `@warp /run ${preview}`,
+        query: `@ozbridge /run ${preview}`,
       });
     }),
 

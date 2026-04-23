@@ -57,7 +57,7 @@ export function createCloudCommand(
     }
 
     // Credit consumption warning (informational, does not block execution)
-    stream.markdown(`⚠️ **Launching cloud agent** — this operation consumes Warp credits.\n\nPrompt: _${prompt}_\n\n`);
+    stream.markdown(`⚠️ **Launching cloud agent** — this operation consumes Oz credits.\n\nPrompt: _${prompt}_\n\n`);
 
     // Resolve environment: if configured use it, otherwise auto-detect
     let environment = config.defaultEnvironment || undefined;
@@ -136,7 +136,7 @@ export function createCloudCommand(
           const statusMsg = finalResult.status === 'SUCCEEDED'
             ? vscode.l10n.t('✅ Cloud agent completed successfully')
             : vscode.l10n.t('❌ Cloud agent failed');
-          vscode.window.showInformationMessage(vscode.l10n.t('Warp Bridge: {0} ({1})', statusMsg, result.runId));
+          vscode.window.showInformationMessage(vscode.l10n.t('OzBridge: {0} ({1})', statusMsg, result.runId));
         } catch (pollErr) {
           // Mark as FAILED in the sidebar on polling error.
           tracker?.markRunStatus(result.runId, 'FAILED');
