@@ -48,10 +48,10 @@ describe('ConfigManager', () => {
       mgr.dispose();
     });
 
-    it('dovrebbe leggere dalla sezione "warpBridge"', () => {
+    it('dovrebbe leggere dalla sezione "ozBridge"', () => {
       const mgr = new ConfigManager();
       mgr.getConfig();
-      expect(workspace.getConfiguration).toHaveBeenCalledWith('warpBridge');
+      expect(workspace.getConfiguration).toHaveBeenCalledWith('ozBridge');
       mgr.dispose();
     });
 
@@ -101,7 +101,7 @@ describe('ConfigManager', () => {
       expect(workspace.getConfiguration).toHaveBeenCalledTimes(1);
 
       // Simula cambio configurazione
-      changeCallback?.({ affectsConfiguration: (s: string) => s === 'warpBridge' });
+      changeCallback?.({ affectsConfiguration: (s: string) => s === 'ozBridge' });
 
       mgr.getConfig(); // Dovrebbe rileggere
       expect(workspace.getConfiguration).toHaveBeenCalledTimes(2);
@@ -147,7 +147,7 @@ describe('ConfigManager', () => {
         }),
       });
 
-      changeCallback?.({ affectsConfiguration: (s: string) => s === 'warpBridge' });
+      changeCallback?.({ affectsConfiguration: (s: string) => s === 'ozBridge' });
 
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener).toHaveBeenCalledWith(

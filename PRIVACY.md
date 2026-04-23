@@ -1,16 +1,16 @@
-# Privacy policy — Warp Bridge for VS Code
+# Privacy policy — OzBridge for VS Code
 
 **Last updated:** 2026-04-20  
-**Applies to:** Warp Bridge for VS Code `≥ 0.10.0` (the v1.0 line).
+**Applies to:** OzBridge for VS Code `≥ 0.10.0` (the v1.0 line).
 
 ## TL;DR
 
-Warp Bridge ships **no telemetry by default**. The transport stays
+OzBridge ships **no telemetry by default**. The transport stays
 disabled until **both** of the following are true:
 
 1. VS Code's global `telemetry.telemetryLevel` is set to `usage` or
    `all` (i.e. `vscode.env.isTelemetryEnabled === true`).
-2. The setting `warpBridge.telemetry.connectionString` is set to a
+2. The setting `ozBridge.telemetry.connectionString` is set to a
    non-empty Application Insights connection string.
 
 Either condition false ⇒ a **`NoopReporter`** is installed and no
@@ -63,7 +63,7 @@ Any **one** of these disables telemetry immediately and permanently
 for your install — no extension reload required:
 
 1. Set `telemetry.telemetryLevel` to `off` in VS Code settings.
-2. Clear `warpBridge.telemetry.connectionString` (set it to `""`).
+2. Clear `ozBridge.telemetry.connectionString` (set it to `""`).
 3. Disable the extension.
 
 When opted out, the extension installs a `NoopReporter` whose
@@ -74,7 +74,7 @@ network code path executed.
 
 When enabled, events are POSTed in batches to the Microsoft
 Application Insights ingestion endpoint encoded in the
-`warpBridge.telemetry.connectionString` setting (typically
+`ozBridge.telemetry.connectionString` setting (typically
 `https://*.in.applicationinsights.azure.com/v2/track`). The endpoint
 is part of an Azure subscription owned by **Sena Labs**; contact
 [security@sena-labs.dev](mailto:security@sena-labs.dev) for the

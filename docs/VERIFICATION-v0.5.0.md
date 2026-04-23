@@ -52,13 +52,13 @@ point listed in the v0.5.0 release notes was asserted individually.
 | `version` | `0.5.0` | ✅ |
 | `engines.vscode` | `^1.96.0` | ✅ |
 | `main` | `./dist/extension.js` | ✅ |
-| `contributes.chatParticipants[0].id` | `warp-vsc-bridge.warp` | ✅ |
+| `contributes.chatParticipants[0].id` | `ozbridge.oz` | ✅ |
 | Slash commands | `cloud, config, history, init, mcp, models, run, schedule, status` | ✅ |
-| `contributes.languageModelTools` | `warp_get_run, warp_list_runs, warp_run_cloud, warp_run_local` | ✅ |
-| Activity Bar container | `warpBridgeSidebar` | ✅ |
-| Sidebar view id | `warpBridge.runsView` | ✅ |
-| Declared commands | `warpBridge.handoff`, `warpBridge.tree.{refresh,copyId,openInBrowser,showRun,pauseSchedule,unpauseSchedule,deleteSchedule,handoff}` | ✅ |
-| Configuration keys | `warpBridge.{ozPath,defaultModel,defaultProfile,defaultEnvironment,timeoutMs,maxOutputChars,…}` | ✅ (8 keys) |
+| `contributes.languageModelTools` | `oz_get_run, oz_list_runs, oz_run_cloud, oz_run_local` | ✅ |
+| Activity Bar container | `ozBridgeSidebar` | ✅ |
+| Sidebar view id | `ozBridge.runsView` | ✅ |
+| Declared commands | `ozBridge.handoff`, `ozBridge.tree.{refresh,copyId,openInBrowser,showRun,pauseSchedule,unpauseSchedule,deleteSchedule,handoff}` | ✅ |
+| Configuration keys | `ozBridge.{ozPath,defaultModel,defaultProfile,defaultEnvironment,timeoutMs,maxOutputChars,…}` | ✅ (8 keys) |
 ## 4. Bundle load + `activate(context)`
 The bundle is loaded via `require('./dist/extension.js')` with a `vscode`
 stub injected through `Module._load`. The stub implements every API the
@@ -66,9 +66,9 @@ extension touches at activation time.
 | Check | Observed | Status |
 | --- | --- | --- |
 | Bundle size | 49 995 bytes (> 10 KB guard) | ✅ |
-| Bundle embeds participant id | `warp-vsc-bridge.warp` present in source | ✅ |
-| Bundle embeds sidebar id | `warpBridge.runsView` present in source | ✅ |
-| Bundle embeds LM tool id | `warp_run_local` present in source | ✅ |
+| Bundle embeds participant id | `ozbridge.oz` present in source | ✅ |
+| Bundle embeds sidebar id | `ozBridge.runsView` present in source | ✅ |
+| Bundle embeds LM tool id | `oz_run_local` present in source | ✅ |
 | Bundle embeds Warp URL scheme | `warp://action/new_tab` present in source | ✅ |
 | `exports.activate` | function | ✅ |
 | `exports.deactivate` | function | ✅ |
@@ -84,25 +84,25 @@ After `activate()` the stub's registries were inspected for every
 feature area documented in `docs/RELEASE-NOTES-v0.5.0.md`:
 | Feature area | Assertion | Status |
 | --- | --- | --- |
-| Chat Participant | `@warp` registered with id `warp-vsc-bridge.warp` | ✅ |
-| LM Tool — local | `warp_run_local` registered via `vscode.lm.registerTool` | ✅ |
-| LM Tool — cloud | `warp_run_cloud` registered | ✅ |
-| LM Tool — get | `warp_get_run` registered | ✅ |
-| LM Tool — list | `warp_list_runs` registered | ✅ |
-| Sidebar | `TreeDataProvider` registered on `warpBridge.runsView` | ✅ |
+| Chat Participant | `@oz` registered with id `ozbridge.oz` | ✅ |
+| LM Tool — local | `oz_run_local` registered via `vscode.lm.registerTool` | ✅ |
+| LM Tool — cloud | `oz_run_cloud` registered | ✅ |
+| LM Tool — get | `oz_get_run` registered | ✅ |
+| LM Tool — list | `oz_list_runs` registered | ✅ |
+| Sidebar | `TreeDataProvider` registered on `ozBridge.runsView` | ✅ |
 | Sidebar categories | `getChildren()` returns `activeRuns / environments / history / mcp / schedules` | ✅ |
 | Status Bar | `createStatusBarItem` invoked exactly once | ✅ |
-| Tree command — refresh | `warpBridge.tree.refresh` live | ✅ |
-| Tree command — copy id | `warpBridge.tree.copyId` live | ✅ |
-| Tree command — open in browser | `warpBridge.tree.openInBrowser` live | ✅ |
-| Tree command — show run | `warpBridge.tree.showRun` live | ✅ |
-| Tree command — pause schedule | `warpBridge.tree.pauseSchedule` live | ✅ |
-| Tree command — unpause schedule | `warpBridge.tree.unpauseSchedule` live | ✅ |
-| Tree command — delete schedule | `warpBridge.tree.deleteSchedule` live | ✅ |
-| Tree command — handoff | `warpBridge.tree.handoff` live | ✅ |
-| Palette command — handoff | `warpBridge.handoff` live | ✅ |
-| Sidebar focus | `warpBridge.sidebar.focus` live | ✅ |
-| Legacy alias | `warpBridge.openConversation` live | ✅ |
+| Tree command — refresh | `ozBridge.tree.refresh` live | ✅ |
+| Tree command — copy id | `ozBridge.tree.copyId` live | ✅ |
+| Tree command — open in browser | `ozBridge.tree.openInBrowser` live | ✅ |
+| Tree command — show run | `ozBridge.tree.showRun` live | ✅ |
+| Tree command — pause schedule | `ozBridge.tree.pauseSchedule` live | ✅ |
+| Tree command — unpause schedule | `ozBridge.tree.unpauseSchedule` live | ✅ |
+| Tree command — delete schedule | `ozBridge.tree.deleteSchedule` live | ✅ |
+| Tree command — handoff | `ozBridge.tree.handoff` live | ✅ |
+| Palette command — handoff | `ozBridge.handoff` live | ✅ |
+| Sidebar focus | `ozBridge.sidebar.focus` live | ✅ |
+| Legacy alias | `ozBridge.openConversation` live | ✅ |
 ## 6. Functional smoke tests
 | Scenario | Expected | Observed | Status |
 | --- | --- | --- | --- |
@@ -121,7 +121,7 @@ repo but we note them here for completeness:
   `vscode.env.openExternal` is called with the correct URI, but the OS
   registry handler that launches Warp is out of scope and covered only
   by manual verification on a Warp-equipped workstation.
-- **Copilot Agent confirmation dialog** for `warp_run_cloud`: the
+- **Copilot Agent confirmation dialog** for `oz_run_cloud`: the
   `confirmationMessages` block is validated by
   `test/tools/runCloudTool.test.ts` but the UI is rendered by VS Code at
   tool-invocation time.

@@ -10,7 +10,7 @@ import { CommandRouter } from '../commands/router.js';
 import { FollowupProvider } from './followups.js';
 
 /**
- * Registers the `@warp` Chat Participant in VS Code Copilot Chat.
+ * Registers the `@oz` Chat Participant in VS Code Copilot Chat.
  *
  * Creates a {@link CommandRouter} for slash-command dispatch and a
  * {@link FollowupProvider} for contextual follow-up suggestions,
@@ -24,7 +24,7 @@ import { FollowupProvider } from './followups.js';
  * @returns The registered {@link vscode.ChatParticipant} instance.
  */
 
-const PARTICIPANT_ID = 'warp-vsc-bridge.warp';
+const PARTICIPANT_ID = 'ozbridge.oz';
 
 export function registerChatParticipant(
   context: vscode.ExtensionContext,

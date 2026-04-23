@@ -37,7 +37,7 @@ interface MessageNode {
 
 /**
  * `TreeDataProvider<DriveTreeNode>` for the Warp Drive sidebar view
- * (`warpBridge.driveView`). Lists three top-level categories
+ * (`ozBridge.driveView`). Lists three top-level categories
  * (Prompts, Rules, Skills), each populated from an
  * {@link IWarpDriveSource}.
  *
@@ -90,7 +90,7 @@ export class WarpDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeN
         item.tooltip = buildTooltip(element.entry);
         item.contextValue = `warpDrive${capitalise(element.entry.category)}`;
         item.command = {
-          command: 'warpBridge.drive.openInEditor',
+          command: 'ozBridge.drive.openInEditor',
           title: 'Open in Editor',
           arguments: [element],
         };

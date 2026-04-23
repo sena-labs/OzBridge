@@ -29,7 +29,7 @@ Branch: **`feat/v1.0-telemetry`**
    asserted against `/prompt|content|output|path|workspace|runId/i`.
 6. Add `PRIVACY.md` at repo root, link from walkthrough's last step
    (`media/walkthrough/04-mcp-bridge.md`).
-7. Add settings `warpBridge.telemetry.connectionString` (default `""`,
+7. Add settings `ozBridge.telemetry.connectionString` (default `""`,
    meaning noop).
 8. Validate, CHANGELOG, PR, merge.
 

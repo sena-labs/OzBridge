@@ -1,17 +1,17 @@
-# Warp Bridge as an MCP server
-Warp Bridge can expose its Oz CLI integration as a **Model Context
+# OzBridge as an MCP server
+OzBridge can expose its Oz CLI integration as a **Model Context
 Protocol** (MCP) server, so *any* MCP client — Claude Code, Cursor,
 Codex, etc. — can drive Warp Oz through the same tools that Copilot
 Chat sees inside VS Code.
 ## Quick start
 1. Open VS Code settings (Ctrl+,).
 2. Enable the server:
-   - `warpBridge.mcpEnabled` → `true`
+   - `ozBridge.mcpEnabled` → `true`
 3. *(optional)* Change the port, bind address, or set a bearer token:
-   - `warpBridge.mcpPort` (default `3847`)
-   - `warpBridge.mcpBindAddress` (default `127.0.0.1` — loopback only)
-   - `warpBridge.mcpBearerToken` (default empty = no auth)
-4. Watch the Warp Bridge output channel for the log line:
+   - `ozBridge.mcpPort` (default `3847`)
+   - `ozBridge.mcpBindAddress` (default `127.0.0.1` — loopback only)
+   - `ozBridge.mcpBearerToken` (default empty = no auth)
+4. Watch the OzBridge output channel for the log line:
    ```
    MCP server listening on http://127.0.0.1:3847/sse (4 tools)
    ```
@@ -29,7 +29,7 @@ You can also start/stop the server on demand without touching settings:
 All responses are JSON (`Content-Type: application/json`) except `/sse`
 which is `text/event-stream`.
 ## Protocol
-Warp Bridge implements the **Model Context Protocol 2025-03-26** (and
+OzBridge implements the **Model Context Protocol 2025-03-26** (and
 gracefully negotiates down to 2024-11-05 on request). The supported
 method set in v0.6 is deliberately small:
 - `initialize` — returns server capabilities + `serverInfo`.
@@ -50,12 +50,12 @@ The JSON schemas for the `inputSchema` of each tool are emitted verbatim
 by `tools/list`, so clients can route arguments from their own prompts
 automatically.
 ## Bearer authentication
-When `warpBridge.mcpBearerToken` is non-empty, every request must carry
+When `ozBridge.mcpBearerToken` is non-empty, every request must carry
 an `Authorization: Bearer <token>` header. Requests missing or with a
 mismatching token receive `401 Unauthorized`. Comparison is
 constant-time via `crypto.timingSafeEqual`.
 Bind to loopback (`127.0.0.1`) whenever possible; only change
-`warpBridge.mcpBindAddress` if you understand the implications.
+`ozBridge.mcpBindAddress` if you understand the implications.
 ## Integration examples
 ### Claude Code
 Add to `~/.claude.json`:
@@ -125,13 +125,13 @@ data: {"jsonrpc":"2.0","id":2,"result":{"filter":"completed","count":5,"items":[
 ```
 ## Troubleshooting
 - **Server fails to start with `EADDRINUSE`** — another process is
-  bound to `warpBridge.mcpPort`. Pick a different port or set it to
+  bound to `ozBridge.mcpPort`. Pick a different port or set it to
   `0` to let the OS choose an ephemeral one (you can retrieve the
   actual port via the `Warp: Show MCP server status` command).
 - **Client connects but gets `401`** — the bearer token on the client
-  doesn't match `warpBridge.mcpBearerToken`. Copy the token via the
+  doesn't match `ozBridge.mcpBearerToken`. Copy the token via the
   VS Code Settings UI, or clear it on both sides for local development.
-- **No tools are returned** — check the Warp Bridge output channel for
+- **No tools are returned** — check the OzBridge output channel for
   a log line like `MCP server listening on … (N tools)`. If `N` is 0,
   the tool registry failed to populate; file a bug.
 - **Connection drops after ~30 s** — idle SSE streams are kept alive
@@ -139,7 +139,7 @@ data: {"jsonrpc":"2.0","id":2,"result":{"filter":"completed","count":5,"items":[
   closes the stream, increase its `keep-alive` timeout.
 ## Security posture
 - Binds to loopback by default; no traffic leaves the machine unless
-  you opt in via `warpBridge.mcpBindAddress`.
+  you opt in via `ozBridge.mcpBindAddress`.
 - Bearer token, when set, is required for *every* route — including
   `/health` — so even reconnaissance probes are authenticated.
 - No prompt content or run output is persisted by the server; the

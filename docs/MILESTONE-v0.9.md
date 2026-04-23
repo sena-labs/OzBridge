@@ -100,16 +100,16 @@ releases.
 ### Goal
 
 A 4-step onboarding flow shown to first-time users so they reach a
-working `@warp /run` invocation without leaving VS Code.
+working `@oz /run` invocation without leaving VS Code.
 
 ### Steps
 
 1. **Install Warp & login** — detect `oz` on PATH; if missing, link to
    install instructions and the Warp download page.
 2. **Configure default environment** — open Settings UI scoped to
-   `warpBridge.defaultEnvironment`, with `oz env list` output rendered
+   `ozBridge.defaultEnvironment`, with `oz env list` output rendered
    in a markdown step description.
-3. **Run `@warp /run hello`** — pre-fills the chat with the prompt;
+3. **Run `@oz /run hello`** — pre-fills the chat with the prompt;
    step marked complete on first successful run.
 4. **Try Agent mode tools** — opens the Agent mode picker and explains
    the four `warp_*` Language Model Tools registered since v0.3.
@@ -117,14 +117,14 @@ working `@warp /run` invocation without leaving VS Code.
 ### Implementation
 
 - `contributes.walkthroughs` entry in `package.json` with id
-  `warpBridge.gettingStarted`.
+  `ozBridge.gettingStarted`.
 - Markdown step content under `media/walkthrough/`.
-- Completion events: `onCommand:warpBridge.run.local` (step 3),
-  `onLanguageModelToolRegistered:warp_run_local` (step 4 — fallback to
-  `onView:warpBridge.sidebar`).
+- Completion events: `onCommand:ozBridge.run.local` (step 3),
+  `onLanguageModelToolRegistered:oz_run_local` (step 4 — fallback to
+  `onView:ozBridge.sidebar`).
 - Auto-open on first activation **only** when no prior run exists in
   history (gated by a new global state key
-  `warpBridge.walkthrough.shown`).
+  `ozBridge.walkthrough.shown`).
 
 ### Tests (target ≥ 8)
 

@@ -370,8 +370,22 @@ export class OzCliService implements IOzCliService {
       let stdout = '';
       let stderr = '';
       let killed = false;
+      let stalled = false;
       let settled = false;
       let forceKillHandle: NodeJS.Timeout | undefined;
+      let idleHandle: NodeJS.Timeout | undefined;
+
+      const idleMs = this.config.idleTimeoutMs ?? 0;
+
+      const armIdleTimer = () => {
+        if (idleMs <= 0) { return; }
+        if (idleHandle) { clearTimeout(idleHandle); }
+        idleHandle = setTimeout(() => {
+          if (settled) { return; }
+          stalled = true;
+          terminateProcess();
+        }, idleMs);
+      };
 
       const terminateProcess = () => {
         killed = true;
@@ -389,16 +403,26 @@ export class OzCliService implements IOzCliService {
         if (forceKillHandle) {
           clearTimeout(forceKillHandle);
         }
+        if (idleHandle) {
+          clearTimeout(idleHandle);
+        }
         cancelListener?.dispose();
       };
 
       proc.stdout?.on('data', (chunk: Buffer) => {
         stdout += chunk.toString();
+        armIdleTimer();
       });
 
       proc.stderr?.on('data', (chunk: Buffer) => {
         stderr += chunk.toString();
+        armIdleTimer();
       });
+
+      // Idle timer starts immediately so a CLI that never emits anything
+      // is detected as stalled within `idleMs` instead of waiting for the
+      // global `timeoutMs`.
+      armIdleTimer();
 
       // Timeout
       const timeoutHandle = setTimeout(() => {
@@ -433,6 +457,27 @@ export class OzCliService implements IOzCliService {
         if (killed) {
           if (cancellation?.isCancellationRequested) {
             reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
+          } else if (stalled) {
+            // IMPL: idle-timeout fail-fast. Run the credits classifier on
+            // anything we *did* manage to capture so we can be even more
+            // specific when stderr contained a credits/quota signal but
+            // the CLI then hung instead of exiting.
+            const combined = (stderr + stdout).toLowerCase();
+            if (isInsufficientCreditsError(combined, exitCode)) {
+              reject(new OzCliError(
+                OzCliErrorKind.INSUFFICIENT_CREDITS,
+                'Warp account is out of credits or has hit its quota',
+                exitCode,
+                stderr,
+              ));
+            } else {
+              reject(new OzCliError(
+                OzCliErrorKind.STALLED,
+                `Oz CLI produced no output for ${idleMs / 1000}s and was terminated`,
+                exitCode,
+                stderr,
+              ));
+            }
           } else {
             reject(new OzCliError(OzCliErrorKind.TIMEOUT, `Operation timed out after ${this.config.timeoutMs}ms`));
           }
@@ -444,6 +489,22 @@ export class OzCliService implements IOzCliService {
           const combined = (stderr + stdout).toLowerCase();
           if (combined.includes('not logged in') || combined.includes('unauthorized') || combined.includes('please log in') || combined.includes('must log in')) {
             reject(new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'Oz CLI: not authenticated', exitCode, stderr));
+            return;
+          }
+          // IMPL: riconosce esaurimento crediti / quota Warp.
+          // Pattern raccolti dai messaggi documentati di Warp Cloud +
+          // codici HTTP standard (402 Payment Required, 429 Too Many
+          // Requests). Un solo match basta — sono stringhe specifiche
+          // che non compaiono in errori generici.
+          if (
+            isInsufficientCreditsError(combined, exitCode)
+          ) {
+            reject(new OzCliError(
+              OzCliErrorKind.INSUFFICIENT_CREDITS,
+              'Warp account is out of credits or has hit its quota',
+              exitCode,
+              stderr,
+            ));
             return;
           }
           reject(new OzCliError(OzCliErrorKind.CLI_ERROR, stderr || stdout || `Exit code ${exitCode}`, exitCode, stderr));
@@ -656,4 +717,42 @@ export class OzCliService implements IOzCliService {
       );
     }
   }
+}
+
+/**
+ * Returns `true` when the (already lower-cased) combined stderr+stdout
+ * looks like a Warp Cloud "out of credits / quota / billing" failure.
+ *
+ * Detection runs on a closed list of substrings observed from Warp
+ * Cloud responses plus the standard HTTP signals — *no regex on the
+ * full payload* so the cost stays linear and the false-positive
+ * surface is small. Exit codes 402 (Payment Required) and 429 (Too
+ * Many Requests) also flip the gate without needing a stderr match.
+ *
+ * Exported for unit testing.
+ */
+export function isInsufficientCreditsError(
+  combinedLowercase: string,
+  exitCode: number,
+): boolean {
+  if (exitCode === 402 || exitCode === 429) { return true; }
+  const needles = [
+    'out of credits',
+    'insufficient credits',
+    'no credits remaining',
+    'no credits left',
+    'credit balance',
+    'quota exceeded',
+    'quota limit',         // Warp Cloud: "Error: Quota limit reached."
+    'quota reached',
+    'usage limit',
+    'rate limit',
+    'payment required',
+    'billing required',
+    'upgrade your plan',
+    'upgrade to continue',
+    'subscription required',
+    'plan limit',
+  ];
+  return needles.some((n) => combinedLowercase.includes(n));
 }

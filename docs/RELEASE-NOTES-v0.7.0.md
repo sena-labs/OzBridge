@@ -1,4 +1,4 @@
-# Warp Bridge for VS Code — v0.7.0
+# OzBridge for VS Code — v0.7.0
 
 **Release date:** 2026-04-20  
 **Publisher:** `sena-labs`  
@@ -6,13 +6,13 @@
 
 ## TL;DR
 
-v0.7.0 turns Warp Bridge into a first-class client for **team-shared Warp resources**: the Warp Drive catalogue becomes navigable from a dedicated sidebar, skill and rule files gain a built-in editor flow, `/init` becomes opt-in-per-file with per-file overwrite protection, a single committed YAML can override the extension's settings for every contributor of a repository, and the running MCP server can be registered into Claude Code, Cursor and Codex with a single command.
+v0.7.0 turns OzBridge into a first-class client for **team-shared Warp resources**: the Warp Drive catalogue becomes navigable from a dedicated sidebar, skill and rule files gain a built-in editor flow, `/init` becomes opt-in-per-file with per-file overwrite protection, a single committed YAML can override the extension's settings for every contributor of a repository, and the running MCP server can be registered into Claude Code, Cursor and Codex with a single command.
 
 ## Highlights
 
 ### 📂 Warp Drive browser
 
-A dedicated *Warp Bridge → Drive* Activity Bar view lists the organisation's shared prompts, rules and skills. Right-click a node to copy it, open it in an editor, or insert it straight into the Copilot Chat panel. The backend is **transport-agnostic**:
+A dedicated *OzBridge → Drive* Activity Bar view lists the organisation's shared prompts, rules and skills. Right-click a node to copy it, open it in an editor, or insert it straight into the Copilot Chat panel. The backend is **transport-agnostic**:
 
 - when the Oz CLI ships the `drive` subcommand the browser consumes it;
 - otherwise it falls back to the filesystem layout (`~/.warp/drive/prompts/*.md`, `~/.agents/rules/*.md`, `~/.agents/skills/*/SKILL.md`).
@@ -23,19 +23,19 @@ Fallback is silent on `CliDriveNotAvailableError`; every other CLI error (authen
 
 Four new commands let you manage skills / rules without leaving VS Code:
 
-- `warpBridge.skill.edit` opens any `SKILL.md` or rule in the native editor (Markdown preview via `Ctrl+K V` remains first-class).
-- `warpBridge.skill.new` prompts for a name and scaffolds `SKILL.md` either under the current workspace or globally.
-- `warpBridge.skill.saveGlobal` / `warpBridge.skill.saveWorkspace` persist the currently active editor's content as a skill file.
+- `ozBridge.skill.edit` opens any `SKILL.md` or rule in the native editor (Markdown preview via `Ctrl+K V` remains first-class).
+- `ozBridge.skill.new` prompts for a name and scaffolds `SKILL.md` either under the current workspace or globally.
+- `ozBridge.skill.saveGlobal` / `ozBridge.skill.saveWorkspace` persist the currently active editor's content as a skill file.
 
 All writes are atomic (`.tmp` + `fs.renameSync`) and validated with the strict `^[a-z0-9][a-z0-9-]*$` skill-name grammar. Overwriting an existing file always requires an explicit modal confirmation. A richer Monaco + webview editor remains a v0.8 stretch item.
 
 ### 🧰 `/init` v2
 
-`@warp /init` now opens a QuickPick that lists the seven agent-pipeline skills and the shared project rules file. Each entry is marked as `[new]` or `[exists]`; existing files are not pre-picked and can only be overwritten after an explicit modal confirmation. `@warp /init all` preserves the v0.2.0 bulk behaviour and never overwrites.
+`@oz /init` now opens a QuickPick that lists the seven agent-pipeline skills and the shared project rules file. Each entry is marked as `[new]` or `[exists]`; existing files are not pre-picked and can only be overwritten after an explicit modal confirmation. `@oz /init all` preserves the v0.2.0 bulk behaviour and never overwrites.
 
 ### 🧾 Per-workspace YAML overrides
 
-Drop a `.warp/warp-bridge.yaml` at the root of the repository and every contributor gets the same `warpBridge.*` defaults:
+Drop a `.warp/warp-bridge.yaml` at the root of the repository and every contributor gets the same `ozBridge.*` defaults:
 
 ```yaml
 defaultProfile: team-shared
@@ -49,7 +49,7 @@ The file is watched live (create / change / delete) so downstream services (MCP 
 
 ### 🔌 MCP auto-registration
 
-Two new commands — `warpBridge.mcp.registerClient` and `.unregisterClient` — QuickPick among the supported MCP clients (Claude Code, Cursor, Codex) and update the client's config file with the running MCP endpoint. Registrars are idempotent and reversible; they preserve every unrelated key or table in the target file.
+Two new commands — `ozBridge.mcp.registerClient` and `.unregisterClient` — QuickPick among the supported MCP clients (Claude Code, Cursor, Codex) and update the client's config file with the running MCP endpoint. Registrars are idempotent and reversible; they preserve every unrelated key or table in the target file.
 
 - Claude Code → `~/.claude.json` (JSON, `mcpServers.<name>`).
 - Cursor → `~/.cursor/mcp.json` (JSON, same layout).
@@ -65,7 +65,7 @@ Two new commands — `warpBridge.mcp.registerClient` and `.unregisterClient` —
 - **VS Code:** ≥ 1.96.0 (same floor as v0.5 / v0.6).
 - **Platforms:** macOS, Linux, Windows.
 - **Oz CLI:** the drive browser works both with and without the `drive` subcommand. When Oz gains it, no reinstall required — the factory will start using it automatically if we ship a runner patch.
-- **Copilot Chat:** optional; required only for the `@warp` participant, Agent-mode LM tools, and the *Insert into chat* action from the drive sidebar.
+- **Copilot Chat:** optional; required only for the `@oz` participant, Agent-mode LM tools, and the *Insert into chat* action from the drive sidebar.
 
 ## Metrics
 

@@ -1,30 +1,30 @@
-# Warp Bridge for VS Code — v0.5.0
+# OzBridge for VS Code — v0.5.0
 **Release date:** 2026-04-20
 **Publisher:** `sena-labs`
 **VSIX:** `warp-vsc-bridge.vsix` (≈ 50 KB)
 **Tag:** [`v0.5.0`](https://github.com/sena-labs/warp-vsc-bridge/releases/tag/v0.5.0)
 ## TL;DR
-Warp Bridge v0.5.0 is the first **consolidated public release** under the
+OzBridge v0.5.0 is the first **consolidated public release** under the
 `sena-labs` publisher. It bundles three previously-internal milestones —
 **v0.3 Agent-Native**, **v0.4 Surfaces**, and **v0.5 Context & Handoff** —
-into a single coherent ship. The extension goes from *"@warp slash
+into a single coherent ship. The extension goes from *"@oz slash
 commands"* to *"deeply integrated Warp control surface"* inside VS Code:
 Copilot Agent mode can call Oz directly, a dedicated Activity Bar view and
 status bar keep you aware of runs at a glance, and a single click hands a
 run off to an actual Warp terminal.
 ## Highlights
-### 🧠 Copilot Agent mode can now call Oz — no `@warp` needed
+### 🧠 Copilot Agent mode can now call Oz — no `@oz` needed
 Four native Language Model Tools are registered on every activation:
 | Tool | Reference | What it does |
 | --- | --- | --- |
-| `warp_run_local` | `#warpRunLocal` | Local Oz agent in the current workspace. |
-| `warp_run_cloud` | `#warpRunCloud` | Cloud Oz agent; shows a credit confirmation dialog, polls to terminal state by default. |
-| `warp_get_run` | `#warpGetRun` | Read-only lookup of a run by id. |
-| `warp_list_runs` | `#warpListRuns` | Recent runs with `all` / `active` / `completed` / `OzRunStatus` filters. |
+| `oz_run_local` | `#ozRunLocal` | Local Oz agent in the current workspace. |
+| `oz_run_cloud` | `#ozRunCloud` | Cloud Oz agent; shows a credit confirmation dialog, polls to terminal state by default. |
+| `oz_get_run` | `#ozGetRun` | Read-only lookup of a run by id. |
+| `oz_list_runs` | `#ozListRuns` | Recent runs with `all` / `active` / `completed` / `OzRunStatus` filters. |
 Agent-mode prompts like *"run the unit tests locally via Oz"* are now
-routed to `warp_run_local` automatically, without any `@`-mention.
+routed to `oz_run_local` automatically, without any `@`-mention.
 ### 🗂 Warp sidebar + status bar
-A dedicated Activity Bar view (**Warp Bridge → Runs & Resources**) renders
+A dedicated Activity Bar view (**OzBridge → Runs & Resources**) renders
 five live categories:
 - **Active Runs** — `QUEUED` + `INPROGRESS`, auto-refreshed every 10 s.
 - **History** — `SUCCEEDED` + `FAILED`, most recent 20 entries.
@@ -42,9 +42,9 @@ Inside any `/run` or `/cloud` prompt you can now embed tokens that the
 extension resolves **locally** before sending the prompt to the Oz CLI:
 | Token | Expands to |
 | --- | --- |
-| `#warp.env` | `warpBridge.defaultEnvironment` (or `(no default environment)` when empty). |
-| `#warp.profile` | `warpBridge.defaultProfile`. |
-| `#warp.model` | `warpBridge.defaultModel`. |
+| `#warp.env` | `ozBridge.defaultEnvironment` (or `(no default environment)` when empty). |
+| `#warp.profile` | `ozBridge.defaultProfile`. |
+| `#warp.model` | `ozBridge.defaultModel`. |
 | `#oz.history` | Markdown table of the last 10 runs. |
 | `#oz.run/<id>` | Fenced JSON payload from `oz run get <id>`. |
 Two commands open a real Warp terminal via the
@@ -59,7 +59,7 @@ it into any shell.
 ## Upgrade path
 - If you were on **v0.2.0**, simply install the new VSIX or run
   `code --install-extension warp-vsc-bridge.vsix`. No settings migration
-  needed: all `warpBridge.*` keys are backwards-compatible and defaults
+  needed: all `ozBridge.*` keys are backwards-compatible and defaults
   are unchanged.
 - If you were tracking the `v0.3.0-dev` tag (internal), just pull `main`
   and reinstall — `0.5.0` supersedes `0.3.0-dev` entirely.
@@ -68,7 +68,7 @@ it into any shell.
 - **Platforms:** macOS, Linux, Windows.
 - **Warp:** any recent build; handoff commands require Warp ≥ 0.2024.x
   with the `warp://` URL handler registered (fallback modal otherwise).
-- **Copilot Chat:** required only if you want to use `@warp` or Agent
+- **Copilot Chat:** required only if you want to use `@oz` or Agent
   mode tools — all sidebar and status bar features work without it.
 ## Metrics
 - **660** unit tests across **41** files — all green.
@@ -93,8 +93,8 @@ internal sidebar.
   without Warp installed the extension always falls back to the Copy
   modal instead of surfacing an opaque error.
 ## What's next (v0.6 preview)
-- **MCP Server Export** — expose `warp_run_local`, `warp_run_cloud`,
-  `warp_get_run` etc. as an embedded MCP server so Claude Code, Cursor
+- **MCP Server Export** — expose `oz_run_local`, `oz_run_cloud`,
+  `oz_get_run` etc. as an embedded MCP server so Claude Code, Cursor
   and Codex can drive Oz too.
 - **Cloud Run Monitor webview** — NDJSON timeline, Cancel button,
   integrated diff view for file changes.
@@ -112,7 +112,7 @@ ext install sena-labs.warp-vsc-bridge
 code --install-extension warp-vsc-bridge.vsix
 ```
 ## Thanks
-Warp Bridge is maintained by **Sena Labs** with generous assistance from
+OzBridge is maintained by **Sena Labs** with generous assistance from
 the Oz agent. Feedback, bug reports and feature requests are welcome on
 [GitHub Issues](https://github.com/sena-labs/warp-vsc-bridge/issues).
 ## Links

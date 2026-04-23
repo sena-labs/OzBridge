@@ -1,4 +1,4 @@
-# Warp Bridge for VS Code — v0.7.1
+# OzBridge for VS Code — v0.7.1
 
 **Release date:** 2026-04-20
 **Type:** Hardening / patch release on top of v0.7.0.
