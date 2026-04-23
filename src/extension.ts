@@ -29,6 +29,7 @@ import { createVsCodeLanguageModelClient } from './services/languageModelClient.
 import { DatasetExportService, DatasetFormat } from './services/datasetExport.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 import { createTelemetryReporter, ITelemetryReporter } from './services/telemetry.js';
+import { getErrorMessage } from './utils/error.js';
 
 /**
  * Entry point of the OzBridge extension.
@@ -97,6 +98,13 @@ export function activate(context: vscode.ExtensionContext): void {
   state.runPoller = new RunPoller(cli, state.configManager);
   context.subscriptions.push({ dispose: () => state.runPoller?.disposeAll() });
 
+  // Avvia l'ActiveRunsTracker — feed event-driven per Status Bar e sidebar.
+  // Created here (before the chat participant) so it can be threaded into
+  // the cloud command, enabling immediate sidebar updates on terminal status.
+  state.tracker = new ActiveRunsTracker(cli);
+  context.subscriptions.push(state.tracker);
+  state.tracker.start();
+
   // Registra comando per aprire conversazioni direttamente in Warp (bypassa il browser)
   const openConvCmd = vscode.commands.registerCommand(
     'ozBridge.openConversation',
@@ -105,7 +113,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(openConvCmd);
 
   // Registra Chat Participant
-  registerChatParticipant(context, cli, ctx, state.configManager, state.runPoller);
+  registerChatParticipant(context, cli, ctx, state.configManager, state.runPoller, state.tracker);
 
   // Registra Language Model Tools — Agent-Native integration.
   // Questi tool permettono a Copilot Agent mode di invocare Oz senza @oz.
@@ -115,11 +123,6 @@ export function activate(context: vscode.ExtensionContext): void {
   } else {
     logInfo('vscode.lm.registerTool not available — Language Model Tools not registered');
   }
-
-  // Avvia l'ActiveRunsTracker — feed event-driven per Status Bar e sidebar.
-  state.tracker = new ActiveRunsTracker(cli);
-  context.subscriptions.push(state.tracker);
-  state.tracker.start();
 
   // Status Bar indicator $(cloud) Warp: N active
   const statusBar = new StatusBarManager(state.tracker);
@@ -207,7 +210,7 @@ export function activate(context: vscode.ExtensionContext): void {
         });
         await vscode.window.showTextDocument(doc, { preview: true });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         logError(`Triage failed: ${message}`);
         await vscode.window.showErrorMessage(vscode.l10n.t('Warp triage failed: {0}', message));
       }
@@ -236,7 +239,7 @@ export function activate(context: vscode.ExtensionContext): void {
         });
         await vscode.window.showTextDocument(doc, { preview: false });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
+        const message = getErrorMessage(err);
         logError(`Dataset export failed: ${message}`);
         await vscode.window.showErrorMessage(vscode.l10n.t('Warp dataset export failed: {0}', message));
       }
@@ -307,17 +310,19 @@ export function activate(context: vscode.ExtensionContext): void {
     } else {
       logInfo('WARNING: Oz CLI not found in PATH');
       const installLabel = vscode.l10n.t('Install Warp');
-      vscode.window.showWarningMessage(
+      Promise.resolve(vscode.window.showWarningMessage(
         vscode.l10n.t('OzBridge: Oz CLI not found. Install Warp to use @oz in chat.'),
         installLabel,
-      ).then((action) => {
+      )).then((action) => {
         if (action === installLabel) {
           vscode.env.openExternal(vscode.Uri.parse('https://www.warp.dev/download'));
         }
+      }).catch((err: unknown) => {
+        logError(`Failed to show install warning: ${getErrorMessage(err)}`);
       });
     }
   }).catch((err) => {
-    logError(`Availability check failed: ${err instanceof Error ? err.message : String(err)}`);
+    logError(`Availability check failed: ${getErrorMessage(err)}`);
     state.telemetry?.track('errorRaised', { kind: 'availabilityCheck' });
   });
 }

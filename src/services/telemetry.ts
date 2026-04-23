@@ -171,7 +171,7 @@ export class HttpAppInsightsReporter implements ITelemetryReporter {
   private readonly version: string;
   private readonly maxBufferSize: number;
   private readonly flushIntervalMs: number;
-  private readonly fetchImpl: typeof fetch;
+  private readonly fetchImpl: typeof fetch | undefined;
   private readonly buffer: QueuedEvent[] = [];
   private timer: ReturnType<typeof setInterval> | undefined;
   private disposed = false;
@@ -187,7 +187,7 @@ export class HttpAppInsightsReporter implements ITelemetryReporter {
     this.flushIntervalMs = options.flushIntervalMs ?? 30_000;
     this.fetchImpl =
       options.fetchImpl ??
-      (typeof fetch === 'function' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+      (typeof fetch === 'function' ? fetch.bind(globalThis) : undefined);
     if (this.flushIntervalMs > 0) {
       this.timer = setInterval(() => {
         void this.flush();
@@ -201,7 +201,8 @@ export class HttpAppInsightsReporter implements ITelemetryReporter {
     if (this.disposed) {
       return;
     }
-    const sanitised = this.sanitise(event, payload as unknown as Record<string, unknown>);
+    // Type assertion is safe because TelemetryEventMap[E] extends Record<string, unknown>
+    const sanitised = this.sanitise(event, payload as Record<string, unknown>);
     if (!sanitised) {
       return;
     }

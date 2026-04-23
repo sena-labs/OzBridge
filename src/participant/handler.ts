@@ -5,6 +5,7 @@ import {
   IConfigManager,
   IRunPoller,
 } from '../types/index.js';
+import { ActiveRunsTracker } from '../services/activeRunsTracker.js';
 import { CommandRouter } from '../commands/router.js';
 import { FollowupProvider } from './followups.js';
 
@@ -31,8 +32,9 @@ export function registerChatParticipant(
   ctx: IContextCollector,
   cfgMgr: IConfigManager,
   poller: IRunPoller,
+  tracker?: ActiveRunsTracker,
 ): vscode.ChatParticipant {
-  const router = new CommandRouter(cli, ctx, cfgMgr, poller);
+  const router = new CommandRouter(cli, ctx, cfgMgr, poller, tracker);
   const handler = router.createHandler();
 
   const participant = vscode.chat.createChatParticipant(PARTICIPANT_ID, handler);

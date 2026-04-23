@@ -385,7 +385,7 @@ npm run package
 
 ### Test Suite
 
-- **860 tests** across 57 files
+- **1109 tests** across 78 files
 - **~2.3:1** test-to-code ratio
 - Framework: [Vitest](https://vitest.dev/) v4.0.18
 
@@ -475,7 +475,7 @@ the extension automatically handles `.cmd` wrappers.
 
 **Q: How do I report a bug?**
 A: Open an issue using the
-[bug report template](.github/ISSUE_TEMPLATE/bug_report.yml). Include your
+[bug report template](.github/ISSUE_TEMPLATE/bug_report.md). Include your
 OS, VS Code version, extension version and steps to reproduce.
 
 **Q: Can I use this extension with GitHub Copilot Chat?**

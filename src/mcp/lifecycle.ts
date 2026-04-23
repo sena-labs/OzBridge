@@ -17,9 +17,7 @@ export interface McpConfig {
 }
 
 /** Extracts the `ozBridge.mcp.*` slice from the full config snapshot. */
-export function readMcpConfig(full: WarpBridgeConfig & Partial<{
-  mcpEnabled: boolean; mcpPort: number; mcpBindAddress: string; mcpBearerToken: string;
-}>): McpConfig {
+export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
   return {
     enabled: full.mcpEnabled === true,
     port: typeof full.mcpPort === 'number' && full.mcpPort >= 0 ? full.mcpPort : 3847,
@@ -73,7 +71,7 @@ export class McpLifecycle implements vscode.Disposable {
   async start(): Promise<void> {
     if (this.disposed) { return; }
     await this.stop();
-    const cfg = readMcpConfig(this.cfgMgr.getConfig() as unknown as WarpBridgeConfig);
+    const cfg = readMcpConfig(this.cfgMgr.getConfig());
     this.current = { ...cfg };
 
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
@@ -172,7 +170,7 @@ export function registerMcpCommands(
     }),
 
     vscode.commands.registerCommand('ozBridge.mcp.status', async () => {
-      const cfg = readMcpConfig(cfgMgr.getConfig() as unknown as WarpBridgeConfig);
+      const cfg = readMcpConfig(cfgMgr.getConfig());
       const ep = lifecycle.endpoint;
       const tokenLabel = cfg.bearerToken ? 'bearer token required' : 'no bearer token';
       const state = lifecycle.running
@@ -283,7 +281,7 @@ async function runRegistrarCommand(
  */
 export function buildLocalEndpoint(lifecycle: McpLifecycle, cfgMgr: IConfigManager): McpClientEndpoint {
   const ep = lifecycle.endpoint;
-  const cfg = readMcpConfig(cfgMgr.getConfig() as unknown as WarpBridgeConfig);
+  const cfg = readMcpConfig(cfgMgr.getConfig());
   const address = ep?.address ?? cfg.bindAddress;
   const port = ep?.port ?? cfg.port;
   return {

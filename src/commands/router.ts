@@ -6,6 +6,7 @@ import {
   IRunPoller,
   SlashCommandHandler,
 } from '../types/index.js';
+import { ActiveRunsTracker } from '../services/activeRunsTracker.js';
 import { createRunCommand } from './runCommand.js';
 import { createCloudCommand } from './cloudCommand.js';
 import { createStatusCommand } from './statusCommand.js';
@@ -30,10 +31,11 @@ export class CommandRouter {
     ctx: IContextCollector,
     cfgMgr: IConfigManager,
     poller: IRunPoller,
+    tracker?: ActiveRunsTracker,
   ) {
     this.handlers = new Map<string, SlashCommandHandler>([
       ['run', createRunCommand(cli, ctx, cfgMgr)],
-      ['cloud', createCloudCommand(cli, cfgMgr, poller, ctx)],
+      ['cloud', createCloudCommand(cli, cfgMgr, poller, ctx, tracker)],
       ['status', createStatusCommand(cli, cfgMgr)],
       ['history', createHistoryCommand(cli, cfgMgr)],
       ['schedule', createScheduleCommand(cli, cfgMgr)],

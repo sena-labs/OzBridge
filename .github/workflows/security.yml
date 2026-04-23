@@ -63,6 +63,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
+      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -70,8 +71,8 @@ jobs:
           fetch-depth: 0 # full history for accurate scanning
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: 'false'
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'true'
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: 'false'
