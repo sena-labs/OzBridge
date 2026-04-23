@@ -5,12 +5,12 @@ import {
   DrivePrompt,
   DriveRule,
   DriveSkill,
-  IWarpDriveSource,
+  IDriveSource,
 } from '../drive/warpDriveSource.js';
 import { logWarn } from '../services/logger.js';
 
 /**
- * Node kinds rendered by {@link WarpDriveTreeProvider}. The `kind`
+ * Node kinds rendered by {@link OzDriveTreeProvider}. The `kind`
  * discriminator drives both the icon and the `contextValue` used by
  * `package.json`'s `view/item/context` menus.
  */
@@ -39,20 +39,20 @@ interface MessageNode {
  * `TreeDataProvider<DriveTreeNode>` for the Warp Drive sidebar view
  * (`ozBridge.driveView`). Lists three top-level categories
  * (Prompts, Rules, Skills), each populated from an
- * {@link IWarpDriveSource}.
+ * {@link IDriveSource}.
  *
  * The provider caches the last-fetched entries per category so the
  * tree refresh stays snappy. Callers invoke {@link refresh} to drop
  * the cache and re-query the source.
  */
-export class WarpDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeNode>, vscode.Disposable {
+export class OzDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeNode>, vscode.Disposable {
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<DriveTreeNode | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private readonly cache = new Map<DriveCategory, DriveEntry[]>();
   private disposed = false;
 
-  constructor(private readonly source: IWarpDriveSource) {}
+  constructor(private readonly source: IDriveSource) {}
 
   refresh(): void {
     this.cache.clear();
@@ -133,7 +133,7 @@ export class WarpDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeN
       return entries.map<EntryNode>((e) => ({ kind: 'entry', id: `entry:${e.id}`, entry: e }));
     } catch (err) {
       const text = err instanceof Error ? err.message : String(err);
-      logWarn(`WarpDriveTreeProvider: ${element.category} load failed: ${text}`);
+      logWarn(`OzDriveTreeProvider: ${element.category} load failed: ${text}`);
       return [msg(`${element.category}:error`, `Error: ${text}`)];
     }
   }

@@ -6,7 +6,7 @@ import {
   DrivePrompt,
   DriveRule,
   DriveSkill,
-  IWarpDriveSource,
+  IDriveSource,
   parseDriveEntryStrict,
 } from './warpDriveSource.js';
 
@@ -66,7 +66,7 @@ export class CliDriveNotAvailableError extends Error {
 const LIST_SOFT_LIMIT = 200;
 
 /**
- * `IWarpDriveSource` implementation backed by the Oz CLI.
+ * `IDriveSource` implementation backed by the Oz CLI.
  *
  * The source routes every `listX` call through the same `listCategory`
  * helper, which:
@@ -78,7 +78,7 @@ const LIST_SOFT_LIMIT = 200;
  * 4. Caps the result at {@link LIST_SOFT_LIMIT} so a runaway upstream
  *    doesn't explode the sidebar.
  */
-export class CliDriveSource implements IWarpDriveSource {
+export class CliDriveSource implements IDriveSource {
   readonly label = 'oz-cli';
 
   constructor(private readonly runner: CliDriveRunner) {}

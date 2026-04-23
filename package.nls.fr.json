@@ -1,8 +1,8 @@
 {
-  "displayName": "Warp Bridge",
+  "displayName": "OzBridge",
   "description": "Exécuter des agents Warp Oz depuis VS Code Copilot Chat",
-  "category.warp": "Warp",
-  "category.warpMcp": "Warp MCP",
+  "category.warp": "OzBridge",
+  "category.warpMcp": "OzBridge MCP",
   "category.warpDrive": "Warp Drive",
   "category.warpSkill": "Warp Skill",
   "command.tree.refresh.title": "Warp : Actualiser",
@@ -31,14 +31,14 @@
   "command.dashboard.open.title": "Warp : Ouvrir le tableau de bord",
   "command.triageFailure.title": "Warp : Trier l'exécution échouée…",
   "command.exportDataset.title": "Warp : Exporter le jeu de données d'exécutions…",
-  "walkthrough.gettingStarted.title": "Premiers pas avec Warp Bridge",
+  "walkthrough.gettingStarted.title": "Premiers pas avec OzBridge",
   "walkthrough.gettingStarted.description": "Installez Warp, exécutez votre premier agent Oz depuis Copilot Chat, explorez les vues Warp et activez le pont MCP.",
   "walkthrough.step.installCli.title": "Installez la CLI Warp",
-  "walkthrough.step.installCli.description": "Téléchargez Warp (≥ 0.2024.x) pour que Warp Bridge puisse localiser l'exécutable `oz` dans votre PATH. Exécutez la commande Warp : Actualiser une fois l'installation terminée.",
+  "walkthrough.step.installCli.description": "Téléchargez Warp (≥ 0.2024.x) pour que OzBridge puisse localiser l'exécutable `oz` dans votre PATH. Exécutez la commande Warp : Actualiser une fois l'installation terminée.",
   "walkthrough.step.firstAgent.title": "Exécutez votre première invite @warp",
   "walkthrough.step.firstAgent.description": "Ouvrez une vue de Copilot Chat et invoquez @warp avec une courte invite pour exécuter un agent Oz de bout en bout.",
   "walkthrough.step.exploreViews.title": "Explorez les vues Warp",
   "walkthrough.step.exploreViews.description": "Ouvrez les vues Warp Runs et Warp Drive depuis la barre d'activités pour gérer les exécutions, les compétences et les invites.",
   "walkthrough.step.enableMcp.title": "Activez le pont MCP (optionnel)",
-  "walkthrough.step.enableMcp.description": "Activez warpBridge.mcpEnabled ou exécutez Warp : Démarrer le serveur MCP pour permettre à Claude Code, Cursor ou Codex de piloter Warp Bridge via MCP."
+  "walkthrough.step.enableMcp.description": "Activez ozBridge.mcpEnabled ou exécutez Warp : Démarrer le serveur MCP pour permettre à Claude Code, Cursor ou Codex de piloter OzBridge via MCP."
 }

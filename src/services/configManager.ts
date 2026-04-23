@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { BaseConfigManager } from 'copilot-chat-toolkit';
-import { WarpBridgeConfig, DEFAULT_CONFIG } from '../types/index.js';
+import { OzBridgeConfig, DEFAULT_CONFIG } from '../types/index.js';
 import { WorkspaceConfigResolver } from './workspaceConfigResolver.js';
 
 // IMPL: thin wrapper — delegates to toolkit's BaseConfigManager with Warp
@@ -19,7 +19,7 @@ import { WorkspaceConfigResolver } from './workspaceConfigResolver.js';
  *   2. `ozBridge.*` VS Code settings
  *   3. Compiled-in defaults
  */
-export class ConfigManager extends BaseConfigManager<WarpBridgeConfig> {
+export class ConfigManager extends BaseConfigManager<OzBridgeConfig> {
   private readonly resolverSubscription: vscode.Disposable | undefined;
 
   constructor(private readonly resolver?: WorkspaceConfigResolver) {
@@ -36,11 +36,11 @@ export class ConfigManager extends BaseConfigManager<WarpBridgeConfig> {
     }
   }
 
-  protected readConfig(cfg: vscode.WorkspaceConfiguration): WarpBridgeConfig {
+  protected readConfig(cfg: vscode.WorkspaceConfiguration): OzBridgeConfig {
     const base = super.readConfig(cfg);
     if (!this.resolver) { return base; }
     const overrides = this.resolver.getOverrides();
-    return { ...base, ...overrides } as WarpBridgeConfig;
+    return { ...base, ...overrides } as OzBridgeConfig;
   }
 
   dispose(): void {

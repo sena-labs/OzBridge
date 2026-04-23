@@ -57,7 +57,7 @@ export function createCloudCommand(
     }
 
     // Credit consumption warning (informational, does not block execution)
-    stream.markdown(`⚠️ **Launching cloud agent** — this operation consumes Warp credits.\n\nPrompt: _${prompt}_\n\n`);
+    stream.markdown(`⚠️ **Launching cloud agent** — this operation consumes Oz credits.\n\nPrompt: _${prompt}_\n\n`);
 
     // Resolve environment: if configured use it, otherwise auto-detect
     let environment = config.defaultEnvironment || undefined;

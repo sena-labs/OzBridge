@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WarpDriveTreeProvider, DriveTreeNode } from '../../src/ui/driveTreeProvider.js';
-import { DriveCategory, IWarpDriveSource, DrivePrompt, DriveRule, DriveSkill } from '../../src/drive/warpDriveSource.js';
+import { OzDriveTreeProvider, DriveTreeNode } from '../../src/ui/driveTreeProvider.js';
+import { DriveCategory, IDriveSource, DrivePrompt, DriveRule, DriveSkill } from '../../src/drive/warpDriveSource.js';
 
-function makeSource(overrides: Partial<IWarpDriveSource> = {}): IWarpDriveSource {
+function makeSource(overrides: Partial<IDriveSource> = {}): IDriveSource {
   return {
     label: 'fake',
     listPrompts: vi.fn(async () => []),
@@ -10,7 +10,7 @@ function makeSource(overrides: Partial<IWarpDriveSource> = {}): IWarpDriveSource
     listSkills: vi.fn(async () => []),
     read: vi.fn(async () => ''),
     ...overrides,
-  } as IWarpDriveSource;
+  } as IDriveSource;
 }
 
 function findCategory(nodes: DriveTreeNode[], category: DriveCategory): DriveTreeNode {
@@ -19,13 +19,13 @@ function findCategory(nodes: DriveTreeNode[], category: DriveCategory): DriveTre
   return node;
 }
 
-describe('WarpDriveTreeProvider', () => {
-  let source: IWarpDriveSource;
-  let provider: WarpDriveTreeProvider;
+describe('OzDriveTreeProvider', () => {
+  let source: IDriveSource;
+  let provider: OzDriveTreeProvider;
 
   beforeEach(() => {
     source = makeSource();
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
   });
 
   it('exposes the 3 top-level categories in a stable order', async () => {
@@ -57,7 +57,7 @@ describe('WarpDriveTreeProvider', () => {
         { id: 's1', category: 'skill', name: '5-test', source: 'filesystem' } as DriveSkill,
       ]),
     });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
     const roots = await provider.getChildren();
     const prompts = await provider.getChildren(findCategory(roots, 'prompt'));
     const rules = await provider.getChildren(findCategory(roots, 'rule'));
@@ -71,7 +71,7 @@ describe('WarpDriveTreeProvider', () => {
     source = makeSource({
       listPrompts: vi.fn(async () => { throw new Error('network down'); }),
     });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
     const roots = await provider.getChildren();
     const children = await provider.getChildren(findCategory(roots, 'prompt'));
     expect(children).toHaveLength(1);
@@ -85,7 +85,7 @@ describe('WarpDriveTreeProvider', () => {
         { id: 'p1', category: 'prompt', name: 'A', source: 'cli' } as DrivePrompt,
       ]),
     });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
     const roots = await provider.getChildren();
     await provider.getChildren(findCategory(roots, 'prompt'));
     await provider.getChildren(findCategory(roots, 'prompt'));
@@ -101,7 +101,7 @@ describe('WarpDriveTreeProvider', () => {
         { id: 's1', category: 'skill', name: '5-test', source: 'filesystem' } as DriveSkill,
       ]),
     });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
     const roots = await provider.getChildren();
     const skillCat = findCategory(roots, 'skill');
     expect(provider.getTreeItem(skillCat).contextValue).toBe('warpDriveCategory:skill');

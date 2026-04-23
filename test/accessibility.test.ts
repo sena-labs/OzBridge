@@ -13,11 +13,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { WarpRunsTreeProvider } from '../src/ui/runsTreeProvider.js';
-import { WarpDriveTreeProvider } from '../src/ui/driveTreeProvider.js';
+import { OzRunsTreeProvider } from '../src/ui/runsTreeProvider.js';
+import { OzDriveTreeProvider } from '../src/ui/driveTreeProvider.js';
 import { StatusBarManager } from '../src/ui/statusBarItem.js';
 import type { ActiveRunsTracker, TrackedRun } from '../src/services/activeRunsTracker.js';
-import type { DriveEntry, IWarpDriveSource } from '../src/drive/warpDriveSource.js';
+import type { DriveEntry, IDriveSource } from '../src/drive/warpDriveSource.js';
 import { createMockCli } from './helpers.js';
 import * as vscodeMock from './mocks/vscode.js';
 
@@ -39,7 +39,7 @@ function makeTracker(initial: TrackedRun[] = []): ActiveRunsTracker {
   } as unknown as ActiveRunsTracker;
 }
 
-function makeDriveSource(entries: DriveEntry[]): IWarpDriveSource {
+function makeDriveSource(entries: DriveEntry[]): IDriveSource {
   return {
     label: 'mock',
     listPrompts: vi.fn(async () => entries.filter((e) => e.category === 'prompt') as never),
@@ -57,7 +57,7 @@ describe('a11y — runs tree provider', () => {
   it('every node kind has an accessibilityInformation.label', async () => {
     const cli = createMockCli();
     const tracker = makeTracker([]);
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
     const roots = await provider.getChildren();
 
     for (const root of roots) {
@@ -73,7 +73,7 @@ describe('a11y — runs tree provider', () => {
   it('synthesizes a11y label for run/schedule/environment/mcp/message kinds', () => {
     const cli = createMockCli();
     const tracker = makeTracker([]);
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
 
     // We exercise every branch of getTreeItem() via fabricated nodes.
     const samples = [
@@ -129,7 +129,7 @@ describe('a11y — drive tree provider', () => {
         source: 'cli',
       } as DriveEntry,
     ]);
-    const provider = new WarpDriveTreeProvider(source);
+    const provider = new OzDriveTreeProvider(source);
     const roots = await provider.getChildren();
     for (const root of roots) {
       const item = provider.getTreeItem(root);

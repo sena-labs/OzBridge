@@ -27,25 +27,25 @@ describe('expandPromptVariables', () => {
     expect(result.replacements).toEqual([]);
   });
 
-  it('expands #warp.env to the configured default environment', async () => {
-    const result = await expandPromptVariables('deploy to #warp.env please', { cli, cfgMgr });
+  it('expands #ozbridge.env to the configured default environment', async () => {
+    const result = await expandPromptVariables('deploy to #ozbridge.env please', { cli, cfgMgr });
     expect(result.text).toBe('deploy to prod-env please');
-    expect(result.replacements).toEqual([{ token: '#warp.env', value: 'prod-env' }]);
+    expect(result.replacements).toEqual([{ token: '#ozbridge.env', value: 'prod-env' }]);
   });
 
   it('falls back to "(no default environment)" when defaultEnvironment is empty', async () => {
     cfgMgr = createMockConfigManager({ defaultEnvironment: '' });
-    const result = await expandPromptVariables('use #warp.env', { cli, cfgMgr });
+    const result = await expandPromptVariables('use #ozbridge.env', { cli, cfgMgr });
     expect(result.text).toContain('(no default environment)');
   });
 
-  it('expands #warp.profile and #warp.model', async () => {
+  it('expands #ozbridge.profile and #ozbridge.model', async () => {
     const result = await expandPromptVariables(
-      'profile=#warp.profile model=#warp.model',
+      'profile=#ozbridge.profile model=#ozbridge.model',
       { cli, cfgMgr },
     );
     expect(result.text).toBe('profile=Default model=gpt-4o');
-    expect(result.replacements.map((r) => r.token).sort()).toEqual(['#warp.model', '#warp.profile']);
+    expect(result.replacements.map((r) => r.token).sort()).toEqual(['#ozbridge.model', '#ozbridge.profile']);
   });
 
   it('expands #oz.history via cli.runList and renders a markdown table', async () => {
@@ -113,8 +113,8 @@ describe('expandPromptVariables', () => {
 
 describe('resolveToken (direct)', () => {
   it('returns the token itself for unknown patterns', async () => {
-    const value = await resolveToken('#warp.unknown', { cli, cfgMgr });
-    expect(value).toBe('#warp.unknown');
+    const value = await resolveToken('#ozbridge.unknown', { cli, cfgMgr });
+    expect(value).toBe('#ozbridge.unknown');
   });
 
   it('reports an invalid run id early', async () => {

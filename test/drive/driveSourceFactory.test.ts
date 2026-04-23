@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 import {
   CompositeDriveSource,
-  createWarpDriveSource,
+  createOzBridgeDriveSource,
 } from '../../src/drive/driveSourceFactory.js';
 import {
   CliDriveNotAvailableError,
@@ -15,7 +15,7 @@ import {
   DrivePrompt,
   DriveRule,
   DriveSkill,
-  IWarpDriveSource,
+  IDriveSource,
 } from '../../src/drive/warpDriveSource.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 
@@ -23,7 +23,7 @@ import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 // Fakes
 // ---------------------------------------------------------------------------
 
-function makeSource(label: string, overrides: Partial<IWarpDriveSource> = {}): IWarpDriveSource {
+function makeSource(label: string, overrides: Partial<IDriveSource> = {}): IDriveSource {
   return {
     label,
     listPrompts: vi.fn(async () => []),
@@ -31,7 +31,7 @@ function makeSource(label: string, overrides: Partial<IWarpDriveSource> = {}): I
     listSkills: vi.fn(async () => []),
     read: vi.fn(async () => ''),
     ...overrides,
-  } as IWarpDriveSource;
+  } as IDriveSource;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,10 +102,10 @@ describe('CompositeDriveSource — fallback semantics', () => {
 });
 
 // ---------------------------------------------------------------------------
-// createWarpDriveSource
+// createOzBridgeDriveSource
 // ---------------------------------------------------------------------------
 
-describe('createWarpDriveSource', () => {
+describe('createOzBridgeDriveSource', () => {
   let tmp: string;
   let promptsDir: string;
 
@@ -120,7 +120,7 @@ describe('createWarpDriveSource', () => {
   });
 
   it('without a runner, returns a plain FileSystemDriveSource', async () => {
-    const source = createWarpDriveSource({ filesystem: { promptsDir, rulesDir: tmp, skillsDir: tmp } });
+    const source = createOzBridgeDriveSource({ filesystem: { promptsDir, rulesDir: tmp, skillsDir: tmp } });
     expect(source).toBeInstanceOf(FileSystemDriveSource);
     expect(source.label).toBe('filesystem');
     expect(await source.listPrompts()).toEqual([]);
@@ -131,7 +131,7 @@ describe('createWarpDriveSource', () => {
       list: vi.fn(async () => []),
       get: vi.fn(async () => ''),
     };
-    const source = createWarpDriveSource({
+    const source = createOzBridgeDriveSource({
       runner,
       filesystem: { promptsDir, rulesDir: tmp, skillsDir: tmp },
     });
@@ -145,7 +145,7 @@ describe('createWarpDriveSource', () => {
       list: vi.fn(async () => [{ id: 'cli-1', category: 'prompt', name: 'cli-prompt', source: 'cli' }]),
       get: vi.fn(async () => '# cli body'),
     };
-    const source = createWarpDriveSource({
+    const source = createOzBridgeDriveSource({
       runner,
       filesystem: { promptsDir, rulesDir: tmp, skillsDir: tmp },
     });
@@ -161,7 +161,7 @@ describe('createWarpDriveSource', () => {
       }),
       get: vi.fn(async () => ''),
     };
-    const source = createWarpDriveSource({
+    const source = createOzBridgeDriveSource({
       runner,
       filesystem: { promptsDir, rulesDir: tmp, skillsDir: tmp },
     });

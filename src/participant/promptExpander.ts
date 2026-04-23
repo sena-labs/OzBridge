@@ -23,9 +23,9 @@ export interface PromptExpansionResult {
 /**
  * Recognised tokens (matched case-sensitively, bounded by non-word chars).
  *
- * - `#warp.env` → `ozBridge.defaultEnvironment` (config value, empty = `(none)`).
- * - `#warp.profile` → `ozBridge.defaultProfile`.
- * - `#warp.model` → `ozBridge.defaultModel`.
+ * - `#ozbridge.env` → `ozBridge.defaultEnvironment` (config value, empty = `(none)`).
+ * - `#ozbridge.profile` → `ozBridge.defaultProfile`.
+ * - `#ozbridge.model` → `ozBridge.defaultModel`.
  * - `#oz.history` → a Markdown table of the last 10 runs from `oz run list`.
  * - `#oz.run/<id>` → JSON payload returned by `oz run get <id>` (truncated).
  *
@@ -33,13 +33,13 @@ export interface PromptExpansionResult {
  * inline `_error_` note inside the prompt rather than throwing, so the user's
  * intent isn't lost.
  */
-const TOKEN_REGEX = /#(warp\.env|warp\.profile|warp\.model|oz\.history|oz\.run\/[A-Za-z0-9_\-]+)/g;
+const TOKEN_REGEX = /#(ozbridge\.env|ozbridge\.profile|ozbridge\.model|oz\.history|oz\.run\/[A-Za-z0-9_\-]+)/g;
 
 const HISTORY_LIMIT = 10;
 const RUN_PAYLOAD_MAX_CHARS = 2_000;
 
 /**
- * Replaces every recognised `#warp.*` / `#oz.*` token in `prompt` with its
+ * Replaces every recognised `#ozbridge.*` / `#oz.*` token in `prompt` with its
  * resolved value. Unknown tokens are left untouched.
  *
  * The function is intentionally async because `#oz.history` and
@@ -81,14 +81,14 @@ export async function expandPromptVariables(
  * Resolves a single token. Exported for unit testing.
  */
 export async function resolveToken(token: string, ctx: PromptExpanderContext): Promise<string> {
-  if (token === '#warp.env') {
+  if (token === '#ozbridge.env') {
     const env = ctx.cfgMgr.getConfig().defaultEnvironment;
     return env || '(no default environment)';
   }
-  if (token === '#warp.profile') {
+  if (token === '#ozbridge.profile') {
     return ctx.cfgMgr.getConfig().defaultProfile || '(no default profile)';
   }
-  if (token === '#warp.model') {
+  if (token === '#ozbridge.model') {
     return ctx.cfgMgr.getConfig().defaultModel || '(no default model)';
   }
   if (token === '#oz.history') {

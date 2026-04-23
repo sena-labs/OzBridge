@@ -9,13 +9,13 @@ import {
 import { ActiveRunsTracker, TrackedRun } from '../services/activeRunsTracker.js';
 
 /**
- * Top-level categories rendered by {@link WarpRunsTreeProvider}.
+ * Top-level categories rendered by {@link OzRunsTreeProvider}.
  *
  * The `kind` discriminator drives both the icon and the `contextValue`
  * assigned to the `TreeItem`, which `package.json` uses to gate context-menu
  * commands (e.g. *Cancel* is visible only on `activeRun` nodes).
  */
-export type WarpTreeNode =
+export type OzTreeNode =
   | CategoryNode
   | RunNode
   | ScheduleNode
@@ -72,10 +72,10 @@ interface MessageNode extends BaseNode {
  * user invokes the `ozBridge.tree.refresh` command, or when a schedule /
  * environment mutation happens.
  */
-export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNode>, vscode.Disposable {
+export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, vscode.Disposable {
   static readonly HISTORY_LIMIT = 20;
 
-  private readonly _onDidChangeTreeData = new vscode.EventEmitter<WarpTreeNode | undefined | void>();
+  private readonly _onDidChangeTreeData = new vscode.EventEmitter<OzTreeNode | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private readonly subscriptions: vscode.Disposable[] = [];
@@ -102,7 +102,7 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
     this._onDidChangeTreeData.dispose();
   }
 
-  getTreeItem(element: WarpTreeNode): vscode.TreeItem {
+  getTreeItem(element: OzTreeNode): vscode.TreeItem {
     switch (element.kind) {
       case 'category': {
         const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Expanded);
@@ -189,7 +189,7 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
     }
   }
 
-  async getChildren(element?: WarpTreeNode): Promise<WarpTreeNode[]> {
+  async getChildren(element?: OzTreeNode): Promise<OzTreeNode[]> {
     if (!element) {
       return [
         cat('activeRuns', 'Active Runs'),
@@ -222,7 +222,7 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
   // Category resolvers
   // ---------------------------------------------------------------------
 
-  private activeRunNodes(): WarpTreeNode[] {
+  private activeRunNodes(): OzTreeNode[] {
     const active = this.tracker.latest.filter((r) => r.status === 'QUEUED' || r.status === 'INPROGRESS');
     if (active.length === 0) {
       return [msg('activeRuns:empty', 'No active runs')];
@@ -230,17 +230,17 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
     return active.map((r) => runNode(r, true));
   }
 
-  private historyNodes(): WarpTreeNode[] {
+  private historyNodes(): OzTreeNode[] {
     const completed = this.tracker.latest
       .filter((r) => r.status === 'SUCCEEDED' || r.status === 'FAILED')
-      .slice(0, WarpRunsTreeProvider.HISTORY_LIMIT);
+      .slice(0, OzRunsTreeProvider.HISTORY_LIMIT);
     if (completed.length === 0) {
       return [msg('history:empty', 'No completed runs yet')];
     }
     return completed.map((r) => runNode(r, false));
   }
 
-  private async scheduleNodes(): Promise<WarpTreeNode[]> {
+  private async scheduleNodes(): Promise<OzTreeNode[]> {
     try {
       const list = await this.cli.scheduleList();
       if (list.items.length === 0) {
@@ -257,7 +257,7 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
     }
   }
 
-  private async environmentNodes(): Promise<WarpTreeNode[]> {
+  private async environmentNodes(): Promise<OzTreeNode[]> {
     try {
       const list = await this.cli.environmentList();
       if (list.items.length === 0) {
@@ -274,7 +274,7 @@ export class WarpRunsTreeProvider implements vscode.TreeDataProvider<WarpTreeNod
     }
   }
 
-  private async mcpNodes(): Promise<WarpTreeNode[]> {
+  private async mcpNodes(): Promise<OzTreeNode[]> {
     try {
       const list = await this.cli.mcpList();
       if (list.items.length === 0) {

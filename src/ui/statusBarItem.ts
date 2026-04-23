@@ -52,7 +52,7 @@ export class StatusBarManager implements vscode.Disposable {
 
   private render(runs: ReadonlyArray<TrackedRun>): void {
     const activeCount = runs.filter((r) => isActive(r.status)).length;
-    this.item.text = `$(cloud) Warp: ${activeCount} active`;
+    this.item.text = `$(cloud) OzBridge: ${activeCount} active`;
     this.item.tooltip = buildTooltip(runs);
     // v1.0 deliverable S — WCAG 2.1 AA: codicon glyphs ($cloud) are
     // not announced by screen readers; expose a plain-language label.
@@ -73,7 +73,7 @@ export class StatusBarManager implements vscode.Disposable {
   private renderError(): void {
     // Keep the last-known count but mark the tooltip so the user knows
     // polling is currently failing (e.g. Oz CLI missing or logged out).
-    this.item.text = `$(cloud-outline) Warp: unavailable`;
+    this.item.text = `$(cloud-outline) OzBridge: unavailable`;
     this.item.tooltip = 'OzBridge: unable to list runs. Check Oz CLI availability and authentication.';
     this.item.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
     this.item.accessibilityInformation = {

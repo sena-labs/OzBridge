@@ -11,14 +11,14 @@ import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
 import { registerWarpTools } from './tools/index.js';
 import { StatusBarManager } from './ui/statusBarItem.js';
-import { WarpRunsTreeProvider } from './ui/runsTreeProvider.js';
+import { OzRunsTreeProvider } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
-import { createWarpDriveSource } from './drive/driveSourceFactory.js';
+import { createOzBridgeDriveSource } from './drive/driveSourceFactory.js';
 import { OzCliDriveRunner } from './drive/ozCliDriveRunner.js';
-import { IWarpDriveSource } from './drive/warpDriveSource.js';
-import { WarpDriveTreeProvider } from './ui/driveTreeProvider.js';
+import { IDriveSource } from './drive/warpDriveSource.js';
+import { OzDriveTreeProvider } from './ui/driveTreeProvider.js';
 import { registerDriveCommands } from './ui/driveCommands.js';
 import { registerSkillEditorCommands } from './ui/skillEditor.js';
 import { maybeOpenGettingStartedWalkthrough } from './ui/walkthrough.js';
@@ -48,7 +48,7 @@ const state: {
   runPoller?: RunPoller;
   tracker?: ActiveRunsTracker;
   mcp?: McpLifecycle;
-  driveSource?: IWarpDriveSource;
+  driveSource?: IDriveSource;
   telemetry?: ITelemetryReporter;
 } = {};
 
@@ -129,7 +129,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusBar);
 
   // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
-  const treeProvider = new WarpRunsTreeProvider(cli, state.tracker);
+  const treeProvider = new OzRunsTreeProvider(cli, state.tracker);
   context.subscriptions.push(treeProvider);
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider('ozBridge.runsView', treeProvider),
@@ -148,10 +148,10 @@ export function activate(context: vscode.ExtensionContext): void {
   // older Oz binaries as `CliDriveNotAvailableError`, so the factory's
   // CompositeDriveSource falls back to the filesystem implementation
   // without any user-visible error.
-  state.driveSource = createWarpDriveSource({ runner: new OzCliDriveRunner(cli) });
+  state.driveSource = createOzBridgeDriveSource({ runner: new OzCliDriveRunner(cli) });
 
   // Warp Drive sidebar (view + context-menu commands).
-  const driveTreeProvider = new WarpDriveTreeProvider(state.driveSource);
+  const driveTreeProvider = new OzDriveTreeProvider(state.driveSource);
   context.subscriptions.push(driveTreeProvider);
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider('ozBridge.driveView', driveTreeProvider),

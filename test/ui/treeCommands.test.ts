@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerTreeCommands, TREE_COMMANDS } from '../../src/ui/treeCommands.js';
-import { WarpRunsTreeProvider } from '../../src/ui/runsTreeProvider.js';
+import { OzRunsTreeProvider } from '../../src/ui/runsTreeProvider.js';
 import type { ActiveRunsTracker } from '../../src/services/activeRunsTracker.js';
 import { createMockCli } from '../helpers.js';
 import * as vscodeMock from '../mocks/vscode.js';
@@ -20,7 +20,7 @@ function makeTracker(): ActiveRunsTracker {
 
 let cli: ReturnType<typeof createMockCli>;
 let tracker: ActiveRunsTracker;
-let provider: WarpRunsTreeProvider;
+let provider: OzRunsTreeProvider;
 
 beforeEach(() => {
   vscodeMock.commands._resetCommands();
@@ -32,7 +32,7 @@ beforeEach(() => {
 
   cli = createMockCli();
   tracker = makeTracker();
-  provider = new WarpRunsTreeProvider(cli, tracker);
+  provider = new OzRunsTreeProvider(cli, tracker);
 
   for (const d of registerTreeCommands({ cli, tracker, provider })) {
     void d; // keep registrations alive for the test lifecycle via the mock map

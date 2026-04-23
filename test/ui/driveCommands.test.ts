@@ -3,11 +3,11 @@ import {
   DRIVE_COMMANDS,
   registerDriveCommands,
 } from '../../src/ui/driveCommands.js';
-import { WarpDriveTreeProvider } from '../../src/ui/driveTreeProvider.js';
-import { IWarpDriveSource, DrivePrompt, DriveSkill } from '../../src/drive/warpDriveSource.js';
+import { OzDriveTreeProvider } from '../../src/ui/driveTreeProvider.js';
+import { IDriveSource, DrivePrompt, DriveSkill } from '../../src/drive/warpDriveSource.js';
 import * as vscodeMock from '../mocks/vscode.js';
 
-function makeSource(overrides: Partial<IWarpDriveSource> = {}): IWarpDriveSource {
+function makeSource(overrides: Partial<IDriveSource> = {}): IDriveSource {
   return {
     label: 'fake',
     listPrompts: vi.fn(async () => []),
@@ -15,11 +15,11 @@ function makeSource(overrides: Partial<IWarpDriveSource> = {}): IWarpDriveSource
     listSkills: vi.fn(async () => []),
     read: vi.fn(async () => ''),
     ...overrides,
-  } as IWarpDriveSource;
+  } as IDriveSource;
 }
 
-let source: IWarpDriveSource;
-let provider: WarpDriveTreeProvider;
+let source: IDriveSource;
+let provider: OzDriveTreeProvider;
 
 beforeEach(() => {
   vscodeMock.commands._resetCommands();
@@ -31,7 +31,7 @@ beforeEach(() => {
   vscodeMock.workspace.openTextDocument.mockClear();
   vscodeMock.window.showTextDocument.mockClear();
   source = makeSource();
-  provider = new WarpDriveTreeProvider(source);
+  provider = new OzDriveTreeProvider(source);
   for (const d of registerDriveCommands({ source, provider })) { void d; }
 });
 
@@ -56,7 +56,7 @@ describe('drive commands', () => {
 
   it('insertIntoChat reads the entry and opens the chat panel', async () => {
     source = makeSource({ read: vi.fn(async () => '# body') });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
     for (const d of registerDriveCommands({ source, provider })) { void d; }
     const entry: DrivePrompt = {
       id: 'p1', category: 'prompt', name: 'Deploy', source: 'cli',
@@ -67,7 +67,7 @@ describe('drive commands', () => {
 
   it('copyContent writes body to clipboard and notifies', async () => {
     source = makeSource({ read: vi.fn(async () => '# hello') });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
     for (const d of registerDriveCommands({ source, provider })) { void d; }
     const entry: DrivePrompt = { id: 'p1', category: 'prompt', name: 'A', source: 'cli' };
     await vscodeMock.commands.executeCommand(DRIVE_COMMANDS.copyContent, { kind: 'entry', id: 'x', entry });
@@ -77,7 +77,7 @@ describe('drive commands', () => {
 
   it('copyContent surfaces read errors', async () => {
     source = makeSource({ read: vi.fn(async () => { throw new Error('boom'); }) });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
     for (const d of registerDriveCommands({ source, provider })) { void d; }
     const entry: DrivePrompt = { id: 'p1', category: 'prompt', name: 'A', source: 'cli' };
     await vscodeMock.commands.executeCommand(DRIVE_COMMANDS.copyContent, { kind: 'entry', id: 'x', entry });
@@ -98,7 +98,7 @@ describe('drive commands', () => {
 
   it('openInEditor opens CLI entries as untitled markdown documents', async () => {
     source = makeSource({ read: vi.fn(async () => '# body') });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
     for (const d of registerDriveCommands({ source, provider })) { void d; }
     const entry: DrivePrompt = { id: 'cli-1', category: 'prompt', name: 'A', source: 'cli' };
     await vscodeMock.commands.executeCommand(DRIVE_COMMANDS.openInEditor, { kind: 'entry', id: 'x', entry });

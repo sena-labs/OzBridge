@@ -29,20 +29,20 @@ describe('CodexRegistrar — metadata', () => {
 describe('CodexRegistrar — register on a fresh file', () => {
   it('creates config.toml with a single [[mcp.servers]] block', async () => {
     await registrar.register({
-      name: 'warp-vsc-bridge',
+      name: 'oz-bridge',
       url: 'http://127.0.0.1:3847/sse',
     });
     expect(fs.existsSync(configPath)).toBe(true);
     const content = fs.readFileSync(configPath, 'utf8');
     expect(content).toContain('[[mcp.servers]]');
-    expect(content).toContain('name = "warp-vsc-bridge"');
+    expect(content).toContain('name = "oz-bridge"');
     expect(content).toContain('url = "http://127.0.0.1:3847/sse"');
     expect(content).not.toContain('bearer_token');
   });
 
   it('includes bearer_token when one is provided', async () => {
     await registrar.register({
-      name: 'warp-vsc-bridge',
+      name: 'oz-bridge',
       url: 'http://127.0.0.1:3847/sse',
       bearerToken: 's3cr3t',
     });
@@ -52,7 +52,7 @@ describe('CodexRegistrar — register on a fresh file', () => {
 
   it('escapes embedded quotes in values', async () => {
     await registrar.register({
-      name: 'warp-vsc-bridge',
+      name: 'oz-bridge',
       url: 'http://"weird"/path',
       bearerToken: 'tok"en',
     });
@@ -73,14 +73,14 @@ model = "gpt-4o"
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
     fs.writeFileSync(configPath, original, 'utf8');
 
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://x' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://x' });
 
     const content = fs.readFileSync(configPath, 'utf8');
     expect(content).toContain('log_level = "info"');
     expect(content).toContain('[profile.default]');
     expect(content).toContain('model = "gpt-4o"');
     expect(content).toContain('[[mcp.servers]]');
-    expect(content).toContain('name = "warp-vsc-bridge"');
+    expect(content).toContain('name = "oz-bridge"');
   });
 
   it('preserves pre-existing [[mcp.servers]] blocks for other servers', async () => {
@@ -91,21 +91,21 @@ url = "http://other"
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
     fs.writeFileSync(configPath, original, 'utf8');
 
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://new' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://new' });
 
     const content = fs.readFileSync(configPath, 'utf8');
     // Both entries must still be present
     const blocks = content.match(/\[\[mcp\.servers\]\]/g) ?? [];
     expect(blocks.length).toBe(2);
     expect(content).toContain('name = "other"');
-    expect(content).toContain('name = "warp-vsc-bridge"');
+    expect(content).toContain('name = "oz-bridge"');
   });
 });
 
 describe('CodexRegistrar — overwriting the same server', () => {
   it('replaces an existing block with the new one rather than duplicating it', async () => {
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://old' });
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://new' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://old' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://new' });
 
     const content = fs.readFileSync(configPath, 'utf8');
     expect(content).not.toContain('http://old');
@@ -117,17 +117,17 @@ describe('CodexRegistrar — overwriting the same server', () => {
 
 describe('CodexRegistrar — unregister and status', () => {
   it('unregister removes only the named block', async () => {
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://x' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://x' });
     await registrar.register({ name: 'other', url: 'http://y' });
-    await registrar.unregister('warp-vsc-bridge');
+    await registrar.unregister('oz-bridge');
 
     const content = fs.readFileSync(configPath, 'utf8');
-    expect(content).not.toContain('name = "warp-vsc-bridge"');
+    expect(content).not.toContain('name = "oz-bridge"');
     expect(content).toContain('name = "other"');
   });
 
   it('unregister is a no-op when the file does not exist', async () => {
-    await registrar.unregister('warp-vsc-bridge');
+    await registrar.unregister('oz-bridge');
     expect(fs.existsSync(configPath)).toBe(false);
   });
 
@@ -135,18 +135,18 @@ describe('CodexRegistrar — unregister and status', () => {
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
     fs.writeFileSync(configPath, '[[mcp.servers]]\nname = "other"\nurl = "u"\n', 'utf8');
     const before = fs.readFileSync(configPath, 'utf8');
-    await registrar.unregister('warp-vsc-bridge');
+    await registrar.unregister('oz-bridge');
     expect(fs.readFileSync(configPath, 'utf8')).toBe(before);
   });
 
   it('status returns not-configured / missing / registered correctly', async () => {
-    expect(await registrar.status('warp-vsc-bridge')).toBe('not-configured');
+    expect(await registrar.status('oz-bridge')).toBe('not-configured');
 
     fs.mkdirSync(path.dirname(configPath), { recursive: true });
     fs.writeFileSync(configPath, '', 'utf8');
-    expect(await registrar.status('warp-vsc-bridge')).toBe('missing');
+    expect(await registrar.status('oz-bridge')).toBe('missing');
 
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://x' });
-    expect(await registrar.status('warp-vsc-bridge')).toBe('registered');
+    await registrar.register({ name: 'oz-bridge', url: 'http://x' });
+    expect(await registrar.status('oz-bridge')).toBe('registered');
   });
 });

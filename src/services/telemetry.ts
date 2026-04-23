@@ -223,7 +223,7 @@ export class HttpAppInsightsReporter implements ITelemetryReporter {
       iKey: this.parsed.instrumentationKey,
       tags: {
         'ai.application.ver': this.version,
-        'ai.cloud.role': 'warp-vsc-bridge',
+        'ai.cloud.role': 'oz-bridge',
       },
       data: {
         baseType: 'EventData',

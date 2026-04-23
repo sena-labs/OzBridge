@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { IConfigManager } from '../types/index.js';
-import { WarpTreeNode } from './runsTreeProvider.js';
+import { OzTreeNode } from './runsTreeProvider.js';
 
 /**
  * Public command IDs contributed by the handoff surface.
@@ -133,7 +133,7 @@ export function registerHandoffCommands(deps: HandoffDeps): vscode.Disposable[] 
       });
     }),
 
-    vscode.commands.registerCommand(HANDOFF_COMMANDS.tree, async (node?: WarpTreeNode) => {
+    vscode.commands.registerCommand(HANDOFF_COMMANDS.tree, async (node?: OzTreeNode) => {
       if (!node || node.kind !== 'run') {
         await vscode.window.showWarningMessage(vscode.l10n.t('OzBridge: select a run node to hand off.'));
         return;

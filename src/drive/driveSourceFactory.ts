@@ -2,7 +2,7 @@ import {
   DrivePrompt,
   DriveRule,
   DriveSkill,
-  IWarpDriveSource,
+  IDriveSource,
 } from './warpDriveSource.js';
 import {
   CliDriveNotAvailableError,
@@ -16,11 +16,11 @@ import {
 import { logInfo } from '../services/logger.js';
 
 /**
- * Options for {@link createWarpDriveSource}. All fields are optional so
+ * Options for {@link createOzBridgeDriveSource}. All fields are optional so
  * the factory can safely run at activation time even with no workspace
  * and no Oz CLI runner available.
  */
-export interface CreateWarpDriveSourceOptions {
+export interface CreateOzBridgeDriveSourceOptions {
   /**
    * Runner used to reach the Oz CLI `drive` subcommand. Omit it to skip
    * the CLI source altogether and rely solely on the filesystem
@@ -38,7 +38,7 @@ export interface CreateWarpDriveSourceOptions {
 }
 
 /**
- * `IWarpDriveSource` that tries a primary backend first and transparently
+ * `IDriveSource` that tries a primary backend first and transparently
  * falls back to a secondary backend **only** when the primary reports
  * that the drive feature is unavailable
  * ({@link CliDriveNotAvailableError}).
@@ -47,12 +47,12 @@ export interface CreateWarpDriveSourceOptions {
  * still see authentication or network failures rather than having them
  * masked by the fallback.
  */
-export class CompositeDriveSource implements IWarpDriveSource {
+export class CompositeDriveSource implements IDriveSource {
   readonly label: string;
 
   constructor(
-    private readonly primary: IWarpDriveSource,
-    private readonly fallback: IWarpDriveSource,
+    private readonly primary: IDriveSource,
+    private readonly fallback: IDriveSource,
   ) {
     this.label = `${primary.label}+${fallback.label}`;
   }
@@ -70,7 +70,7 @@ export class CompositeDriveSource implements IWarpDriveSource {
     return this.tryPrimary((s) => s.read(id));
   }
 
-  private async tryPrimary<T>(op: (s: IWarpDriveSource) => Promise<T>): Promise<T> {
+  private async tryPrimary<T>(op: (s: IDriveSource) => Promise<T>): Promise<T> {
     try {
       return await op(this.primary);
     } catch (err) {
@@ -83,7 +83,7 @@ export class CompositeDriveSource implements IWarpDriveSource {
 }
 
 /**
- * Builds the {@link IWarpDriveSource} the rest of the extension will
+ * Builds the {@link IDriveSource} the rest of the extension will
  * consume. The returned value is always safe to use from tests and
  * production — no network calls happen inside the factory itself.
  *
@@ -98,7 +98,7 @@ export class CompositeDriveSource implements IWarpDriveSource {
  * The chosen source's label is logged once at activation to make the
  * active configuration obvious in the OzBridge output channel.
  */
-export function createWarpDriveSource(opts: CreateWarpDriveSourceOptions = {}): IWarpDriveSource {
+export function createOzBridgeDriveSource(opts: CreateOzBridgeDriveSourceOptions = {}): IDriveSource {
   const fs = new FileSystemDriveSource(opts.filesystem);
   if (!opts.runner) {
     logInfo('Warp Drive source: filesystem (Oz CLI drive subcommand unavailable)');

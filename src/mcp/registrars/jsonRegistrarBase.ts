@@ -38,7 +38,7 @@ interface JsonConfig {
  * ```json
  * {
  *   "mcpServers": {
- *     "warp-vsc-bridge": {
+ *     "oz-bridge": {
  *       "url": "http://127.0.0.1:3847/sse",
  *       "headers": { "Authorization": "Bearer …" }
  *     }
