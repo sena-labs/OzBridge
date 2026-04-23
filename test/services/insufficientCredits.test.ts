@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isInsufficientCreditsError } from '../../src/services/ozCliService';
+import { isInsufficientCreditsError } from '../../src/services/ozCliService.js';
 
 describe('isInsufficientCreditsError', () => {
   it('matches HTTP 402 (Payment Required)', () => {
