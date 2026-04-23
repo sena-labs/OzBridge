@@ -23,9 +23,9 @@ interface Walkthrough {
 
 describe('Getting Started walkthrough manifest', () => {
   const walkthroughs = (PKG.contributes?.walkthroughs ?? []) as Walkthrough[];
-  const wt = walkthroughs.find((w) => w.id === 'warpBridge.gettingStarted');
+  const wt = walkthroughs.find((w) => w.id === 'ozBridge.gettingStarted');
 
-  it('contributes a single "warpBridge.gettingStarted" walkthrough', () => {
+  it('contributes a single "ozBridge.gettingStarted" walkthrough', () => {
     expect(walkthroughs).toHaveLength(1);
     expect(wt).toBeDefined();
   });
@@ -34,10 +34,10 @@ describe('Getting Started walkthrough manifest', () => {
     expect(wt!.steps).toHaveLength(4);
     const ids = wt!.steps.map((s) => s.id);
     expect(ids).toEqual([
-      'warpBridge.gettingStarted.installCli',
-      'warpBridge.gettingStarted.firstAgent',
-      'warpBridge.gettingStarted.exploreViews',
-      'warpBridge.gettingStarted.enableMcp',
+      'ozBridge.gettingStarted.installCli',
+      'ozBridge.gettingStarted.firstAgent',
+      'ozBridge.gettingStarted.exploreViews',
+      'ozBridge.gettingStarted.enableMcp',
     ]);
   });
 

@@ -2,35 +2,35 @@
 ## Obiettivo strategico
 Trasformare `warp-vsc-bridge` da "Chat Participant che wrappa il CLI Oz" (v0.2.0 appena rilasciata) nell'**estensione VS Code de-facto per Warp/Oz**, superando — per ciascun asse di valore — le estensioni già presenti sul Marketplace. La roadmap è organizzata in 7 milestone tematiche: ogni milestone porta un "messaggio di destinazione" competitivo e un insieme di feature concrete che sottraggono terreno a uno o più concorrenti identificati.
 ## Stato di partenza (v0.2.0)
-* Chat Participant `@warp` con 9 slash command (`/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`).
+* Chat Participant `@oz` con 9 slash command (`/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`).
 * 561/561 test verdi, TSC strict clean, bundle esbuild 28.8 KB, VSIX 30.5 KB.
 * Oz CLI coverage completa (local, cloud, schedule, env, integration, profile, mcp, model).
 * Posizionamento unico confermato dall'analisi di ~40 estensioni simili sul Marketplace: nessuno wrappa Oz in un Chat Participant.
 ## Principi di roadmap
 * **Ogni milestone aggredisce una nicchia concorrente specifica.** Non "feature per feature" ma "posizionamento per posizionamento".
-* **Compatibilità all'indietro.** Il flow `@warp /run ...` del v0.2.0 deve continuare a funzionare in tutte le release successive.
+* **Compatibilità all'indietro.** Il flow `@oz /run ...` del v0.2.0 deve continuare a funzionare in tutte le release successive.
 * **Bundle size budget.** Mantenere `dist/extension.js` sotto 125 KB fino a v1.0 (100 KB extension + 25 KB l10n bundle aggiunti in v0.9). Baseline attuale 28.8 KB, headroom ~4×.
 * **Test-to-code ratio ≥ 2:1** sul codice nuovo, con vitest come framework.
 * **Windows‑first, cross-platform.** Ogni feature testata su Windows (env primario dell'autore), macOS, Linux.
 * **Zero runtime dependency oltre `vscode`** mantenuto per l'extension; nuove dipendenze ammesse solo via `copilot-chat-toolkit` workspace o bundle esbuild.
 ## v0.3.0 — "Agent-Native": Language Model Tools
 ### Messaggio di destinazione
-*Non devi più scrivere `@warp` — Copilot Agent mode chiama Oz da solo quando serve.*
+*Non devi più scrivere `@oz` — Copilot Agent mode chiama Oz da solo quando serve.*
 ### Concorrenti superati
 * `sbluemin.github-copilot-cli-agents` (1.787 installs, `@claude`/`@codex`/`@gemini`) — richiede `@`-mention esplicito, noi no.
 * Tutti i wrapper CLI (`RyanReynolds.agent-terminal`, `Agent Terminal`, `Agent Grid`) — forniscono REPL separati, noi integriamo nell'agent loop.
 ### Deliverable
 * Registrare 4 tool via `vscode.lm.registerTool` + `contributes.languageModelTools` in `package.json`:
-    * `warp_run_local` — wrappa `agentRun()` con schema JSON per `prompt`, `model?`, `profile?`, `skill?`.
-    * `warp_run_cloud` — wrappa `agentRunCloud()` con conferma consumo crediti come `ToolInvocationConfirmation`.
-    * `warp_get_run` — wrappa `runGet(runId)`.
-    * `warp_list_runs` — wrappa `runList()` con filtro opzionale `status`.
+    * `oz_run_local` — wrappa `agentRun()` con schema JSON per `prompt`, `model?`, `profile?`, `skill?`.
+    * `oz_run_cloud` — wrappa `agentRunCloud()` con conferma consumo crediti come `ToolInvocationConfirmation`.
+    * `oz_get_run` — wrappa `runGet(runId)`.
+    * `oz_list_runs` — wrappa `runList()` con filtro opzionale `status`.
 * Ogni tool dichiara `tags: ["warp", "oz", "agent"]` per il tool picker.
-* `prepareInvocation` implementato con preview markdown della chiamata e conferma solo per `warp_run_cloud` (consumo crediti).
+* `prepareInvocation` implementato con preview markdown della chiamata e conferma solo per `oz_run_cloud` (consumo crediti).
 * Registrare un **custom agent** "Warp Oz" via `contributes.chatAgents` (API VS Code 1.115+) che pre-abilita i tool Warp.
 * Test vitest con mock di `vscode.lm.registerTool` e `LanguageModelToolResult`.
 ### Metriche di successo
-* In Agent mode, una prompt come "run the unit tests locally via Oz" invoca `warp_run_local` senza `@warp`.
+* In Agent mode, una prompt come "run the unit tests locally via Oz" invoca `oz_run_local` senza `@oz`.
 * Tempo attivazione extension +≤ 50 ms rispetto a v0.2.0.
 ## v0.4.0 — "Surfaces": Sidebar, Status Bar, Cloud Run Monitor
 ### Messaggio di destinazione
@@ -40,7 +40,7 @@ Trasformare `warp-vsc-bridge` da "Chat Participant che wrappa il CLI Oz" (v0.2.0
 * `apoqgin.agent-snitch` (107 installs), `proliminal.agent-lens` (68 installs) — visualizzano sessioni agent *locali*, noi visualizziamo anche *cloud* con steering.
 * `formulahendry.acp-client` (~1K) — sidebar ACP ma senza live run streaming.
 ### Deliverable
-* **Activity Bar view** `warpBridge.sidebar` con icona Warp dedicata. 5 collezioni via `TreeDataProvider`:
+* **Activity Bar view** `ozBridge.sidebar` con icona Warp dedicata. 5 collezioni via `TreeDataProvider`:
     * Active Runs (QUEUED + INPROGRESS, auto-refresh 10 s)
     * History (SUCCEEDED + FAILED, paginato)
     * Schedules
@@ -70,8 +70,8 @@ Trasformare `warp-vsc-bridge` da "Chat Participant che wrappa il CLI Oz" (v0.2.0
     * `#warp.profile` → profilo Oz attivo.
     * `#oz.run/<id>` → payload `runGet(<id>)` come JSON nel prompt.
     * `#oz.history` → ultimi 10 run come tabella markdown.
-* **Inline chat location** (`request.location === vscode.ChatLocation.Editor`): selezione codice + `@warp` → `selection` iniettata automaticamente come `[CONTEXT]` nel prompt e `skill` auto-rilevata da linguaggio file.
-* Comando `warpBridge.handoffToWarp`:
+* **Inline chat location** (`request.location === vscode.ChatLocation.Editor`): selezione codice + `@oz` → `selection` iniettata automaticamente come `[CONTEXT]` nel prompt e `skill` auto-rilevata da linguaggio file.
+* Comando `ozBridge.handoffToWarp`:
     * Apre URI `warp://action/new_tab?path=<workspacePath>&command=<urlencoded>`.
     * Pre-popola il comando `oz run get <id>` per run terminate o `oz agent run --prompt "<continua da runId>"` per nuove sessioni derivate.
     * Disponibile da: Cloud Run Monitor webview, Sidebar context menu, Command Palette.
@@ -95,7 +95,7 @@ Trasformare `warp-vsc-bridge` da "Chat Participant che wrappa il CLI Oz" (v0.2.0
     * `~/.claude.json` per Claude Code.
     * `~/.cursor/mcp.json` per Cursor.
     * `~/.codex/config.toml` per Codex.
-    * Undo del registration via comando `warpBridge.mcp.unregister`.
+    * Undo del registration via comando `ozBridge.mcp.unregister`.
 * Extension separata opzionale `warp-mcp-standalone` (package npm `warp-vsc-bridge-mcp`) per chi non usa VS Code ma vuole il bridge da riga di comando.
 * Documentazione dedicata `docs/MCP.md` con esempi di integrazione per ciascun client.
 ### Metriche di successo
@@ -108,7 +108,7 @@ Trasformare `warp-vsc-bridge` da "Chat Participant che wrappa il CLI Oz" (v0.2.0
 * `AbelMak.skills-sh` (202 installs) — package manager skills multi-agent. Noi integriamo con lo skill system Warp nativo + gli stessi skill Oz del CLI.
 * `Swarmify.swarm-ext` (211 installs) — team orchestration con MCP. Noi offriamo team config Warp-native via Drive.
 ### Deliverable
-* Comando `warpBridge.drive.browse` con TreeView dedicato:
+* Comando `ozBridge.drive.browse` con TreeView dedicato:
     * Listing dei Warp Drive prompts/rules/skills (via endpoint Oz CLI se disponibile, altrimenti parse `.warp/` e `.agents/skills/`).
     * Copia/incolla di un prompt Drive come contenuto di `/run` o `/cloud`.
 * **Editor skill/rules** integrato Monaco:
@@ -126,7 +126,7 @@ Trasformare `warp-vsc-bridge` da "Chat Participant che wrappa il CLI Oz" (v0.2.0
 * `agentstats.agentstats` (114 installs) — tracker token/costi per Claude/Codex, noi aggiungiamo Oz cloud agent credits.
 * `apoqgin.agent-snitch` (107 installs), `proliminal.agent-lens` (68 installs) — session graph per agent locali, noi anche per cloud agent + steering.
 ### Deliverable
-* **Dashboard webview** `warpBridge.dashboard`:
+* **Dashboard webview** `ozBridge.dashboard`:
     * Timeline 30 giorni con run count, durata media, success rate.
     * Breakdown credit consumption per environment / skill / model.
     * Top 10 prompts più lenti con link al detail.
@@ -149,8 +149,8 @@ Trasformare `warp-vsc-bridge` da "Chat Participant che wrappa il CLI Oz" (v0.2.0
     * Open VSX (publisher `sena-labs`, token ovsx).
 * `contributes.walkthroughs` con 4 step:
     1. Install Warp + `oz login`.
-    2. Configure `warpBridge.defaultEnvironment`.
-    3. Run `@warp /run hello`.
+    2. Configure `ozBridge.defaultEnvironment`.
+    3. Run `@oz /run hello`.
     4. Try Agent mode tools (v0.3).
 * GIF animate nel README per ogni feature major (Sidebar, Cloud Run Monitor, Dashboard, Chat Variables).
 * **`vscode.l10n` bundle** per 10 locale (en, it, es, fr, de, pt, ja, zh, ko, ru) — questa volta via l'API ufficiale VS Code invece di custom i18n service (delta minimo rispetto a v0.2.0).

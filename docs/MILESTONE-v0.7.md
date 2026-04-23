@@ -7,7 +7,7 @@
 ## Strategic message
 > Your Warp organisation (Drive, Rules, Skills) is **browsable,
 > editable, and applicable** directly from VS Code.
-v0.6 made Warp Bridge a first-class citizen for *external* MCP clients.
+v0.6 made OzBridge a first-class citizen for *external* MCP clients.
 v0.7 turns it into a first-class citizen for *team-shared Warp
 resources*: the Warp Drive catalogue, skill definitions, and project
 rules become navigable and editable without leaving the IDE.
@@ -47,12 +47,12 @@ or opened for editing without leaving VS Code.
   `<source>:<id>`. Auto-refresh is **manual only** (a refresh command in
   the view title bar) — no background polling.
 - `src/ui/driveCommands.ts` — context-menu handlers
-  `warpBridge.drive.insertIntoChat`, `.copyContent`, `.openInEditor`,
+  `ozBridge.drive.insertIntoChat`, `.copyContent`, `.openInEditor`,
   `.edit` (deliverable B hand-off), and `.refresh`.
 ### Manifest additions
-- `contributes.viewsContainers.activitybar.warpBridgeSidebar` already
-  exists; add a second view entry `warpBridge.driveView` alongside
-  `warpBridge.runsView`.
+- `contributes.viewsContainers.activitybar.ozBridgeSidebar` already
+  exists; add a second view entry `ozBridge.driveView` alongside
+  `ozBridge.runsView`.
 - 5 new `contributes.commands` entries under category `Warp Drive`.
 - 4 `contributes.menus.view/item/context` entries gated on the right
   `contextValue` (`warpDrivePrompt`, `warpDriveRule`, `warpDriveSkill`).
@@ -62,10 +62,10 @@ or opened for editing without leaving VS Code.
 - `test/ui/driveTreeProvider.test.ts` (3 categories, empty / populated / error).
 - `test/ui/driveCommands.test.ts` (every command, happy + no-selection paths).
 ### Acceptance
-- `@warp /drive` (optional alias) or Command Palette → *Warp Drive: Browse*
+- `@oz /drive` (optional alias) or Command Palette → *Warp Drive: Browse*
   focuses the sidebar view and loads content in ≤ 300 ms on a cached
   `IWarpDriveSource`.
-- Right-click *Insert into chat* pre-fills `@warp /run "<content>"` in
+- Right-click *Insert into chat* pre-fills `@oz /run "<content>"` in
   the Copilot Chat editor via the existing
   `workbench.action.chat.open` command.
 ## Deliverable B — Skill & Rules Monaco editor
@@ -83,7 +83,7 @@ palette).
   existing `yamlParser.ts` that only accepts the skill/rule frontmatter
   schema (`name`, `description`, optional `model`, `tags`).
 - `src/ui/skillEditorCommands.ts` — commands
-  `warpBridge.skill.edit <path>`, `.rule.edit <path>`,
+  `ozBridge.skill.edit <path>`, `.rule.edit <path>`,
   `.skill.new`, `.skill.saveGlobal`, `.skill.saveWorkspace`,
   `.skill.promoteToDrive` (delegates to `IWarpDriveSource.upload?` or
   falls back to a *Copy for manual upload* modal).
@@ -126,14 +126,14 @@ local edits.
 - `src/scaffold/skillWriter.ts` — atomic writer with overwrite
   protection (prompts before clobbering an existing file).
 ### UX
-1. `@warp /init` → QuickPick with 7 rows, each showing name +
+1. `@oz /init` → QuickPick with 7 rows, each showing name +
    description + current on-disk state (`[new]`, `[exists]`,
    `[modified]`).
 2. Multi-select → confirmation with diff preview for each `[modified]`
    entry.
 3. Progress notification while writing; final summary in chat with
    per-file status.
-4. `@warp /init all` keeps working as the legacy bulk shortcut.
+4. `@oz /init all` keeps working as the legacy bulk shortcut.
 ### Tests (target ≥ 15)
 - `test/commands/initV2Command.test.ts` — QuickPick cancel, single
   selection, multi-selection, `all` shortcut, overwrite decline,
@@ -160,9 +160,9 @@ client config files. Strictly opt-in and reversible.
   `~/.codex/config.toml` via a minimal zero-dep TOML writer
   (only needs to append/remove a named `[[mcp.servers]]` entry).
 ### Commands
-- `warpBridge.mcp.registerClient` — QuickPick picks which clients to
+- `ozBridge.mcp.registerClient` — QuickPick picks which clients to
   register; updates each; shows per-client status.
-- `warpBridge.mcp.unregisterClient` — inverse; removes entries whose
+- `ozBridge.mcp.unregisterClient` — inverse; removes entries whose
   `url` matches the current endpoint.
 ### Tests (target ≥ 15)
 - One suite per registrar hitting a temp directory, covering:

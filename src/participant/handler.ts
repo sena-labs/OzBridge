@@ -5,11 +5,12 @@ import {
   IConfigManager,
   IRunPoller,
 } from '../types/index.js';
+import { ActiveRunsTracker } from '../services/activeRunsTracker.js';
 import { CommandRouter } from '../commands/router.js';
 import { FollowupProvider } from './followups.js';
 
 /**
- * Registers the `@warp` Chat Participant in VS Code Copilot Chat.
+ * Registers the `@oz` Chat Participant in VS Code Copilot Chat.
  *
  * Creates a {@link CommandRouter} for slash-command dispatch and a
  * {@link FollowupProvider} for contextual follow-up suggestions,
@@ -23,7 +24,7 @@ import { FollowupProvider } from './followups.js';
  * @returns The registered {@link vscode.ChatParticipant} instance.
  */
 
-const PARTICIPANT_ID = 'warp-vsc-bridge.warp';
+const PARTICIPANT_ID = 'ozbridge.oz';
 
 export function registerChatParticipant(
   context: vscode.ExtensionContext,
@@ -31,8 +32,9 @@ export function registerChatParticipant(
   ctx: IContextCollector,
   cfgMgr: IConfigManager,
   poller: IRunPoller,
+  tracker?: ActiveRunsTracker,
 ): vscode.ChatParticipant {
-  const router = new CommandRouter(cli, ctx, cfgMgr, poller);
+  const router = new CommandRouter(cli, ctx, cfgMgr, poller, tracker);
   const handler = router.createHandler();
 
   const participant = vscode.chat.createChatParticipant(PARTICIPANT_ID, handler);

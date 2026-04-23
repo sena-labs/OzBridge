@@ -60,7 +60,7 @@ const WARP_DEFAULT_FOLLOWUPS = [
 ];
 
 /**
- * Contextual follow-up provider for the `@warp` Chat Participant.
+ * Contextual follow-up provider for the `@oz` Chat Participant.
  *
  * Extends the toolkit's data-driven {@link BaseFollowupProvider} with
  * Warp-specific follow-up suggestions.

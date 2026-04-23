@@ -83,8 +83,8 @@ regressions.
     are not narrated)
   - `"prompt My Prompt, source cli"` for drive entries
 - **Status bar** (`StatusBarManager`): exposes
-  `accessibilityInformation` in both steady (`Warp Bridge: 0 active
-  runs`) and error (`Warp Bridge: unavailable…`) states with role
+  `accessibilityInformation` in both steady (`OzBridge: 0 active
+  runs`) and error (`OzBridge: unavailable…`) states with role
   `'button'` (matches its click-to-focus behaviour). Codicons like
   `$(cloud)` are silent for AT — the explicit label fixes that.
 - **Tooltips backfilled** on category and message nodes that
@@ -148,12 +148,12 @@ Ships **deliverable T** of the v1.0 milestone — the operator
 escape hatch and the formal LTS policy.
 
 - **Kill-switch settings** in `package.json`:
-  - `warpBridge.killSwitch.enabled` (boolean, default `false`,
+  - `ozBridge.killSwitch.enabled` (boolean, default `false`,
     scope `machine-overridable`).
-  - `warpBridge.killSwitch.reason` (string, default `""`).
+  - `ozBridge.killSwitch.reason` (string, default `""`).
 - **`src/extension.ts#activate`** reads both settings immediately
   after logger init. When enabled, it logs a single info line and
-  surfaces a `showWarningMessage` ("Warp Bridge is disabled by the
+  surfaces a `showWarningMessage` ("OzBridge is disabled by the
   kill-switch …" + optional reason), then **returns early** — no
   commands, tools, MCP server, chat participant, trees, drives or
   walkthrough hooks are registered. `deactivate()` remains safe to
@@ -375,11 +375,11 @@ pipeline — defined in `docs/MILESTONE-v1.0.md` and
     `fetch` (Node ≥ 18). **Zero new runtime dependency.**
 - The reporter is **doubly gated**: active only when **both**
   `vscode.env.isTelemetryEnabled === true` **and**
-  `warpBridge.telemetry.connectionString` is a valid
+  `ozBridge.telemetry.connectionString` is a valid
   `InstrumentationKey=...;IngestionEndpoint=...` string. Either gate
   closed ⇒ noop transport. Malformed strings ⇒ noop fallback (warning
   logged, extension keeps running).
-- New setting `warpBridge.telemetry.connectionString` (default `""`,
+- New setting `ozBridge.telemetry.connectionString` (default `""`,
   scope `machine-overridable`) declared in `package.json`, documented
   with a `markdownDescription` linking to `PRIVACY.md`.
 - Hard-coded deny-list `FORBIDDEN_KEY_REGEX =
@@ -578,19 +578,19 @@ Second deliverable of the v0.9 "Reach" milestone
 
 ## What
 
-Contributes a first-class **Get Started with Warp Bridge** walkthrough
+Contributes a first-class **Get Started with OzBridge** walkthrough
 that appears automatically the first time the extension activates and
 can be reopened from **Help → Get Started** at any time.
 
 ### Manifest
-- `package.json#contributes.walkthroughs[0]` — `warpBridge.gettingStarted`
+- `package.json#contributes.walkthroughs[0]` — `ozBridge.gettingStarted`
   with four steps:
-  1. **Install the Warp CLI** (completion: `warpBridge.tree.refresh`).
-  2. **Run your first `@warp` prompt** (completion: chat participant
+  1. **Install the Warp CLI** (completion: `ozBridge.tree.refresh`).
+  2. **Run your first `@oz` prompt** (completion: chat participant
      invocation).
-  3. **Explore the Warp views** (completion: opening `warpBridge.runsView`).
+  3. **Explore the Warp views** (completion: opening `ozBridge.runsView`).
   4. **Enable the MCP bridge (optional)** (completion: toggling
-     `warpBridge.mcpEnabled` or running `warpBridge.mcp.start`).
+     `ozBridge.mcpEnabled` or running `ozBridge.mcp.start`).
 - All titles/descriptions localised through
   `package.nls{,.it,.es}.json` (10 new `walkthrough.*` keys per locale).
 
@@ -602,7 +602,7 @@ can be reopened from **Help → Get Started** at any time.
 
 ### First-activation gate
 - `src/ui/walkthrough.ts` exposes `maybeOpenGettingStartedWalkthrough`
-  which reads/writes the `warpBridge.walkthrough.shown` key on
+  which reads/writes the `ozBridge.walkthrough.shown` key on
   `context.globalState` so the wizard auto-opens at most once per
   install. Failures from `workbench.action.openWalkthrough` are
   swallowed (activation must never block on UX).
@@ -685,10 +685,10 @@ Closes the v0.7 milestone by merging deliverables **A-UI**, **B**, **C** and **E
 
 | Commit | Deliverable |
 | --- | --- |
-| `8931e08` | **A-UI** — `WarpDriveTreeProvider` + 4 `warpBridge.drive.*` commands, `warpBridge.driveView` view entry, provider + commands wired into `extension.ts`. 15 new tests. |
-| `9a6ea09` | **B** — Built-in skill / rule editor: 4 commands (`warpBridge.skill.edit` / `.new` / `.saveGlobal` / `.saveWorkspace`), atomic write, strict name validator, overwrite protection. 11 new tests. |
-| `cb95091` | **C** — `/init` v2 QuickPick with per-file `[new]` / `[exists]` badges and per-file overwrite confirmation; `@warp /init all` preserves legacy bulk behaviour. New `src/scaffold/skillTemplates.ts` registry. Legacy `initCommand.ts` + its 2 test files removed. 19 new tests. |
-| `4f4b8b0` | **E** — MCP client auto-registration: `IMcpClientRegistrar` contract + `ClaudeCodeRegistrar` / `CursorRegistrar` (JSON via shared `JsonMcpRegistrar` base) / `CodexRegistrar` (minimal line-based TOML). Two new commands (`warpBridge.mcp.registerClient` / `.unregisterClient`). 38 new tests. |
+| `8931e08` | **A-UI** — `WarpDriveTreeProvider` + 4 `ozBridge.drive.*` commands, `ozBridge.driveView` view entry, provider + commands wired into `extension.ts`. 15 new tests. |
+| `9a6ea09` | **B** — Built-in skill / rule editor: 4 commands (`ozBridge.skill.edit` / `.new` / `.saveGlobal` / `.saveWorkspace`), atomic write, strict name validator, overwrite protection. 11 new tests. |
+| `cb95091` | **C** — `/init` v2 QuickPick with per-file `[new]` / `[exists]` badges and per-file overwrite confirmation; `@oz /init all` preserves legacy bulk behaviour. New `src/scaffold/skillTemplates.ts` registry. Legacy `initCommand.ts` + its 2 test files removed. 19 new tests. |
+| `4f4b8b0` | **E** — MCP client auto-registration: `IMcpClientRegistrar` contract + `ClaudeCodeRegistrar` / `CursorRegistrar` (JSON via shared `JsonMcpRegistrar` base) / `CodexRegistrar` (minimal line-based TOML). Two new commands (`ozBridge.mcp.registerClient` / `.unregisterClient`). 38 new tests. |
 | `82a92c8` | **Release finalization** — version bump `0.7.0-dev → 0.7.0` across `package.json`, `package-lock.json` and `EXTENSION_VERSION`. CHANGELOG `[Unreleased]` consolidated into `[0.7.0] — 2026-04-20`. RELEASE-NOTES finalised (WIP callout / progress tracker / `(pending)` markers dropped; VSIX SHA256 + metrics filled in). |
 
 ## Metrics
@@ -701,8 +701,8 @@ Closes the v0.7 milestone by merging deliverables **A-UI**, **B**, **C** and **E
 
 ## Back-compat
 
-- `@warp /init` users get the new QuickPick immediately; `@warp /init all` retains the v0.2.0 bulk semantics.
-- MCP server remains opt-in (`warpBridge.mcpEnabled`). Client auto-registration is manual and reversible; no file is written at activation.
+- `@oz /init` users get the new QuickPick immediately; `@oz /init all` retains the v0.2.0 bulk semantics.
+- MCP server remains opt-in (`ozBridge.mcpEnabled`). Client auto-registration is manual and reversible; no file is written at activation.
 - All v0.2.0-era slash commands, Language Model Tools, tree views and settings untouched.
 
 ## Follow-ups (not in this PR)

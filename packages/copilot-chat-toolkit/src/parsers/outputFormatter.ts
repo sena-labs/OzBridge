@@ -111,9 +111,29 @@ export class OutputFormatter {
         }
         break;
 
+      case CliErrorKind.INSUFFICIENT_CREDITS:
+        stream.markdown(
+          '💳 **Account out of credits or quota.** The remote service rejected the request.\n\n'
+          + 'Top up your account or upgrade your plan, then retry.\n',
+        );
+        if (error.stderr) {
+          stream.markdown(`\n<details><summary>CLI output</summary>\n\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n\n</details>\n`);
+        }
+        break;
+
+      case CliErrorKind.STALLED:
+        stream.markdown(
+          '🛑 **CLI unresponsive.** The process produced no output for the configured idle window and was terminated.\n\n'
+          + 'Most common causes: depleted account credits, network outage, or the CLI is waiting for an interactive prompt outside the editor.\n',
+        );
+        break;
+
       case CliErrorKind.TIMEOUT: {
         const secs = this.getConfig().timeoutMs / 1000;
-        stream.markdown(`⏰ **Timeout.** The operation exceeded the ${secs}s limit.\n\n`);
+        stream.markdown(
+          `⏰ **Timeout.** The operation exceeded the ${secs}s limit.\n\n`
+          + 'Common causes: account out of credits (the CLI may hang waiting for an interactive prompt), slow network, or a genuinely long-running task.\n',
+        );
         break;
       }
 
@@ -133,7 +153,9 @@ export class OutputFormatter {
           `❌ **CLI error** (exit code ${error.exitCode ?? '?'}):\n\n` +
           `\`\`\`\n${error.message}\n\`\`\`\n`,
         );
-        if (error.stderr) {
+        // Avoid printing the same payload twice when OzCliError was
+        // constructed with `message = stderr` (typical non-zero exits).
+        if (error.stderr && error.stderr.trim() !== error.message.trim()) {
           stream.markdown(`\n**stderr:**\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n`);
         }
         break;

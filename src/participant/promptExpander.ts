@@ -23,9 +23,9 @@ export interface PromptExpansionResult {
 /**
  * Recognised tokens (matched case-sensitively, bounded by non-word chars).
  *
- * - `#warp.env` → `warpBridge.defaultEnvironment` (config value, empty = `(none)`).
- * - `#warp.profile` → `warpBridge.defaultProfile`.
- * - `#warp.model` → `warpBridge.defaultModel`.
+ * - `#warp.env` → `ozBridge.defaultEnvironment` (config value, empty = `(none)`).
+ * - `#warp.profile` → `ozBridge.defaultProfile`.
+ * - `#warp.model` → `ozBridge.defaultModel`.
  * - `#oz.history` → a Markdown table of the last 10 runs from `oz run list`.
  * - `#oz.run/<id>` → JSON payload returned by `oz run get <id>` (truncated).
  *

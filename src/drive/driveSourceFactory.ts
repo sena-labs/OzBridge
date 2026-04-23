@@ -96,7 +96,7 @@ export class CompositeDriveSource implements IWarpDriveSource {
  *   shipped the `drive` subcommand.
  *
  * The chosen source's label is logged once at activation to make the
- * active configuration obvious in the Warp Bridge output channel.
+ * active configuration obvious in the OzBridge output channel.
  */
 export function createWarpDriveSource(opts: CreateWarpDriveSourceOptions = {}): IWarpDriveSource {
   const fs = new FileSystemDriveSource(opts.filesystem);

@@ -1,10 +1,10 @@
-# Warp Bridge for VS Code — v0.6.0
+# OzBridge for VS Code — v0.6.0
 **Release date:** 2026-04-20
 **Publisher:** `sena-labs`
 **VSIX:** `warp-vsc-bridge.vsix`
 **Tag:** [`v0.6.0`](https://github.com/sena-labs/warp-vsc-bridge/releases/tag/v0.6.0)
 ## TL;DR
-Warp Bridge v0.6.0 ships the **MCP Server Export** milestone: a
+OzBridge v0.6.0 ships the **MCP Server Export** milestone: a
 lightweight, zero-dependency Model Context Protocol server embedded in
 the extension. Flip one setting and any MCP-aware client — Claude Code,
 Cursor, Codex — can drive Warp Oz through the same 4 tools Copilot
@@ -12,7 +12,7 @@ Chat sees inside VS Code. No new network exposure by default: the
 server binds to loopback and is off until you opt in.
 ## Highlights
 ### 🔌 Embedded MCP server (opt-in)
-Enable `warpBridge.mcpEnabled` and the extension starts a JSON-RPC 2.0
+Enable `ozBridge.mcpEnabled` and the extension starts a JSON-RPC 2.0
 server on `127.0.0.1:3847` by default. Transport is HTTP + SSE, the
 layout everyone else uses:
 - `GET  /sse` opens the SSE stream. The first frame is
@@ -30,9 +30,9 @@ Four tools are advertised via `tools/list`:
 Each tool declares a strict JSON `inputSchema` that `tools/list`
 emits verbatim, so MCP clients route arguments automatically.
 ### 🔐 Security-first defaults
-- Binds to **loopback** by default; change `warpBridge.mcpBindAddress`
+- Binds to **loopback** by default; change `ozBridge.mcpBindAddress`
   only when you understand the implications.
-- Optional bearer auth via `warpBridge.mcpBearerToken`. When set, every
+- Optional bearer auth via `ozBridge.mcpBearerToken`. When set, every
   request — including `/health` — must carry
   `Authorization: Bearer <token>`. Comparison is constant-time
   (`crypto.timingSafeEqual`).
@@ -45,7 +45,7 @@ All under the `Warp MCP` Command Palette category:
 - `Warp: Show MCP server status`
 - `Warp: Copy MCP endpoint URL`
 ### 🔁 Reactive lifecycle
-Toggle `warpBridge.mcpEnabled` and the server starts or stops without
+Toggle `ozBridge.mcpEnabled` and the server starts or stops without
 an extension reload. `deactivate()` disposes the socket cleanly, so
 there are no zombie listeners on reload or uninstall.
 ## Upgrade path
@@ -63,7 +63,7 @@ there are no zombie listeners on reload or uninstall.
 - **Platforms:** macOS, Linux, Windows.
 - **MCP clients:** any client speaking protocol `2024-11-05` or newer.
   The server prefers `2025-03-26` and negotiates down on request.
-- **Copilot Chat:** still required only for the `@warp` participant
+- **Copilot Chat:** still required only for the `@oz` participant
   and Agent-mode tools; the MCP export is usable without it.
 ## Metrics
 - **694** unit tests across **44** files — all green.
@@ -104,7 +104,7 @@ ext install sena-labs.warp-vsc-bridge
 code --install-extension warp-vsc-bridge.vsix
 ```
 ## Thanks
-Warp Bridge is maintained by **Sena Labs** with ongoing assistance from
+OzBridge is maintained by **Sena Labs** with ongoing assistance from
 the Oz agent. Feedback, bug reports and feature requests are welcome on
 [GitHub Issues](https://github.com/sena-labs/warp-vsc-bridge/issues).
 ## Links

@@ -1,4 +1,4 @@
-# Warp Bridge for VS Code — v0.9.0
+# OzBridge for VS Code — v0.9.0
 
 **Release date:** 2026-04-20  
 **Publisher:** `sena-labs`  
@@ -6,7 +6,7 @@
 
 ## TL;DR
 
-v0.9.0 makes Warp Bridge **installable everywhere a VS Code-like editor
+v0.9.0 makes OzBridge **installable everywhere a VS Code-like editor
 runs and welcoming to first-time users**: the official `vscode.l10n`
 pipeline ships English / Italian / Spanish bundles, a four-step
 Get-Started walkthrough opens on first activation, the publish
@@ -35,10 +35,10 @@ references and bundle declaration.
 
 ### 🚀 Get-Started walkthrough (deliverable L)
 
-A four-step `warpBridge.gettingStarted` walkthrough — install Warp CLI,
-run `@warp`, explore the Warp views, enable the MCP bridge — opens
+A four-step `ozBridge.gettingStarted` walkthrough — install Warp CLI,
+run `@oz`, explore the Warp views, enable the MCP bridge — opens
 automatically on first activation, gated by the
-`warpBridge.walkthrough.shown` key in `context.globalState` so it
+`ozBridge.walkthrough.shown` key in `context.globalState` so it
 never nags returning users. Re-openable any time from
 **Help → Get Started**. Titles, descriptions and step bodies are
 fully localised. The gating helper is hardened to no-op when
@@ -113,7 +113,7 @@ and install via **Extensions → Install from VSIX…**.
 
 ## Breaking changes
 
-None. v0.2.0 `@warp` chat participant flows continue to work
+None. v0.2.0 `@oz` chat participant flows continue to work
 unchanged.
 
 ## Known issues

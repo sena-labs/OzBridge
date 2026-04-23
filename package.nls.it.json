@@ -1,5 +1,5 @@
 {
-  "displayName": "Warp Bridge",
+  "displayName": "OzBridge",
   "description": "Esegui agenti Warp Oz da VS Code Copilot Chat",
   "category.warp": "Warp",
   "category.warpMcp": "Warp MCP",
@@ -31,14 +31,14 @@
   "command.dashboard.open.title": "Warp: Apri dashboard",
   "command.triageFailure.title": "Warp: Analizza run fallita…",
   "command.exportDataset.title": "Warp: Esporta dataset run…",
-  "walkthrough.gettingStarted.title": "Inizia con Warp Bridge",
+  "walkthrough.gettingStarted.title": "Inizia con OzBridge",
   "walkthrough.gettingStarted.description": "Installa Warp, esegui il primo agente Oz da Copilot Chat, esplora le view di Warp e abilita il bridge MCP.",
   "walkthrough.step.installCli.title": "Installa la CLI di Warp",
-  "walkthrough.step.installCli.description": "Scarica Warp (≥ 0.2024.x) così Warp Bridge può trovare l'eseguibile `oz` nel PATH. Esegui il comando Warp: Refresh una volta completata l'installazione.",
-  "walkthrough.step.firstAgent.title": "Esegui il primo prompt @warp",
-  "walkthrough.step.firstAgent.description": "Apri una view di Copilot Chat e invoca @warp con un prompt breve per eseguire un agente Oz end-to-end.",
+  "walkthrough.step.installCli.description": "Scarica Warp (≥ 0.2024.x) così OzBridge può trovare l'eseguibile `oz` nel PATH. Esegui il comando Warp: Refresh una volta completata l'installazione.",
+  "walkthrough.step.firstAgent.title": "Esegui il primo prompt @oz",
+  "walkthrough.step.firstAgent.description": "Apri una view di Copilot Chat e invoca @oz con un prompt breve per eseguire un agente Oz end-to-end.",
   "walkthrough.step.exploreViews.title": "Esplora le view di Warp",
   "walkthrough.step.exploreViews.description": "Apri le view Warp Runs e Warp Drive dalla Activity Bar per gestire run, skill e prompt.",
   "walkthrough.step.enableMcp.title": "Abilita il bridge MCP (opzionale)",
-  "walkthrough.step.enableMcp.description": "Attiva warpBridge.mcpEnabled o esegui Warp: Start MCP server per permettere a Claude Code, Cursor o Codex di pilotare Warp Bridge via MCP."
+  "walkthrough.step.enableMcp.description": "Attiva ozBridge.mcpEnabled o esegui Warp: Start MCP server per permettere a Claude Code, Cursor o Codex di pilotare OzBridge via MCP."
 }

@@ -22,7 +22,7 @@ failure-triage assistant that suggests fixes from `vscode.lm`.
 | --- | ------------------------------------------------- | -------------- | ----------------------------------- | --- |
 | F   | `IRunSteerer` abstraction + progressive fallback  | 🟡 **Planned** | `feat/v0.8-run-steerer`             | —   |
 | G   | `RunStatsService` + `runStats.ts` aggregator      | 🟡 **Planned** | `feat/v0.8-run-stats`               | —   |
-| H   | Dashboard webview (`warpBridge.dashboard`)        | 🟡 **Planned** | `feat/v0.8-dashboard`               | —   |
+| H   | Dashboard webview (`ozBridge.dashboard`)        | 🟡 **Planned** | `feat/v0.8-dashboard`               | —   |
 | I   | Failure triage helper (`vscode.lm.sendRequest`)   | 🟡 **Planned** | `feat/v0.8-failure-triage`          | —   |
 | J   | Dataset export (JSONL from selected runs)         | 🔵 **Stretch** | `feat/v0.8-dataset-export`          | —   |
 
@@ -171,7 +171,7 @@ export interface IRunStatsService {
 
 ### Goal
 
-A webview opened via command `warpBridge.dashboard.open` that renders:
+A webview opened via command `ozBridge.dashboard.open` that renders:
 
 - 30-day timeline (line chart, runs/day) — vanilla SVG, no charting
   lib (bundle budget!).
@@ -187,7 +187,7 @@ A webview opened via command `warpBridge.dashboard.open` that renders:
 - `media/dashboard/index.html` + `dashboard.js` + `dashboard.css` —
   shipped verbatim, loaded via `webview.asWebviewUri()` with strict
   CSP and per-panel nonce.
-- `contributes.commands` entry `warpBridge.dashboard.open`.
+- `contributes.commands` entry `ozBridge.dashboard.open`.
 
 ### Tests (target ≥ 10)
 
@@ -222,7 +222,7 @@ that:
 - Pure `extractStackTrace(output: string): string | null` helper for
   unit tests (no `vscode.lm` dependency).
 - `src/commands/triageCommand.ts` — palette entry
-  `warpBridge.triageLastFailure`.
+  `ozBridge.triageLastFailure`.
 
 ### Tests (target ≥ 10)
 

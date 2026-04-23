@@ -410,6 +410,27 @@ describe('OzCliService', () => {
       }
     });
 
+    it('dovrebbe rilevare "out of credits" come INSUFFICIENT_CREDITS', async () => {
+      createMockProcess({ stderr: 'Error: account is out of credits', exitCode: 1 });
+      try {
+        await cli.agentRun({ prompt: 'test' });
+        expect.fail('should throw');
+      } catch (err) {
+        expect(err).toBeInstanceOf(OzCliError);
+        expect((err as OzCliError).kind).toBe(OzCliErrorKind.INSUFFICIENT_CREDITS);
+      }
+    });
+
+    it('dovrebbe rilevare exit code 402 come INSUFFICIENT_CREDITS', async () => {
+      createMockProcess({ stderr: 'HTTP 402', exitCode: 402 });
+      try {
+        await cli.agentRun({ prompt: 'test' });
+        expect.fail('should throw');
+      } catch (err) {
+        expect((err as OzCliError).kind).toBe(OzCliErrorKind.INSUFFICIENT_CREDITS);
+      }
+    });
+
     it('dovrebbe tornare CLI_ERROR per exit code non-zero generico', async () => {
       createMockProcess({ stderr: 'Unknown error', exitCode: 2 });
       try {
@@ -587,6 +608,88 @@ describe('OzCliService', () => {
       const result = await cli.agentRun({ prompt: 'test' });
       expect(result.status).toBe('SUCCEEDED');
       expect(result.output).toBe('done');
+    });
+  });
+
+  // =========================================================================
+  // runGet() — arg shape regression (issue: was passing --id instead of
+  // positional argument, causing warp CLI to exit with code 2)
+  // =========================================================================
+  describe('runGet() — argument shape', () => {
+    it('dovrebbe passare runId come argomento posizionale (non --id)', async () => {
+      createMockProcess({ stdout: '{"id":"uuid-abc","status":"SUCCEEDED"}' });
+      await cli.runGet('uuid-abc');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      // Positional: ['run', 'get', 'uuid-abc', '--output-format', 'json']
+      expect(args[2]).toBe('uuid-abc');
+      expect(args).not.toContain('--id');
+    });
+  });
+
+  // =========================================================================
+  // agentRunCloud() — banner UUID extraction and id normalization
+  // (issue: runId mismatch between chat banner and sidebar)
+  // =========================================================================
+  describe('agentRunCloud() — banner UUID precedence', () => {
+    it('dovrebbe preferire il run ID dal banner CLI rispetto al JSON id', async () => {
+      // Simulate CLI emitting both a banner line and a JSON id that differ
+      const stdout =
+        'Spawned ambient agent with run ID: BANNER-UUID-001\n' +
+        '{"id":"JSON-UUID-999","status":"INPROGRESS"}';
+      createMockProcess({ stdout });
+      const result = await cli.agentRunCloud({ prompt: 'test' });
+      // Banner UUID wins, normalized to lowercase
+      expect(result.runId).toBe('banner-uuid-001');
+    });
+
+    it('dovrebbe normalizzare il run ID del banner in lowercase', async () => {
+      createMockProcess({
+        stdout: 'Spawned ambient agent with run ID: UPPER-CASE-ID\n{"status":"INPROGRESS"}',
+      });
+      const result = await cli.agentRunCloud({ prompt: 'test' });
+      expect(result.runId).toBe('upper-case-id');
+    });
+
+    it('dovrebbe usare il JSON id se non c\'è banner', async () => {
+      createMockProcess({ stdout: '{"id":"json-only-id","status":"INPROGRESS"}' });
+      const result = await cli.agentRunCloud({ prompt: 'test' });
+      expect(result.runId).toBe('json-only-id');
+    });
+
+    it('dovrebbe estrarre il banner anche se il testo è in stderr', async () => {
+      createMockProcess({
+        stdout: '{"id":"json-id","status":"INPROGRESS"}',
+        stderr: 'Spawned ambient agent with run ID: stderr-uuid-42',
+      });
+      const result = await cli.agentRunCloud({ prompt: 'test' });
+      expect(result.runId).toBe('stderr-uuid-42');
+    });
+  });
+
+  // =========================================================================
+  // extractCloudBannerRunId() — static helper
+  // =========================================================================
+  describe('OzCliService.extractCloudBannerRunId()', () => {
+    it('dovrebbe estrarre l\'ID dal banner classico', () => {
+      const id = OzCliService.extractCloudBannerRunId(
+        'Spawned ambient agent with run ID: abc-def-123',
+      );
+      expect(id).toBe('abc-def-123');
+    });
+
+    it('dovrebbe essere case-insensitive', () => {
+      const id = OzCliService.extractCloudBannerRunId(
+        'SPAWNED AMBIENT AGENT WITH RUN ID: MyRunId',
+      );
+      expect(id).toBe('myrunid');
+    });
+
+    it('dovrebbe tornare null se il banner non è presente', () => {
+      expect(OzCliService.extractCloudBannerRunId('{"id":"no-banner"}')).toBeNull();
+    });
+
+    it('dovrebbe tornare null per stringa vuota', () => {
+      expect(OzCliService.extractCloudBannerRunId('')).toBeNull();
     });
   });
 });

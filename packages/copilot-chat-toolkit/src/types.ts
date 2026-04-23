@@ -78,6 +78,26 @@ export interface ContextPayload {
 export enum CliErrorKind {
   NOT_FOUND = 'NOT_FOUND',
   NOT_AUTHENTICATED = 'NOT_AUTHENTICATED',
+  /**
+   * The remote agent service rejected the request because the
+   * caller's account is out of credits / quota / billing seats.
+   * Detected from stderr keywords (`out of credits`, `quota`,
+   * `payment required`, HTTP 402/429) so that the UI layer can
+   * surface an actionable upgrade message instead of a generic
+   * `CLI_ERROR` or — worse — a `TIMEOUT` when the CLI hangs
+   * waiting for an interactive Warp prompt.
+   */
+  INSUFFICIENT_CREDITS = 'INSUFFICIENT_CREDITS',
+  /**
+   * The CLI subprocess produced no stdout/stderr for the configured
+   * idle window (`idleTimeoutMs`). Indicates the underlying process
+   * is hung — typically because the upstream Warp service is not
+   * responding (out of credits with no fail-fast signal, network
+   * partition, or Warp app waiting for an interactive prompt).
+   * Surfaced separately from `TIMEOUT` so the message can be sharper
+   * and the wait window much shorter than the global timeout.
+   */
+  STALLED = 'STALLED',
   TIMEOUT = 'TIMEOUT',
   PARSE_ERROR = 'PARSE_ERROR',
   CLI_ERROR = 'CLI_ERROR',

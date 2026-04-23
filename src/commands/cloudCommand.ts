@@ -6,11 +6,17 @@ import {
   IRunPoller,
   OzCliError,
   OzCliErrorKind,
+  OzRunStatus,
   SlashCommandHandler,
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
 import { detectSkill } from './skillDetector.js';
 import { expandPromptVariables } from '../participant/promptExpander.js';
+
+/** Minimal tracker interface required by the cloud command (avoids tight coupling). */
+interface IRunStatusTracker {
+  markRunStatus(runId: string, status: OzRunStatus): void;
+}
 
 /**
  * Creates the `/cloud` slash-command handler.
@@ -23,6 +29,9 @@ import { expandPromptVariables } from '../participant/promptExpander.js';
  * @param cfgMgr - Configuration manager.
  * @param poller - Cloud-run poller.
  * @param ctx - IDE context collector.
+ * @param tracker - Optional active-runs tracker. When provided, the sidebar is
+ *   updated immediately on run start and on terminal status without waiting for
+ *   the next periodic `oz run list` poll.
  * @returns A {@link SlashCommandHandler} for the `/cloud` command.
  */
 
@@ -31,6 +40,7 @@ export function createCloudCommand(
   cfgMgr: IConfigManager,
   poller: IRunPoller,
   ctx: IContextCollector,
+  tracker?: IRunStatusTracker,
 ): SlashCommandHandler {
   const formatter = new OutputFormatter(cfgMgr);
   return async (prompt, stream, token) => {
@@ -94,7 +104,7 @@ export function createCloudCommand(
         model: config.defaultModel !== 'auto' ? config.defaultModel : undefined,
         environment,
         noEnvironment,
-        open: true,
+        open: false,
         skill,
         cancellation: token,
       });
@@ -102,6 +112,10 @@ export function createCloudCommand(
       if (result.runId) {
         stream.markdown(`🚀 **Cloud run started**: \`${result.runId}\`\n\n`);
         stream.markdown('Polling for results...\n\n');
+
+        // Immediately mark the run as INPROGRESS in the sidebar so users
+        // see the entry without waiting for the next periodic runList poll.
+        tracker?.markRunStatus(result.runId, 'INPROGRESS');
 
         // IMPL: async polling with exponential backoff (D3)
         try {
@@ -113,14 +127,19 @@ export function createCloudCommand(
             token,
           );
 
-          formatter.formatRunResult(finalResult, stream, { autoOpened: true });
+          // Immediately reflect terminal status in the sidebar.
+          tracker?.markRunStatus(result.runId, finalResult.status);
+
+          formatter.formatRunResult(finalResult, stream, { autoOpened: false });
 
           // VS Code notification
           const statusMsg = finalResult.status === 'SUCCEEDED'
             ? vscode.l10n.t('✅ Cloud agent completed successfully')
             : vscode.l10n.t('❌ Cloud agent failed');
-          vscode.window.showInformationMessage(vscode.l10n.t('Warp Bridge: {0} ({1})', statusMsg, result.runId));
+          vscode.window.showInformationMessage(vscode.l10n.t('OzBridge: {0} ({1})', statusMsg, result.runId));
         } catch (pollErr) {
+          // Mark as FAILED in the sidebar on polling error.
+          tracker?.markRunStatus(result.runId, 'FAILED');
           if (pollErr instanceof OzCliError) {
             formatter.formatError(pollErr, stream);
           } else {
@@ -130,7 +149,7 @@ export function createCloudCommand(
         }
       } else {
         // Se non c'è runId, mostra il risultato direttamente
-        formatter.formatRunResult(result, stream, { autoOpened: true });
+        formatter.formatRunResult(result, stream, { autoOpened: false });
       }
     } catch (err) {
       formatter.handleError(err, stream);

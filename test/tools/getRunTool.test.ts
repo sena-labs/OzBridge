@@ -14,7 +14,7 @@ beforeEach(() => {
 
 describe('GetRunTool.name', () => {
   it('matches the manifest entry', () => {
-    expect(GetRunTool.name).toBe('warp_get_run');
+    expect(GetRunTool.name).toBe('oz_get_run');
   });
 });
 

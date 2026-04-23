@@ -4,10 +4,10 @@ import { WarpDriveTreeProvider, DriveTreeNode } from './driveTreeProvider.js';
 
 /** Command IDs contributed by the Warp Drive sidebar surface. */
 export const DRIVE_COMMANDS = {
-  refresh: 'warpBridge.drive.refresh',
-  insertIntoChat: 'warpBridge.drive.insertIntoChat',
-  copyContent: 'warpBridge.drive.copyContent',
-  openInEditor: 'warpBridge.drive.openInEditor',
+  refresh: 'ozBridge.drive.refresh',
+  insertIntoChat: 'ozBridge.drive.insertIntoChat',
+  copyContent: 'ozBridge.drive.copyContent',
+  openInEditor: 'ozBridge.drive.openInEditor',
 } as const;
 
 export interface DriveCommandDeps {
@@ -45,7 +45,7 @@ export function registerDriveCommands(deps: DriveCommandDeps): vscode.Disposable
       }
       const preview = body.length > 1500 ? `${body.slice(0, 1500)}\n… (truncated)` : body;
       await vscode.commands.executeCommand('workbench.action.chat.open', {
-        query: `@warp /run ${preview}`,
+        query: `@oz /run ${preview}`,
       });
     }),
 

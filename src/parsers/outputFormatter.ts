@@ -123,8 +123,41 @@ export class OutputFormatter {
         });
         break;
 
+      case OzCliErrorKind.INSUFFICIENT_CREDITS:
+        stream.markdown(
+          '💳 **Out of Warp credits.** Your account has hit its quota or has no credits left, '
+          + 'so the agent could not start.\n\n'
+          + 'Open the Warp account dashboard to top up or upgrade your plan, then retry.\n',
+        );
+        if (error.stderr) {
+          stream.markdown(`\n<details><summary>CLI output</summary>\n\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n\n</details>\n`);
+        }
+        stream.button({
+          command: 'vscode.open',
+          arguments: [vscode.Uri.parse('https://app.warp.dev/settings/billing')],
+          title: '💳 Manage Warp billing',
+        });
+        break;
+
+      case OzCliErrorKind.STALLED:
+        stream.markdown(
+          `🛑 **Oz CLI unresponsive.** No output for ${this.config.idleTimeoutMs / 1000}s — the process was terminated to avoid waiting the full ${this.config.timeoutMs / 1000}s timeout.\n\n`
+          + 'Most common causes:\n'
+          + '- Warp account out of credits (top up at https://app.warp.dev/settings/billing)\n'
+          + '- Network outage or upstream Warp service degradation\n'
+          + '- Warp desktop app waiting for an interactive prompt outside VS Code.\n\n'
+          + 'Adjust **Settings → OzBridge → Idle Timeout Ms** if your prompts are legitimately long-running with periods of silence.\n',
+        );
+        break;
+
       case OzCliErrorKind.TIMEOUT:
-        stream.markdown(`⏰ **Timeout.** Operation exceeded the ${this.config.timeoutMs / 1000}s limit.\n\nYou can increase the timeout in Settings → Warp Bridge → Timeout.\n`);
+        stream.markdown(
+          `⏰ **Timeout.** Operation exceeded the ${this.config.timeoutMs / 1000}s limit.\n\n`
+          + 'Common causes:\n'
+          + '- Warp account out of credits (the CLI may hang waiting for an interactive prompt)\n'
+          + '- Slow network or upstream service degradation\n'
+          + '- Prompt is genuinely large — increase the limit in **Settings → OzBridge → Timeout**.\n',
+        );
         break;
 
       case OzCliErrorKind.CANCELLED:
@@ -143,7 +176,9 @@ export class OutputFormatter {
           `❌ **CLI Error** (exit code ${error.exitCode ?? '?'}):\n\n` +
           `\`\`\`\n${error.message}\n\`\`\`\n`,
         );
-        if (error.stderr) {
+        // Avoid printing the same payload twice when OzCliError was
+        // constructed with `message = stderr` (typical non-zero exits).
+        if (error.stderr && error.stderr.trim() !== error.message.trim()) {
           stream.markdown(`\n**stderr:**\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n`);
         }
         break;

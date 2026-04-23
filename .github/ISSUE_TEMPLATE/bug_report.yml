@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug or unexpected behavior in Warp Bridge
+description: Report a bug or unexpected behavior in OzBridge
 title: "[BUG] "
 labels: ["bug"]
 assignees: []
@@ -25,7 +25,7 @@ body:
       placeholder: |
         1. Open VS Code
         2. Open the Chat panel
-        3. Type `@warp /...`
+        3. Type `@oz /...`
         4. Observe the error
     validations:
       required: true
@@ -85,7 +85,7 @@ body:
     id: logs
     attributes:
       label: Logs
-      description: Paste relevant logs from the "Warp Bridge" output channel.
+      description: Paste relevant logs from the "OzBridge" output channel.
       render: shell
     validations:
       required: false

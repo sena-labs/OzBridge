@@ -31,7 +31,7 @@ describe('registerChatParticipant()', () => {
     );
 
     expect(chat.createChatParticipant).toHaveBeenCalledWith(
-      'warp-vsc-bridge.warp',
+      'ozbridge.oz',
       expect.any(Function),
     );
   });

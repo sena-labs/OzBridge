@@ -1,6 +1,6 @@
 # Explore the Warp views
 
-Warp Bridge contributes two tree views to the Activity Bar:
+OzBridge contributes two tree views to the Activity Bar:
 
 - **Warp Runs** — live and historical agent runs grouped by status.
   Right-click a run to copy its id, open it in the browser, or hand

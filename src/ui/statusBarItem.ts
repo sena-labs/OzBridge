@@ -12,11 +12,11 @@ import { OzRunStatus } from '../types/index.js';
  * - `1`–`2`   → `statusBarItem.warningBackground`
  * - `3` +     → `statusBarItem.errorBackground`
  *
- * Clicking the item runs the `warpBridge.sidebar.focus` command, bringing the
+ * Clicking the item runs the `ozBridge.sidebar.focus` command, bringing the
  * Warp Activity Bar view into focus.
  */
 export class StatusBarManager implements vscode.Disposable {
-  static readonly FOCUS_COMMAND = 'warpBridge.sidebar.focus';
+  static readonly FOCUS_COMMAND = 'ozBridge.sidebar.focus';
 
   private readonly item: vscode.StatusBarItem;
   private readonly subscriptions: vscode.Disposable[] = [];
@@ -27,7 +27,7 @@ export class StatusBarManager implements vscode.Disposable {
       vscode.StatusBarAlignment.Right,
       100,
     );
-    this.item.name = 'Warp Bridge';
+    this.item.name = 'OzBridge';
     this.item.command = StatusBarManager.FOCUS_COMMAND;
     this.render([]);
     this.item.show();
@@ -57,7 +57,7 @@ export class StatusBarManager implements vscode.Disposable {
     // v1.0 deliverable S — WCAG 2.1 AA: codicon glyphs ($cloud) are
     // not announced by screen readers; expose a plain-language label.
     this.item.accessibilityInformation = {
-      label: `Warp Bridge: ${activeCount} active run${activeCount === 1 ? '' : 's'}`,
+      label: `OzBridge: ${activeCount} active run${activeCount === 1 ? '' : 's'}`,
       role: 'button',
     };
 
@@ -74,10 +74,10 @@ export class StatusBarManager implements vscode.Disposable {
     // Keep the last-known count but mark the tooltip so the user knows
     // polling is currently failing (e.g. Oz CLI missing or logged out).
     this.item.text = `$(cloud-outline) Warp: unavailable`;
-    this.item.tooltip = 'Warp Bridge: unable to list runs. Check Oz CLI availability and authentication.';
+    this.item.tooltip = 'OzBridge: unable to list runs. Check Oz CLI availability and authentication.';
     this.item.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
     this.item.accessibilityInformation = {
-      label: 'Warp Bridge: unavailable. Check Oz CLI availability and authentication.',
+      label: 'OzBridge: unavailable. Check Oz CLI availability and authentication.',
       role: 'button',
     };
   }
@@ -90,7 +90,7 @@ function isActive(status: OzRunStatus): boolean {
 function buildTooltip(runs: ReadonlyArray<TrackedRun>): vscode.MarkdownString {
   const md = new vscode.MarkdownString(undefined, true);
   md.isTrusted = true;
-  md.appendMarkdown('**Warp Bridge** — active & recent runs\n\n');
+  md.appendMarkdown('**OzBridge** — active & recent runs\n\n');
 
   if (runs.length === 0) {
     md.appendMarkdown('_No runs reported by Oz CLI._\n\n');

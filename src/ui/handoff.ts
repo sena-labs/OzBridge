@@ -9,9 +9,9 @@ import { WarpTreeNode } from './runsTreeProvider.js';
  */
 export const HANDOFF_COMMANDS = {
   /** Command Palette entry: asks the user for a prompt to seed Warp with. */
-  palette: 'warpBridge.handoff',
+  palette: 'ozBridge.handoff',
   /** Sidebar context menu entry on run nodes. */
-  tree: 'warpBridge.tree.handoff',
+  tree: 'ozBridge.tree.handoff',
 } as const;
 
 /**
@@ -91,7 +91,7 @@ export async function showHandoffFallback(options: HandoffOptions): Promise<void
   const command = buildHandoffCommand(options);
   const copy = vscode.l10n.t('Copy command');
   const choice = await vscode.window.showWarningMessage(
-    vscode.l10n.t('Warp Bridge: could not open Warp via the `warp://` URL scheme. Install Warp ≥ 0.2024.x or copy the command and run it manually.'),
+    vscode.l10n.t('OzBridge: could not open Warp via the `warp://` URL scheme. Install Warp ≥ 0.2024.x or copy the command and run it manually.'),
     { modal: true, detail: command },
     copy,
   );
@@ -122,7 +122,7 @@ export function registerHandoffCommands(deps: HandoffDeps): vscode.Disposable[] 
   return [
     vscode.commands.registerCommand(HANDOFF_COMMANDS.palette, async () => {
       const prompt = await vscode.window.showInputBox({
-        title: 'Warp Bridge · Hand off to Warp',
+        title: 'OzBridge · Hand off to Warp',
         prompt: 'Command or prompt to seed Warp with (leave empty for a fresh terminal)',
         placeHolder: 'e.g. fix the failing test in src/auth/login.ts',
       });
@@ -135,7 +135,7 @@ export function registerHandoffCommands(deps: HandoffDeps): vscode.Disposable[] 
 
     vscode.commands.registerCommand(HANDOFF_COMMANDS.tree, async (node?: WarpTreeNode) => {
       if (!node || node.kind !== 'run') {
-        await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: select a run node to hand off.'));
+        await vscode.window.showWarningMessage(vscode.l10n.t('OzBridge: select a run node to hand off.'));
         return;
       }
       await openHandoff({

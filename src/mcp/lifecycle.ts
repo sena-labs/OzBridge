@@ -16,7 +16,7 @@ export interface McpConfig {
   bearerToken: string;
 }
 
-/** Extracts the `warpBridge.mcp.*` slice from the full config snapshot. */
+/** Extracts the `ozBridge.mcp.*` slice from the full config snapshot. */
 export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
   return {
     enabled: full.mcpEnabled === true,
@@ -58,7 +58,7 @@ export class McpLifecycle implements vscode.Disposable {
     return this.server?.endpoint;
   }
 
-  /** Snapshot of the current `warpBridge.mcp.*` settings. */
+  /** Snapshot of the current `ozBridge.mcp.*` settings. */
   get config(): McpConfig | undefined {
     return this.current;
   }
@@ -154,22 +154,22 @@ export function registerMcpCommands(
   cfgMgr: IConfigManager,
 ): vscode.Disposable[] {
   return [
-    vscode.commands.registerCommand('warpBridge.mcp.start', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.start', async () => {
       await lifecycle.start();
       const ep = lifecycle.endpoint;
       await vscode.window.showInformationMessage(
         ep
           ? vscode.l10n.t('Warp MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port))
-          : vscode.l10n.t('Warp MCP server failed to start — see the Warp Bridge output channel.'),
+          : vscode.l10n.t('Warp MCP server failed to start — see the OzBridge output channel.'),
       );
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.stop', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.stop', async () => {
       await lifecycle.stop();
       await vscode.window.showInformationMessage(vscode.l10n.t('Warp MCP server stopped.'));
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.status', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.status', async () => {
       const cfg = readMcpConfig(cfgMgr.getConfig());
       const ep = lifecycle.endpoint;
       const tokenLabel = cfg.bearerToken ? 'bearer token required' : 'no bearer token';
@@ -179,7 +179,7 @@ export function registerMcpCommands(
       await vscode.window.showInformationMessage(vscode.l10n.t('Warp MCP server: {0}', state));
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.copyEndpointUrl', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.copyEndpointUrl', async () => {
       const ep = lifecycle.endpoint;
       if (!ep) {
         await vscode.window.showWarningMessage(vscode.l10n.t('Warp MCP server is not running.'));
@@ -190,11 +190,11 @@ export function registerMcpCommands(
       await vscode.window.showInformationMessage(vscode.l10n.t('Copied MCP endpoint URL: {0}', url));
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.registerClient', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.registerClient', async () => {
       await runRegistrarCommand('register', lifecycle, cfgMgr);
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.unregisterClient', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.unregisterClient', async () => {
       await runRegistrarCommand('unregister', lifecycle, cfgMgr);
     }),
   ];
@@ -246,8 +246,8 @@ async function runRegistrarCommand(
   }));
   const picked = await vscode.window.showQuickPick(items, {
     title: action === 'register'
-      ? vscode.l10n.t('Warp Bridge · Register MCP client')
-      : vscode.l10n.t('Warp Bridge · Unregister MCP client'),
+      ? vscode.l10n.t('OzBridge · Register MCP client')
+      : vscode.l10n.t('OzBridge · Unregister MCP client'),
     placeHolder: vscode.l10n.t('Choose the client whose config file should be updated'),
     canPickMany: false,
   });

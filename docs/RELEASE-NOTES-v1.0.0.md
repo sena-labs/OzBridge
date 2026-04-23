@@ -1,4 +1,4 @@
-# Warp Bridge for VS Code — v1.0.0 Release Notes
+# OzBridge for VS Code — v1.0.0 Release Notes
 
 **Release date:** 2026-04-20
 **Codename:** GA (Enterprise-Ready)
@@ -46,7 +46,7 @@ with a default `NoopReporter` (zero network code path) and an
 **no new runtime dependency**. Reporter is **doubly gated**:
 
 1. `vscode.env.isTelemetryEnabled === true`, **AND**
-2. `warpBridge.telemetry.connectionString` carries a valid
+2. `ozBridge.telemetry.connectionString` carries a valid
    `InstrumentationKey=...;IngestionEndpoint=...` string.
 
 Either gate closed ⇒ noop. The event map is a closed
@@ -99,8 +99,8 @@ least one heading for document outline).
 
 Two new `machine-overridable` settings:
 
-- `warpBridge.killSwitch.enabled` — boolean, default `false`.
-- `warpBridge.killSwitch.reason` — string, default `""`.
+- `ozBridge.killSwitch.enabled` — boolean, default `false`.
+- `ozBridge.killSwitch.reason` — string, default `""`.
 
 When the switch is on, `activate()` short-circuits before any wiring
 step (no commands, tools, MCP server, chat participant or trees are
@@ -117,9 +117,9 @@ one-minor-release deprecation notice).
 
 | Setting | Default | Scope |
 |---|---|---|
-| `warpBridge.telemetry.connectionString` | `""` | application |
-| `warpBridge.killSwitch.enabled` | `false` | application, machine-overridable |
-| `warpBridge.killSwitch.reason` | `""` | application, machine-overridable |
+| `ozBridge.telemetry.connectionString` | `""` | application |
+| `ozBridge.killSwitch.enabled` | `false` | application, machine-overridable |
+| `ozBridge.killSwitch.reason` | `""` | application, machine-overridable |
 
 ## Install
 
@@ -157,7 +157,7 @@ code --install-extension warp-vsc-bridge-1.0.0.vsix
   soft-fail behaviour as Marketplace.
 - **Telemetry collector not yet provisioned**: The Application Insights
   resource in the Sena Labs Azure subscription is pending
-  provisioning. Until then `warpBridge.telemetry.connectionString`
+  provisioning. Until then `ozBridge.telemetry.connectionString`
   has no public default; users who self-host their own AppInsights
   can opt in already by setting it manually.
 

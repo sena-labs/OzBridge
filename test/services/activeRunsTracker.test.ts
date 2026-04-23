@@ -124,4 +124,106 @@ describe('ActiveRunsTracker', () => {
     await vi.advanceTimersByTimeAsync(5_000);
     expect(cli.runList).toHaveBeenCalledTimes(before);
   });
+
+  // =========================================================================
+  // markRunStatus() — sticky overrides
+  // (issue: sidebar stuck on "in Progress" after cloud invocation)
+  // =========================================================================
+
+  it('markRunStatus() immediately fires onDidChange with the overridden status', async () => {
+    cli.runList.mockResolvedValue(
+      makeListResult<{ id: string; status: OzRunStatus }>([{ id: 'r1', status: 'INPROGRESS' }]),
+    );
+
+    const tracker = new ActiveRunsTracker(cli, 60_000);
+    await tracker.refresh(); // populate lastCli with INPROGRESS
+
+    const changes: TrackedRun[][] = [];
+    tracker.onDidChange((runs) => changes.push([...runs]));
+
+    tracker.markRunStatus('r1', 'SUCCEEDED');
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0]).toEqual([{ id: 'r1', status: 'SUCCEEDED' }]);
+    expect(tracker.latest).toEqual([{ id: 'r1', status: 'SUCCEEDED' }]);
+  });
+
+  it('markRunStatus() does not fire onDidChange if tracker is disposed', async () => {
+    const tracker = new ActiveRunsTracker(cli, 60_000);
+    const fired = vi.fn();
+    tracker.onDidChange(fired);
+    tracker.dispose();
+
+    tracker.markRunStatus('r1', 'SUCCEEDED');
+    expect(fired).not.toHaveBeenCalled();
+  });
+
+  it('markRunStatus() adds a synthetic entry for a run not yet in runList', async () => {
+    cli.runList.mockResolvedValue(makeListResult<{ id: string; status: OzRunStatus }>([]));
+
+    const tracker = new ActiveRunsTracker(cli, 60_000);
+    await tracker.refresh(); // empty snapshot
+
+    tracker.markRunStatus('new-run', 'INPROGRESS');
+
+    expect(tracker.latest).toEqual([{ id: 'new-run', status: 'INPROGRESS' }]);
+  });
+
+  it('markRunStatus() clears synthetic entry on next tick when CLI reports terminal status', async () => {
+    cli.runList
+      .mockResolvedValueOnce(makeListResult<{ id: string; status: OzRunStatus }>([])) // 1st: empty
+      .mockResolvedValueOnce(                                                          // 2nd: terminal
+        makeListResult<{ id: string; status: OzRunStatus }>([{ id: 'r-new', status: 'SUCCEEDED' }]),
+      );
+
+    const tracker = new ActiveRunsTracker(cli, 1_000);
+    await tracker.refresh(); // empty snapshot
+    tracker.markRunStatus('r-new', 'INPROGRESS');
+
+    expect(tracker.latest).toEqual([{ id: 'r-new', status: 'INPROGRESS' }]);
+
+    // Next tick: CLI now returns SUCCEEDED → override should be dropped
+    await vi.advanceTimersByTimeAsync(1_000);
+    tracker.start();
+    await vi.runOnlyPendingTimersAsync();
+    await Promise.resolve();
+
+    // After tick, override is removed; CLI SUCCEEDED wins
+    const run = tracker.latest.find((r) => r.id === 'r-new');
+    expect(run?.status).toBe('SUCCEEDED');
+  });
+
+  // =========================================================================
+  // ID normalisation (toLowerCase)
+  // (issue: map key collision between banner UUID and runList UUID of different case)
+  // =========================================================================
+
+  it('normalises run ids to lowercase from runList', async () => {
+    cli.runList.mockResolvedValue(
+      makeListResult<{ id: string; status: OzRunStatus }>([{ id: 'UPPER-CASE-ID', status: 'QUEUED' }]),
+    );
+
+    const tracker = new ActiveRunsTracker(cli, 60_000);
+    await tracker.refresh();
+
+    expect(tracker.latest[0].id).toBe('upper-case-id');
+  });
+
+  it('markRunStatus() with uppercase runId matches lowercase entry from runList', async () => {
+    cli.runList.mockResolvedValue(
+      makeListResult<{ id: string; status: OzRunStatus }>([{ id: 'UUID-Mixed', status: 'INPROGRESS' }]),
+    );
+
+    const tracker = new ActiveRunsTracker(cli, 60_000);
+    await tracker.refresh(); // normalises to 'uuid-mixed'
+
+    const changes: TrackedRun[][] = [];
+    tracker.onDidChange((runs) => changes.push([...runs]));
+
+    // Calling markRunStatus with uppercase — must still match the normalised id
+    tracker.markRunStatus('UUID-Mixed', 'SUCCEEDED');
+
+    expect(changes).toHaveLength(1);
+    expect(changes[0][0]).toEqual({ id: 'uuid-mixed', status: 'SUCCEEDED' });
+  });
 });

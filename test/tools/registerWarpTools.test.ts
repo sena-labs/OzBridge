@@ -29,10 +29,10 @@ describe('registerWarpTools()', () => {
     );
 
     expect(vscodeMock.lm.registerTool).toHaveBeenCalledTimes(4);
-    expect(vscodeMock.lm._getTool('warp_run_local')).toBeInstanceOf(RunLocalTool);
-    expect(vscodeMock.lm._getTool('warp_run_cloud')).toBeInstanceOf(RunCloudTool);
-    expect(vscodeMock.lm._getTool('warp_get_run')).toBeInstanceOf(GetRunTool);
-    expect(vscodeMock.lm._getTool('warp_list_runs')).toBeInstanceOf(ListRunsTool);
+    expect(vscodeMock.lm._getTool('oz_run_local')).toBeInstanceOf(RunLocalTool);
+    expect(vscodeMock.lm._getTool('oz_run_cloud')).toBeInstanceOf(RunCloudTool);
+    expect(vscodeMock.lm._getTool('oz_get_run')).toBeInstanceOf(GetRunTool);
+    expect(vscodeMock.lm._getTool('oz_list_runs')).toBeInstanceOf(ListRunsTool);
   });
 
   it('pushes one disposable per tool into context.subscriptions', () => {

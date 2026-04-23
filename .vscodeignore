@@ -42,3 +42,6 @@ scripts/**
 
 # PR body scratchpad (local-only, never ships to Marketplace)
 pr-body.md
+
+test-out.txt
+*.txt
