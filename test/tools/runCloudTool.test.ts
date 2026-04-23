@@ -30,7 +30,7 @@ beforeEach(() => {
 
 describe('RunCloudTool.name', () => {
   it('matches the manifest entry', () => {
-    expect(RunCloudTool.name).toBe('ozbridge_run_cloud');
+    expect(RunCloudTool.name).toBe('oz_run_cloud');
   });
 });
 

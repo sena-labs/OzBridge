@@ -3,7 +3,7 @@ import { IOzCliService, IConfigManager } from '../types/index.js';
 import { errorResult, renderRunResult, textResult } from './baseTool.js';
 
 /**
- * Input schema for `ozbridge_get_run`.
+ * Input schema for `oz_get_run`.
  */
 export interface GetRunInput {
   runId: string;
@@ -16,7 +16,7 @@ export interface GetRunInput {
  * references a run ID and wants to know the status and output.
  */
 export class GetRunTool implements vscode.LanguageModelTool<GetRunInput> {
-  static readonly name = 'ozbridge_get_run';
+  static readonly name = 'oz_get_run';
 
   constructor(
     private readonly cli: IOzCliService,

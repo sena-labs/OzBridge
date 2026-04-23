@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IConfigManager, IOzCliService, OzBridgeConfig } from '../types/index.js';
+import { IConfigManager, IOzCliService, WarpBridgeConfig } from '../types/index.js';
 import { McpServer } from './server.js';
 import { buildToolRegistry } from './tools.js';
 import { logError, logInfo, logWarn } from '../services/logger.js';
@@ -17,7 +17,7 @@ export interface McpConfig {
 }
 
 /** Extracts the `ozBridge.mcp.*` slice from the full config snapshot. */
-export function readMcpConfig(full: OzBridgeConfig): McpConfig {
+export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
   return {
     enabled: full.mcpEnabled === true,
     port: typeof full.mcpPort === 'number' && full.mcpPort >= 0 ? full.mcpPort : 3847,
@@ -75,7 +75,7 @@ export class McpLifecycle implements vscode.Disposable {
     this.current = { ...cfg };
 
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
-    const serverInfo = { name: 'oz-bridge', version: this.extensionVersion };
+    const serverInfo = { name: 'warp-vsc-bridge', version: this.extensionVersion };
 
     try {
       const server = new McpServer(registry, serverInfo, {
@@ -159,14 +159,14 @@ export function registerMcpCommands(
       const ep = lifecycle.endpoint;
       await vscode.window.showInformationMessage(
         ep
-          ? vscode.l10n.t('OzBridge MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port))
-          : vscode.l10n.t('OzBridge MCP server failed to start — see the OzBridge output channel.'),
+          ? vscode.l10n.t('Warp MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port))
+          : vscode.l10n.t('Warp MCP server failed to start — see the OzBridge output channel.'),
       );
     }),
 
     vscode.commands.registerCommand('ozBridge.mcp.stop', async () => {
       await lifecycle.stop();
-      await vscode.window.showInformationMessage(vscode.l10n.t('OzBridge MCP server stopped.'));
+      await vscode.window.showInformationMessage(vscode.l10n.t('Warp MCP server stopped.'));
     }),
 
     vscode.commands.registerCommand('ozBridge.mcp.status', async () => {
@@ -176,13 +176,13 @@ export function registerMcpCommands(
       const state = lifecycle.running
         ? `running — http://${ep?.address}:${ep?.port}/sse · ${tokenLabel}`
         : 'stopped';
-      await vscode.window.showInformationMessage(vscode.l10n.t('OzBridge MCP server: {0}', state));
+      await vscode.window.showInformationMessage(vscode.l10n.t('Warp MCP server: {0}', state));
     }),
 
     vscode.commands.registerCommand('ozBridge.mcp.copyEndpointUrl', async () => {
       const ep = lifecycle.endpoint;
       if (!ep) {
-        await vscode.window.showWarningMessage(vscode.l10n.t('OzBridge MCP server is not running.'));
+        await vscode.window.showWarningMessage(vscode.l10n.t('Warp MCP server is not running.'));
         return;
       }
       const url = `http://${ep.address}:${ep.port}/sse`;
@@ -220,7 +220,7 @@ function defaultRegistrars(): IMcpClientRegistrar[] {
 }
 
 /** Server name advertised to every MCP client we register with. */
-export const MCP_SERVER_NAME = 'oz-bridge';
+export const MCP_SERVER_NAME = 'warp-vsc-bridge';
 
 /**
  * Shared implementation behind the `registerClient` / `unregisterClient`
@@ -234,7 +234,7 @@ async function runRegistrarCommand(
 ): Promise<void> {
   if (action === 'register' && !lifecycle.running) {
     await vscode.window.showWarningMessage(
-      vscode.l10n.t('OzBridge MCP server is not running. Start it first with "OzBridge: Start MCP server".'),
+      vscode.l10n.t('Warp MCP server is not running. Start it first with "Warp: Start MCP server".'),
     );
     return;
   }
@@ -269,7 +269,7 @@ async function runRegistrarCommand(
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    await vscode.window.showErrorMessage(vscode.l10n.t('OzBridge MCP {0} failed: {1}', action, msg));
+    await vscode.window.showErrorMessage(vscode.l10n.t('Warp MCP {0} failed: {1}', action, msg));
     logError(`mcp.${action}Client(${target.clientId}) failed: ${msg}`);
   }
 }

@@ -1,6 +1,6 @@
 /* eslint-disable */
 /**
- * Verification harness for the installed Warp Bridge VSIX.
+ * Verification harness for the installed OzBridge VSIX.
  *
  * Loads the bundled `dist/extension.js` with a minimal `vscode` stub that
  * mirrors the surface the extension expects at activation time, then calls
@@ -42,14 +42,14 @@ function assert(cond, label, detail) {
 
 console.log('--- Manifest checks ---');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-assert(manifest.name === 'oz-bridge', 'name', manifest.name);
+assert(manifest.name === 'ozbridge', 'name', manifest.name);
 assert(manifest.publisher === 'sena-labs', 'publisher', manifest.publisher);
 assert(manifest.version === '0.5.0', 'version', manifest.version);
 assert(/^[\^~]?1\.96/.test(manifest.engines.vscode), 'engines.vscode', manifest.engines.vscode);
 assert(manifest.main === './dist/extension.js', 'main', manifest.main);
 assert(Array.isArray(manifest.contributes.chatParticipants), 'chatParticipants declared');
 assert(
-  manifest.contributes.chatParticipants[0].id === 'oz-bridge.ozbridge',
+  manifest.contributes.chatParticipants[0].id === 'ozbridge.oz',
   'chat participant id', manifest.contributes.chatParticipants[0].id,
 );
 const slashCommands = (manifest.contributes.chatParticipants[0].commands || []).map((c) => c.name).sort();
@@ -60,7 +60,7 @@ assert(
 );
 
 const tools = (manifest.contributes.languageModelTools || []).map((t) => t.name).sort();
-const expectedTools = ['ozbridge_get_run', 'ozbridge_list_runs', 'ozbridge_run_cloud', 'ozbridge_run_local'];
+const expectedTools = ['oz_get_run', 'oz_list_runs', 'oz_run_cloud', 'oz_run_local'];
 assert(
   JSON.stringify(tools) === JSON.stringify(expectedTools),
   'languageModelTools', tools.join(','),
@@ -102,9 +102,9 @@ for (const key of [
 console.log('\n--- Bundle load + activate() ---');
 const bundleSrc = fs.readFileSync(bundlePath, 'utf8');
 assert(bundleSrc.length > 10_000, 'bundle size > 10 KB', `${bundleSrc.length}B`);
-assert(bundleSrc.includes('oz-bridge.ozbridge'), 'bundle mentions participant id');
+assert(bundleSrc.includes('ozbridge.oz'), 'bundle mentions participant id');
 assert(bundleSrc.includes('ozBridge.runsView'), 'bundle mentions sidebar view id');
-assert(bundleSrc.includes('ozbridge_run_local'), 'bundle mentions ozbridge_run_local');
+assert(bundleSrc.includes('oz_run_local'), 'bundle mentions oz_run_local');
 assert(bundleSrc.includes('warp://action/new_tab'), 'bundle embeds Warp URL scheme');
 
 // ---------------------------------------------------------------------------
@@ -263,11 +263,11 @@ try {
   log('  ✗', 'activate(context) throws', err.message);
   process.exit(1);
 }
-assert(registry.participants.some((p) => p.id === 'oz-bridge.ozbridge'), 'registers @ozbridge participant');
-assert(registry.tools.has('ozbridge_run_local'), 'registers ozbridge_run_local tool');
-assert(registry.tools.has('ozbridge_run_cloud'), 'registers ozbridge_run_cloud tool');
-assert(registry.tools.has('ozbridge_get_run'), 'registers ozbridge_get_run tool');
-assert(registry.tools.has('ozbridge_list_runs'), 'registers ozbridge_list_runs tool');
+assert(registry.participants.some((p) => p.id === 'ozbridge.oz'), 'registers @oz participant');
+assert(registry.tools.has('oz_run_local'), 'registers oz_run_local tool');
+assert(registry.tools.has('oz_run_cloud'), 'registers oz_run_cloud tool');
+assert(registry.tools.has('oz_get_run'), 'registers oz_get_run tool');
+assert(registry.tools.has('oz_list_runs'), 'registers oz_list_runs tool');
 assert(registry.treeProviders.has('ozBridge.runsView'), 'registers sidebar tree provider');
 assert(registry.statusBarItems.length >= 1, 'creates status bar item', `count=${registry.statusBarItems.length}`);
 for (const id of mustHaveCommands) {

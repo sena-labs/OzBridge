@@ -33,10 +33,10 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: npm
@@ -54,12 +54,19 @@ jobs:
     name: Secret scan (gitleaks)
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # gitleaks-action@v2 calls GET /pulls/:n/commits to scope the diff;
+    # the default repo token only has `contents: read`, so on PRs the
+    # call returns 403 ("Resource not accessible by integration") and
+    # the action exits non-zero before even running the scanner.
+    # Granting `pull-requests: read` is the minimum required scope —
+    # comment posting is still disabled via GITLEAKS_ENABLE_COMMENTS.
     permissions:
       contents: read
+      pull-requests: read
       security-events: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # full history for accurate scanning
 

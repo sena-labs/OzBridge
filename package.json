@@ -1,9 +1,9 @@
 {
-  "name": "oz-bridge",
+  "name": "ozbridge",
   "displayName": "%displayName%",
   "description": "%description%",
   "l10n": "./l10n",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "sena-labs",
   "license": "MIT",
   "workspaces": [
@@ -25,23 +25,23 @@
     "Chat"
   ],
   "activationEvents": [
-    "onChatParticipant:oz-bridge.ozbridge",
-    "onLanguageModelTool:ozbridge_run_local",
-    "onLanguageModelTool:ozbridge_run_cloud",
-    "onLanguageModelTool:ozbridge_get_run",
-    "onLanguageModelTool:ozbridge_list_runs",
-    "onView:ozBridge.runsView",
-    "onView:ozBridge.driveView",
-    "onCommand:ozBridge.dashboard.open"
+    "onChatParticipant:warp-vsc-bridge.warp",
+    "onLanguageModelTool:warp_run_local",
+    "onLanguageModelTool:warp_run_cloud",
+    "onLanguageModelTool:warp_get_run",
+    "onLanguageModelTool:warp_list_runs",
+    "onView:warpBridge.runsView",
+    "onView:warpBridge.driveView",
+    "onCommand:warpBridge.dashboard.open"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "chatParticipants": [
       {
-        "id": "oz-bridge.ozbridge",
-        "name": "ozbridge",
+        "id": "ozbridge.oz",
+        "name": "oz",
         "fullName": "OzBridge",
-        "description": "Run OzBridge Oz agents from VS Code",
+        "description": "Run Warp Oz agents from VS Code",
         "isSticky": true,
         "commands": [
           {
@@ -74,7 +74,7 @@
           },
           {
             "name": "config",
-            "description": "Show current Warp Bridge configuration"
+            "description": "Show current OzBridge configuration"
           },
           {
             "name": "init",
@@ -85,11 +85,11 @@
     ],
     "languageModelTools": [
       {
-        "name": "ozbridge_run_local",
-        "displayName": "Run OzBridge Oz agent (local)",
-        "toolReferenceName": "ozBridgeRunLocal",
+        "name": "oz_run_local",
+        "displayName": "Run Warp Oz agent (local)",
+        "toolReferenceName": "ozRunLocal",
         "modelDescription": "Runs a Warp Oz agent locally in the current VS Code workspace and returns its output. Use when the user asks to execute, refactor, test, or debug code using Warp without consuming cloud credits. Automatically injects IDE context (workspace path, active file, selection, diagnostics) unless `includeIdeContext: false` is passed.",
-        "userDescription": "Let Copilot invoke Warp Oz agents locally without typing @warp.",
+        "userDescription": "Let Copilot invoke Warp Oz agents locally without typing @oz.",
         "canBeReferencedInPrompt": true,
         "icon": "$(warp)",
         "tags": [
@@ -128,10 +128,10 @@
         }
       },
       {
-        "name": "ozbridge_run_cloud",
-        "displayName": "Run OzBridge Oz agent (cloud)",
-        "toolReferenceName": "ozBridgeRunCloud",
-        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS — always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `ozbridge_get_run`.",
+        "name": "oz_run_cloud",
+        "displayName": "Run Warp Oz agent (cloud)",
+        "toolReferenceName": "ozRunCloud",
+        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS \u2014 always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `oz_get_run`.",
         "userDescription": "Let Copilot launch cloud Warp Oz runs (with explicit confirmation to consume credits).",
         "canBeReferencedInPrompt": true,
         "icon": "$(cloud)",
@@ -175,10 +175,10 @@
         }
       },
       {
-        "name": "ozbridge_get_run",
-        "displayName": "Get OzBridge Oz run",
-        "toolReferenceName": "ozBridgeGetRun",
-        "modelDescription": "Fetches the status and output of a Warp Oz run by its id. Read-only; safe to invoke without confirmation. Use it after `ozbridge_run_cloud` with `wait: false`, or when the user references a run id.",
+        "name": "oz_get_run",
+        "displayName": "Get Warp Oz run",
+        "toolReferenceName": "ozGetRun",
+        "modelDescription": "Fetches the status and output of a Warp Oz run by its id. Read-only; safe to invoke without confirmation. Use it after `oz_run_cloud` with `wait: false`, or when the user references a run id.",
         "userDescription": "Look up a Warp Oz run by id.",
         "canBeReferencedInPrompt": true,
         "icon": "$(search)",
@@ -195,15 +195,15 @@
           "properties": {
             "runId": {
               "type": "string",
-              "description": "Warp run identifier (as returned by `ozbridge_run_cloud`, `ozbridge_list_runs`, or the Warp UI)."
+              "description": "Warp run identifier (as returned by `oz_run_cloud`, `oz_list_runs`, or the Warp UI)."
             }
           }
         }
       },
       {
-        "name": "ozbridge_list_runs",
-        "displayName": "List OzBridge Oz runs",
-        "toolReferenceName": "ozBridgeListRuns",
+        "name": "oz_list_runs",
+        "displayName": "List Warp Oz runs",
+        "toolReferenceName": "ozListRuns",
         "modelDescription": "Lists recent Warp Oz runs. Supports filters: `all` (default), `active` (QUEUED + INPROGRESS), `completed` (SUCCEEDED + FAILED), or a specific `OzRunStatus` value. Read-only.",
         "userDescription": "List recent Warp Oz runs with an optional status filter.",
         "canBeReferencedInPrompt": true,
@@ -248,7 +248,7 @@
       ]
     },
     "views": {
-        "ozBridgeSidebar": [
+      "ozBridgeSidebar": [
         {
           "id": "ozBridge.runsView",
           "name": "Runs & Resources",
@@ -512,6 +512,11 @@
           "default": 300000,
           "description": "Timeout for local agent runs (ms, default 5 min)"
         },
+        "ozBridge.idleTimeoutMs": {
+          "type": "number",
+          "default": 90000,
+          "description": "Idle timeout for the Oz CLI subprocess (ms). Aborts the run if no stdout/stderr is received for this long \u2014 prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to 0 to disable. Default 90 s."
+        },
         "ozBridge.maxOutputChars": {
           "type": "number",
           "default": 15000,
@@ -583,7 +588,7 @@
               "markdown": "media/walkthrough/first-agent.md"
             },
             "completionEvents": [
-              "onChatParticipant:oz-bridge.ozbridge"
+              "onChatParticipant:ozbridge.oz"
             ]
           },
           {
@@ -623,17 +628,17 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "package": "npx @vscode/vsce package --no-dependencies -o warp-vsc-bridge.vsix"
+    "package": "npx @vscode/vsce package --no-dependencies -o ozbridge.vsix"
   },
   "dependencies": {
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
   },
   "devDependencies": {
-    "@types/node": "^20.11.0",
-    "@types/vscode": "^1.96.0",
-    "@vitest/coverage-v8": "^4.0.18",
+    "@types/node": "^25.6.0",
+    "@types/vscode": "^1.116.0",
+    "@vitest/coverage-v8": "^4.1.5",
     "esbuild": "^0.28.0",
-    "typescript": "^5.7.0",
+    "typescript": "^6.0.3",
     "vitest": "^4.0.18"
   }
 }

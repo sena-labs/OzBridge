@@ -8,7 +8,7 @@ import {
 import { errorResult, renderRunResult, textResult } from './baseTool.js';
 
 /**
- * Input schema for `ozbridge_run_cloud`.
+ * Input schema for `oz_run_cloud`.
  *
  * Must stay in sync with `contributes.languageModelTools[].inputSchema`
  * in `package.json` (keys, types, `required` flags).
@@ -35,7 +35,7 @@ export interface RunCloudInput {
  * - If `wait` is `false`, returns immediately with the submitted run ID.
  */
 export class RunCloudTool implements vscode.LanguageModelTool<RunCloudInput> {
-  static readonly name = 'ozbridge_run_cloud';
+  static readonly name = 'oz_run_cloud';
 
   constructor(
     private readonly cli: IOzCliService,
@@ -146,7 +146,7 @@ export class RunCloudTool implements vscode.LanguageModelTool<RunCloudInput> {
       return textResult(
         result.runId
           ? `☁️ **Cloud run submitted** — Run ID: \`${result.runId}\`\n\n` +
-            'Call `ozbridge_get_run` with this ID to retrieve status later.'
+            'Call `oz_get_run` with this ID to retrieve status later.'
           : renderRunResult(result, config.maxOutputChars),
       );
     } catch (err) {

@@ -14,7 +14,7 @@ A clear and concise description of the bug.
 
 1. Open VS Code
 2. Open the Chat panel
-3. Type `@warp /...`
+3. Type `@oz /...`
 4. Observe the error
 
 ## Expected Behavior
@@ -36,10 +36,10 @@ What actually happened. Include error messages or screenshots if applicable.
 ## Logs
 
 <details>
-<summary>Output from "Warp Bridge" channel</summary>
+<summary>Output from "OzBridge" channel</summary>
 
 ```text
-<!-- Paste logs from Output panel → "Warp Bridge" here -->
+<!-- Paste logs from Output panel → "OzBridge" here -->
 ```
 
 </details>

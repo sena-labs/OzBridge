@@ -15,7 +15,7 @@ beforeEach(() => {
 
 describe('ListRunsTool.name', () => {
   it('matches the manifest entry', () => {
-    expect(ListRunsTool.name).toBe('ozbridge_list_runs');
+    expect(ListRunsTool.name).toBe('oz_list_runs');
   });
 });
 

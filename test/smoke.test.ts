@@ -55,7 +55,7 @@ describe('Smoke test — extension lifecycle', () => {
   it('dovrebbe registrare il Chat Participant durante activate()', () => {
     activate(createMockExtensionContext() as any);
     expect(chat.createChatParticipant).toHaveBeenCalledWith(
-      'oz-bridge.ozbridge',
+      'ozbridge.oz',
       expect.any(Function),
     );
   });

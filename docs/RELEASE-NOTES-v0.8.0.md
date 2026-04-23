@@ -1,4 +1,4 @@
-# Warp Bridge for VS Code — v0.8.0 release notes
+# OzBridge for VS Code — v0.8.0 release notes
 
 **Date:** 2026-04-20  
 **Codename:** *Observability*
@@ -63,9 +63,9 @@ exported for unit testing.
 
 | Command id                      | Title                          |
 | ------------------------------- | ------------------------------ |
-| `warpBridge.dashboard.open`     | Warp: Open Dashboard           |
-| `warpBridge.triageFailure`      | Warp: Triage Failed Run…       |
-| `warpBridge.exportDataset`      | Warp: Export Run Dataset…      |
+| `ozBridge.dashboard.open`     | Warp: Open Dashboard           |
+| `ozBridge.triageFailure`      | Warp: Triage Failed Run…       |
+| `ozBridge.exportDataset`      | Warp: Export Run Dataset…      |
 
 ## Quality gates
 

@@ -9,7 +9,7 @@ import { OzCliService } from './services/ozCliService.js';
 import { RunPoller } from './services/runPoller.js';
 import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
-import { registerOzBridgeTools } from './tools/index.js';
+import { registerWarpTools } from './tools/index.js';
 import { StatusBarManager } from './ui/statusBarItem.js';
 import { OzRunsTreeProvider } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
@@ -35,7 +35,7 @@ import { getErrorMessage } from './utils/error.js';
  * Entry point of the OzBridge extension.
  *
  * Initialises all core services ({@link ConfigManager}, {@link OzCliService},
- * {@link ContextCollector}, {@link RunPoller}), registers the `@ozbridge` Chat
+ * {@link ContextCollector}, {@link RunPoller}), registers the `@oz` Chat
  * Participant, and starts the Oz CLI availability check in the background.
  *
  * @param context - VS Code extension context for subscriptions and lifecycle.
@@ -53,13 +53,13 @@ const state: {
 } = {};
 
 /** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
-const EXTENSION_VERSION = '1.0.0';
+const EXTENSION_VERSION = '1.1.0';
 
 export function activate(context: vscode.ExtensionContext): void {
   // Startup log
   const outputChannel = vscode.window.createOutputChannel('OzBridge');
   context.subscriptions.push(outputChannel);
-  initLogger(outputChannel, '[ozbridge]');
+  initLogger(outputChannel, '[warp-vsc-bridge]');
 
   // ── Kill-switch (v1.0 deliverable T) ──────────────────────────────
   // Operator escape hatch for emergencies (critical regression in
@@ -116,15 +116,15 @@ export function activate(context: vscode.ExtensionContext): void {
   registerChatParticipant(context, cli, ctx, state.configManager, state.runPoller, state.tracker);
 
   // Registra Language Model Tools — Agent-Native integration.
-  // Questi tool permettono a Copilot Agent mode di invocare Oz senza @ozbridge.
+  // Questi tool permettono a Copilot Agent mode di invocare Oz senza @oz.
   // Il runtime di VS Code < 1.96 (`vscode.lm` assente) è gestito con graceful fallback.
   if (typeof vscode.lm?.registerTool === 'function') {
-    registerOzBridgeTools(context, cli, state.configManager, ctx, state.runPoller);
+    registerWarpTools(context, cli, state.configManager, ctx, state.runPoller);
   } else {
     logInfo('vscode.lm.registerTool not available — Language Model Tools not registered');
   }
 
-  // Status Bar indicator $(cloud) OzBridge: N active
+  // Status Bar indicator $(cloud) Warp: N active
   const statusBar = new StatusBarManager(state.tracker);
   context.subscriptions.push(statusBar);
 
@@ -193,7 +193,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const triage = new FailureTriageService(cli, lmClient);
       try {
         const suggestion = await vscode.window.withProgress(
-          { location: vscode.ProgressLocation.Notification, title: vscode.l10n.t('OzBridge: triaging {0}…', id), cancellable: true },
+          { location: vscode.ProgressLocation.Notification, title: vscode.l10n.t('Warp: triaging {0}…', id), cancellable: true },
           (_progress, token) => triage.triage(id, token),
         );
         const doc = await vscode.workspace.openTextDocument({
@@ -212,7 +212,7 @@ export function activate(context: vscode.ExtensionContext): void {
       } catch (err) {
         const message = getErrorMessage(err);
         logError(`Triage failed: ${message}`);
-        await vscode.window.showErrorMessage(vscode.l10n.t('OzBridge: triage failed: {0}', message));
+        await vscode.window.showErrorMessage(vscode.l10n.t('Warp triage failed: {0}', message));
       }
     }),
   );
@@ -241,7 +241,7 @@ export function activate(context: vscode.ExtensionContext): void {
       } catch (err) {
         const message = getErrorMessage(err);
         logError(`Dataset export failed: ${message}`);
-        await vscode.window.showErrorMessage(vscode.l10n.t('OzBridge: dataset export failed: {0}', message));
+        await vscode.window.showErrorMessage(vscode.l10n.t('Warp dataset export failed: {0}', message));
       }
     }),
   );
@@ -311,7 +311,7 @@ export function activate(context: vscode.ExtensionContext): void {
       logInfo('WARNING: Oz CLI not found in PATH');
       const installLabel = vscode.l10n.t('Install Warp');
       Promise.resolve(vscode.window.showWarningMessage(
-        vscode.l10n.t('OzBridge: Oz CLI not found. Install Warp to use @ozbridge in chat.'),
+        vscode.l10n.t('OzBridge: Oz CLI not found. Install Warp to use @oz in chat.'),
         installLabel,
       )).then((action) => {
         if (action === installLabel) {

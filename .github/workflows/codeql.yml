@@ -36,27 +36,59 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Check Code Scanning availability
+        id: code_scanning
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          http_code=$(curl -sS \
+            -o /tmp/code-scanning-response.json \
+            -w '%{http_code}' \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?per_page=1")
+
+          if [ "${http_code}" = "200" ]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo 'enabled=false' >> "$GITHUB_OUTPUT"
+          echo "::warning::Code Scanning API unavailable for ${GITHUB_REPOSITORY} (HTTP ${http_code}). Skipping CodeQL analyze/upload to avoid a false failing check."
+          cat /tmp/code-scanning-response.json || true
 
       - name: Setup Node.js 22
-        uses: actions/setup-node@v4
+        if: steps.code_scanning.outputs.enabled == 'true'
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: npm
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        if: steps.code_scanning.outputs.enabled == 'true'
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           queries: +security-extended,security-and-quality
 
       - name: Install dependencies
+        if: steps.code_scanning.outputs.enabled == 'true'
         run: npm ci
 
       - name: Build extension
+        if: steps.code_scanning.outputs.enabled == 'true'
         run: npm run build
 
       - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v3
+        if: steps.code_scanning.outputs.enabled == 'true'
+        uses: github/codeql-action/analyze@v4
         with:
           category: '/language:${{ matrix.language }}'
+
+      - name: Skip notice (Code Scanning disabled)
+        if: steps.code_scanning.outputs.enabled != 'true'
+        run: |
+          echo 'Code scanning is disabled for this repository; CodeQL scan/upload skipped by workflow guard.'

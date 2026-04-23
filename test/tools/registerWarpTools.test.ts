@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as vscodeMock from '../mocks/vscode.js';
-import { registerOzBridgeTools, RunLocalTool, RunCloudTool, GetRunTool, ListRunsTool } from '../../src/tools/index.js';
+import { registerWarpTools, RunLocalTool, RunCloudTool, GetRunTool, ListRunsTool } from '../../src/tools/index.js';
 import {
   createMockCli,
   createMockConfigManager,
@@ -17,11 +17,11 @@ beforeEach(() => {
   vscodeMock.lm.registerTool.mockClear();
 });
 
-describe('registerOzBridgeTools()', () => {
+describe('registerWarpTools()', () => {
   it('registers the 4 Warp tools under their public names', () => {
     const ctx = makeContext();
-    registerOzBridgeTools(
-      ctx as unknown as Parameters<typeof registerOzBridgeTools>[0],
+    registerWarpTools(
+      ctx as unknown as Parameters<typeof registerWarpTools>[0],
       createMockCli(),
       createMockConfigManager(),
       createMockContextCollector(),
@@ -29,16 +29,16 @@ describe('registerOzBridgeTools()', () => {
     );
 
     expect(vscodeMock.lm.registerTool).toHaveBeenCalledTimes(4);
-    expect(vscodeMock.lm._getTool('ozbridge_run_local')).toBeInstanceOf(RunLocalTool);
-    expect(vscodeMock.lm._getTool('ozbridge_run_cloud')).toBeInstanceOf(RunCloudTool);
-    expect(vscodeMock.lm._getTool('ozbridge_get_run')).toBeInstanceOf(GetRunTool);
-    expect(vscodeMock.lm._getTool('ozbridge_list_runs')).toBeInstanceOf(ListRunsTool);
+    expect(vscodeMock.lm._getTool('oz_run_local')).toBeInstanceOf(RunLocalTool);
+    expect(vscodeMock.lm._getTool('oz_run_cloud')).toBeInstanceOf(RunCloudTool);
+    expect(vscodeMock.lm._getTool('oz_get_run')).toBeInstanceOf(GetRunTool);
+    expect(vscodeMock.lm._getTool('oz_list_runs')).toBeInstanceOf(ListRunsTool);
   });
 
   it('pushes one disposable per tool into context.subscriptions', () => {
     const ctx = makeContext();
-    registerOzBridgeTools(
-      ctx as unknown as Parameters<typeof registerOzBridgeTools>[0],
+    registerWarpTools(
+      ctx as unknown as Parameters<typeof registerWarpTools>[0],
       createMockCli(),
       createMockConfigManager(),
       createMockContextCollector(),

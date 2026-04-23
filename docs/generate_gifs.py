@@ -465,7 +465,7 @@ def gif_06_first_config():
             d.text((64, y - 2), "W", fill=BG, font=FONT_UI_SM)
 
             resp_lines = [
-                ("⚙️  Configurazione Warp Bridge", WHITE, FONT_UI_B),
+                ("⚙️  Configurazione OzBridge", WHITE, FONT_UI_B),
                 ("━━━━━━━━━━━━━━━━━━━━━━━━━━━", DIM, FONT_UI_SM),
                 ("✅ Disponibile — versione: unknown", GREEN, FONT_UI),
                 ("Modello: auto", GRAY, FONT_UI),
@@ -615,9 +615,9 @@ def gif_08_init():
 
 
 def gif_09_settings():
-    """VS Code Settings panel — warpBridge search and edit."""
+    """VS Code Settings panel — ozBridge search and edit."""
     frames = []
-    search = "warpBridge"
+    search = "ozBridge"
 
     for i in range(18):
         img = new_frame()
@@ -638,10 +638,10 @@ def gif_09_settings():
         # Settings entries appear
         if i >= 5:
             settings_data = [
-                ("warpBridge.ozPath", "oz", "Percorso del CLI Oz"),
-                ("warpBridge.defaultModel", "auto", "Modello AI predefinito"),
-                ("warpBridge.timeoutMs", "300000", "Timeout per esecuzioni locali"),
-                ("warpBridge.maxOutputChars", "5000", "Max caratteri output in chat"),
+                ("ozBridge.ozPath", "oz", "Percorso del CLI Oz"),
+                ("ozBridge.defaultModel", "auto", "Modello AI predefinito"),
+                ("ozBridge.timeoutMs", "300000", "Timeout per esecuzioni locali"),
+                ("ozBridge.maxOutputChars", "5000", "Max caratteri output in chat"),
             ]
             sy = 110
             visible = min(len(settings_data), (i - 5) + 1)

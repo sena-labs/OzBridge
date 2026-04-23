@@ -8,7 +8,7 @@ const PKG = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
 describe('Publishing readiness (deliverable M)', () => {
   it('declares every mandatory publisher/marketplace field', () => {
     expect(PKG.publisher).toBe('sena-labs');
-    expect(PKG.name).toBe('oz-bridge');
+    expect(PKG.name).toBe('ozbridge');
     expect(typeof PKG.displayName).toBe('string');
     expect(typeof PKG.description).toBe('string');
     expect(PKG.license).toBe('MIT');
@@ -74,6 +74,6 @@ describe('Publishing readiness (deliverable M)', () => {
     const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
     expect(readme).toMatch(/marketplace\.visualstudio\.com/i);
     expect(readme).toMatch(/open-vsx\.org/i);
-    expect(readme).toMatch(/sena-labs\.oz-bridge/);
+    expect(readme).toMatch(/sena-labs\.ozbridge/);
   });
 });

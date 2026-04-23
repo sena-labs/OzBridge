@@ -8,9 +8,9 @@ import { SKILL_TEMPLATES, SkillTemplate } from '../scaffold/skillTemplates.js';
  * Creates the `/init` v2 slash-command handler.
  *
  * Two entry points with back-compat semantics:
- * - `@warp /init`       → interactive QuickPick, per-file overwrite
+ * - `@oz /init`       → interactive QuickPick, per-file overwrite
  *                         confirmation. User friendly default.
- * - `@warp /init all`   → legacy bulk scaffold; never overwrites
+ * - `@oz /init all`   → legacy bulk scaffold; never overwrites
  *                         existing files (same behaviour as v0.2.0).
  *
  * Files are always written atomically (`.tmp` + `fs.renameSync`) so

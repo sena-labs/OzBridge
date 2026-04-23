@@ -35,7 +35,7 @@ export type { ListRunsInput } from './listRunsTool.js';
  * @param ctx      IDE context collector (workspace, file, selection, diagnostics).
  * @param poller   Cloud run poller with exponential backoff.
  */
-export function registerOzBridgeTools(
+export function registerWarpTools(
   context: vscode.ExtensionContext,
   cli: IOzCliService,
   cfgMgr: IConfigManager,

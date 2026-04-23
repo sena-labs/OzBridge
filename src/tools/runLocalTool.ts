@@ -3,7 +3,7 @@ import { IOzCliService, IConfigManager, IContextCollector } from '../types/index
 import { errorResult, renderRunResult, textResult } from './baseTool.js';
 
 /**
- * Input schema for `ozbridge_run_local`.
+ * Input schema for `oz_run_local`.
  *
  * Must stay in sync with `contributes.languageModelTools[].inputSchema`
  * in `package.json` (keys, types, `required` flags).
@@ -25,7 +25,7 @@ export interface RunLocalInput {
  * via `includeIdeContext: false`.
  */
 export class RunLocalTool implements vscode.LanguageModelTool<RunLocalInput> {
-  static readonly name = 'ozbridge_run_local';
+  static readonly name = 'oz_run_local';
 
   constructor(
     private readonly cli: IOzCliService,

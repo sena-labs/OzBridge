@@ -104,7 +104,7 @@ function buildTooltip(runs: ReadonlyArray<TrackedRun>): vscode.MarkdownString {
     }
   }
 
-  md.appendMarkdown('\n\nClick to focus the OzBridge sidebar.');
+  md.appendMarkdown('\n\nClick to focus the Warp sidebar.');
   return md;
 }
 

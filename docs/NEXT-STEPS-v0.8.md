@@ -52,7 +52,7 @@ Branch: **`feat/v0.8-dashboard`**
    step (CHANGELOG entry under `[Unreleased]`).
 2. Add `media/dashboard/` assets (no charting lib — vanilla SVG).
 3. Implement `src/ui/dashboardPanel.ts` with strict CSP + nonce.
-4. Register command `warpBridge.dashboard.open` in `package.json`.
+4. Register command `ozBridge.dashboard.open` in `package.json`.
 5. Tests: **≥ 10** new (panel lifecycle, message protocol, export).
 6. Validate, PR, merge.
 
@@ -62,7 +62,7 @@ Branch: **`feat/v0.8-failure-triage`**
 
 1. Implement `extractStackTrace` as a pure module function.
 2. Implement `FailureTriageService.analyse()` with `vscode.lm` fallback.
-3. Register command `warpBridge.triageLastFailure`.
+3. Register command `ozBridge.triageLastFailure`.
 4. Tests: **≥ 10** new (extractor edge cases, mocked `vscode.lm`).
 5. Validate, PR, merge.
 

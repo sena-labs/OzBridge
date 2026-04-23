@@ -28,7 +28,7 @@ export type { DiagnosticEntry, ContextPayload, SlashCommandHandler };
 // ============================================================================
 
 /** Extension settings read from `vscode.workspace.getConfiguration('ozBridge')`. */
-export interface OzBridgeConfig extends BridgeConfig {
+export interface WarpBridgeConfig extends BridgeConfig {
   /** Path to the `oz` CLI executable. */
   ozPath: string;
   /** Default AI model for agent runs (`'auto'` = CLI decides). */
@@ -41,6 +41,14 @@ export interface OzBridgeConfig extends BridgeConfig {
   cloudPollingIntervalMs: number;
   /** Maximum total polling duration for cloud runs, in milliseconds. */
   cloudPollingTimeoutMs: number;
+  /**
+   * Idle timeout for the local Oz CLI subprocess (ms). When no
+   * stdout/stderr data is received for this long the process is
+   * killed and a `STALLED` error is raised so the user sees an
+   * actionable message immediately instead of waiting for
+   * `timeoutMs`. Set to `0` to disable. Default 90s.
+   */
+  idleTimeoutMs: number;
   /** Whether to auto-start the embedded MCP server at activation. */
   mcpEnabled: boolean;
   /** Port the MCP server listens on when enabled. */
@@ -52,7 +60,7 @@ export interface OzBridgeConfig extends BridgeConfig {
 }
 
 // IMPL: valori di default allineati con package.json contributes.configuration
-export const DEFAULT_CONFIG: OzBridgeConfig = {
+export const DEFAULT_CONFIG: WarpBridgeConfig = {
   ozPath: 'oz',
   defaultModel: 'auto',
   defaultProfile: 'Default',
@@ -60,6 +68,7 @@ export const DEFAULT_CONFIG: OzBridgeConfig = {
   cloudPollingIntervalMs: 5_000,
   cloudPollingTimeoutMs: 1_800_000,
   timeoutMs: 300_000,
+  idleTimeoutMs: 90_000,
   maxOutputChars: 15_000,
   mcpEnabled: false,
   mcpPort: 3847,
@@ -221,9 +230,9 @@ export interface IOzCliService {
 /** Reactive wrapper around VS Code extension settings with caching and change events. */
 export interface IConfigManager {
   /** Returns the current configuration snapshot (cached until next change). */
-  getConfig(): OzBridgeConfig;
+  getConfig(): WarpBridgeConfig;
   /** Fires when `ozBridge.*` settings change, with the new configuration. */
-  onConfigChanged: vscode.Event<OzBridgeConfig>;
+  onConfigChanged: vscode.Event<WarpBridgeConfig>;
   /** Disposes the configuration change listener. */
   dispose(): void;
 }

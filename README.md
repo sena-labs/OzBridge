@@ -1,11 +1,11 @@
 # OzBridge for VS Code
 
-[![Build](https://github.com/sena-labs.oz-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs.oz-bridge/actions/workflows/ci.yml)
+[![Build](https://github.com/sena-labs/warp-vsc-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/warp-vsc-bridge/actions/workflows/ci.yml)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Run **Warp Oz agents** directly from VS Code Copilot Chat — either via the
-`@ozbridge` **Chat Participant** or through **Agent-Native Language Model Tools**
+`@oz` **Chat Participant** or through **Agent-Native Language Model Tools**
 that Copilot Agent mode can invoke autonomously.
 
 ![OzBridge screenshot](media/screenshot.png)
@@ -18,7 +18,7 @@ that Copilot Agent mode can invoke autonomously.
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Chat Participant (`@ozbridge`)](#chat-participant-warp)
+  - [Chat Participant (`@oz`)](#chat-participant-warp)
   - [Slash Commands](#slash-commands)
   - [Agent Mode — Language Model Tools](#agent-mode--language-model-tools)
 - [Configuration](#configuration)
@@ -33,10 +33,10 @@ that Copilot Agent mode can invoke autonomously.
 
 ## Features
 
-- **`@ozbridge` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel.
-- **Agent-Native Language Model Tools** — Copilot Agent mode can invoke Warp Oz directly, without typing `@ozbridge`.
+- **`@oz` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel.
+- **Agent-Native Language Model Tools** — Copilot Agent mode can invoke Warp Oz directly, without typing `@oz`.
 - **Warp sidebar + status bar** — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
-- **Context variables & Warp handoff** — inline `#ozbridge.env`, `#ozbridge.profile`, `#ozbridge.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
+- **Context variables & Warp handoff** — inline `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
 - **MCP server export** (opt-in) — OzBridge can expose its Oz tools as a Model Context Protocol server over HTTP+SSE so Claude Code, Cursor and Codex can drive Oz too. See [`docs/MCP.md`](docs/MCP.md).
 - **Per-workspace config** — optional `.warp/warp-bridge.yaml` committed to the repo overrides `ozBridge.*` settings for everyone who opens the project. Precedence: YAML > VS Code settings > defaults. Secrets like `mcpBearerToken` and platform-specific `ozPath` are deliberately excluded.
 - **9 slash commands** covering the full agent workflow: `/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`.
@@ -49,10 +49,10 @@ that Copilot Agent mode can invoke autonomously.
 
 ## Requirements
 
-- **VS Code** ≥ 1.96.0 (the `@ozbridge` participant requires the stable Chat Participant API; LM Tools additionally require `vscode.lm.registerTool`).
+- **VS Code** ≥ 1.96.0 (the `@oz` participant requires the stable Chat Participant API; LM Tools additionally require `vscode.lm.registerTool`).
 - **[Warp Terminal](https://www.warp.dev/)** installed, with the `oz` CLI accessible in `PATH`.
 - A **Warp account**, signed in via `oz login`.
-- **GitHub Copilot Chat** extension (optional but required to actually invoke `@ozbridge` or use Agent mode tools).
+- **GitHub Copilot Chat** extension (optional but required to actually invoke `@oz` or use Agent mode tools).
 
 ## Installation
 
@@ -65,20 +65,20 @@ every tagged release.
 marketplace access):
 
 ```bash
-code --install-extension sena-labs.oz-bridge
+code --install-extension sena-labs.ozbridge
 ```
 
 **Open VSX** (VSCodium, Gitpod, Theia, Cursor with Open VSX mirror):
 
 ```bash
-codium --install-extension sena-labs.oz-bridge
+codium --install-extension sena-labs.ozbridge
 # or, inside the editor GUI, search for "OzBridge" on open-vsx.org
 ```
 
 Direct links:
 
-- Marketplace — <https://marketplace.visualstudio.com/items?itemName=sena-labs.oz-bridge>
-- Open VSX — <https://open-vsx.org/extension/sena-labs.oz-bridge>
+- Marketplace — <https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge>
+- Open VSX — <https://open-vsx.org/extension/sena-labs/warp-vsc-bridge>
 
 ### From VSIX (local)
 
@@ -86,12 +86,12 @@ Direct links:
 
 1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS).
 2. Type **"Extensions: Install from VSIX…"**.
-3. Select the `oz-bridge.vsix` file.
+3. Select the `warp-vsc-bridge.vsix` file.
 
 **Option B — CLI:**
 
 ```bash
-code --install-extension oz-bridge.vsix
+code --install-extension warp-vsc-bridge.vsix
 ```
 
 > **Note:** on Windows `code` may not be in your `PATH`. Use the full path or
@@ -100,8 +100,8 @@ code --install-extension oz-bridge.vsix
 ### From source
 
 ```bash
-git clone https://github.com/sena-labs.oz-bridge.git
-cd OzBridge
+git clone https://github.com/sena-labs/warp-vsc-bridge.git
+cd warp-vsc-bridge
 npm install
 npm run build
 ```
@@ -112,19 +112,19 @@ built extension loaded.
 ### Verify the installation
 
 1. Open the Copilot Chat panel (`Ctrl+Shift+I` / `Cmd+Shift+I`).
-2. Type `@ozbridge /config` and submit.
+2. Type `@oz /config` and submit.
 3. The panel should show a table with the current configuration and the
    detected Oz CLI path. If the CLI is missing you will see an *"Install
    Warp"* action button that opens the download page.
 
 ## Usage
 
-### Chat Participant (`@ozbridge`)
+### Chat Participant (`@oz`)
 
-Open the Copilot Chat panel and type `@ozbridge` followed by your request:
+Open the Copilot Chat panel and type `@oz` followed by your request:
 
 ```text
-@ozbridge fix the failing test in src/auth/login.ts
+@oz fix the failing test in src/auth/login.ts
 ```
 
 The extension injects an IDE context block (workspace path, active file,
@@ -135,15 +135,15 @@ stream back as markdown with action buttons (e.g. *Retry*, *Open run*).
 
 | Command | Description | Example |
 | --- | --- | --- |
-| `/run` | Run an Oz agent locally in the workspace | `@ozbridge /run refactor this function` |
-| `/cloud` | Run an Oz agent in the cloud (credits) | `@ozbridge /cloud deploy to staging` |
-| `/status` | Show **active** runs (`QUEUED` / `INPROGRESS`) or detail by ID | `@ozbridge /status` or `@ozbridge /status <runId>` |
-| `/history` | Show **completed** runs (`SUCCEEDED` / `FAILED`) with optional filter | `@ozbridge /history`, `@ozbridge /history succeeded`, `@ozbridge /history <runId>` |
-| `/schedule` | Create and manage scheduled runs | `@ozbridge /schedule create daily "0 9 * * *" "Run linting"` |
-| `/models` | List available AI models | `@ozbridge /models` |
-| `/mcp` | List configured MCP servers | `@ozbridge /mcp` |
-| `/config` | Show current configuration | `@ozbridge /config` |
-| `/init` | Scaffold Warp Skills and Rules files | `@ozbridge /init` |
+| `/run` | Run an Oz agent locally in the workspace | `@oz /run refactor this function` |
+| `/cloud` | Run an Oz agent in the cloud (credits) | `@oz /cloud deploy to staging` |
+| `/status` | Show **active** runs (`QUEUED` / `INPROGRESS`) or detail by ID | `@oz /status` or `@oz /status <runId>` |
+| `/history` | Show **completed** runs (`SUCCEEDED` / `FAILED`) with optional filter | `@oz /history`, `@oz /history succeeded`, `@oz /history <runId>` |
+| `/schedule` | Create and manage scheduled runs | `@oz /schedule create daily "0 9 * * *" "Run linting"` |
+| `/models` | List available AI models | `@oz /models` |
+| `/mcp` | List configured MCP servers | `@oz /mcp` |
+| `/config` | Show current configuration | `@oz /config` |
+| `/init` | Scaffold Warp Skills and Rules files | `@oz /init` |
 
 #### `/history` filters
 
@@ -168,27 +168,27 @@ stream back as markdown with action buttons (e.g. *Retry*, *Open run*).
 
 In **GitHub Copilot Chat Agent mode**, Copilot can call Warp Oz directly
 through registered Language Model Tools — you don't need to prefix your
-request with `@ozbridge`. Copilot selects the right tool based on the prompt
+request with `@oz`. Copilot selects the right tool based on the prompt
 and its declared `modelDescription`.
 
 | Tool | Reference | Behaviour |
 | --- | --- | --- |
-| `ozbridge_run_local` | `#ozBridgeRunLocal` | Runs a local Oz agent in the current workspace. Injects IDE context by default (`includeIdeContext: false` to opt out). |
-| `ozbridge_run_cloud` | `#ozBridgeRunCloud` | Launches a **cloud** Oz agent. Shows a confirmation dialog before consuming Warp credits. Polls to terminal state by default (`wait: false` returns immediately with the run id). |
-| `ozbridge_get_run` | `#ozBridgeGetRun` | Fetches status + output of a specific run by id. Read-only. |
-| `ozbridge_list_runs` | `#ozBridgeListRuns` | Lists recent runs with a status filter (`all`, `active`, `completed`, or a raw `OzRunStatus`) and optional `limit`. Read-only. |
+| `oz_run_local` | `#ozRunLocal` | Runs a local Oz agent in the current workspace. Injects IDE context by default (`includeIdeContext: false` to opt out). |
+| `oz_run_cloud` | `#ozRunCloud` | Launches a **cloud** Oz agent. Shows a confirmation dialog before consuming Warp credits. Polls to terminal state by default (`wait: false` returns immediately with the run id). |
+| `oz_get_run` | `#ozGetRun` | Fetches status + output of a specific run by id. Read-only. |
+| `oz_list_runs` | `#ozListRuns` | Lists recent runs with a status filter (`all`, `active`, `completed`, or a raw `OzRunStatus`) and optional `limit`. Read-only. |
 
 Examples:
 
 ```text
-# Agent mode picks ozbridge_run_local automatically:
+# Agent mode picks oz_run_local automatically:
 Run the unit tests locally via Oz.
 
 # Explicit tool reference (prefix with #):
-Run this refactor on cloud: #ozBridgeRunCloud refactor src/auth to hexagonal architecture
+Run this refactor on cloud: #ozRunCloud refactor src/auth to hexagonal architecture
 
 # Query a previous run:
-Check run #ozBridgeGetRun for run id run-abc123.
+Check run #ozGetRun for run id run-abc123.
 ```
 
 Each tool is declared in `package.json` under
@@ -221,23 +221,23 @@ OzBridge sidebar.
 
 ### Prompt variables
 
-Inside any `@ozbridge /run …` or `@ozbridge /cloud …` prompt you can embed a small
+Inside any `@oz /run …` or `@oz /cloud …` prompt you can embed a small
 set of tokens that the extension resolves **locally** before sending the
 prompt to the Oz CLI. Unknown tokens (e.g. `#some.other`) are passed
 through unchanged.
 
 | Token | Expands to |
 | --- | --- |
-| `#ozbridge.env` | Value of `ozBridge.defaultEnvironment` (or `(no default environment)` when empty). |
-| `#ozbridge.profile` | Value of `ozBridge.defaultProfile`. |
-| `#ozbridge.model` | Value of `ozBridge.defaultModel`. |
+| `#warp.env` | Value of `ozBridge.defaultEnvironment` (or `(no default environment)` when empty). |
+| `#warp.profile` | Value of `ozBridge.defaultProfile`. |
+| `#warp.model` | Value of `ozBridge.defaultModel`. |
 | `#oz.history` | Markdown table of the last 10 runs from `oz run list`. |
 | `#oz.run/<id>` | Fenced JSON payload from `oz run get <id>` (truncated at 2 000 chars). |
 
 Example:
 
 ```text
-@ozbridge /cloud deploy branch #ozbridge.env profile=#ozbridge.profile given the last runs:\n#oz.history
+@oz /cloud deploy branch #warp.env profile=#warp.profile given the last runs:\n#oz.history
 ```
 
 ### Hand off to Warp
@@ -334,10 +334,10 @@ src/
 │   └── {9 command files}   — One handler per /command
 ├── tools/
 │   ├── baseTool.ts         — Shared helpers (textResult, errorResult)
-│   ├── runLocalTool.ts     — ozbridge_run_local
-│   ├── runCloudTool.ts     — ozbridge_run_cloud (with confirmation)
-│   ├── getRunTool.ts       — ozbridge_get_run
-│   ├── listRunsTool.ts     — ozbridge_list_runs
+│   ├── runLocalTool.ts     — oz_run_local
+│   ├── runCloudTool.ts     — oz_run_cloud (with confirmation)
+│   ├── getRunTool.ts       — oz_get_run
+│   ├── listRunsTool.ts     — oz_list_runs
 │   └── index.ts            — registerWarpTools()
 ├── participant/
 │   ├── handler.ts          — Chat Participant registration
@@ -347,8 +347,8 @@ src/
 
 ### Data flow
 
-1. User types `@ozbridge /run implement auth` in Copilot Chat.
-2. VS Code dispatches the request to the `@ozbridge` Chat Participant.
+1. User types `@oz /run implement auth` in Copilot Chat.
+2. VS Code dispatches the request to the `@oz` Chat Participant.
 3. `CommandRouter` maps `/run` to the `createRunCommand` handler.
 4. Handler calls `ContextCollector.gather()` for IDE context.
 5. Handler calls `OzCliService.agentRun()`, which spawns `oz` as a child process.
@@ -428,7 +428,7 @@ where oz   # Windows (PowerShell)
 ```
 
 If `oz` is in `PATH` but the extension still reports it as unavailable,
-type `@ozbridge /config` in the Copilot Chat panel — this triggers extension
+type `@oz /config` in the Copilot Chat panel — this triggers extension
 activation and the first CLI check. You can also set an explicit path in
 **Settings → Extensions → OzBridge → Oz Path**.
 
@@ -446,12 +446,12 @@ timeout controlled by `cloudPollingTimeoutMs`.
 
 ### Extension not activating
 
-The extension activates only when the `@ozbridge` participant is invoked in
+The extension activates only when the `@oz` participant is invoked in
 Copilot Chat (or when Copilot Agent mode calls one of the LM Tools).
 To activate it manually:
 
 1. Open the Chat panel (`Ctrl+Shift+I`).
-2. Type `@ozbridge` followed by any command (e.g. `@ozbridge /config`).
+2. Type `@oz` followed by any command (e.g. `@oz /config`).
 
 Make sure you have **VS Code ≥ 1.96.0** and the **GitHub Copilot Chat**
 extension installed and signed in.
@@ -480,7 +480,7 @@ OS, VS Code version, extension version and steps to reproduce.
 
 **Q: Can I use this extension with GitHub Copilot Chat?**
 A: Yes — this extension is a VS Code Chat Participant. It appears as
-`@ozbridge` in the Copilot Chat panel. You need GitHub Copilot Chat installed
+`@oz` in the Copilot Chat panel. You need GitHub Copilot Chat installed
 and active.
 
 **Q: How do I update the Oz CLI?**

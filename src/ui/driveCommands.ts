@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { IDriveSource } from '../drive/warpDriveSource.js';
-import { OzDriveTreeProvider, DriveTreeNode } from './driveTreeProvider.js';
+import { IWarpDriveSource } from '../drive/warpDriveSource.js';
+import { WarpDriveTreeProvider, DriveTreeNode } from './driveTreeProvider.js';
 
 /** Command IDs contributed by the Warp Drive sidebar surface. */
 export const DRIVE_COMMANDS = {
@@ -11,8 +11,8 @@ export const DRIVE_COMMANDS = {
 } as const;
 
 export interface DriveCommandDeps {
-  source: IDriveSource;
-  provider: OzDriveTreeProvider;
+  source: IWarpDriveSource;
+  provider: WarpDriveTreeProvider;
 }
 
 /**
@@ -45,7 +45,7 @@ export function registerDriveCommands(deps: DriveCommandDeps): vscode.Disposable
       }
       const preview = body.length > 1500 ? `${body.slice(0, 1500)}\n… (truncated)` : body;
       await vscode.commands.executeCommand('workbench.action.chat.open', {
-        query: `@ozbridge /run ${preview}`,
+        query: `@oz /run ${preview}`,
       });
     }),
 
