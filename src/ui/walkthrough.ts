@@ -7,10 +7,10 @@ import * as vscode from 'vscode';
  * Once the key is `true` the extension never auto-opens the walkthrough
  * again — users can still launch it manually from **Help → Get Started**.
  */
-export const WALKTHROUGH_STATE_KEY = 'warpBridge.walkthrough.shown';
+export const WALKTHROUGH_STATE_KEY = 'ozBridge.walkthrough.shown';
 
 /** Fully qualified walkthrough id contributed in `package.json`. */
-export const WALKTHROUGH_ID = 'sena-labs.warp-vsc-bridge#warpBridge.gettingStarted';
+export const WALKTHROUGH_ID = 'sena-labs.oz-bridge#ozBridge.gettingStarted';
 
 export interface GlobalStateLike {
   get<T>(key: string): T | undefined;

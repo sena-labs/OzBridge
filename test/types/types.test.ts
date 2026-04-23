@@ -7,15 +7,15 @@ import {
   OzCliError,
   OzCliErrorKind,
   AGENT_SKILL_MAP,
-  WarpBridgeConfig,
+  OzBridgeConfig,
 } from '../../src/types/index.js';
 
 // ============================================================================
 // DEFAULT_CONFIG
 // ============================================================================
 describe('DEFAULT_CONFIG', () => {
-  it('dovrebbe avere tutte le chiavi di WarpBridgeConfig', () => {
-    const keys: Array<keyof WarpBridgeConfig> = [
+  it('dovrebbe avere tutte le chiavi di OzBridgeConfig', () => {
+    const keys: Array<keyof OzBridgeConfig> = [
       'ozPath', 'defaultModel', 'defaultProfile', 'defaultEnvironment',
       'cloudPollingIntervalMs', 'cloudPollingTimeoutMs', 'timeoutMs', 'maxOutputChars',
     ];

@@ -27,8 +27,8 @@ export type { DiagnosticEntry, ContextPayload, SlashCommandHandler };
 // Warp Bridge Configuration (extends toolkit's BridgeConfig)
 // ============================================================================
 
-/** Extension settings read from `vscode.workspace.getConfiguration('warpBridge')`. */
-export interface WarpBridgeConfig extends BridgeConfig {
+/** Extension settings read from `vscode.workspace.getConfiguration('ozBridge')`. */
+export interface OzBridgeConfig extends BridgeConfig {
   /** Path to the `oz` CLI executable. */
   ozPath: string;
   /** Default AI model for agent runs (`'auto'` = CLI decides). */
@@ -52,7 +52,7 @@ export interface WarpBridgeConfig extends BridgeConfig {
 }
 
 // IMPL: valori di default allineati con package.json contributes.configuration
-export const DEFAULT_CONFIG: WarpBridgeConfig = {
+export const DEFAULT_CONFIG: OzBridgeConfig = {
   ozPath: 'oz',
   defaultModel: 'auto',
   defaultProfile: 'Default',
@@ -221,9 +221,9 @@ export interface IOzCliService {
 /** Reactive wrapper around VS Code extension settings with caching and change events. */
 export interface IConfigManager {
   /** Returns the current configuration snapshot (cached until next change). */
-  getConfig(): WarpBridgeConfig;
-  /** Fires when `warpBridge.*` settings change, with the new configuration. */
-  onConfigChanged: vscode.Event<WarpBridgeConfig>;
+  getConfig(): OzBridgeConfig;
+  /** Fires when `ozBridge.*` settings change, with the new configuration. */
+  onConfigChanged: vscode.Event<OzBridgeConfig>;
   /** Disposes the configuration change listener. */
   dispose(): void;
 }

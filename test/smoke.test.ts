@@ -55,14 +55,14 @@ describe('Smoke test — extension lifecycle', () => {
   it('dovrebbe registrare il Chat Participant durante activate()', () => {
     activate(createMockExtensionContext() as any);
     expect(chat.createChatParticipant).toHaveBeenCalledWith(
-      'warp-vsc-bridge.warp',
+      'oz-bridge.ozbridge',
       expect.any(Function),
     );
   });
 
   it('dovrebbe creare un output channel', () => {
     activate(createMockExtensionContext() as any);
-    expect(window.createOutputChannel).toHaveBeenCalledWith('Warp Bridge');
+    expect(window.createOutputChannel).toHaveBeenCalledWith('OzBridge');
   });
 
   it('dovrebbe aggiungere risorse a subscriptions', () => {

@@ -3,7 +3,7 @@
  */
 import { vi } from 'vitest';
 import {
-  WarpBridgeConfig,
+  OzBridgeConfig,
   DEFAULT_CONFIG,
   IOzCliService,
   IConfigManager,
@@ -51,8 +51,8 @@ export function createMockToken(cancelled = false) {
 // ---------------------------------------------------------------------------
 // Mock IConfigManager
 // ---------------------------------------------------------------------------
-export function createMockConfigManager(overrides?: Partial<WarpBridgeConfig>): IConfigManager {
-  const config: WarpBridgeConfig = { ...DEFAULT_CONFIG, ...overrides };
+export function createMockConfigManager(overrides?: Partial<OzBridgeConfig>): IConfigManager {
+  const config: OzBridgeConfig = { ...DEFAULT_CONFIG, ...overrides };
   const emitter = { event: vi.fn(), fire: vi.fn(), dispose: vi.fn() };
 
   return {

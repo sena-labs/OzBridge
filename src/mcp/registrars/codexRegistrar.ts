@@ -25,7 +25,7 @@ import {
  *
  * ```toml
  * [[mcp.servers]]
- * name = "warp-vsc-bridge"
+ * name = "oz-bridge"
  * url = "http://127.0.0.1:3847/sse"
  * bearer_token = "…"
  * ```

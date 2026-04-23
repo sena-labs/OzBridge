@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { IConfigManager, IOzCliService, WarpBridgeConfig } from '../types/index.js';
+import { IConfigManager, IOzCliService, OzBridgeConfig } from '../types/index.js';
 import { McpServer } from './server.js';
 import { buildToolRegistry } from './tools.js';
 import { logError, logInfo, logWarn } from '../services/logger.js';
@@ -16,8 +16,8 @@ export interface McpConfig {
   bearerToken: string;
 }
 
-/** Extracts the `warpBridge.mcp.*` slice from the full config snapshot. */
-export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
+/** Extracts the `ozBridge.mcp.*` slice from the full config snapshot. */
+export function readMcpConfig(full: OzBridgeConfig): McpConfig {
   return {
     enabled: full.mcpEnabled === true,
     port: typeof full.mcpPort === 'number' && full.mcpPort >= 0 ? full.mcpPort : 3847,
@@ -58,7 +58,7 @@ export class McpLifecycle implements vscode.Disposable {
     return this.server?.endpoint;
   }
 
-  /** Snapshot of the current `warpBridge.mcp.*` settings. */
+  /** Snapshot of the current `ozBridge.mcp.*` settings. */
   get config(): McpConfig | undefined {
     return this.current;
   }
@@ -75,7 +75,7 @@ export class McpLifecycle implements vscode.Disposable {
     this.current = { ...cfg };
 
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
-    const serverInfo = { name: 'warp-vsc-bridge', version: this.extensionVersion };
+    const serverInfo = { name: 'oz-bridge', version: this.extensionVersion };
 
     try {
       const server = new McpServer(registry, serverInfo, {
@@ -154,7 +154,7 @@ export function registerMcpCommands(
   cfgMgr: IConfigManager,
 ): vscode.Disposable[] {
   return [
-    vscode.commands.registerCommand('warpBridge.mcp.start', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.start', async () => {
       await lifecycle.start();
       const ep = lifecycle.endpoint;
       await vscode.window.showInformationMessage(
@@ -164,12 +164,12 @@ export function registerMcpCommands(
       );
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.stop', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.stop', async () => {
       await lifecycle.stop();
       await vscode.window.showInformationMessage(vscode.l10n.t('Warp MCP server stopped.'));
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.status', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.status', async () => {
       const cfg = readMcpConfig(cfgMgr.getConfig());
       const ep = lifecycle.endpoint;
       const tokenLabel = cfg.bearerToken ? 'bearer token required' : 'no bearer token';
@@ -179,7 +179,7 @@ export function registerMcpCommands(
       await vscode.window.showInformationMessage(vscode.l10n.t('Warp MCP server: {0}', state));
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.copyEndpointUrl', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.copyEndpointUrl', async () => {
       const ep = lifecycle.endpoint;
       if (!ep) {
         await vscode.window.showWarningMessage(vscode.l10n.t('Warp MCP server is not running.'));
@@ -190,11 +190,11 @@ export function registerMcpCommands(
       await vscode.window.showInformationMessage(vscode.l10n.t('Copied MCP endpoint URL: {0}', url));
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.registerClient', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.registerClient', async () => {
       await runRegistrarCommand('register', lifecycle, cfgMgr);
     }),
 
-    vscode.commands.registerCommand('warpBridge.mcp.unregisterClient', async () => {
+    vscode.commands.registerCommand('ozBridge.mcp.unregisterClient', async () => {
       await runRegistrarCommand('unregister', lifecycle, cfgMgr);
     }),
   ];
@@ -220,7 +220,7 @@ function defaultRegistrars(): IMcpClientRegistrar[] {
 }
 
 /** Server name advertised to every MCP client we register with. */
-export const MCP_SERVER_NAME = 'warp-vsc-bridge';
+export const MCP_SERVER_NAME = 'oz-bridge';
 
 /**
  * Shared implementation behind the `registerClient` / `unregisterClient`

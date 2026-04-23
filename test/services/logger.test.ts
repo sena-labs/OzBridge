@@ -56,13 +56,13 @@ describe('Logger', () => {
   // logInfo
   // --------------------------------------------------------------------------
   describe('logInfo()', () => {
-    it('dovrebbe scrivere nel channel con prefisso [warp-vsc-bridge]', async () => {
+    it('dovrebbe scrivere nel channel con prefisso [ozbridge]', async () => {
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
-      logger.initLogger(channel as any, '[warp-vsc-bridge]');
+      logger.initLogger(channel as any, '[ozbridge]');
       logger.logInfo('hello');
       const lastCall = channel.appendLine.mock.calls.at(-1)?.[0] as string;
-      expect(lastCall).toContain('[warp-vsc-bridge]');
+      expect(lastCall).toContain('[ozbridge]');
       expect(lastCall).toContain('hello');
     });
 

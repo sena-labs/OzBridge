@@ -85,16 +85,16 @@ describe('Kill-switch — package.json contributions', () => {
   };
   const props = pkg.contributes.configuration.properties;
 
-  it('declares warpBridge.killSwitch.enabled as a boolean defaulting to false', () => {
-    const setting = props['warpBridge.killSwitch.enabled'];
+  it('declares ozBridge.killSwitch.enabled as a boolean defaulting to false', () => {
+    const setting = props['ozBridge.killSwitch.enabled'];
     expect(setting).toBeDefined();
     expect(setting.type).toBe('boolean');
     expect(setting.default).toBe(false);
     expect(setting.scope).toBe('machine-overridable');
   });
 
-  it('declares warpBridge.killSwitch.reason as an empty-string default', () => {
-    const setting = props['warpBridge.killSwitch.reason'];
+  it('declares ozBridge.killSwitch.reason as an empty-string default', () => {
+    const setting = props['ozBridge.killSwitch.reason'];
     expect(setting).toBeDefined();
     expect(setting.type).toBe('string');
     expect(setting.default).toBe('');
@@ -106,8 +106,8 @@ describe('LTS policy — SECURITY.md', () => {
 
   it('publishes the kill-switch playbook', () => {
     expect(md).toMatch(/Kill-switch \(v1\.0 deliverable T\)/);
-    expect(md).toMatch(/warpBridge\.killSwitch\.enabled/);
-    expect(md).toMatch(/warpBridge\.killSwitch\.reason/);
+    expect(md).toMatch(/ozBridge\.killSwitch\.enabled/);
+    expect(md).toMatch(/ozBridge\.killSwitch\.reason/);
   });
 
   it('publishes the LTS commitment table', () => {

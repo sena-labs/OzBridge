@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { IConfigManager } from '../types/index.js';
-import { WarpTreeNode } from './runsTreeProvider.js';
+import { OzTreeNode } from './runsTreeProvider.js';
 
 /**
  * Public command IDs contributed by the handoff surface.
@@ -9,9 +9,9 @@ import { WarpTreeNode } from './runsTreeProvider.js';
  */
 export const HANDOFF_COMMANDS = {
   /** Command Palette entry: asks the user for a prompt to seed Warp with. */
-  palette: 'warpBridge.handoff',
+  palette: 'ozBridge.handoff',
   /** Sidebar context menu entry on run nodes. */
-  tree: 'warpBridge.tree.handoff',
+  tree: 'ozBridge.tree.handoff',
 } as const;
 
 /**
@@ -133,7 +133,7 @@ export function registerHandoffCommands(deps: HandoffDeps): vscode.Disposable[] 
       });
     }),
 
-    vscode.commands.registerCommand(HANDOFF_COMMANDS.tree, async (node?: WarpTreeNode) => {
+    vscode.commands.registerCommand(HANDOFF_COMMANDS.tree, async (node?: OzTreeNode) => {
       if (!node || node.kind !== 'run') {
         await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: select a run node to hand off.'));
         return;

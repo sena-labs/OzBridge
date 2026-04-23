@@ -46,7 +46,7 @@ describe('StatusBarManager', () => {
     expect(item.alignment).toBe(vscodeMock.StatusBarAlignment.Right);
     expect(item.priority).toBe(100);
     expect(item.command).toBe(StatusBarManager.FOCUS_COMMAND);
-    expect(item.name).toBe('Warp Bridge');
+    expect(item.name).toBe('OzBridge');
     expect(item.show).toHaveBeenCalledTimes(1);
     expect(item.text).toBe('$(cloud) Warp: 0 active');
     expect(item.backgroundColor).toBeUndefined();

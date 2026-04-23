@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { registerTreeCommands, TREE_COMMANDS } from '../../src/ui/treeCommands.js';
-import { WarpRunsTreeProvider } from '../../src/ui/runsTreeProvider.js';
+import { OzRunsTreeProvider } from '../../src/ui/runsTreeProvider.js';
 import type { ActiveRunsTracker } from '../../src/services/activeRunsTracker.js';
 import { createMockCli } from '../helpers.js';
 import * as vscodeMock from '../mocks/vscode.js';
@@ -20,7 +20,7 @@ function makeTracker(): ActiveRunsTracker {
 
 let cli: ReturnType<typeof createMockCli>;
 let tracker: ActiveRunsTracker;
-let provider: WarpRunsTreeProvider;
+let provider: OzRunsTreeProvider;
 
 beforeEach(() => {
   vscodeMock.commands._resetCommands();
@@ -32,7 +32,7 @@ beforeEach(() => {
 
   cli = createMockCli();
   tracker = makeTracker();
-  provider = new WarpRunsTreeProvider(cli, tracker);
+  provider = new OzRunsTreeProvider(cli, tracker);
 
   for (const d of registerTreeCommands({ cli, tracker, provider })) {
     void d; // keep registrations alive for the test lifecycle via the mock map
@@ -41,13 +41,13 @@ beforeEach(() => {
 
 describe('tree commands', () => {
   it('exports a stable set of command ids', () => {
-    expect(TREE_COMMANDS.refresh).toBe('warpBridge.tree.refresh');
-    expect(TREE_COMMANDS.copyId).toBe('warpBridge.tree.copyId');
-    expect(TREE_COMMANDS.openInBrowser).toBe('warpBridge.tree.openInBrowser');
-    expect(TREE_COMMANDS.showRun).toBe('warpBridge.tree.showRun');
-    expect(TREE_COMMANDS.pauseSchedule).toBe('warpBridge.tree.pauseSchedule');
-    expect(TREE_COMMANDS.unpauseSchedule).toBe('warpBridge.tree.unpauseSchedule');
-    expect(TREE_COMMANDS.deleteSchedule).toBe('warpBridge.tree.deleteSchedule');
+    expect(TREE_COMMANDS.refresh).toBe('ozBridge.tree.refresh');
+    expect(TREE_COMMANDS.copyId).toBe('ozBridge.tree.copyId');
+    expect(TREE_COMMANDS.openInBrowser).toBe('ozBridge.tree.openInBrowser');
+    expect(TREE_COMMANDS.showRun).toBe('ozBridge.tree.showRun');
+    expect(TREE_COMMANDS.pauseSchedule).toBe('ozBridge.tree.pauseSchedule');
+    expect(TREE_COMMANDS.unpauseSchedule).toBe('ozBridge.tree.unpauseSchedule');
+    expect(TREE_COMMANDS.deleteSchedule).toBe('ozBridge.tree.deleteSchedule');
   });
 
   it('registerTreeCommands registers every TREE_COMMANDS id', () => {

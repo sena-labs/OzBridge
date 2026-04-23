@@ -57,7 +57,7 @@ export class McpServer {
 
   constructor(
     private readonly tools: Map<string, McpToolEntry>,
-    private readonly serverInfo: McpServerInfo = { name: 'warp-vsc-bridge', version: '0.6.0-dev' },
+    private readonly serverInfo: McpServerInfo = { name: 'oz-bridge', version: '0.6.0-dev' },
     options: McpServerOptions = {},
   ) {
     this.options = {

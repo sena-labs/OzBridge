@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { WarpBridgeConfig } from '../types/index.js';
+import { OzBridgeConfig } from '../types/index.js';
 import { logInfo, logWarn } from './logger.js';
 import { parseFlatYaml, YamlScalar } from './yamlParser.js';
 
 /**
  * Allowed keys in `.warp/warp-bridge.yaml`. Matches a subset of
- * {@link WarpBridgeConfig} that makes sense to commit into a repo:
+ * {@link OzBridgeConfig} that makes sense to commit into a repo:
  * shared defaults and MCP surface toggles.
  *
  * Excluded on purpose:
@@ -16,7 +16,7 @@ import { parseFlatYaml, YamlScalar } from './yamlParser.js';
  *   share it across machines, source it via an env variable read by your
  *   shell and feed it into VS Code settings directly.
  */
-export const ALLOWED_OVERRIDE_KEYS = new Set<keyof WarpBridgeConfig>([
+export const ALLOWED_OVERRIDE_KEYS = new Set<keyof OzBridgeConfig>([
   'defaultModel',
   'defaultProfile',
   'defaultEnvironment',
@@ -34,10 +34,10 @@ export const WORKSPACE_CONFIG_PATH = path.join('.warp', 'warp-bridge.yaml');
 
 /**
  * Validates a raw YAML value against the expected type of a
- * {@link WarpBridgeConfig} key and either returns it coerced or logs a
+ * {@link OzBridgeConfig} key and either returns it coerced or logs a
  * warning and returns `undefined` so the key is skipped.
  */
-function coerce(key: keyof WarpBridgeConfig, value: YamlScalar): unknown | undefined {
+function coerce(key: keyof OzBridgeConfig, value: YamlScalar): unknown | undefined {
   switch (key) {
     case 'defaultModel':
     case 'defaultProfile':
@@ -60,7 +60,7 @@ function coerce(key: keyof WarpBridgeConfig, value: YamlScalar): unknown | undef
   return undefined;
 }
 
-function expectedKind(key: keyof WarpBridgeConfig): string {
+function expectedKind(key: keyof OzBridgeConfig): string {
   switch (key) {
     case 'mcpEnabled': return 'boolean';
     case 'timeoutMs':
@@ -84,14 +84,14 @@ function expectedKind(key: keyof WarpBridgeConfig): string {
  * case `getOverrides()` just returns `{}` and `onDidChange` never fires.
  */
 export class WorkspaceConfigResolver implements vscode.Disposable {
-  private overrides: Partial<WarpBridgeConfig> = {};
+  private overrides: Partial<OzBridgeConfig> = {};
   private readonly watcher: vscode.FileSystemWatcher | undefined;
-  private readonly emitter = new vscode.EventEmitter<Partial<WarpBridgeConfig>>();
+  private readonly emitter = new vscode.EventEmitter<Partial<OzBridgeConfig>>();
   private readonly disposables: vscode.Disposable[] = [];
   private disposed = false;
 
   /** Fires with the new override snapshot whenever the YAML file changes. */
-  readonly onDidChange: vscode.Event<Partial<WarpBridgeConfig>> = this.emitter.event;
+  readonly onDidChange: vscode.Event<Partial<OzBridgeConfig>> = this.emitter.event;
 
   constructor(private readonly workspaceRoot: string | undefined) {
     if (!workspaceRoot) { return; }
@@ -116,12 +116,12 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
   }
 
   /** Snapshot of the last-read overrides. Empty when no file is present. */
-  getOverrides(): Partial<WarpBridgeConfig> {
+  getOverrides(): Partial<OzBridgeConfig> {
     return { ...this.overrides };
   }
 
   /** Re-reads the file without emitting. Exposed for tests & manual refresh. */
-  refresh(): Partial<WarpBridgeConfig> {
+  refresh(): Partial<OzBridgeConfig> {
     this.reload();
     return this.getOverrides();
   }
@@ -160,13 +160,13 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
     for (const err of result.errors) {
       logWarn(`workspace config parse error (line ${err.line}): ${err.message}`);
     }
-    const overrides: Partial<WarpBridgeConfig> = {};
+    const overrides: Partial<OzBridgeConfig> = {};
     for (const [key, value] of Object.entries(result.data)) {
-      if (!ALLOWED_OVERRIDE_KEYS.has(key as keyof WarpBridgeConfig)) {
+      if (!ALLOWED_OVERRIDE_KEYS.has(key as keyof OzBridgeConfig)) {
         logWarn(`workspace config: ignoring unknown key \`${key}\``);
         continue;
       }
-      const coerced = coerce(key as keyof WarpBridgeConfig, value);
+      const coerced = coerce(key as keyof OzBridgeConfig, value);
       if (coerced !== undefined) {
         (overrides as Record<string, unknown>)[key] = coerced;
       }

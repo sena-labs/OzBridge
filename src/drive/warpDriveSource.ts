@@ -3,7 +3,7 @@
  *
  * This module is **dependency-free** on purpose: it defines only the
  * shape of the data the UI consumes (see
- * `src/ui/driveTreeProvider.ts`) and the `IWarpDriveSource` abstraction
+ * `src/ui/driveTreeProvider.ts`) and the `IDriveSource` abstraction
  * that both the CLI-backed and the filesystem-backed implementations
  * honour.
  *
@@ -69,7 +69,7 @@ export type DriveEntry = DrivePrompt | DriveRule | DriveSkill;
  * synchronous: a future remote implementation (HTTP to a Warp API)
  * would benefit from the uniform return shape.
  */
-export interface IWarpDriveSource {
+export interface IDriveSource {
   /** Human-readable name for diagnostics (e.g. `'oz-cli'`, `'filesystem'`). */
   readonly label: string;
 

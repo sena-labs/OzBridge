@@ -4,7 +4,7 @@ import {
   OzListResult,
   OzCliError,
   OzCliErrorKind,
-  WarpBridgeConfig,
+  OzBridgeConfig,
   IConfigManager,
 } from '../types/index.js';
 
@@ -22,7 +22,7 @@ export class OutputFormatter {
   }
 
   /** Lazily reads the current config — always reflects latest VS Code settings. */
-  private get config(): WarpBridgeConfig {
+  private get config(): OzBridgeConfig {
     return this.cfgMgr.getConfig();
   }
 

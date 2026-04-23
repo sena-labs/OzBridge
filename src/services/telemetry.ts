@@ -3,7 +3,7 @@
  *
  * Privacy contract — see {@link FORBIDDEN_KEY_REGEX}:
  *   - **Off by default** until *both* `vscode.env.isTelemetryEnabled === true`
- *     **and** `warpBridge.telemetry.connectionString !== ""`.
+ *     **and** `ozBridge.telemetry.connectionString !== ""`.
  *   - Only the event names declared in {@link TelemetryEventName} are
  *     accepted at the type level.
  *   - Every payload property name is asserted against
@@ -223,7 +223,7 @@ export class HttpAppInsightsReporter implements ITelemetryReporter {
       iKey: this.parsed.instrumentationKey,
       tags: {
         'ai.application.ver': this.version,
-        'ai.cloud.role': 'warp-vsc-bridge',
+        'ai.cloud.role': 'oz-bridge',
       },
       data: {
         baseType: 'EventData',

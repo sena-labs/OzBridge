@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { BaseConfigManager } from 'copilot-chat-toolkit';
-import { WarpBridgeConfig, DEFAULT_CONFIG } from '../types/index.js';
+import { OzBridgeConfig, DEFAULT_CONFIG } from '../types/index.js';
 import { WorkspaceConfigResolver } from './workspaceConfigResolver.js';
 
 // IMPL: thin wrapper — delegates to toolkit's BaseConfigManager with Warp
@@ -8,7 +8,7 @@ import { WorkspaceConfigResolver } from './workspaceConfigResolver.js';
 // `.warp/warp-bridge.yaml` wins over VS Code settings.
 
 /**
- * Manages the `warpBridge.*` VS Code settings with an in-memory cache.
+ * Manages the `ozBridge.*` VS Code settings with an in-memory cache.
  *
  * When a {@link WorkspaceConfigResolver} is supplied, the values it returns
  * take precedence over the VS Code configuration — useful for
@@ -16,14 +16,14 @@ import { WorkspaceConfigResolver } from './workspaceConfigResolver.js';
  *
  * Precedence, highest first:
  *   1. `.warp/warp-bridge.yaml` overrides
- *   2. `warpBridge.*` VS Code settings
+ *   2. `ozBridge.*` VS Code settings
  *   3. Compiled-in defaults
  */
-export class ConfigManager extends BaseConfigManager<WarpBridgeConfig> {
+export class ConfigManager extends BaseConfigManager<OzBridgeConfig> {
   private readonly resolverSubscription: vscode.Disposable | undefined;
 
   constructor(private readonly resolver?: WorkspaceConfigResolver) {
-    super('warpBridge', DEFAULT_CONFIG);
+    super('ozBridge', DEFAULT_CONFIG);
     if (resolver) {
       // When the YAML file changes, invalidate the cached snapshot and
       // fire the inherited `onConfigChanged` so downstream services (MCP
@@ -36,11 +36,11 @@ export class ConfigManager extends BaseConfigManager<WarpBridgeConfig> {
     }
   }
 
-  protected readConfig(cfg: vscode.WorkspaceConfiguration): WarpBridgeConfig {
+  protected readConfig(cfg: vscode.WorkspaceConfiguration): OzBridgeConfig {
     const base = super.readConfig(cfg);
     if (!this.resolver) { return base; }
     const overrides = this.resolver.getOverrides();
-    return { ...base, ...overrides } as WarpBridgeConfig;
+    return { ...base, ...overrides } as OzBridgeConfig;
   }
 
   dispose(): void {

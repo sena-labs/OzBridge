@@ -73,7 +73,7 @@ export function errorHint(kind: OzCliErrorKind): string | undefined {
     case OzCliErrorKind.NOT_AUTHENTICATED:
       return 'Run `oz login` in a terminal to authenticate with Warp.';
     case OzCliErrorKind.TIMEOUT:
-      return 'Increase `warpBridge.timeoutMs` or `warpBridge.cloudPollingTimeoutMs` in settings.';
+      return 'Increase `ozBridge.timeoutMs` or `ozBridge.cloudPollingTimeoutMs` in settings.';
     case OzCliErrorKind.CANCELLED:
       return 'The operation was cancelled by the user.';
     case OzCliErrorKind.PARSE_ERROR:

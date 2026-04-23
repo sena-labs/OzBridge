@@ -13,7 +13,7 @@ const TERMINAL_STATUSES = new Set<OzRunStatus>(['SUCCEEDED', 'FAILED']);
 /**
  * Periodically polls `oz run list` and emits events whenever the set of runs
  * changes or when a polling error occurs. Used by the Status Bar indicator
- * and by the sidebar {@link import('../ui/runsTreeProvider.js').WarpRunsTreeProvider}.
+ * and by the sidebar {@link import('../ui/runsTreeProvider.js').OzRunsTreeProvider}.
  *
  * The tracker is intentionally decoupled from {@link BaseRunPoller}, which
  * exists to poll a single run until terminal state. Here we poll the full

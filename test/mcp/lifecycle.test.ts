@@ -105,10 +105,10 @@ describe('registerMcpCommands', () => {
     for (const d of registerMcpCommands(lifecycle, cfgMgr)) { void d; }
 
     const registered = vscodeMock.commands._listCommands();
-    expect(registered).toContain('warpBridge.mcp.start');
-    expect(registered).toContain('warpBridge.mcp.stop');
-    expect(registered).toContain('warpBridge.mcp.status');
-    expect(registered).toContain('warpBridge.mcp.copyEndpointUrl');
+    expect(registered).toContain('ozBridge.mcp.start');
+    expect(registered).toContain('ozBridge.mcp.stop');
+    expect(registered).toContain('ozBridge.mcp.status');
+    expect(registered).toContain('ozBridge.mcp.copyEndpointUrl');
   });
 
   it('copyEndpointUrl warns when the server is stopped', async () => {
@@ -116,7 +116,7 @@ describe('registerMcpCommands', () => {
     const lifecycle = new McpLifecycle(createMockCli(), cfgMgr, '0.6.0-dev');
     for (const d of registerMcpCommands(lifecycle, cfgMgr)) { void d; }
 
-    await vscodeMock.commands.executeCommand('warpBridge.mcp.copyEndpointUrl');
+    await vscodeMock.commands.executeCommand('ozBridge.mcp.copyEndpointUrl');
     expect(vscodeMock.window.showWarningMessage).toHaveBeenCalled();
     expect(vscodeMock.env.clipboard.writeText).not.toHaveBeenCalled();
   });
@@ -128,7 +128,7 @@ describe('registerMcpCommands', () => {
 
     await lifecycle.start();
     try {
-      await vscodeMock.commands.executeCommand('warpBridge.mcp.copyEndpointUrl');
+      await vscodeMock.commands.executeCommand('ozBridge.mcp.copyEndpointUrl');
       expect(vscodeMock.env.clipboard.writeText).toHaveBeenCalledTimes(1);
       const arg = vscodeMock.env.clipboard.writeText.mock.calls[0][0] as string;
       expect(arg).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/sse$/);

@@ -6,13 +6,13 @@ import * as path from 'path';
 /** Command IDs contributed by the skill & rule editor surface. */
 export const SKILL_EDITOR_COMMANDS = {
   /** Opens an existing skill / rule / prompt file in the editor. */
-  edit: 'warpBridge.skill.edit',
+  edit: 'ozBridge.skill.edit',
   /** Creates a new scaffolded skill file and opens it. */
-  newSkill: 'warpBridge.skill.new',
+  newSkill: 'ozBridge.skill.new',
   /** Saves the currently active editor's skill file as a global skill. */
-  saveGlobal: 'warpBridge.skill.saveGlobal',
+  saveGlobal: 'ozBridge.skill.saveGlobal',
   /** Saves the currently active editor's skill file as a project skill. */
-  saveWorkspace: 'warpBridge.skill.saveWorkspace',
+  saveWorkspace: 'ozBridge.skill.saveWorkspace',
 } as const;
 
 /**

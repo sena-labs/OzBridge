@@ -87,8 +87,8 @@ For incident response we ship an operator escape hatch. Setting
 ```jsonc
 // VS Code settings.json (per-user or per-workspace)
 {
-  "warpBridge.killSwitch.enabled": true,
-  "warpBridge.killSwitch.reason": "Investigating SEC-2026-04-21"
+  "ozBridge.killSwitch.enabled": true,
+  "ozBridge.killSwitch.reason": "Investigating SEC-2026-04-21"
 }
 ```
 

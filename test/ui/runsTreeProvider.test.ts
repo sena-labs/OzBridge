@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WarpRunsTreeProvider, WarpTreeNode } from '../../src/ui/runsTreeProvider.js';
+import { OzRunsTreeProvider, OzTreeNode } from '../../src/ui/runsTreeProvider.js';
 import type { ActiveRunsTracker, TrackedRun } from '../../src/services/activeRunsTracker.js';
 import { createMockCli, makeListResult } from '../helpers.js';
 import * as vscodeMock from '../mocks/vscode.js';
@@ -30,7 +30,7 @@ function makeTracker(initial: TrackedRun[] = []): {
   };
 }
 
-function findCategory(nodes: WarpTreeNode[], category: string): WarpTreeNode {
+function findCategory(nodes: OzTreeNode[], category: string): OzTreeNode {
   const node = nodes.find((n) => n.kind === 'category' && n.category === category);
   if (!node) { throw new Error(`category ${category} not found`); }
   return node;
@@ -42,10 +42,10 @@ beforeEach(() => {
   cli = createMockCli();
 });
 
-describe('WarpRunsTreeProvider', () => {
+describe('OzRunsTreeProvider', () => {
   it('renders the 5 top-level categories with stable ids', async () => {
     const { tracker } = makeTracker();
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
 
     const roots = await provider.getChildren();
     const categoryIds = roots.map((n) => n.id);
@@ -60,7 +60,7 @@ describe('WarpRunsTreeProvider', () => {
 
   it('Active Runs shows an empty message when there are none', async () => {
     const { tracker } = makeTracker();
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
     const node = findCategory(await provider.getChildren(), 'activeRuns');
     const children = await provider.getChildren(node);
     expect(children).toHaveLength(1);
@@ -74,7 +74,7 @@ describe('WarpRunsTreeProvider', () => {
       { id: 'r2', status: 'INPROGRESS' },
       { id: 'r3', status: 'SUCCEEDED' },
     ]);
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
 
     const node = findCategory(await provider.getChildren(), 'activeRuns');
     const children = await provider.getChildren(node);
@@ -88,11 +88,11 @@ describe('WarpRunsTreeProvider', () => {
       status: 'SUCCEEDED' as const,
     }));
     const { tracker } = makeTracker(many);
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
 
     const node = findCategory(await provider.getChildren(), 'history');
     const children = await provider.getChildren(node);
-    expect(children).toHaveLength(WarpRunsTreeProvider.HISTORY_LIMIT);
+    expect(children).toHaveLength(OzRunsTreeProvider.HISTORY_LIMIT);
   });
 
   it('Schedules category renders CLI results', async () => {
@@ -102,7 +102,7 @@ describe('WarpRunsTreeProvider', () => {
       ]),
     );
     const { tracker } = makeTracker();
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
 
     const node = findCategory(await provider.getChildren(), 'schedules');
     const children = await provider.getChildren(node);
@@ -114,7 +114,7 @@ describe('WarpRunsTreeProvider', () => {
   it('Schedules category renders an error node when CLI throws', async () => {
     cli.scheduleList.mockRejectedValue(new Error('no network'));
     const { tracker } = makeTracker();
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
 
     const node = findCategory(await provider.getChildren(), 'schedules');
     const children = await provider.getChildren(node);
@@ -127,7 +127,7 @@ describe('WarpRunsTreeProvider', () => {
     cli.mcpList.mockResolvedValue(makeListResult([]));
     cli.environmentList.mockResolvedValue(makeListResult([]));
     const { tracker } = makeTracker();
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
 
     const roots = await provider.getChildren();
     const mcpChildren = await provider.getChildren(findCategory(roots, 'mcp'));
@@ -139,7 +139,7 @@ describe('WarpRunsTreeProvider', () => {
 
   it('fires onDidChangeTreeData when the tracker reports a change', () => {
     const { tracker, fireChange } = makeTracker();
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
     const fired = vi.fn();
     provider.onDidChangeTreeData(fired);
 
@@ -155,7 +155,7 @@ describe('WarpRunsTreeProvider', () => {
         { id: 's2', name: 'Weekly', cron: '0 9 * * 1', prompt: 'Do Y', paused: true },
       ]),
     );
-    const provider = new WarpRunsTreeProvider(cli, tracker);
+    const provider = new OzRunsTreeProvider(cli, tracker);
 
     const activeCategory = findCategory(await provider.getChildren(), 'activeRuns');
     const [runNode] = await provider.getChildren(activeCategory);

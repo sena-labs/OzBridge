@@ -48,7 +48,7 @@ describe('skill editor — command registration', () => {
   });
 });
 
-describe('warpBridge.skill.edit', () => {
+describe('ozBridge.skill.edit', () => {
   it('opens a known path in the built-in editor', async () => {
     const file = path.join(workspace, 'skill.md');
     fs.writeFileSync(file, '# hi', 'utf8');
@@ -64,7 +64,7 @@ describe('warpBridge.skill.edit', () => {
   });
 });
 
-describe('warpBridge.skill.new', () => {
+describe('ozBridge.skill.new', () => {
   it('scaffolds a project skill when the user picks Project', async () => {
     vscodeMock.window.showInputBox.mockResolvedValueOnce('9-security-agent' as any);
     vscodeMock.window.showQuickPick.mockResolvedValueOnce('Project' as any);
@@ -104,7 +104,7 @@ describe('warpBridge.skill.new', () => {
   });
 });
 
-describe('warpBridge.skill.saveWorkspace / saveGlobal', () => {
+describe('ozBridge.skill.saveWorkspace / saveGlobal', () => {
   function installActiveEditor(content: string, filePath: string): void {
     (vscodeMock.window as any).activeTextEditor = {
       document: {

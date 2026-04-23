@@ -134,7 +134,7 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
  */
 export class DashboardPanel {
   private static current: DashboardPanel | undefined;
-  public static readonly viewType = 'warpBridge.dashboard';
+  public static readonly viewType = 'ozBridge.dashboard';
 
   private readonly disposables: vscode.Disposable[] = [];
   private disposed = false;

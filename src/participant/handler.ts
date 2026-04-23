@@ -24,7 +24,7 @@ import { FollowupProvider } from './followups.js';
  * @returns The registered {@link vscode.ChatParticipant} instance.
  */
 
-const PARTICIPANT_ID = 'warp-vsc-bridge.warp';
+const PARTICIPANT_ID = 'oz-bridge.ozbridge';
 
 export function registerChatParticipant(
   context: vscode.ExtensionContext,

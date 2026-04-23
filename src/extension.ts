@@ -9,16 +9,16 @@ import { OzCliService } from './services/ozCliService.js';
 import { RunPoller } from './services/runPoller.js';
 import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
-import { registerWarpTools } from './tools/index.js';
+import { registerOzBridgeTools } from './tools/index.js';
 import { StatusBarManager } from './ui/statusBarItem.js';
-import { WarpRunsTreeProvider } from './ui/runsTreeProvider.js';
+import { OzRunsTreeProvider } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
-import { createWarpDriveSource } from './drive/driveSourceFactory.js';
+import { createOzBridgeDriveSource } from './drive/driveSourceFactory.js';
 import { OzCliDriveRunner } from './drive/ozCliDriveRunner.js';
-import { IWarpDriveSource } from './drive/warpDriveSource.js';
-import { WarpDriveTreeProvider } from './ui/driveTreeProvider.js';
+import { IDriveSource } from './drive/warpDriveSource.js';
+import { OzDriveTreeProvider } from './ui/driveTreeProvider.js';
 import { registerDriveCommands } from './ui/driveCommands.js';
 import { registerSkillEditorCommands } from './ui/skillEditor.js';
 import { maybeOpenGettingStartedWalkthrough } from './ui/walkthrough.js';
@@ -48,7 +48,7 @@ const state: {
   runPoller?: RunPoller;
   tracker?: ActiveRunsTracker;
   mcp?: McpLifecycle;
-  driveSource?: IWarpDriveSource;
+  driveSource?: IDriveSource;
   telemetry?: ITelemetryReporter;
 } = {};
 
@@ -57,14 +57,14 @@ const EXTENSION_VERSION = '1.0.0';
 
 export function activate(context: vscode.ExtensionContext): void {
   // Startup log
-  const outputChannel = vscode.window.createOutputChannel('Warp Bridge');
+  const outputChannel = vscode.window.createOutputChannel('OzBridge');
   context.subscriptions.push(outputChannel);
-  initLogger(outputChannel, '[warp-vsc-bridge]');
+  initLogger(outputChannel, '[ozbridge]');
 
   // ── Kill-switch (v1.0 deliverable T) ──────────────────────────────
   // Operator escape hatch for emergencies (critical regression in
   // production, supply-chain incident, etc.). When
-  // `warpBridge.killSwitch.enabled === true` we skip every wiring
+  // `ozBridge.killSwitch.enabled === true` we skip every wiring
   // step and surface a single warning notification so users know
   // the extension is intentionally inert. The setting is workspace-
   // overridable so an org can ship it via shared `settings.json`.
@@ -72,15 +72,15 @@ export function activate(context: vscode.ExtensionContext): void {
   // registered — `deactivate()` remains safe to call.
   const killSwitchEnabled =
     vscode.workspace
-      .getConfiguration('warpBridge')
+      .getConfiguration('ozBridge')
       .get<boolean>('killSwitch.enabled', false) === true;
   if (killSwitchEnabled) {
     const reason =
-      vscode.workspace.getConfiguration('warpBridge').get<string>('killSwitch.reason', '') || '';
+      vscode.workspace.getConfiguration('ozBridge').get<string>('killSwitch.reason', '') || '';
     const detail = reason ? ` Reason: ${reason}` : '';
     logInfo(`Kill-switch active — extension will not register any features.${detail}`);
     void vscode.window.showWarningMessage(
-      `Warp Bridge is disabled by the kill-switch (warpBridge.killSwitch.enabled).${detail}`,
+      `Warp Bridge is disabled by the kill-switch (ozBridge.killSwitch.enabled).${detail}`,
     );
     return;
   }
@@ -107,7 +107,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Registra comando per aprire conversazioni direttamente in Warp (bypassa il browser)
   const openConvCmd = vscode.commands.registerCommand(
-    'warpBridge.openConversation',
+    'ozBridge.openConversation',
     (uri: vscode.Uri) => vscode.env.openExternal(uri),
   );
   context.subscriptions.push(openConvCmd);
@@ -119,7 +119,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Questi tool permettono a Copilot Agent mode di invocare Oz senza @warp.
   // Il runtime di VS Code < 1.96 (`vscode.lm` assente) è gestito con graceful fallback.
   if (typeof vscode.lm?.registerTool === 'function') {
-    registerWarpTools(context, cli, state.configManager, ctx, state.runPoller);
+    registerOzBridgeTools(context, cli, state.configManager, ctx, state.runPoller);
   } else {
     logInfo('vscode.lm.registerTool not available — Language Model Tools not registered');
   }
@@ -129,10 +129,10 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusBar);
 
   // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
-  const treeProvider = new WarpRunsTreeProvider(cli, state.tracker);
+  const treeProvider = new OzRunsTreeProvider(cli, state.tracker);
   context.subscriptions.push(treeProvider);
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('warpBridge.runsView', treeProvider),
+    vscode.window.registerTreeDataProvider('ozBridge.runsView', treeProvider),
   );
   for (const disposable of registerTreeCommands({ cli, tracker: state.tracker, provider: treeProvider })) {
     context.subscriptions.push(disposable);
@@ -148,13 +148,13 @@ export function activate(context: vscode.ExtensionContext): void {
   // older Oz binaries as `CliDriveNotAvailableError`, so the factory's
   // CompositeDriveSource falls back to the filesystem implementation
   // without any user-visible error.
-  state.driveSource = createWarpDriveSource({ runner: new OzCliDriveRunner(cli) });
+  state.driveSource = createOzBridgeDriveSource({ runner: new OzCliDriveRunner(cli) });
 
   // Warp Drive sidebar (view + context-menu commands).
-  const driveTreeProvider = new WarpDriveTreeProvider(state.driveSource);
+  const driveTreeProvider = new OzDriveTreeProvider(state.driveSource);
   context.subscriptions.push(driveTreeProvider);
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('warpBridge.driveView', driveTreeProvider),
+    vscode.window.registerTreeDataProvider('ozBridge.driveView', driveTreeProvider),
   );
   for (const disposable of registerDriveCommands({
     source: state.driveSource,
@@ -171,7 +171,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Observability dashboard (v0.8 deliverable H).
   const runStats = new RunStatsService(cli);
   context.subscriptions.push(
-    vscode.commands.registerCommand('warpBridge.dashboard.open', () => {
+    vscode.commands.registerCommand('ozBridge.dashboard.open', () => {
       DashboardPanel.createOrShow(runStats);
     }),
   );
@@ -179,7 +179,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Failure triage (v0.8 deliverable I) — opt-in: requires vscode.lm host.
   const lmClient = createVsCodeLanguageModelClient();
   context.subscriptions.push(
-    vscode.commands.registerCommand('warpBridge.triageFailure', async (runId?: string) => {
+    vscode.commands.registerCommand('ozBridge.triageFailure', async (runId?: string) => {
       if (!lmClient) {
         await vscode.window.showWarningMessage(vscode.l10n.t('Failure triage requires VS Code 1.96+ with a Copilot chat model installed.'));
         return;
@@ -220,7 +220,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Dataset export (v0.8 deliverable J) — stretch.
   const datasetExport = new DatasetExportService(cli);
   context.subscriptions.push(
-    vscode.commands.registerCommand('warpBridge.exportDataset', async () => {
+    vscode.commands.registerCommand('ozBridge.exportDataset', async () => {
       const pick = await vscode.window.showQuickPick(
         [
           { label: 'JSON Lines', value: 'jsonl' as DatasetFormat },
@@ -246,7 +246,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  // MCP server export — opt-in via warpBridge.mcpEnabled.
+  // MCP server export — opt-in via ozBridge.mcpEnabled.
   state.mcp = new McpLifecycle(cli, state.configManager, EXTENSION_VERSION);
   context.subscriptions.push({ dispose: () => { void state.mcp?.dispose(); } });
   for (const disposable of registerMcpCommands(state.mcp, state.configManager)) {
@@ -259,7 +259,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Comando aggiuntivo: focus sulla sidebar — usato dal click sulla Status Bar.
   context.subscriptions.push(
     vscode.commands.registerCommand(StatusBarManager.FOCUS_COMMAND, () =>
-      vscode.commands.executeCommand('workbench.view.extension.warpBridgeSidebar'),
+      vscode.commands.executeCommand('workbench.view.extension.ozBridgeSidebar'),
     ),
   );
 
@@ -285,7 +285,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // connection string. Default `connectionString = ""` ⇒ noop transport.
   // No PII ever transits: see `src/services/telemetry.ts` and PRIVACY.md.
   const telemetryConnectionString = vscode.workspace
-    .getConfiguration('warpBridge')
+    .getConfiguration('ozBridge')
     .get<string>('telemetry.connectionString', '');
   state.telemetry = createTelemetryReporter({
     env: { isTelemetryEnabled: vscode.env.isTelemetryEnabled ?? false },

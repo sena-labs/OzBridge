@@ -7,8 +7,8 @@ import { IOzCliService, IConfigManager } from '../types/index.js';
  * Asynchronous poller for cloud Oz runs with exponential back-off.
  *
  * Extends the toolkit's {@link BaseRunPoller} with Warp-specific polling
- * configuration sourced from `warpBridge.cloudPollingIntervalMs` and
- * `warpBridge.cloudPollingTimeoutMs`.
+ * configuration sourced from `ozBridge.cloudPollingIntervalMs` and
+ * `ozBridge.cloudPollingTimeoutMs`.
  *
  * All polling logic (exponential back-off ×1.5, 30 s cap, AbortController,
  * VS Code CancellationToken integration) is inherited from the toolkit.

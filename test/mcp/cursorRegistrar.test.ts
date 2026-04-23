@@ -26,35 +26,35 @@ describe('CursorRegistrar', () => {
   });
 
   it('creates `.cursor/mcp.json` and any missing parent directories', async () => {
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://127.0.0.1:3847/sse' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/sse' });
     expect(fs.existsSync(configPath)).toBe(true);
     expect(fs.statSync(path.dirname(configPath)).isDirectory()).toBe(true);
   });
 
   it('writes a canonical `mcpServers` entry with bearer-token headers', async () => {
     await registrar.register({
-      name: 'warp-vsc-bridge',
+      name: 'oz-bridge',
       url: 'http://127.0.0.1:3847/sse',
       bearerToken: 'abc',
     });
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(parsed.mcpServers['warp-vsc-bridge']).toEqual({
+    expect(parsed.mcpServers['oz-bridge']).toEqual({
       url: 'http://127.0.0.1:3847/sse',
       headers: { Authorization: 'Bearer abc' },
     });
   });
 
   it('round-trips register → unregister → status cleanly', async () => {
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://x' });
-    expect(await registrar.status('warp-vsc-bridge')).toBe('registered');
-    await registrar.unregister('warp-vsc-bridge');
-    expect(await registrar.status('warp-vsc-bridge')).toBe('missing');
+    await registrar.register({ name: 'oz-bridge', url: 'http://x' });
+    expect(await registrar.status('oz-bridge')).toBe('registered');
+    await registrar.unregister('oz-bridge');
+    expect(await registrar.status('oz-bridge')).toBe('missing');
   });
 
   it('preserves other servers on unregister', async () => {
-    await registrar.register({ name: 'warp-vsc-bridge', url: 'http://x' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://x' });
     await registrar.register({ name: 'other', url: 'http://y' });
-    await registrar.unregister('warp-vsc-bridge');
+    await registrar.unregister('oz-bridge');
 
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(parsed.mcpServers).toEqual({ other: { url: 'http://y' } });

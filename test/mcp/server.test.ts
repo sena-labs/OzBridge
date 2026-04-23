@@ -46,7 +46,7 @@ describe('McpServer.dispatch', () => {
     const result = resp?.result as any;
     expect(result.protocolVersion).toBe('2025-03-26');
     expect(result.capabilities.tools).toBeDefined();
-    expect(result.serverInfo.name).toBe('warp-vsc-bridge');
+    expect(result.serverInfo.name).toBe('oz-bridge');
   });
 
   it('falls back to latest protocol version when client asks an unknown one', async () => {

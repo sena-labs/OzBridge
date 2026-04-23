@@ -12,11 +12,11 @@ import { OzRunStatus } from '../types/index.js';
  * - `1`–`2`   → `statusBarItem.warningBackground`
  * - `3` +     → `statusBarItem.errorBackground`
  *
- * Clicking the item runs the `warpBridge.sidebar.focus` command, bringing the
+ * Clicking the item runs the `ozBridge.sidebar.focus` command, bringing the
  * Warp Activity Bar view into focus.
  */
 export class StatusBarManager implements vscode.Disposable {
-  static readonly FOCUS_COMMAND = 'warpBridge.sidebar.focus';
+  static readonly FOCUS_COMMAND = 'ozBridge.sidebar.focus';
 
   private readonly item: vscode.StatusBarItem;
   private readonly subscriptions: vscode.Disposable[] = [];
@@ -27,7 +27,7 @@ export class StatusBarManager implements vscode.Disposable {
       vscode.StatusBarAlignment.Right,
       100,
     );
-    this.item.name = 'Warp Bridge';
+    this.item.name = 'OzBridge';
     this.item.command = StatusBarManager.FOCUS_COMMAND;
     this.render([]);
     this.item.show();

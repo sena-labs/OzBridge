@@ -1,26 +1,26 @@
 import * as vscode from 'vscode';
 import { IOzCliService } from '../types/index.js';
 import { ActiveRunsTracker } from '../services/activeRunsTracker.js';
-import { WarpRunsTreeProvider, WarpTreeNode } from './runsTreeProvider.js';
+import { OzRunsTreeProvider, OzTreeNode } from './runsTreeProvider.js';
 
 /**
  * IDs of every command contributed by the sidebar surface. Kept here so both
  * the `contributes.commands` manifest and the handlers stay in sync.
  */
 export const TREE_COMMANDS = {
-  refresh: 'warpBridge.tree.refresh',
-  copyId: 'warpBridge.tree.copyId',
-  openInBrowser: 'warpBridge.tree.openInBrowser',
-  showRun: 'warpBridge.tree.showRun',
-  pauseSchedule: 'warpBridge.tree.pauseSchedule',
-  unpauseSchedule: 'warpBridge.tree.unpauseSchedule',
-  deleteSchedule: 'warpBridge.tree.deleteSchedule',
+  refresh: 'ozBridge.tree.refresh',
+  copyId: 'ozBridge.tree.copyId',
+  openInBrowser: 'ozBridge.tree.openInBrowser',
+  showRun: 'ozBridge.tree.showRun',
+  pauseSchedule: 'ozBridge.tree.pauseSchedule',
+  unpauseSchedule: 'ozBridge.tree.unpauseSchedule',
+  deleteSchedule: 'ozBridge.tree.deleteSchedule',
 } as const;
 
 export interface TreeCommandDeps {
   cli: IOzCliService;
   tracker: ActiveRunsTracker;
-  provider: WarpRunsTreeProvider;
+  provider: OzRunsTreeProvider;
 }
 
 /**
@@ -36,7 +36,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       await tracker.refresh();
     }),
 
-    vscode.commands.registerCommand(TREE_COMMANDS.copyId, async (node?: WarpTreeNode) => {
+    vscode.commands.registerCommand(TREE_COMMANDS.copyId, async (node?: OzTreeNode) => {
       const id = extractId(node);
       if (!id) {
         await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: nothing to copy for this item.'));
@@ -46,7 +46,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       await vscode.window.showInformationMessage(vscode.l10n.t('Copied `{0}` to clipboard.', id));
     }),
 
-    vscode.commands.registerCommand(TREE_COMMANDS.openInBrowser, async (node?: WarpTreeNode) => {
+    vscode.commands.registerCommand(TREE_COMMANDS.openInBrowser, async (node?: OzTreeNode) => {
       const url = extractUrl(node);
       if (!url) {
         await vscode.window.showWarningMessage(vscode.l10n.t('Warp Bridge: no browser URL for this item.'));
@@ -64,7 +64,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       });
     }),
 
-    vscode.commands.registerCommand(TREE_COMMANDS.pauseSchedule, async (node?: WarpTreeNode) => {
+    vscode.commands.registerCommand(TREE_COMMANDS.pauseSchedule, async (node?: OzTreeNode) => {
       const id = scheduleId(node);
       if (!id) { return; }
       try {
@@ -76,7 +76,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       }
     }),
 
-    vscode.commands.registerCommand(TREE_COMMANDS.unpauseSchedule, async (node?: WarpTreeNode) => {
+    vscode.commands.registerCommand(TREE_COMMANDS.unpauseSchedule, async (node?: OzTreeNode) => {
       const id = scheduleId(node);
       if (!id) { return; }
       try {
@@ -88,7 +88,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
       }
     }),
 
-    vscode.commands.registerCommand(TREE_COMMANDS.deleteSchedule, async (node?: WarpTreeNode) => {
+    vscode.commands.registerCommand(TREE_COMMANDS.deleteSchedule, async (node?: OzTreeNode) => {
       const id = scheduleId(node);
       if (!id) { return; }
       const confirm = await vscode.window.showWarningMessage(
@@ -112,7 +112,7 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
 // Helpers
 // ---------------------------------------------------------------------------
 
-function extractId(node: WarpTreeNode | undefined): string | undefined {
+function extractId(node: OzTreeNode | undefined): string | undefined {
   if (!node) { return undefined; }
   switch (node.kind) {
     case 'run': return node.runId;
@@ -123,7 +123,7 @@ function extractId(node: WarpTreeNode | undefined): string | undefined {
   }
 }
 
-function extractUrl(node: WarpTreeNode | undefined): string | undefined {
+function extractUrl(node: OzTreeNode | undefined): string | undefined {
   if (!node) { return undefined; }
   if (node.kind === 'run') {
     return `https://app.warp.dev/agents/${encodeURIComponent(node.runId)}`;
@@ -131,7 +131,7 @@ function extractUrl(node: WarpTreeNode | undefined): string | undefined {
   return undefined;
 }
 
-function scheduleId(node: WarpTreeNode | undefined): string | undefined {
+function scheduleId(node: OzTreeNode | undefined): string | undefined {
   return node?.kind === 'schedule' ? node.schedule.id : undefined;
 }
 

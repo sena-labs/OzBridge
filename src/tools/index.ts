@@ -31,11 +31,11 @@ export type { ListRunsInput } from './listRunsTool.js';
  *
  * @param context  Extension context for lifecycle management.
  * @param cli      Oz CLI service (wraps `oz` binary).
- * @param cfgMgr   Configuration manager (lazy-reads `warpBridge.*`).
+ * @param cfgMgr   Configuration manager (lazy-reads `ozBridge.*`).
  * @param ctx      IDE context collector (workspace, file, selection, diagnostics).
  * @param poller   Cloud run poller with exponential backoff.
  */
-export function registerWarpTools(
+export function registerOzBridgeTools(
   context: vscode.ExtensionContext,
   cli: IOzCliService,
   cfgMgr: IConfigManager,

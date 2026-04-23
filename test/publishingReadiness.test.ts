@@ -8,7 +8,7 @@ const PKG = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
 describe('Publishing readiness (deliverable M)', () => {
   it('declares every mandatory publisher/marketplace field', () => {
     expect(PKG.publisher).toBe('sena-labs');
-    expect(PKG.name).toBe('warp-vsc-bridge');
+    expect(PKG.name).toBe('oz-bridge');
     expect(typeof PKG.displayName).toBe('string');
     expect(typeof PKG.description).toBe('string');
     expect(PKG.license).toBe('MIT');

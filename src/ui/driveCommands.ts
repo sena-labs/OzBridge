@@ -1,18 +1,18 @@
 import * as vscode from 'vscode';
-import { IWarpDriveSource } from '../drive/warpDriveSource.js';
-import { WarpDriveTreeProvider, DriveTreeNode } from './driveTreeProvider.js';
+import { IDriveSource } from '../drive/warpDriveSource.js';
+import { OzDriveTreeProvider, DriveTreeNode } from './driveTreeProvider.js';
 
 /** Command IDs contributed by the Warp Drive sidebar surface. */
 export const DRIVE_COMMANDS = {
-  refresh: 'warpBridge.drive.refresh',
-  insertIntoChat: 'warpBridge.drive.insertIntoChat',
-  copyContent: 'warpBridge.drive.copyContent',
-  openInEditor: 'warpBridge.drive.openInEditor',
+  refresh: 'ozBridge.drive.refresh',
+  insertIntoChat: 'ozBridge.drive.insertIntoChat',
+  copyContent: 'ozBridge.drive.copyContent',
+  openInEditor: 'ozBridge.drive.openInEditor',
 } as const;
 
 export interface DriveCommandDeps {
-  source: IWarpDriveSource;
-  provider: WarpDriveTreeProvider;
+  source: IDriveSource;
+  provider: OzDriveTreeProvider;
 }
 
 /**

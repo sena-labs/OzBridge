@@ -4,7 +4,7 @@ import * as path from 'path';
 import { parseFlatYaml } from '../services/yamlParser.js';
 import { logWarn } from '../services/logger.js';
 import {
-  IWarpDriveSource,
+  IDriveSource,
   DrivePrompt,
   DriveRule,
   DriveSkill,
@@ -40,17 +40,17 @@ export interface FileSystemDriveOptions {
 }
 
 /**
- * Pure-filesystem implementation of {@link IWarpDriveSource}. Used by
+ * Pure-filesystem implementation of {@link IDriveSource}. Used by
  * the factory when the Oz CLI does not expose the `drive` subcommand
  * or when a user wants offline access to their local prompts / rules /
  * skills.
  *
  * All reads are synchronous (`fs.readFileSync`) — the directories are
  * small and reads happen lazily from the sidebar. The async signatures
- * in {@link IWarpDriveSource} are honoured nonetheless so the contract
+ * in {@link IDriveSource} are honoured nonetheless so the contract
  * stays identical to the CLI source.
  */
-export class FileSystemDriveSource implements IWarpDriveSource {
+export class FileSystemDriveSource implements IDriveSource {
   readonly label = 'filesystem';
 
   private readonly promptsDir: string;
