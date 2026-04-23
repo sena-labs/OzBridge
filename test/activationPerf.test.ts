@@ -13,6 +13,7 @@
  * the regression — never silently disable the assertion.
  */
 import { describe, it, expect } from 'vitest';
+import { vi } from 'vitest';
 
 /**
  * Budget envelope, in milliseconds.
@@ -95,5 +96,19 @@ describe('activation performance budget (v1.0 deliverable R)', () => {
     expect(p95, `activate p95 ${p95.toFixed(2)}ms exceeds budget ${BUDGETS.p95Ms}ms`).toBeLessThan(
       BUDGETS.p95Ms,
     );
+  });
+
+  it('activate() triggers ActiveRunsTracker.start path', async () => {
+    const trackerModule = await import('../src/services/activeRunsTracker.js');
+    const startSpy = vi.spyOn(trackerModule.ActiveRunsTracker.prototype, 'start');
+
+    const { activate, deactivate } = await import('../src/extension.js');
+    const ctx = createMockExtensionContext();
+    activate(ctx as unknown as never);
+
+    expect(startSpy).toHaveBeenCalledTimes(1);
+
+    await Promise.resolve(deactivate());
+    startSpy.mockRestore();
   });
 });

@@ -51,18 +51,16 @@ describe('telemetry deny-list', () => {
   });
 
   it('every declared TelemetryEventMap field has a clean name', () => {
-    // Synthetic table: keep this in sync with TelemetryEventMap. The list is
-    // intentionally hard-coded so any drift in the production map breaks the
-    // test loudly.
-    const declared: Record<TelemetryEventName, string[]> = {
-      extensionActivated: ['version'],
-      commandInvoked: ['command'],
-      runStarted: ['kind'],
-      runCompleted: ['status', 'durationMs'],
-      errorRaised: ['kind'],
-    };
-    for (const [event, fields] of Object.entries(declared)) {
-      const offending = fields.filter((f) => FORBIDDEN_KEY_REGEX.test(f));
+    const declared = {
+      extensionActivated: { version: '1.0.0' },
+      commandInvoked: { command: '/run' },
+      runStarted: { kind: 'local' as const },
+      runCompleted: { status: 'SUCCEEDED', durationMs: 42 },
+      errorRaised: { kind: 'availabilityCheck' },
+    } satisfies TelemetryEventMap;
+
+    for (const [event, payload] of Object.entries(declared)) {
+      const offending = findForbiddenKeys(payload as Record<string, unknown>);
       expect(offending, `event ${event} declares forbidden field(s)`).toEqual([]);
     }
   });

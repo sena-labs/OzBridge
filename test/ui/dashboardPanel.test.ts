@@ -83,6 +83,7 @@ describe('renderDashboardHtml', () => {
     expect(html).toContain(`'nonce-NONCE123'`);
     expect(html).toContain('vscode-webview://x');
     expect(html).toContain(`default-src 'none'`);
+    expect(html).not.toContain('img-src vscode-webview://x data:');
   });
 
   it('renders the totals card and success-rate percentage', () => {
@@ -186,6 +187,7 @@ describe('DashboardPanel', () => {
     const panel = (vscode.window.createWebviewPanel as ReturnType<typeof vi.fn>).mock.results[0].value;
     expect(panel.webview.html).toContain('Failed to load dashboard');
     expect(panel.webview.html).toContain('boom');
+    expect(panel.webview.html).toContain('img-src vscode-webview://mock;');
   });
 
   it('dispose clears the singleton', () => {
