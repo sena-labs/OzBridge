@@ -20,6 +20,15 @@ packages/**
 # Scaffold output (created by /init, not part of the extension)
 .agents/**
 .warp/**
+.venv/**
+
+# Local secrets / machine-only files
+.env
+.env.*
+
+# Temporary media artifacts
+media/screenshot*.*
+media/file.*
 
 # Misc
 node_modules/**

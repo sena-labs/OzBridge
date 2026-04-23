@@ -3,3 +3,5 @@ dist/
 *.vsix
 .vscode-test/
 coverage/
+.env
+.env.*
