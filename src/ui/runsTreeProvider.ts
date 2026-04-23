@@ -60,7 +60,7 @@ interface MessageNode extends BaseNode {
 }
 
 /**
- * `TreeDataProvider` that renders 5 top-level categories in the Warp sidebar:
+ * `TreeDataProvider` that renders 5 top-level categories in the OzBridge sidebar:
  *
  * 1. **Active Runs** — `QUEUED` + `INPROGRESS` (live via {@link ActiveRunsTracker}).
  * 2. **History** — `SUCCEEDED` + `FAILED` (last N, from the same tracker).

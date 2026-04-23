@@ -9,7 +9,7 @@ import { OzCliService } from './services/ozCliService.js';
 import { RunPoller } from './services/runPoller.js';
 import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
-import { registerWarpTools } from './tools/index.js';
+import { registerOzTools } from './tools/index.js';
 import { StatusBarManager } from './ui/statusBarItem.js';
 import { OzRunsTreeProvider } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
@@ -119,12 +119,12 @@ export function activate(context: vscode.ExtensionContext): void {
   // Questi tool permettono a Copilot Agent mode di invocare Oz senza @oz.
   // Il runtime di VS Code < 1.96 (`vscode.lm` assente) è gestito con graceful fallback.
   if (typeof vscode.lm?.registerTool === 'function') {
-    registerWarpTools(context, cli, state.configManager, ctx, state.runPoller);
+    registerOzTools(context, cli, state.configManager, ctx, state.runPoller);
   } else {
     logInfo('vscode.lm.registerTool not available — Language Model Tools not registered');
   }
 
-  // Status Bar indicator $(cloud) Warp: N active
+  // Status Bar indicator $(cloud) OzBridge: N active
   const statusBar = new StatusBarManager(state.tracker);
   context.subscriptions.push(statusBar);
 
@@ -193,7 +193,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const triage = new FailureTriageService(cli, lmClient);
       try {
         const suggestion = await vscode.window.withProgress(
-          { location: vscode.ProgressLocation.Notification, title: vscode.l10n.t('Warp: triaging {0}…', id), cancellable: true },
+          { location: vscode.ProgressLocation.Notification, title: vscode.l10n.t('OzBridge: triaging {0}…', id), cancellable: true },
           (_progress, token) => triage.triage(id, token),
         );
         const doc = await vscode.workspace.openTextDocument({
@@ -212,7 +212,7 @@ export function activate(context: vscode.ExtensionContext): void {
       } catch (err) {
         const message = getErrorMessage(err);
         logError(`Triage failed: ${message}`);
-        await vscode.window.showErrorMessage(vscode.l10n.t('Warp triage failed: {0}', message));
+        await vscode.window.showErrorMessage(vscode.l10n.t('OzBridge: triage failed: {0}', message));
       }
     }),
   );
@@ -241,7 +241,7 @@ export function activate(context: vscode.ExtensionContext): void {
       } catch (err) {
         const message = getErrorMessage(err);
         logError(`Dataset export failed: ${message}`);
-        await vscode.window.showErrorMessage(vscode.l10n.t('Warp dataset export failed: {0}', message));
+        await vscode.window.showErrorMessage(vscode.l10n.t('OzBridge: dataset export failed: {0}', message));
       }
     }),
   );

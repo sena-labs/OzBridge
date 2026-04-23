@@ -3,7 +3,7 @@ import { ActiveRunsTracker, TrackedRun } from '../services/activeRunsTracker.js'
 import { OzRunStatus } from '../types/index.js';
 
 /**
- * Manages the `$(cloud) Warp: N active` status bar indicator.
+ * Manages the `$(cloud) OzBridge: N active` status bar indicator.
  *
  * The item subscribes to an {@link ActiveRunsTracker} for live updates and
  * colour-codes the count:
@@ -13,7 +13,7 @@ import { OzRunStatus } from '../types/index.js';
  * - `3` +     → `statusBarItem.errorBackground`
  *
  * Clicking the item runs the `ozBridge.sidebar.focus` command, bringing the
- * Warp Activity Bar view into focus.
+ * OzBridge Activity Bar view into focus.
  */
 export class StatusBarManager implements vscode.Disposable {
   static readonly FOCUS_COMMAND = 'ozBridge.sidebar.focus';
@@ -104,7 +104,7 @@ function buildTooltip(runs: ReadonlyArray<TrackedRun>): vscode.MarkdownString {
     }
   }
 
-  md.appendMarkdown('\n\nClick to focus the Warp sidebar.');
+  md.appendMarkdown('\n\nClick to focus the OzBridge sidebar.');
   return md;
 }
 
