@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { IConfigManager } from '../types/index.js';
 import { OzTreeNode } from './runsTreeProvider.js';
 
 /**
@@ -104,7 +103,6 @@ export async function showHandoffFallback(options: HandoffOptions): Promise<void
  * Dependencies used by the palette and tree handoff commands.
  */
 export interface HandoffDeps {
-  cfgMgr: IConfigManager;
   /**
    * Returns the first workspace folder path if available, else undefined.
    * Extracted as a dependency so tests can inject a deterministic value.
@@ -162,6 +160,20 @@ function defaultWorkspacePath(): string | undefined {
  * default across macOS/Linux; on Windows Warp still parses double quotes.
  */
 function shellQuote(value: string): string {
+  if (process.platform === 'win32') {
+    // cmd.exe-style escaping (Warp on Windows may delegate to cmd semantics):
+    // - %VAR% expansion: neutralised via %%
+    // - caret and control chars: caret-escaped
+    // - double quotes: backslash-escaped to keep surrounding quotes intact
+    const escaped = value
+      .replace(/\^/g, '^^')
+      .replace(/%/g, '%%')
+      .replace(/"/g, '\\"')
+      .replace(/[&|<>]/g, (ch) => `^${ch}`)
+      .replace(/!/g, '^^!');
+    return `"${escaped}"`;
+  }
+
   const escaped = value.replace(/[\\$"`]/g, (ch) => `\\${ch}`);
   return `"${escaped}"`;
 }

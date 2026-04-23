@@ -530,6 +530,8 @@
         "ozBridge.mcpPort": {
           "type": "number",
           "default": 3847,
+          "minimum": 0,
+          "maximum": 65535,
           "description": "TCP port the MCP server listens on when enabled."
         },
         "ozBridge.mcpBindAddress": {

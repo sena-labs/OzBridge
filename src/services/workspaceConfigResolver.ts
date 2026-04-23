@@ -88,34 +88,34 @@ function expectedKind(key: keyof OzBridgeConfig): string {
  */
 export class WorkspaceConfigResolver implements vscode.Disposable {
   private overrides: Partial<OzBridgeConfig> = {};
-  private readonly watcher: vscode.FileSystemWatcher | undefined;
   private readonly emitter = new vscode.EventEmitter<Partial<OzBridgeConfig>>();
-  private readonly disposables: vscode.Disposable[] = [];
+  private readonly watcherDisposables: vscode.Disposable[] = [];
   private disposed = false;
+  private workspaceRoot: string | undefined;
 
   /** Fires with the new override snapshot whenever the YAML file changes. */
   readonly onDidChange: vscode.Event<Partial<OzBridgeConfig>> = this.emitter.event;
 
-  constructor(private readonly workspaceRoot: string | undefined) {
-    if (!workspaceRoot) { return; }
+  constructor(workspaceRoot: string | undefined) {
+    this.workspaceRoot = workspaceRoot;
     // Initial read (synchronous so ConfigManager's first `getConfig()`
     // already reflects overrides).
     this.reload();
+    this.bindWatcher();
+  }
 
-    if (typeof vscode.workspace.createFileSystemWatcher === 'function') {
-      this.watcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(workspaceRoot, WORKSPACE_CONFIG_PATH),
-        false,
-        false,
-        false,
-      );
-      this.disposables.push(
-        this.watcher.onDidCreate(() => this.reloadAndEmit()),
-        this.watcher.onDidChange(() => this.reloadAndEmit()),
-        this.watcher.onDidDelete(() => this.reloadAndEmit()),
-        this.watcher,
-      );
-    }
+  /**
+   * Rebinds resolver and watcher to a new workspace root (or `undefined`).
+   * Useful when the extension activates in single-file mode and a folder is
+   * opened later, or when workspace folders change at runtime.
+   */
+  setWorkspaceRoot(workspaceRoot: string | undefined): void {
+    if (this.disposed) { return; }
+    if (this.workspaceRoot === workspaceRoot) { return; }
+    this.workspaceRoot = workspaceRoot;
+    this.disposeWatcher();
+    this.reloadAndEmit();
+    this.bindWatcher();
   }
 
   /** Snapshot of the last-read overrides. Empty when no file is present. */
@@ -132,9 +132,7 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
   dispose(): void {
     if (this.disposed) { return; }
     this.disposed = true;
-    for (const d of this.disposables) {
-      try { d.dispose(); } catch { /* ignore */ }
-    }
+    this.disposeWatcher();
     this.emitter.dispose();
   }
 
@@ -146,6 +144,29 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
     if (this.disposed) { return; }
     this.reload();
     this.emitter.fire(this.getOverrides());
+  }
+
+  private bindWatcher(): void {
+    if (!this.workspaceRoot) { return; }
+    if (typeof vscode.workspace.createFileSystemWatcher !== 'function') { return; }
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(this.workspaceRoot, WORKSPACE_CONFIG_PATH),
+      false,
+      false,
+      false,
+    );
+    this.watcherDisposables.push(
+      watcher.onDidCreate(() => this.reloadAndEmit()),
+      watcher.onDidChange(() => this.reloadAndEmit()),
+      watcher.onDidDelete(() => this.reloadAndEmit()),
+      watcher,
+    );
+  }
+
+  private disposeWatcher(): void {
+    for (const d of this.watcherDisposables.splice(0)) {
+      try { d.dispose(); } catch { /* ignore */ }
+    }
   }
 
   private reload(): void {

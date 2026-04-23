@@ -18,9 +18,18 @@ export interface McpConfig {
 
 /** Extracts the `ozBridge.mcp.*` slice from the full config snapshot. */
 export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
+  const port =
+    typeof full.mcpPort === 'number'
+    && Number.isInteger(full.mcpPort)
+    && Number.isFinite(full.mcpPort)
+    && full.mcpPort >= 0
+    && full.mcpPort <= 65_535
+      ? full.mcpPort
+      : 3847;
+
   return {
     enabled: full.mcpEnabled === true,
-    port: typeof full.mcpPort === 'number' && full.mcpPort >= 0 ? full.mcpPort : 3847,
+    port,
     bindAddress: full.mcpBindAddress || '127.0.0.1',
     bearerToken: full.mcpBearerToken || '',
   };

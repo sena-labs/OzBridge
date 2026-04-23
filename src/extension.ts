@@ -55,6 +55,15 @@ const state: {
 /** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
 const EXTENSION_VERSION = '1.1.0';
 
+function isWarpUri(value: unknown): value is { scheme: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { scheme?: unknown }).scheme === 'string' &&
+    (value as { scheme: string }).scheme.toLowerCase() === 'warp'
+  );
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   // Startup log
   const outputChannel = vscode.window.createOutputChannel('OzBridge');
@@ -90,6 +99,13 @@ export function activate(context: vscode.ExtensionContext): void {
   // corrente e offre override typed che vincono sui settings VS Code.
   state.workspaceConfigResolver = new WorkspaceConfigResolver(firstWorkspaceFolderPath());
   context.subscriptions.push(state.workspaceConfigResolver);
+  if (typeof vscode.workspace.onDidChangeWorkspaceFolders === 'function') {
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeWorkspaceFolders(() => {
+        state.workspaceConfigResolver?.setWorkspaceRoot(firstWorkspaceFolderPath());
+      }),
+    );
+  }
   state.configManager = new ConfigManager(state.workspaceConfigResolver);
   context.subscriptions.push(state.configManager);
 
@@ -108,7 +124,15 @@ export function activate(context: vscode.ExtensionContext): void {
   // Registra comando per aprire conversazioni direttamente in Warp (bypassa il browser)
   const openConvCmd = vscode.commands.registerCommand(
     'ozBridge.openConversation',
-    (uri: vscode.Uri) => vscode.env.openExternal(uri),
+    async (uri: unknown) => {
+      if (!isWarpUri(uri)) {
+        await vscode.window.showErrorMessage(
+          vscode.l10n.t('OzBridge: openConversation accepts only warp:// URIs.'),
+        );
+        return false;
+      }
+      return vscode.env.openExternal(uri as vscode.Uri);
+    },
   );
   context.subscriptions.push(openConvCmd);
 
@@ -139,7 +163,7 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   // Warp handoff — apre un tab Warp con contesto tramite URI warp://
-  for (const disposable of registerHandoffCommands({ cfgMgr: state.configManager })) {
+  for (const disposable of registerHandoffCommands({})) {
     context.subscriptions.push(disposable);
   }
 
@@ -334,11 +358,9 @@ export function activate(context: vscode.ExtensionContext): void {
  * `context.subscriptions`) is safe.
  */
 export function deactivate(): Promise<void> | void {
-  // RunPoller è ora disposto anche via context.subscriptions,
-  // ma disposeAll() è idempotente — sicuro chiamare in entrambi i punti.
-  state.runPoller?.disposeAll();
-  state.tracker?.dispose();
-  // The MCP server owns an open socket; await its disposal so the host can
-  // exit cleanly on reload/uninstall.
-  return state.mcp?.dispose();
+  return Promise.allSettled([
+    Promise.resolve().then(() => state.runPoller?.disposeAll()),
+    Promise.resolve().then(() => state.tracker?.dispose()),
+    Promise.resolve().then(() => state.mcp?.dispose()),
+  ]).then(() => undefined);
 }

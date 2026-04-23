@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { randomBytes } from 'node:crypto';
 import { IRunStatsService, RunStatsSummary } from '../services/runStats.js';
 import { logError } from '../services/logger.js';
 
@@ -8,14 +9,11 @@ import { logError } from '../services/logger.js';
  */
 export const DEFAULT_DASHBOARD_WINDOW_DAYS = 14;
 
-/** Generates a cryptographically-weak nonce sufficient for CSP. */
+/** Generates a cryptographically-strong nonce suitable for CSP. */
 export function generateNonce(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let nonce = '';
-  for (let i = 0; i < 32; i++) {
-    nonce += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return nonce;
+  const bytes = randomBytes(32);
+  return Array.from(bytes, (b) => chars[b % chars.length]).join('');
 }
 
 /** Escapes a value for safe interpolation inside HTML text/attributes. */
@@ -82,7 +80,7 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; img-src ${cspSource} data:;" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; img-src ${cspSource};" />
 <title>OzBridge — Dashboard</title>
 <style nonce="${nonce}">
   body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background: var(--vscode-editor-background); margin: 0; padding: 16px; }
@@ -189,7 +187,7 @@ export class DashboardPanel {
       const message = err instanceof Error ? err.message : String(err);
       logError(`Dashboard refresh failed: ${message}`);
       const nonce = generateNonce();
-      this.panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}';" /><style nonce="${nonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-errorForeground);padding:16px;}</style></head><body>Failed to load dashboard: ${escapeHtml(message)}</body></html>`;
+      this.panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'nonce-${nonce}'; img-src ${this.panel.webview.cspSource};" /><style nonce="${nonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-errorForeground);padding:16px;}</style></head><body>Failed to load dashboard: ${escapeHtml(message)}</body></html>`;
     }
   }
 

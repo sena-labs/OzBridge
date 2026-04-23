@@ -89,7 +89,6 @@ function isActive(status: OzRunStatus): boolean {
 
 function buildTooltip(runs: ReadonlyArray<TrackedRun>): vscode.MarkdownString {
   const md = new vscode.MarkdownString(undefined, true);
-  md.isTrusted = true;
   md.appendMarkdown('**OzBridge** — active & recent runs\n\n');
 
   if (runs.length === 0) {

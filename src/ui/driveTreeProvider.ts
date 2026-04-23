@@ -23,6 +23,8 @@ interface CategoryNode {
   readonly label: string;
 }
 
+type CategorySourceMode = 'unknown' | 'cli' | 'filesystem' | 'mixed';
+
 interface EntryNode {
   readonly kind: 'entry';
   readonly id: string;
@@ -50,12 +52,14 @@ export class OzDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeNod
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private readonly cache = new Map<DriveCategory, DriveEntry[]>();
+  private readonly categorySources = new Map<DriveCategory, CategorySourceMode>();
   private disposed = false;
 
   constructor(private readonly source: IDriveSource) {}
 
   refresh(): void {
     this.cache.clear();
+    this.categorySources.clear();
     this._onDidChangeTreeData.fire();
   }
 
@@ -71,8 +75,14 @@ export class OzDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeNod
         const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Collapsed);
         item.id = element.id;
         item.iconPath = new vscode.ThemeIcon(categoryIcon(element.category));
+        const sourceMode = this.categorySources.get(element.category) ?? 'unknown';
+        if (sourceMode !== 'unknown') {
+          item.description = sourceMode;
+        }
         item.contextValue = `warpDriveCategory:${element.category}`;
-        item.tooltip = `${element.label} category`;
+        item.tooltip = sourceMode === 'unknown'
+          ? `${element.label} category`
+          : `${element.label} category · source: ${sourceMode}`;
         // v1.0 deliverable S — WCAG 2.1 AA: every tree node carries an
         // explicit a11y label + role so screen readers announce a
         // semantic value rather than the raw display string.
@@ -148,6 +158,7 @@ export class OzDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeNod
       case 'skill': entries = await this.source.listSkills(); break;
     }
     this.cache.set(category, entries);
+    this.categorySources.set(category, computeSourceMode(entries));
     return entries;
   }
 }
@@ -200,4 +211,16 @@ function buildTooltip(entry: DriveEntry): vscode.MarkdownString {
     md.appendMarkdown(`\n\n_updated: ${entry.updatedAt}_`);
   }
   return md;
+}
+
+function computeSourceMode(entries: ReadonlyArray<DriveEntry>): CategorySourceMode {
+  if (entries.length === 0) {
+    return 'unknown';
+  }
+  const hasCli = entries.some((e) => e.source === 'cli');
+  const hasFs = entries.some((e) => e.source === 'filesystem');
+  if (hasCli && hasFs) {
+    return 'mixed';
+  }
+  return hasCli ? 'cli' : 'filesystem';
 }
