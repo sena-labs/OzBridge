@@ -1,6 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200" viewBox="0 0 640 200">
-  <rect width="640" height="200" rx="12" fill="#1e1e1e"/>
-  <text x="320" y="90" text-anchor="middle" fill="#569cd6" font-family="Consolas,monospace" font-size="22">@warp /run implement auth module</text>
-  <text x="320" y="130" text-anchor="middle" fill="#4ec9b0" font-family="Consolas,monospace" font-size="16">✅ Agent run — stato: SUCCEEDED</text>
-  <text x="320" y="165" text-anchor="middle" fill="#808080" font-family="Consolas,monospace" font-size="13">Warp Bridge for VS Code — Chat Participant demo</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" fill="none">
+  <rect width="1440" height="900" fill="#1e1e1e"/>
+  <rect y="36" width="54" height="840" fill="#333333"/>
+  <rect x="54" y="36" width="306" height="840" fill="#252526"/>
+  <rect x="360" y="36" width="1080" height="840" fill="#1e1e1e"/>
+  <rect y="876" width="1440" height="24" fill="#007acc"/>
+  <text x="84" y="86" fill="#cccccc" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700">Runs &amp; Resources</text>
+  <text x="84" y="114" fill="#868686" font-family="Segoe UI, Arial, sans-serif" font-size="14">Sidebar + chat flow for Oz agents</text>
+  <text x="420" y="196" fill="#cccccc" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="700">@oz /cloud refactor auth flow and update tests</text>
 </svg>
