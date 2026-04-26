@@ -19,7 +19,7 @@
   "homepage": "https://github.com/sena-labs/warp-vsc-bridge#readme",
   "icon": "media/warp-icon.png",
   "engines": {
-    "vscode": "^1.96.0"
+    "vscode": "^1.116.0"
   },
   "categories": [
     "Chat"
