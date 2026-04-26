@@ -122,7 +122,7 @@ describe('OzDriveTreeProvider', () => {
         { id: 's2', category: 'skill', name: 'skill-b', source: 'filesystem' } as DriveSkill,
       ]),
     });
-    provider = new WarpDriveTreeProvider(source);
+    provider = new OzDriveTreeProvider(source);
 
     const roots = await provider.getChildren();
     const promptCat = findCategory(roots, 'prompt');

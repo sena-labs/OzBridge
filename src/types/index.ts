@@ -59,6 +59,13 @@ export interface WarpBridgeConfig extends BridgeConfig {
   mcpBearerToken: string;
 }
 
+/**
+ * Rebrand alias: prefer `OzBridgeConfig` for new code. The original
+ * `WarpBridgeConfig` name is retained for backward compatibility with
+ * existing imports across the codebase.
+ */
+export type OzBridgeConfig = WarpBridgeConfig;
+
 // IMPL: valori di default allineati con package.json contributes.configuration
 export const DEFAULT_CONFIG: WarpBridgeConfig = {
   ozPath: 'oz',

@@ -58,7 +58,7 @@ function coerce(key: keyof OzBridgeConfig, value: YamlScalar): unknown | undefin
       if (typeof value === 'boolean') { return value; }
       break;
   }
-  logWarn(`workspace config: ignoring \`${key}\`: got ${typeof value}, expected ${expectedKind(key)}`);
+  logWarn(`workspace config: ignoring \`${String(key)}\`: got ${typeof value}, expected ${expectedKind(key)}`);
   return undefined;
 }
 
