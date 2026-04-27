@@ -44,8 +44,8 @@ console.log('--- Manifest checks ---');
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 assert(manifest.name === 'ozbridge', 'name', manifest.name);
 assert(manifest.publisher === 'sena-labs', 'publisher', manifest.publisher);
-assert(manifest.version === '0.5.0', 'version', manifest.version);
-assert(/^[\^~]?1\.96/.test(manifest.engines.vscode), 'engines.vscode', manifest.engines.vscode);
+assert(manifest.version === '1.1.0', 'version', manifest.version);
+assert(manifest.engines.vscode === '^1.96.0', 'engines.vscode', manifest.engines.vscode);
 assert(manifest.main === './dist/extension.js', 'main', manifest.main);
 assert(Array.isArray(manifest.contributes.chatParticipants), 'chatParticipants declared');
 assert(
@@ -68,12 +68,30 @@ assert(
 
 const viewContainer = manifest.contributes.viewsContainers?.activitybar?.[0];
 assert(viewContainer?.id === 'ozBridgeSidebar', 'Activity Bar container', viewContainer?.id);
-const view = manifest.contributes.views?.ozBridgeSidebar?.[0];
-assert(view?.id === 'ozBridge.runsView', 'Sidebar view id', view?.id);
+const sidebarViews = (manifest.contributes.views?.ozBridgeSidebar || []).map((v) => v.id).sort();
+assert(sidebarViews.includes('ozBridge.runsView'), 'Runs sidebar view id', sidebarViews.join(','));
+assert(sidebarViews.includes('ozBridge.driveView'), 'Drive sidebar view id', sidebarViews.join(','));
 
 const commandIds = (manifest.contributes.commands || []).map((c) => c.command).sort();
 const mustHaveCommands = [
+  'ozBridge.dashboard.open',
+  'ozBridge.drive.copyContent',
+  'ozBridge.drive.insertIntoChat',
+  'ozBridge.drive.openInEditor',
+  'ozBridge.drive.refresh',
+  'ozBridge.exportDataset',
   'ozBridge.handoff',
+  'ozBridge.mcp.copyEndpointUrl',
+  'ozBridge.mcp.registerClient',
+  'ozBridge.mcp.start',
+  'ozBridge.mcp.status',
+  'ozBridge.mcp.stop',
+  'ozBridge.mcp.unregisterClient',
+  'ozBridge.skill.edit',
+  'ozBridge.skill.new',
+  'ozBridge.skill.saveGlobal',
+  'ozBridge.skill.saveWorkspace',
+  'ozBridge.triageFailure',
   'ozBridge.tree.copyId',
   'ozBridge.tree.deleteSchedule',
   'ozBridge.tree.handoff',
@@ -85,6 +103,19 @@ const mustHaveCommands = [
 ];
 for (const id of mustHaveCommands) {
   assert(commandIds.includes(id), `declares command ${id}`);
+}
+
+const activationEvents = manifest.activationEvents || [];
+assert(activationEvents.includes('onStartupFinished'), 'activation onStartupFinished');
+assert(activationEvents.includes('onChatParticipant:ozbridge.oz'), 'activation chat participant');
+for (const name of expectedTools) {
+  assert(activationEvents.includes(`onLanguageModelTool:${name}`), `activation language model tool ${name}`);
+}
+for (const id of sidebarViews) {
+  assert(activationEvents.includes(`onView:${id}`), `activation view ${id}`);
+}
+for (const id of commandIds) {
+  assert(activationEvents.includes(`onCommand:${id}`), `activation command ${id}`);
 }
 
 const props = manifest.contributes.configuration?.properties || {};
@@ -116,6 +147,7 @@ const registry = {
   treeProviders: new Map(),
   participants: [],
   statusBarItems: [],
+  webviewPanels: [],
   externalsOpened: [],
 };
 
@@ -168,11 +200,22 @@ const vscode = {
   TreeItemCollapsibleState: { None: 0, Collapsed: 1, Expanded: 2 },
   StatusBarAlignment: { Left: 1, Right: 2 },
   DiagnosticSeverity: { Error: 0, Warning: 1, Information: 2, Hint: 3 },
+  ProgressLocation: { SourceControl: 1, Window: 10, Notification: 15 },
+  ViewColumn: { Active: -1, Beside: -2, One: 1, Two: 2, Three: 3 },
   LanguageModelTextPart,
   LanguageModelToolResult,
+  l10n: {
+    t: (message, ...args) => String(message).replace(/\{(\d+)\}/g, (_m, idx) => String(args[Number(idx)] ?? '')),
+  },
   workspace: {
     getConfiguration: (_section) => ({ get: (_k, def) => def }),
     onDidChangeConfiguration: () => new Disposable(),
+    onDidChangeWorkspaceFolders: () => new Disposable(),
+    openTextDocument: (input) => Promise.resolve({
+      uri: input instanceof Uri ? input : Uri.parse('untitled:OzBridge'),
+      languageId: typeof input?.language === 'string' ? input.language : 'plaintext',
+      getText: () => input?.content ?? '',
+    }),
     workspaceFolders: undefined,
     fs: { stat: () => Promise.reject(new Error('n/a')), createDirectory: () => Promise.resolve(), writeFile: () => Promise.resolve() },
   },
@@ -183,6 +226,38 @@ const vscode = {
     showInformationMessage: () => Promise.resolve(undefined),
     showErrorMessage: () => Promise.resolve(undefined),
     showInputBox: () => Promise.resolve(undefined),
+    showQuickPick: () => Promise.resolve(undefined),
+    showOpenDialog: () => Promise.resolve(undefined),
+    showTextDocument: (doc) => Promise.resolve({ document: doc }),
+    withProgress: (_options, task) => task({}, { isCancellationRequested: false, onCancellationRequested: () => new Disposable() }),
+    createWebviewPanel: (viewType, title, viewColumn, options) => {
+      const disposables = [];
+      const panel = {
+        viewType,
+        title,
+        viewColumn,
+        options,
+        webview: {
+          cspSource: 'vscode-webview://ozbridge',
+          html: '',
+          onDidReceiveMessage: (_listener, _thisArg, targetDisposables) => {
+            const d = new Disposable();
+            targetDisposables?.push?.(d);
+            return d;
+          },
+        },
+        reveal: () => {},
+        onDidDispose: (_listener, _thisArg, targetDisposables) => {
+          const d = new Disposable();
+          disposables.push(d);
+          targetDisposables?.push?.(d);
+          return d;
+        },
+        dispose: () => { while (disposables.length > 0) disposables.pop().dispose(); },
+      };
+      registry.webviewPanels.push(panel);
+      return panel;
+    },
     createStatusBarItem: (alignment, priority) => {
       const item = { alignment, priority, text: '', show: () => {}, hide: () => {}, dispose: () => {} };
       registry.statusBarItems.push(item);
@@ -211,6 +286,7 @@ const vscode = {
   },
   env: {
     language: 'en',
+    isTelemetryEnabled: false,
     openExternal: (uri) => { registry.externalsOpened.push(uri); return Promise.resolve(true); },
     clipboard: { writeText: () => Promise.resolve(), readText: () => Promise.resolve('') },
   },
@@ -269,6 +345,7 @@ assert(registry.tools.has('oz_run_cloud'), 'registers oz_run_cloud tool');
 assert(registry.tools.has('oz_get_run'), 'registers oz_get_run tool');
 assert(registry.tools.has('oz_list_runs'), 'registers oz_list_runs tool');
 assert(registry.treeProviders.has('ozBridge.runsView'), 'registers sidebar tree provider');
+assert(registry.treeProviders.has('ozBridge.driveView'), 'registers drive tree provider');
 assert(registry.statusBarItems.length >= 1, 'creates status bar item', `count=${registry.statusBarItems.length}`);
 for (const id of mustHaveCommands) {
   assert(registry.commands.has(id), `command ${id} is live`);
@@ -311,7 +388,19 @@ console.log('\n--- Functional smoke tests ---');
   ];
   assert(JSON.stringify(categoryIds) === JSON.stringify(expected), 'sidebar has 5 categories', categoryIds.join(','));
 
-  // 4) Calling deactivate() must not throw
+  // 4) Drive Tree provider returns the 3 expected top-level categories
+  const driveProvider = registry.treeProviders.get('ozBridge.driveView');
+  const driveRoots = await driveProvider.getChildren();
+  const driveCategoryIds = driveRoots.map((n) => n.id).sort();
+  const expectedDrive = ['category:prompt', 'category:rule', 'category:skill'];
+  assert(JSON.stringify(driveCategoryIds) === JSON.stringify(expectedDrive), 'drive view has 3 categories', driveCategoryIds.join(','));
+
+  // 5) Dashboard command creates a webview panel without throwing
+  const panelsBefore = registry.webviewPanels.length;
+  await vscode.commands.executeCommand('ozBridge.dashboard.open');
+  assert(registry.webviewPanels.length === panelsBefore + 1, 'dashboard command creates webview');
+
+  // 6) Calling deactivate() must not throw
   try { extModule.deactivate(); log('  ✓', 'deactivate() returns cleanly'); }
   catch (err) { log('  ✗', 'deactivate()', err.message); failures.push('deactivate'); }
 

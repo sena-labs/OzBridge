@@ -50,14 +50,20 @@ describe('Kill-switch — activation short-circuit', () => {
       subscriptions: subs,
     });
 
-    // Only the OutputChannel should have been pushed onto subscriptions
-    // before the early return.
-    expect(subs.length).toBeLessThanOrEqual(1);
+    // Only the OutputChannel and the escape command should have been
+    // registered before the early return. Anything more would mean the
+    // kill-switch failed to short-circuit.
+    expect(subs.length).toBeLessThanOrEqual(2);
     const showWarning = vscode.window.showWarningMessage as unknown as ReturnType<typeof vi.fn>;
     expect(showWarning).toHaveBeenCalledTimes(1);
     const msg = showWarning.mock.calls[0][0] as string;
     expect(msg).toMatch(/kill-switch/i);
     expect(msg).toMatch(/incident-123/);
+
+    // Escape hatch must be registered so users can recover.
+    const registerCommand = vscode.commands.registerCommand as unknown as ReturnType<typeof vi.fn>;
+    const registeredCommands = registerCommand.mock.calls.map((c) => c[0] as string);
+    expect(registeredCommands).toContain('ozBridge.killSwitch.disable');
 
     expect(() => deactivate()).not.toThrow();
   });

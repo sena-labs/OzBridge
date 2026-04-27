@@ -68,7 +68,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // Startup log
   const outputChannel = vscode.window.createOutputChannel('OzBridge');
   context.subscriptions.push(outputChannel);
-  initLogger(outputChannel, '[warp-vsc-bridge]');
+  initLogger(outputChannel, '[ozbridge]');
 
   // ── Kill-switch (v1.0 deliverable T) ──────────────────────────────
   // Operator escape hatch for emergencies (critical regression in
@@ -87,9 +87,35 @@ export function activate(context: vscode.ExtensionContext): void {
     const reason =
       vscode.workspace.getConfiguration('ozBridge').get<string>('killSwitch.reason', '') || '';
     const detail = reason ? ` Reason: ${reason}` : '';
-    logInfo(`Kill-switch active — extension will not register any features.${detail}`);
+    logInfo(`[KILL-SWITCH] active — extension will not register any features.${detail}`);
     void vscode.window.showWarningMessage(
       `OzBridge is disabled by the kill-switch (ozBridge.killSwitch.enabled).${detail}`,
+    );
+    // Escape hatch: always available even when kill-switch is on, so users
+    // are not trapped if the flag was set inadvertently (e.g. shared
+    // workspace settings.json). The command resets the flag at Global
+    // scope and offers a window reload to re-activate the extension.
+    context.subscriptions.push(
+      vscode.commands.registerCommand('ozBridge.killSwitch.disable', async () => {
+        try {
+          await vscode.workspace
+            .getConfiguration('ozBridge')
+            .update('killSwitch.enabled', false, vscode.ConfigurationTarget.Global);
+          const reload = 'Reload Window';
+          const action = await vscode.window.showInformationMessage(
+            'OzBridge kill-switch disabled. Reload the window to re-activate the extension.',
+            reload,
+          );
+          if (action === reload) {
+            await vscode.commands.executeCommand('workbench.action.reloadWindow');
+          }
+        } catch (err) {
+          logError(`Failed to disable kill-switch: ${getErrorMessage(err)}`);
+          void vscode.window.showErrorMessage(
+            `Failed to disable kill-switch: ${getErrorMessage(err)}`,
+          );
+        }
+      }),
     );
     return;
   }
@@ -277,7 +303,10 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(disposable);
   }
   if (state.configManager.getConfig().mcpEnabled) {
-    void state.mcp.start();
+    state.mcp.start().catch((err) => {
+      logError(`MCP start failed: ${getErrorMessage(err)}`);
+      state.telemetry?.track('errorRaised', { kind: 'mcpStart' });
+    });
   }
 
   // Comando aggiuntivo: focus sulla sidebar — usato dal click sulla Status Bar.
@@ -294,9 +323,15 @@ export function activate(context: vscode.ExtensionContext): void {
     // React to mcp-specific toggles without requiring an extension reload.
     if (state.mcp) {
       if (newConfig.mcpEnabled && !state.mcp.running) {
-        void state.mcp.start();
+        state.mcp.start().catch((err) => {
+          logError(`MCP start failed: ${getErrorMessage(err)}`);
+          state.telemetry?.track('errorRaised', { kind: 'mcpStart' });
+        });
       } else if (!newConfig.mcpEnabled && state.mcp.running) {
-        void state.mcp.stop();
+        state.mcp.stop().catch((err) => {
+          logError(`MCP stop failed: ${getErrorMessage(err)}`);
+          state.telemetry?.track('errorRaised', { kind: 'mcpStop' });
+        });
       }
     }
   });
@@ -325,7 +360,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // First-activation Getting Started walkthrough (gated via globalState so
   // it opens at most once per install; failure is non-fatal).
-  void maybeOpenGettingStartedWalkthrough({ globalState: context.globalState });
+  maybeOpenGettingStartedWalkthrough({ globalState: context.globalState }).catch((err) => {
+    logError(`Walkthrough failed: ${getErrorMessage(err)}`);
+  });
 
   // Background availability check (does not block activation)
   cli.checkAvailability().then((avail) => {

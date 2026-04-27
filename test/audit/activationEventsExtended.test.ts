@@ -35,6 +35,24 @@ describe('activationEvents extended audit', () => {
     expect(pkg.activationEvents ?? []).toContain(expected);
   });
 
+  it('must explicitly activate for every contributed command', () => {
+    const commands = (pkg.contributes?.commands ?? []).map((c) => c.command);
+    const activation = new Set(pkg.activationEvents ?? []);
+
+    expect(commands.length).toBeGreaterThan(0);
+    for (const command of commands) {
+      const expected = `onCommand:${command}`;
+      expect(
+        activation.has(expected),
+        `Missing activation event ${expected}. Command Palette invocation may not wake the extension on older VS Code hosts.`,
+      ).toBe(true);
+    }
+  });
+
+  it('must activate after startup so status bar/sidebar services are initialized', () => {
+    expect(pkg.activationEvents ?? []).toContain('onStartupFinished');
+  });
+
   it('must not contain stale warpBridge activation prefixes', () => {
     const stale = (pkg.activationEvents ?? []).filter((e) => /warpBridge\./.test(e));
     expect(stale, `Stale activation events detected: ${stale.join(', ')}`).toEqual([]);

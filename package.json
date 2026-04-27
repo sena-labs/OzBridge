@@ -11,20 +11,21 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sena-labs/warp-vsc-bridge"
+    "url": "https://github.com/sena-labs/OzBridge"
   },
   "bugs": {
-    "url": "https://github.com/sena-labs/warp-vsc-bridge/issues"
+    "url": "https://github.com/sena-labs/OzBridge/issues"
   },
-  "homepage": "https://github.com/sena-labs/warp-vsc-bridge#readme",
+  "homepage": "https://github.com/sena-labs/OzBridge#readme",
   "icon": "media/warp-icon.png",
   "engines": {
-    "vscode": "^1.116.0"
+    "vscode": "^1.96.0"
   },
   "categories": [
     "Chat"
   ],
   "activationEvents": [
+    "onStartupFinished",
     "onChatParticipant:ozbridge.oz",
     "onLanguageModelTool:oz_run_local",
     "onLanguageModelTool:oz_run_cloud",
@@ -32,7 +33,32 @@
     "onLanguageModelTool:oz_list_runs",
     "onView:ozBridge.runsView",
     "onView:ozBridge.driveView",
-    "onCommand:ozBridge.dashboard.open"
+    "onCommand:ozBridge.tree.refresh",
+    "onCommand:ozBridge.tree.copyId",
+    "onCommand:ozBridge.tree.openInBrowser",
+    "onCommand:ozBridge.tree.showRun",
+    "onCommand:ozBridge.tree.pauseSchedule",
+    "onCommand:ozBridge.tree.unpauseSchedule",
+    "onCommand:ozBridge.tree.deleteSchedule",
+    "onCommand:ozBridge.handoff",
+    "onCommand:ozBridge.tree.handoff",
+    "onCommand:ozBridge.mcp.start",
+    "onCommand:ozBridge.mcp.stop",
+    "onCommand:ozBridge.mcp.status",
+    "onCommand:ozBridge.mcp.copyEndpointUrl",
+    "onCommand:ozBridge.mcp.registerClient",
+    "onCommand:ozBridge.mcp.unregisterClient",
+    "onCommand:ozBridge.drive.refresh",
+    "onCommand:ozBridge.drive.insertIntoChat",
+    "onCommand:ozBridge.drive.copyContent",
+    "onCommand:ozBridge.drive.openInEditor",
+    "onCommand:ozBridge.skill.edit",
+    "onCommand:ozBridge.skill.new",
+    "onCommand:ozBridge.skill.saveGlobal",
+    "onCommand:ozBridge.skill.saveWorkspace",
+    "onCommand:ozBridge.dashboard.open",
+    "onCommand:ozBridge.triageFailure",
+    "onCommand:ozBridge.exportDataset"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -637,7 +663,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
-    "@types/vscode": "^1.116.0",
+    "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.5",
     "esbuild": "^0.28.0",
     "typescript": "^6.0.3",
