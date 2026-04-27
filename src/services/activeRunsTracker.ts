@@ -50,6 +50,15 @@ export class ActiveRunsTracker implements vscode.Disposable {
   /** Merged view: CLI snapshot + sticky overrides (exposed via {@link latest}). */
   private last: TrackedRun[] = [];
   /**
+   * `true` once a polling iteration has fired `onDidError` without a
+   * subsequent successful tick. Used by {@link tick} to force an
+   * `onDidChange` emission on the next success even when the merged
+   * list content is unchanged — otherwise the `StatusBarManager`
+   * stays stuck in its `unavailable` state forever after a single
+   * transient error.
+   */
+  private errorState = false;
+  /**
    * Sticky status overrides keyed by normalised (lower-case) run id.
    * These are applied on top of the CLI snapshot until the CLI itself
    * reports a terminal status for the same id.
@@ -191,11 +200,23 @@ export class ActiveRunsTracker implements vscode.Disposable {
       }
 
       const next = this.applyOverrides(cliRuns);
-      if (!sameList(next, this.last)) {
+      const listChanged = !sameList(next, this.last);
+      const recoveringFromError = this.errorState;
+      if (listChanged) {
         this.last = next;
+      }
+      // Always update the cached snapshot, then emit `onDidChange` if
+      // the list changed *or* we are recovering from a previous error
+      // — the latter is needed so `StatusBarManager.renderError()`
+      // gets cleared on recovery even when the list content didn't
+      // actually change between polls.
+      if (listChanged || recoveringFromError) {
+        this.last = next;
+        this.errorState = false;
         this._onDidChange.fire([...next]);
       }
     } catch (err) {
+      this.errorState = true;
       this._onDidError.fire(err);
     }
   }

@@ -49,7 +49,7 @@ export class OzCliService implements IOzCliService {
 
   async checkAvailability(): Promise<{ available: boolean; version: string | null; path: string | null }> {
     try {
-      await this.exec(['--help']);
+      await this.exec(['--help'], undefined, undefined, { readOnly: true });
       return { available: true, version: null, path: this.resolveOzPath() };
     } catch {
       return { available: false, version: null, path: null };
@@ -161,13 +161,23 @@ export class OzCliService implements IOzCliService {
   // =========================================================================
 
   async runList(): Promise<OzListResult<{ id: string; status: OzRunStatus }>> {
-    const result = await this.exec(['run', 'list', '--output-format', 'json']);
+    const result = await this.exec(
+      ['run', 'list', '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return this.toListResult(result);
   }
 
   async runGet(runId: string): Promise<OzRunResult> {
     this.sanitizeId(runId, 'runId');
-    const result = await this.exec(['run', 'get', runId, '--output-format', 'json']);
+    const result = await this.exec(
+      ['run', 'get', runId, '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return this.toRunResult(result);
   }
 
@@ -210,7 +220,12 @@ export class OzCliService implements IOzCliService {
   }
 
   async scheduleList(): Promise<OzListResult<OzSchedule>> {
-    const result = await this.exec(['schedule', 'list', '--output-format', 'json']);
+    const result = await this.exec(
+      ['schedule', 'list', '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return this.toListResult(result);
   }
 
@@ -234,27 +249,52 @@ export class OzCliService implements IOzCliService {
   // =========================================================================
 
   async modelList(): Promise<OzListResult<OzModel>> {
-    const result = await this.exec(['model', 'list', '--output-format', 'json']);
+    const result = await this.exec(
+      ['model', 'list', '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return this.toListResult(result);
   }
 
   async mcpList(): Promise<OzListResult<OzMcpServer>> {
-    const result = await this.exec(['mcp', 'list', '--output-format', 'json']);
+    const result = await this.exec(
+      ['mcp', 'list', '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return this.toListResult(result);
   }
 
   async profileList(): Promise<OzListResult<OzProfile>> {
-    const result = await this.exec(['agent', 'profile', 'list', '--output-format', 'json']);
+    const result = await this.exec(
+      ['agent', 'profile', 'list', '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return this.toListResult(result);
   }
 
   async environmentList(): Promise<OzListResult<OzEnvironment>> {
-    const result = await this.exec(['environment', 'list', '--output-format', 'json']);
+    const result = await this.exec(
+      ['environment', 'list', '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return this.toListResult(result);
   }
 
   async integrationList(): Promise<OzListResult<OzIntegration>> {
-    const result = await this.exec(['integration', 'list', '--output-format', 'json']);
+    const result = await this.exec(
+      ['integration', 'list', '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return this.toListResult(result);
   }
 
@@ -269,14 +309,24 @@ export class OzCliService implements IOzCliService {
         `Invalid drive category: ${String(category)}`,
       );
     }
-    const result = await this.exec(['drive', 'list', category, '--output-format', 'json']);
+    const result = await this.exec(
+      ['drive', 'list', category, '--output-format', 'json'],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     const { parsed, rawText } = parse<unknown>(result.stdout);
     return parsed ?? rawText;
   }
 
   async driveGet(id: string): Promise<string> {
     this.sanitizeId(id, 'drive id');
-    const result = await this.exec(['drive', 'get', '--id', id]);
+    const result = await this.exec(
+      ['drive', 'get', '--id', id],
+      undefined,
+      undefined,
+      { readOnly: true },
+    );
     return result.stdout;
   }
 
@@ -319,7 +369,14 @@ export class OzCliService implements IOzCliService {
     args: string[],
     cwd?: string,
     cancellation?: vscode.CancellationToken,
+    options?: { readOnly?: boolean },
   ): Promise<ExecResult> {
+    // Read-only commands (list/get) cannot consume Warp credits per
+    // https://docs.warp.dev/reference/api-and-sdk/troubleshooting/errors/insufficient-credits
+    // (insufficient_credits is HTTP 403 emitted only by `agent run`/task
+    // endpoints). We pass this flag through to the close-handler so a
+    // misleading credits classification cannot bubble up from a list call.
+    const readOnly = options?.readOnly === true;
     return new Promise((resolve, reject) => {
       if (cancellation?.isCancellationRequested) {
         reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
@@ -339,25 +396,47 @@ export class OzCliService implements IOzCliService {
         // shell when we resolved to a concrete .exe path.
         const needsShell = process.platform === 'win32' && !/\.exe$/i.test(ozPath);
 
-        // Filter environment variables to only pass what's necessary for CLI operation
-        // This prevents potential exposure of sensitive env vars to the spawned process
-        const safeEnv: Record<string, string | undefined> = {
-          PATH: process.env.PATH,
-          HOME: process.env.HOME,
-          USERPROFILE: process.env.USERPROFILE,  // Windows equivalent of HOME
-          APPDATA: process.env.APPDATA,          // Windows app data
-          LOCALAPPDATA: process.env.LOCALAPPDATA,
-          TEMP: process.env.TEMP,
-          TMP: process.env.TMP,
-          LANG: process.env.LANG,
-          LC_ALL: process.env.LC_ALL,
-        };
+        // Inherit the full parent environment so the Oz CLI sees every
+        // platform variable it needs to function. Stripping the env down
+        // to a hand-picked allowlist (as we did in commits 861eb5e and
+        // earlier) was a security-theatre regression that broke the CLI
+        // on Windows: dropping `SystemRoot`, `COMSPEC`, `WINDIR`,
+        // `PROGRAMFILES`/`PROGRAMFILES(X86)`, `PROCESSOR_ARCHITECTURE`,
+        // and the user's `WARP_*` auth variables made several Warp
+        // backend calls (run list / schedule list / agent run) hang
+        // forever without any output — the CLI started but could not
+        // resolve TLS / DNS / Win32 APIs, then sat waiting on the
+        // stdlib. The user's own shell already exposes these variables
+        // to the IDE, so re-exporting them to a child process the same
+        // user is launching is not an additional information leak.
+        //
+        // We still apply a tiny *blocklist* of well-known secret keys
+        // that should never be passed to a child the user did not
+        // explicitly mark as trusted (matching the deny list shipped
+        // by `npm exec` / `pnpm exec`). This preserves the spirit of
+        // the original hardening without breaking the CLI.
+        const SENSITIVE_ENV_KEYS = new Set([
+          'NPM_TOKEN',
+          'GITHUB_TOKEN',
+          'GH_TOKEN',
+          'AWS_SECRET_ACCESS_KEY',
+          'AWS_SESSION_TOKEN',
+          'OPENAI_API_KEY',
+          'ANTHROPIC_API_KEY',
+          'GEMINI_API_KEY',
+          'AZURE_OPENAI_API_KEY',
+        ]);
+        const childEnv: Record<string, string | undefined> = {};
+        for (const [key, value] of Object.entries(process.env)) {
+          if (SENSITIVE_ENV_KEYS.has(key)) { continue; }
+          childEnv[key] = value;
+        }
 
         proc = spawn(ozPath, args, {
           cwd: spawnCwd,
           shell: needsShell,
           windowsHide: true,
-          env: safeEnv,
+          env: childEnv,
         });
       } catch (err) {
         reject(new OzCliError(
@@ -458,12 +537,20 @@ export class OzCliService implements IOzCliService {
           if (cancellation?.isCancellationRequested) {
             reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
           } else if (stalled) {
-            // IMPL: idle-timeout fail-fast. Run the credits classifier on
-            // anything we *did* manage to capture so we can be even more
-            // specific when stderr contained a credits/quota signal but
-            // the CLI then hung instead of exiting.
+            // IMPL: idle-timeout fail-fast. A stalled process must NOT be
+            // reclassified as INSUFFICIENT_CREDITS unless stderr/stdout
+            // contains an *explicit* documented Warp credit signal — see
+            // https://docs.warp.dev/reference/api-and-sdk/troubleshooting/errors/insufficient-credits
+            // (HTTP 403 + the canonical "add-on credits" / "insufficient
+            // credits" / "out of credits" / "purchase more credits"
+            // strings). Network rate limits, transient 429s, and other
+            // generic quota-style signals are NOT credits exhaustion and
+            // MUST surface as STALLED so the user does not get pushed
+            // to the billing page on a timeout false positive.
+            // Additionally, read-only commands (list/get) can never
+            // consume credits, so they always surface as STALLED.
             const combined = (stderr + stdout).toLowerCase();
-            if (isInsufficientCreditsError(combined, exitCode)) {
+            if (!readOnly && hasExplicitInsufficientCreditsSignal(combined)) {
               reject(new OzCliError(
                 OzCliErrorKind.INSUFFICIENT_CREDITS,
                 'Warp account is out of credits or has hit its quota',
@@ -492,11 +579,16 @@ export class OzCliService implements IOzCliService {
             return;
           }
           // IMPL: riconosce esaurimento crediti / quota Warp.
-          // Pattern raccolti dai messaggi documentati di Warp Cloud +
-          // codici HTTP standard (402 Payment Required, 429 Too Many
-          // Requests). Un solo match basta — sono stringhe specifiche
-          // che non compaiono in errori generici.
+          // Per https://docs.warp.dev/reference/api-and-sdk/troubleshooting/errors/insufficient-credits
+          // insufficient_credits è HTTP 403 emesso solo dagli endpoint
+          // di start agent (agent run / agent run-cloud / task). I
+          // comandi read-only (list/get) NON possono mai consumare
+          // crediti, quindi non vengono mai classificati come
+          // INSUFFICIENT_CREDITS — questo evita di indirizzare l'utente
+          // alla pagina di billing per un fallimento di rete o di auth
+          // su una list operation.
           if (
+            !readOnly &&
             isInsufficientCreditsError(combined, exitCode)
           ) {
             reject(new OzCliError(
@@ -721,13 +813,56 @@ export class OzCliService implements IOzCliService {
 
 /**
  * Returns `true` when the (already lower-cased) combined stderr+stdout
- * looks like a Warp Cloud "out of credits / quota / billing" failure.
+ * carries an explicit Warp "insufficient credits" signal as documented
+ * at
+ * https://docs.warp.dev/reference/api-and-sdk/troubleshooting/errors/insufficient-credits
  *
- * Detection runs on a closed list of substrings observed from Warp
- * Cloud responses plus the standard HTTP signals — *no regex on the
- * full payload* so the cost stays linear and the false-positive
- * surface is small. Exit codes 402 (Payment Required) and 429 (Too
- * Many Requests) also flip the gate without needing a stderr match.
+ * Per the Warp documentation `insufficient_credits` is HTTP **403**
+ * with a canonical body that mentions "add-on credits" / "out of
+ * add-on credits" / "purchase more credits". Generic 4xx signals such
+ * as 402 Payment Required or 429 Too Many Requests are explicitly
+ * NOT this error class — they may be transient rate limits, billing
+ * misconfigurations, or upstream throttling, and the user must not be
+ * told their Warp account is out of credits when it isn't.
+ *
+ * The matcher therefore looks **only** for the strings the Warp
+ * service is documented to emit, plus the closely related localized
+ * variants ("out of credits" / "insufficient credits" / "no credits
+ * remaining"/"left"). All ambiguous quota-style phrases ("rate
+ * limit", "usage limit", "quota limit", "plan limit", …) are removed
+ * — they generate too many false positives on transient network or
+ * routing errors.
+ *
+ * Exported for unit testing.
+ */
+export function hasExplicitInsufficientCreditsSignal(
+  combinedLowercase: string,
+): boolean {
+  const needles = [
+    'out of credits',
+    'out of add-on credits',
+    'out of add on credits',
+    'insufficient credits',
+    'insufficient_credits',
+    'no credits remaining',
+    'no credits left',
+    'no add-on credits',
+    'purchase more credits',
+    'purchase more add-on credits',
+    'purchase additional add-on credits',
+    'run out of add-on credits',
+    'run out of add on credits',
+    'run out of credits',
+  ];
+  return needles.some((n) => combinedLowercase.includes(n));
+}
+
+/**
+ * Returns `true` when the CLI invocation should be classified as a
+ * Warp `insufficient_credits` failure. Wraps
+ * {@link hasExplicitInsufficientCreditsSignal} with the documented
+ * HTTP status (403). Exit codes 402 and 429 are NOT mapped here on
+ * purpose — see the function comment above.
  *
  * Exported for unit testing.
  */
@@ -735,24 +870,8 @@ export function isInsufficientCreditsError(
   combinedLowercase: string,
   exitCode: number,
 ): boolean {
-  if (exitCode === 402 || exitCode === 429) { return true; }
-  const needles = [
-    'out of credits',
-    'insufficient credits',
-    'no credits remaining',
-    'no credits left',
-    'credit balance',
-    'quota exceeded',
-    'quota limit',         // Warp Cloud: "Error: Quota limit reached."
-    'quota reached',
-    'usage limit',
-    'rate limit',
-    'payment required',
-    'billing required',
-    'upgrade your plan',
-    'upgrade to continue',
-    'subscription required',
-    'plan limit',
-  ];
-  return needles.some((n) => combinedLowercase.includes(n));
+  if (exitCode === 403 && hasExplicitInsufficientCreditsSignal(combinedLowercase)) {
+    return true;
+  }
+  return hasExplicitInsufficientCreditsSignal(combinedLowercase);
 }

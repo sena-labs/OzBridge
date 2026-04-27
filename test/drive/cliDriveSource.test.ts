@@ -130,6 +130,31 @@ describe('CliDriveSource — not-available surface', () => {
     await expect(source.listRules()).rejects.toBeInstanceOf(CliDriveNotAvailableError);
   });
 
+  // Regression: the user's CLI does not have a `drive` subcommand and clap
+  // (the Rust CLI parser used by some Warp builds) rejects the bare word
+  // `drive` as a positional value. The fallback to filesystem must still
+  // kick in transparently — the user must NOT see an opaque error tile.
+  it.each([
+    "error: invalid value 'drive' for '[USAGE]'",
+    'error: invalid value "drive" for "<COMMAND>"',
+    "error: unrecognized argument 'drive'",
+    "error: unexpected argument 'drive' found",
+    'error: unrecognized subcommand drive',
+    'error: no such subcommand: drive',
+  ])('reclassifies clap-style stderr `%s` as drive-not-available', async (stderr) => {
+    runner.list.mockRejectedValue(
+      new OzCliError(OzCliErrorKind.CLI_ERROR, 'exit 2', 2, stderr),
+    );
+    await expect(source.listPrompts()).rejects.toBeInstanceOf(CliDriveNotAvailableError);
+  });
+
+  it('treats STALLED on a drive call as drive-not-available so the FS fallback wins', async () => {
+    runner.list.mockRejectedValue(
+      new OzCliError(OzCliErrorKind.STALLED, 'no output for 90s', 0, ''),
+    );
+    await expect(source.listPrompts()).rejects.toBeInstanceOf(CliDriveNotAvailableError);
+  });
+
   it('does NOT mask other CLI errors', async () => {
     const err = new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'run `oz login`');
     runner.list.mockRejectedValue(err);

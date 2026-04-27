@@ -421,8 +421,25 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe rilevare exit code 402 come INSUFFICIENT_CREDITS', async () => {
+    it('dovrebbe NOT classificare exit 402 senza messaggio crediti come INSUFFICIENT_CREDITS', async () => {
+      // Warp’s insufficient_credits is documented as HTTP 403 with a
+      // canonical "add-on credits" body. A bare 402 is NOT enough to
+      // claim the user is out of credits — surface CLI_ERROR instead.
       createMockProcess({ stderr: 'HTTP 402', exitCode: 402 });
+      try {
+        await cli.agentRun({ prompt: 'test' });
+        expect.fail('should throw');
+      } catch (err) {
+        expect((err as OzCliError).kind).toBe(OzCliErrorKind.CLI_ERROR);
+        expect((err as OzCliError).exitCode).toBe(402);
+      }
+    });
+
+    it('dovrebbe rilevare 403 con "add-on credits" come INSUFFICIENT_CREDITS', async () => {
+      createMockProcess({
+        stderr: 'HTTP 403: Your team has run out of add-on credits.',
+        exitCode: 403,
+      });
       try {
         await cli.agentRun({ prompt: 'test' });
         expect.fail('should throw');

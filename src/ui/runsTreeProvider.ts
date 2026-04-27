@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import {
   IOzCliService,
+  OzCliError,
+  OzCliErrorKind,
   OzRunStatus,
   OzSchedule,
   OzEnvironment,
@@ -253,7 +255,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         schedule: s,
       }));
     } catch (err) {
-      return [msg('schedules:error', errorLabel(err))];
+      return [msg('schedules:error', errorLabel(err, 'schedules'))];
     }
   }
 
@@ -270,7 +272,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         environment: e,
       }));
     } catch (err) {
-      return [msg('environments:error', errorLabel(err))];
+      return [msg('environments:error', errorLabel(err, 'environments'))];
     }
   }
 
@@ -287,7 +289,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         server: m,
       }));
     } catch (err) {
-      return [msg('mcp:error', errorLabel(err))];
+      return [msg('mcp:error', errorLabel(err, 'MCP servers'))];
     }
   }
 }
@@ -342,7 +344,38 @@ function runIcon(status: OzRunStatus): string {
   }
 }
 
-function errorLabel(err: unknown): string {
-  if (err instanceof Error) { return `Error: ${err.message}`; }
-  return `Error: ${String(err)}`;
+/**
+ * Builds a sidebar-friendly error label that explains *why* a list could not
+ * be loaded without exposing the raw stack-trace style `OzCliError` message.
+ *
+ * The category name (e.g. "schedules", "environments") is folded into the
+ * message so the user can tell at a glance whether the failure is local to
+ * one tile or a systemic CLI problem.
+ */
+function errorLabel(err: unknown, category: string = 'this list'): string {
+  if (err instanceof OzCliError) {
+    switch (err.kind) {
+      case OzCliErrorKind.NOT_FOUND:
+        return `Oz CLI not found — install Warp to load ${category}.`;
+      case OzCliErrorKind.NOT_AUTHENTICATED:
+        return `Not authenticated — run \`oz login\` to load ${category}.`;
+      case OzCliErrorKind.STALLED:
+        return `Oz CLI did not respond for ${category}. Retry, or check Warp connectivity.`;
+      case OzCliErrorKind.TIMEOUT:
+        return `Oz CLI timed out loading ${category}. Increase \`ozBridge.timeoutMs\` or retry.`;
+      case OzCliErrorKind.CANCELLED:
+        return `Loading ${category} was cancelled.`;
+      case OzCliErrorKind.PARSE_ERROR:
+        return `Could not parse Oz CLI output for ${category}. Update Warp.`;
+      case OzCliErrorKind.INSUFFICIENT_CREDITS:
+        // Read-only listings cannot consume credits per Warp docs; if we get
+        // here it is almost certainly a generic auth/network failure being
+        // misclassified upstream. Avoid pointing the user at billing.
+        return `Oz CLI rejected the ${category} request. Retry, or run \`oz login\` if the issue persists.`;
+      default:
+        return `Oz CLI error loading ${category}: ${err.message}`;
+    }
+  }
+  if (err instanceof Error) { return `Error loading ${category}: ${err.message}`; }
+  return `Error loading ${category}: ${String(err)}`;
 }
