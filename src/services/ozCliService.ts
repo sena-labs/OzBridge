@@ -229,19 +229,24 @@ export class OzCliService implements IOzCliService {
     return this.toListResult(result);
   }
 
+  // Upstream `oz schedule pause|unpause|delete` accept the schedule ID as a
+  // positional argument (see `PauseScheduleArgs`/`UnpauseScheduleArgs`/
+  // `DeleteScheduleArgs` in warpdotdev/warp `crates/warp_cli/src/schedule.rs`).
+  // Passing `--id <id>` causes clap to reject the call with
+  // `unexpected argument '--id'`. We therefore pass the ID positionally.
   async schedulePause(id: string): Promise<void> {
     this.sanitizeId(id, 'schedule id');
-    await this.exec(['schedule', 'pause', '--id', id]);
+    await this.exec(['schedule', 'pause', id]);
   }
 
   async scheduleUnpause(id: string): Promise<void> {
     this.sanitizeId(id, 'schedule id');
-    await this.exec(['schedule', 'unpause', '--id', id]);
+    await this.exec(['schedule', 'unpause', id]);
   }
 
   async scheduleDelete(id: string): Promise<void> {
     this.sanitizeId(id, 'schedule id');
-    await this.exec(['schedule', 'delete', '--id', id]);
+    await this.exec(['schedule', 'delete', id]);
   }
 
   // =========================================================================

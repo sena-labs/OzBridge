@@ -644,6 +644,37 @@ describe('OzCliService', () => {
   });
 
   // =========================================================================
+  // schedule pause/unpause/delete — arg shape regression
+  // (upstream warpdotdev/warp uses positional `schedule_id`, not `--id`).
+  // Passing `--id` makes the upstream CLI exit with `unexpected argument`.
+  // =========================================================================
+  describe('schedulePause/Unpause/Delete — argument shape', () => {
+    it('schedulePause dovrebbe passare l\'ID come argomento posizionale', async () => {
+      createMockProcess();
+      await cli.schedulePause('sched-1');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['schedule', 'pause', 'sched-1']);
+      expect(args).not.toContain('--id');
+    });
+
+    it('scheduleUnpause dovrebbe passare l\'ID come argomento posizionale', async () => {
+      createMockProcess();
+      await cli.scheduleUnpause('sched-2');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['schedule', 'unpause', 'sched-2']);
+      expect(args).not.toContain('--id');
+    });
+
+    it('scheduleDelete dovrebbe passare l\'ID come argomento posizionale', async () => {
+      createMockProcess();
+      await cli.scheduleDelete('sched-3');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['schedule', 'delete', 'sched-3']);
+      expect(args).not.toContain('--id');
+    });
+  });
+
+  // =========================================================================
   // agentRunCloud() — banner UUID extraction and id normalization
   // (issue: runId mismatch between chat banner and sidebar)
   // =========================================================================
