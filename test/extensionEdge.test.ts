@@ -3,15 +3,14 @@
  *
  * Covers:
  * - Line 43: configManager.onConfigChanged callback
- * - Lines 54-62: checkAvailability() → !available branch (warning + button)
- * - Line 65: checkAvailability() → .catch() branch
+ * - lazy activation does not probe Oz CLI or show install prompts
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventEmitter as NodeEventEmitter } from 'node:events';
 import { workspace, window, chat, Uri, env } from './mocks/vscode.js';
 
 // Mutable ref to control spawn behavior per-test
-let spawnBehavior: 'available' | 'not-available' = 'available';
+let spawnBehavior: 'available' | 'not-available' | 'sync-throw' = 'available';
 
 vi.mock('node:child_process', () => ({
   spawn: vi.fn(() => {
@@ -97,22 +96,21 @@ describe('extension.ts — coverage gaps', () => {
   });
 
   // -----------------------------------------------------------------------
-  // Lines 54-62: checkAvailability → !available → warning + button
+  // Lazy activation: checkAvailability is no longer run during activate()
   // -----------------------------------------------------------------------
-  it('dovrebbe mostrare warning se Oz CLI non è disponibile (righe 54-62)', async () => {
+  it('non dovrebbe mostrare warning se Oz CLI non è disponibile durante activate()', async () => {
     spawnBehavior = 'not-available';
 
     const { activate } = await import('../src/extension.js');
     activate(createMockExtensionContext() as any);
     await flushMicrotasks();
-
-    expect(window.showWarningMessage).toHaveBeenCalledWith(
+    expect(window.showWarningMessage).not.toHaveBeenCalledWith(
       expect.stringContaining('Oz CLI not found'),
-      'Install Warp',
+      expect.anything(),
     );
   });
 
-  it('dovrebbe aprire URL download quando utente clicca "Installa Warp" (righe 58-61)', async () => {
+  it('non dovrebbe aprire URL download durante activate()', async () => {
     spawnBehavior = 'not-available';
     window.showWarningMessage.mockResolvedValue('Install Warp' as any);
 
@@ -120,23 +118,14 @@ describe('extension.ts — coverage gaps', () => {
     activate(createMockExtensionContext() as any);
     await flushMicrotasks();
 
-    expect(env.openExternal).toHaveBeenCalledWith(
-      expect.objectContaining({
-        fsPath: expect.stringContaining('warp.dev/download'),
-      }),
-    );
+    expect(env.openExternal).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
-  // Line 65: .catch() on the checkAvailability promise chain
-  // Triggered when something inside the .then() handler throws.
+  // Sync spawn errors must not affect activation because no spawn is attempted.
   // -----------------------------------------------------------------------
-  it('dovrebbe loggare errore se il .then() di checkAvailability lancia (riga 65)', async () => {
-    spawnBehavior = 'not-available';
-    // Make showWarningMessage throw synchronously → propagates to .catch()
-    window.showWarningMessage.mockImplementation(() => {
-      throw new Error('showWarningMessage exploded');
-    });
+  it('non dovrebbe loggare availability failure durante activate()', async () => {
+    spawnBehavior = 'sync-throw';
 
     const { activate } = await import('../src/extension.js');
     activate(createMockExtensionContext() as any);
@@ -144,6 +133,6 @@ describe('extension.ts — coverage gaps', () => {
 
     const ch = window.createOutputChannel.mock.results[0]?.value;
     const logs: string[] = ch?.appendLine.mock.calls.map((c: unknown[]) => c[0]) ?? [];
-    expect(logs.some((l: string) => l.includes('Availability check failed'))).toBe(true);
+    expect(logs.some((l: string) => l.includes('Availability check failed'))).toBe(false);
   });
 });

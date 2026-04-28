@@ -16,7 +16,6 @@ import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
 import { createOzBridgeDriveSource } from './drive/driveSourceFactory.js';
-import { OzCliDriveRunner } from './drive/ozCliDriveRunner.js';
 import { IDriveSource } from './drive/warpDriveSource.js';
 import { OzDriveTreeProvider } from './ui/driveTreeProvider.js';
 import { registerDriveCommands } from './ui/driveCommands.js';
@@ -145,7 +144,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // the cloud command, enabling immediate sidebar updates on terminal status.
   state.tracker = new ActiveRunsTracker(cli);
   context.subscriptions.push(state.tracker);
-  state.tracker.start();
+  const ensureRunsTrackerStarted = () => {
+    state.tracker?.start();
+  };
 
   // Registra comando per aprire conversazioni direttamente in Warp (bypassa il browser)
   const openConvCmd = vscode.commands.registerCommand(
@@ -181,8 +182,14 @@ export function activate(context: vscode.ExtensionContext): void {
   // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
   const treeProvider = new OzRunsTreeProvider(cli, state.tracker);
   context.subscriptions.push(treeProvider);
+  const runsTreeView = vscode.window.createTreeView('ozBridge.runsView', { treeDataProvider: treeProvider });
+  context.subscriptions.push(runsTreeView);
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('ozBridge.runsView', treeProvider),
+    runsTreeView.onDidChangeVisibility((event) => {
+      if (event.visible) {
+        ensureRunsTrackerStarted();
+      }
+    }),
   );
   for (const disposable of registerTreeCommands({ cli, tracker: state.tracker, provider: treeProvider })) {
     context.subscriptions.push(disposable);
@@ -193,12 +200,12 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(disposable);
   }
 
-  // Warp Drive source — composite (Oz CLI primary, filesystem fallback).
-  // The CLI runner transparently surfaces "unknown command" stderr from
-  // older Oz binaries as `CliDriveNotAvailableError`, so the factory's
-  // CompositeDriveSource falls back to the filesystem implementation
-  // without any user-visible error.
-  state.driveSource = createOzBridgeDriveSource({ runner: new OzCliDriveRunner(cli) });
+  // Warp Drive source — filesystem fallback by default.
+  // Do not call `oz drive` during normal activation/view rendering: current
+  // Warp/Oz builds can interpret `drive` as a URL argument and return noisy
+  // errors instead of a clean "subcommand unavailable" signal. The factory
+  // still supports a CLI runner for tests/future gated rollout.
+  state.driveSource = createOzBridgeDriveSource();
 
   // Warp Drive sidebar (view + context-menu commands).
   const driveTreeProvider = new OzDriveTreeProvider(state.driveSource);
@@ -311,9 +318,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Comando aggiuntivo: focus sulla sidebar — usato dal click sulla Status Bar.
   context.subscriptions.push(
-    vscode.commands.registerCommand(StatusBarManager.FOCUS_COMMAND, () =>
-      vscode.commands.executeCommand('workbench.view.extension.ozBridgeSidebar'),
-    ),
+    vscode.commands.registerCommand(StatusBarManager.FOCUS_COMMAND, () => {
+      ensureRunsTrackerStarted();
+      return vscode.commands.executeCommand('workbench.view.extension.ozBridgeSidebar');
+    }),
   );
 
   // I servizi leggono la config dinamicamente tramite IConfigManager,
@@ -364,28 +372,9 @@ export function activate(context: vscode.ExtensionContext): void {
     logError(`Walkthrough failed: ${getErrorMessage(err)}`);
   });
 
-  // Background availability check (does not block activation)
-  cli.checkAvailability().then((avail) => {
-    if (avail.available) {
-      logInfo(`Oz CLI available: ${avail.version}`);
-    } else {
-      logInfo('WARNING: Oz CLI not found in PATH');
-      const installLabel = vscode.l10n.t('Install Warp');
-      Promise.resolve(vscode.window.showWarningMessage(
-        vscode.l10n.t('OzBridge: Oz CLI not found. Install Warp to use @oz in chat.'),
-        installLabel,
-      )).then((action) => {
-        if (action === installLabel) {
-          vscode.env.openExternal(vscode.Uri.parse('https://www.warp.dev/download'));
-        }
-      }).catch((err: unknown) => {
-        logError(`Failed to show install warning: ${getErrorMessage(err)}`);
-      });
-    }
-  }).catch((err) => {
-    logError(`Availability check failed: ${getErrorMessage(err)}`);
-    state.telemetry?.track('errorRaised', { kind: 'availabilityCheck' });
-  });
+  // Do not probe Oz CLI availability during activation. Commands and views
+  // surface CLI availability/authentication problems lazily when the user
+  // actually invokes Oz-backed functionality.
 }
 
 /**

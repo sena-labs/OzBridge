@@ -267,7 +267,19 @@ const vscode = {
       registry.treeProviders.set(id, provider);
       return new Disposable();
     },
-    createTreeView: (id) => ({ dispose: () => {}, reveal: () => {}, onDidChangeSelection: () => new Disposable(), onDidChangeVisibility: () => new Disposable(), visible: false, selection: [] }),
+    createTreeView: (id, options = {}) => {
+      if (options.treeDataProvider) {
+        registry.treeProviders.set(id, options.treeDataProvider);
+      }
+      return {
+        dispose: () => {},
+        reveal: () => {},
+        onDidChangeSelection: () => new Disposable(),
+        onDidChangeVisibility: () => new Disposable(),
+        visible: false,
+        selection: [],
+      };
+    },
   },
   languages: { getDiagnostics: () => [] },
   chat: {

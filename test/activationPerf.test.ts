@@ -98,7 +98,7 @@ describe('activation performance budget (v1.0 deliverable R)', () => {
     );
   });
 
-  it('activate() triggers ActiveRunsTracker.start path', async () => {
+  it('activate() does NOT eagerly start ActiveRunsTracker (lazy on view visibility / focus)', async () => {
     const trackerModule = await import('../src/services/activeRunsTracker.js');
     const startSpy = vi.spyOn(trackerModule.ActiveRunsTracker.prototype, 'start');
 
@@ -106,7 +106,9 @@ describe('activation performance budget (v1.0 deliverable R)', () => {
     const ctx = createMockExtensionContext();
     activate(ctx as unknown as never);
 
-    expect(startSpy).toHaveBeenCalledTimes(1);
+    // Lazy: start() is wired to sidebar visibility and the status-bar
+    // focus command, NOT to activate() itself. Activation must stay cheap.
+    expect(startSpy).not.toHaveBeenCalled();
 
     await Promise.resolve(deactivate());
     startSpy.mockRestore();
