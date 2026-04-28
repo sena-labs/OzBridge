@@ -35,6 +35,48 @@ interface ExecResult {
   durationMs: number;
 }
 
+/**
+ * Sensitive parent-env keys never propagated to the spawned `oz` child.
+ * Mirrors the deny-list shipped by `npm exec` / `pnpm exec`.
+ */
+const SENSITIVE_ENV_KEYS = new Set([
+  'NPM_TOKEN',
+  'GITHUB_TOKEN',
+  'GH_TOKEN',
+  'AWS_SECRET_ACCESS_KEY',
+  'AWS_SESSION_TOKEN',
+  'OPENAI_API_KEY',
+  'ANTHROPIC_API_KEY',
+  'GEMINI_API_KEY',
+  'AZURE_OPENAI_API_KEY',
+]);
+
+/**
+ * Permissive validator for `--jq <FILTER>` values. Allows the characters
+ * actually used by jq syntax (dots, brackets, parens, pipes, quotes,
+ * commas, comparison operators, arithmetic) while blocking shell
+ * metacharacters that could enable command injection in the
+ * Windows-shell code path (`shell: true`). Keep in sync with `exec()`.
+ */
+function validateJqFilter(filter: string): void {
+  // Block characters that have special meaning to cmd.exe / sh and are
+  // not part of jq syntax: backtick, $(, &, ;, >, <, newline, CR.
+  // These are the only shell-injection vectors that survive when
+  // `shell: true` is used (Windows non-.exe path fallback).
+  if (/[`;\n\r]|\$\(|&&|\|\||>|<(?!=)/.test(filter)) {
+    throw new OzCliError(
+      OzCliErrorKind.CLI_ERROR,
+      `Invalid jq filter: contains disallowed shell metacharacters`,
+    );
+  }
+  if (filter.length > 1024) {
+    throw new OzCliError(
+      OzCliErrorKind.CLI_ERROR,
+      `Invalid jq filter: exceeds 1024 characters`,
+    );
+  }
+}
+
 export class OzCliService implements IOzCliService {
   constructor(private readonly configManager: IConfigManager) {}
 
@@ -49,7 +91,9 @@ export class OzCliService implements IOzCliService {
 
   async checkAvailability(): Promise<{ available: boolean; version: string | null; path: string | null }> {
     try {
-      await this.exec(['--help'], undefined, undefined, { readOnly: true });
+      // `--help` is independent of WARP_OUTPUT_FORMAT — pass null so we
+      // don't perturb the CLI's default formatting for the probe.
+      await this.exec(['--help'], undefined, undefined, { readOnly: true, outputFormat: null });
       return { available: true, version: null, path: this.resolveOzPath() };
     } catch {
       return { available: false, version: null, path: null };
@@ -67,6 +111,15 @@ export class OzCliService implements IOzCliService {
     skill?: string;
     cwd?: string;
     cancellation?: vscode.CancellationToken;
+    /**
+     * Optional progressive-event callback. When provided the CLI is
+     * invoked with `WARP_OUTPUT_FORMAT=ndjson` and every newline-delimited
+     * JSON event is forwarded to the callback as it arrives, while the
+     * full aggregated payload is still parsed and returned at the end.
+     * Errors thrown by the callback are swallowed so a UI mistake never
+     * breaks the underlying CLI invocation.
+     */
+    onProgress?: (eventLine: string) => void;
   }): Promise<OzRunResult> {
     if (!opts.prompt?.trim()) {
       throw new OzCliError(OzCliErrorKind.CLI_ERROR, 'Prompt cannot be empty');
@@ -87,9 +140,21 @@ export class OzCliService implements IOzCliService {
       args.push('--skill', opts.skill);
     }
 
-    args.push('--output-format', 'json');
+    // `--output-format` is a GLOBAL option upstream; we now propagate it
+    // through the WARP_OUTPUT_FORMAT env var (set in `exec()`), so we no
+    // longer push the flag onto every argv.
+    const onProgress = opts.onProgress;
+    let onLine: ((line: string) => void) | undefined;
+    if (onProgress) {
+      onLine = (line) => {
+        try { onProgress(line); } catch { /* swallow callback errors */ }
+      };
+    }
 
-    const result = await this.exec(args, opts.cwd, opts.cancellation);
+    const result = await this.exec(args, opts.cwd, opts.cancellation, {
+      outputFormat: onProgress ? 'ndjson' : 'json',
+      onLine,
+    });
     return this.toRunResult(result);
   }
 
@@ -126,7 +191,7 @@ export class OzCliService implements IOzCliService {
       args.push('--skill', opts.skill);
     }
 
-    args.push('--output-format', 'json');
+    // Output format is now driven by WARP_OUTPUT_FORMAT (set in exec()).
 
     const result = await this.exec(args, undefined, opts.cancellation);
     const base = this.toRunResult(result);
@@ -160,24 +225,24 @@ export class OzCliService implements IOzCliService {
   // Run management
   // =========================================================================
 
-  async runList(): Promise<OzListResult<{ id: string; status: OzRunStatus }>> {
-    const result = await this.exec(
-      ['run', 'list', '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
+  async runList(opts?: { jq?: string }): Promise<OzListResult<{ id: string; status: OzRunStatus }>> {
+    const args = ['run', 'list'];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
     return this.toListResult(result);
   }
 
-  async runGet(runId: string): Promise<OzRunResult> {
+  async runGet(runId: string, opts?: { jq?: string }): Promise<OzRunResult> {
     this.sanitizeId(runId, 'runId');
-    const result = await this.exec(
-      ['run', 'get', runId, '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
+    const args = ['run', 'get', runId];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
     return this.toRunResult(result);
   }
 
@@ -209,8 +274,6 @@ export class OzCliService implements IOzCliService {
       args.push('-e', opts.environment);
     }
 
-    args.push('--output-format', 'json');
-
     const result = await this.exec(args);
     const parsed = parse<OzSchedule>(result.stdout);
     if (!parsed.parsed) {
@@ -219,13 +282,13 @@ export class OzCliService implements IOzCliService {
     return parsed.parsed;
   }
 
-  async scheduleList(): Promise<OzListResult<OzSchedule>> {
-    const result = await this.exec(
-      ['schedule', 'list', '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
+  async scheduleList(opts?: { jq?: string }): Promise<OzListResult<OzSchedule>> {
+    const args = ['schedule', 'list'];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
     return this.toListResult(result);
   }
 
@@ -253,84 +316,114 @@ export class OzCliService implements IOzCliService {
   // Discovery
   // =========================================================================
 
-  async modelList(): Promise<OzListResult<OzModel>> {
-    const result = await this.exec(
-      ['model', 'list', '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
+  async modelList(opts?: { jq?: string }): Promise<OzListResult<OzModel>> {
+    const args = ['model', 'list'];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
     return this.toListResult(result);
   }
 
-  async mcpList(): Promise<OzListResult<OzMcpServer>> {
-    const result = await this.exec(
-      ['mcp', 'list', '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
+  async mcpList(opts?: { jq?: string }): Promise<OzListResult<OzMcpServer>> {
+    const args = ['mcp', 'list'];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
     return this.toListResult(result);
   }
 
-  async profileList(): Promise<OzListResult<OzProfile>> {
-    const result = await this.exec(
-      ['agent', 'profile', 'list', '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
+  async profileList(opts?: { jq?: string }): Promise<OzListResult<OzProfile>> {
+    const args = ['agent', 'profile', 'list'];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
     return this.toListResult(result);
   }
 
-  async environmentList(): Promise<OzListResult<OzEnvironment>> {
-    const result = await this.exec(
-      ['environment', 'list', '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
+  async environmentList(opts?: { jq?: string }): Promise<OzListResult<OzEnvironment>> {
+    const args = ['environment', 'list'];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
     return this.toListResult(result);
   }
 
-  async integrationList(): Promise<OzListResult<OzIntegration>> {
-    const result = await this.exec(
-      ['integration', 'list', '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
-    return this.toListResult(result);
+  /**
+   * `oz integration` is gated behind a `FeatureFlag` upstream
+   * (warpdotdev/warp `crates/warp_cli/src/lib.rs`). On builds where the
+   * flag is off, clap rejects the call with `unrecognized subcommand`
+   * — we treat that as "no integrations available" and return an empty
+   * list so callers can continue rendering their UI.
+   */
+  async integrationList(opts?: { jq?: string }): Promise<OzListResult<OzIntegration>> {
+    const args = ['integration', 'list'];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    try {
+      const result = await this.exec(args, undefined, undefined, { readOnly: true });
+      return this.toListResult(result);
+    } catch (err) {
+      if (err instanceof OzCliError && OzCliService.isUnrecognizedSubcommandError(err)) {
+        return { items: [] };
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Detects clap's "unrecognized subcommand" / "unknown command" error
+   * shapes so callers can offer a graceful fallback for feature-flagged
+   * commands.
+   * @internal Exported on the class for testing.
+   */
+  static isUnrecognizedSubcommandError(err: OzCliError): boolean {
+    if (err.kind !== OzCliErrorKind.CLI_ERROR && err.kind !== OzCliErrorKind.NOT_FOUND) {
+      return false;
+    }
+    const haystack = `${err.message} ${err.stderr ?? ''}`.toLowerCase();
+    return /unrecognized subcommand|unknown subcommand|unknown command|unrecognized argument/.test(haystack);
   }
 
   // =========================================================================
   // Warp Drive (RF-5)
   // =========================================================================
 
-  async driveList(category: 'prompt' | 'rule' | 'skill'): Promise<unknown> {
+  async driveList(category: 'prompt' | 'rule' | 'skill', opts?: { jq?: string }): Promise<unknown> {
     if (category !== 'prompt' && category !== 'rule' && category !== 'skill') {
       throw new OzCliError(
         OzCliErrorKind.CLI_ERROR,
         `Invalid drive category: ${String(category)}`,
       );
     }
-    const result = await this.exec(
-      ['drive', 'list', category, '--output-format', 'json'],
-      undefined,
-      undefined,
-      { readOnly: true },
-    );
+    const args = ['drive', 'list', category];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
     const { parsed, rawText } = parse<unknown>(result.stdout);
     return parsed ?? rawText;
   }
 
   async driveGet(id: string): Promise<string> {
     this.sanitizeId(id, 'drive id');
+    // `drive get` returns raw markdown; do NOT force WARP_OUTPUT_FORMAT=json
+    // or the body would be wrapped/escaped.
     const result = await this.exec(
       ['drive', 'get', '--id', id],
       undefined,
       undefined,
-      { readOnly: true },
+      { readOnly: true, outputFormat: null },
     );
     return result.stdout;
   }
@@ -353,7 +446,6 @@ export class OzCliService implements IOzCliService {
       'agent', 'run',
       '--continue', opts.runId,
       '--prompt', opts.prompt,
-      '--output-format', 'json',
     ];
 
     const result = await this.exec(args, undefined, opts.cancellation);
@@ -361,7 +453,8 @@ export class OzCliService implements IOzCliService {
   }
 
   async helpAgentRun(): Promise<string> {
-    const result = await this.exec(['agent', 'run', '--help']);
+    // Help text is independent of the output format — don't override it.
+    const result = await this.exec(['agent', 'run', '--help'], undefined, undefined, { outputFormat: null });
     return result.stdout;
   }
 
@@ -374,7 +467,25 @@ export class OzCliService implements IOzCliService {
     args: string[],
     cwd?: string,
     cancellation?: vscode.CancellationToken,
-    options?: { readOnly?: boolean },
+    options?: {
+      readOnly?: boolean;
+      /**
+       * Value forwarded to the upstream `WARP_OUTPUT_FORMAT` env var.
+       * - `'json'` (default): structured JSON output (used by all
+       *   programmatic callers).
+       * - `'ndjson'`: newline-delimited JSON, suitable for streaming
+       *   `oz agent run` events line-by-line.
+       * - `null`: do NOT set the env var — used by `--help` and by
+       *   `drive get` (raw markdown body).
+       */
+      outputFormat?: 'json' | 'ndjson' | null;
+      /**
+       * Optional line-buffered stdout sink. Each complete newline-
+       * terminated line is forwarded as it arrives. Useful with
+       * `outputFormat: 'ndjson'` for progressive event delivery.
+       */
+      onLine?: (line: string) => void;
+    },
   ): Promise<ExecResult> {
     // Read-only commands (list/get) cannot consume Warp credits per
     // https://docs.warp.dev/reference/api-and-sdk/troubleshooting/errors/insufficient-credits
@@ -382,6 +493,8 @@ export class OzCliService implements IOzCliService {
     // endpoints). We pass this flag through to the close-handler so a
     // misleading credits classification cannot bubble up from a list call.
     const readOnly = options?.readOnly === true;
+    const outputFormat = options?.outputFormat === undefined ? 'json' : options.outputFormat;
+    const onLine = options?.onLine;
     return new Promise((resolve, reject) => {
       if (cancellation?.isCancellationRequested) {
         reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
@@ -420,22 +533,12 @@ export class OzCliService implements IOzCliService {
         // explicitly mark as trusted (matching the deny list shipped
         // by `npm exec` / `pnpm exec`). This preserves the spirit of
         // the original hardening without breaking the CLI.
-        const SENSITIVE_ENV_KEYS = new Set([
-          'NPM_TOKEN',
-          'GITHUB_TOKEN',
-          'GH_TOKEN',
-          'AWS_SECRET_ACCESS_KEY',
-          'AWS_SESSION_TOKEN',
-          'OPENAI_API_KEY',
-          'ANTHROPIC_API_KEY',
-          'GEMINI_API_KEY',
-          'AZURE_OPENAI_API_KEY',
-        ]);
-        const childEnv: Record<string, string | undefined> = {};
-        for (const [key, value] of Object.entries(process.env)) {
-          if (SENSITIVE_ENV_KEYS.has(key)) { continue; }
-          childEnv[key] = value;
-        }
+        //
+        // Output format is propagated via `WARP_OUTPUT_FORMAT` (a
+        // documented upstream env override for the global
+        // `--output-format` clap option), so individual callers no
+        // longer have to repeat the flag on every argv.
+        const childEnv = OzCliService.buildChildEnv(outputFormat);
 
         proc = spawn(ozPath, args, {
           cwd: spawnCwd,
@@ -453,6 +556,7 @@ export class OzCliService implements IOzCliService {
 
       let stdout = '';
       let stderr = '';
+      let lineBuffer = '';
       let killed = false;
       let stalled = false;
       let settled = false;
@@ -494,7 +598,20 @@ export class OzCliService implements IOzCliService {
       };
 
       proc.stdout?.on('data', (chunk: Buffer) => {
-        stdout += chunk.toString();
+        const text = chunk.toString();
+        stdout += text;
+        if (onLine) {
+          lineBuffer += text;
+          // Drain complete lines, keep the trailing partial in the buffer.
+          let nl: number;
+          while ((nl = lineBuffer.indexOf('\n')) !== -1) {
+            const line = lineBuffer.slice(0, nl).replace(/\r$/, '');
+            lineBuffer = lineBuffer.slice(nl + 1);
+            if (line.length > 0) {
+              try { onLine(line); } catch { /* swallow sink errors */ }
+            }
+          }
+        }
         armIdleTimer();
       });
 
@@ -534,6 +651,13 @@ export class OzCliService implements IOzCliService {
         cleanup();
         if (settled) { return; }
         settled = true;
+
+        // Flush any trailing partial line so callers don't lose the
+        // last event when the CLI exits without a final newline.
+        if (onLine && lineBuffer.length > 0) {
+          try { onLine(lineBuffer); } catch { /* swallow sink errors */ }
+          lineBuffer = '';
+        }
 
         const durationMs = Date.now() - startTime;
         const exitCode = code ?? 1;
@@ -789,6 +913,31 @@ export class OzCliService implements IOzCliService {
     const upper = value.toUpperCase();
     const valid: OzRunStatus[] = ['QUEUED', 'INPROGRESS', 'SUCCEEDED', 'FAILED'];
     return valid.includes(upper as OzRunStatus) ? (upper as OzRunStatus) : 'UNKNOWN';
+  }
+
+  /**
+   * Builds the env passed to the spawned `oz` child. Inherits the
+   * parent env (so the CLI can resolve TLS / DNS / Win32 APIs), strips
+   * a small allowlist of well-known secret keys (matching
+   * `npm exec` / `pnpm exec`), and — when `outputFormat` is non-null
+   * — sets `WARP_OUTPUT_FORMAT` so the global `--output-format` flag
+   * does not have to be repeated on every CLI invocation.
+   *
+   * @internal Exported on the class for unit testing.
+   */
+  static buildChildEnv(
+    outputFormat: 'json' | 'ndjson' | null,
+    parentEnv: NodeJS.ProcessEnv = process.env,
+  ): Record<string, string | undefined> {
+    const env: Record<string, string | undefined> = {};
+    for (const [key, value] of Object.entries(parentEnv)) {
+      if (SENSITIVE_ENV_KEYS.has(key)) { continue; }
+      env[key] = value;
+    }
+    if (outputFormat) {
+      env.WARP_OUTPUT_FORMAT = outputFormat;
+    }
+    return env;
   }
 
   /** Valida che un ID utente contenga solo caratteri sicuri (protezione injection) */

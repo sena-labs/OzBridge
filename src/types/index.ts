@@ -160,6 +160,12 @@ export interface IOzCliService {
     skill?: string;
     cwd?: string;
     cancellation?: vscode.CancellationToken;
+    /**
+     * Optional progressive-event callback. When provided the CLI is
+     * invoked with `WARP_OUTPUT_FORMAT=ndjson` and every newline-
+     * delimited JSON event is forwarded as it arrives.
+     */
+    onProgress?: (eventLine: string) => void;
   }): Promise<OzRunResult>;
 
   agentRunCloud(opts: {
@@ -172,8 +178,8 @@ export interface IOzCliService {
     cancellation?: vscode.CancellationToken;
   }): Promise<OzRunResult>;
 
-  runList(): Promise<OzListResult<{ id: string; status: OzRunStatus }>>;
-  runGet(runId: string): Promise<OzRunResult>;
+  runList(opts?: { jq?: string }): Promise<OzListResult<{ id: string; status: OzRunStatus }>>;
+  runGet(runId: string, opts?: { jq?: string }): Promise<OzRunResult>;
 
   scheduleCreate(opts: {
     name: string;
@@ -182,16 +188,16 @@ export interface IOzCliService {
     skill?: string;
     environment?: string;
   }): Promise<OzSchedule>;
-  scheduleList(): Promise<OzListResult<OzSchedule>>;
+  scheduleList(opts?: { jq?: string }): Promise<OzListResult<OzSchedule>>;
   schedulePause(id: string): Promise<void>;
   scheduleUnpause(id: string): Promise<void>;
   scheduleDelete(id: string): Promise<void>;
 
-  modelList(): Promise<OzListResult<OzModel>>;
-  mcpList(): Promise<OzListResult<OzMcpServer>>;
-  profileList(): Promise<OzListResult<OzProfile>>;
-  environmentList(): Promise<OzListResult<OzEnvironment>>;
-  integrationList(): Promise<OzListResult<OzIntegration>>;
+  modelList(opts?: { jq?: string }): Promise<OzListResult<OzModel>>;
+  mcpList(opts?: { jq?: string }): Promise<OzListResult<OzMcpServer>>;
+  profileList(opts?: { jq?: string }): Promise<OzListResult<OzProfile>>;
+  environmentList(opts?: { jq?: string }): Promise<OzListResult<OzEnvironment>>;
+  integrationList(opts?: { jq?: string }): Promise<OzListResult<OzIntegration>>;
 
   /**
    * Invokes `oz drive list <category> --output-format json` and returns
@@ -200,7 +206,7 @@ export interface IOzCliService {
    * `NOT_FOUND` or `CLI_ERROR`/"unknown command" stderr when the
    * subcommand is unavailable, so the drive factory can fall back.
    */
-  driveList(category: 'prompt' | 'rule' | 'skill'): Promise<unknown>;
+  driveList(category: 'prompt' | 'rule' | 'skill', opts?: { jq?: string }): Promise<unknown>;
 
   /**
    * Invokes `oz drive get --id <id>` and returns the raw markdown body.
