@@ -75,8 +75,11 @@ export function createConfigCommand(
           const integrations = await cli.integrationList();
           if (integrations.items.length > 0) {
             stream.markdown('**Integrations:**\n');
+            // Positive whitelist: anything else (e.g. "NOT CONNECTED",
+            // "DISCONNECTED", "FAILED", "ERROR") is treated as not connected.
+            const connectedStatuses = new Set(['connected', 'active', 'ok', 'ready', 'healthy']);
             for (const i of integrations.items) {
-              const connected = !i.status.toLowerCase().includes('not connected');
+              const connected = connectedStatuses.has(i.status.trim().toLowerCase());
               stream.markdown(`- ${connected ? '🟢' : '🔴'} ${i.provider}: ${i.status}\n`);
             }
             stream.markdown('\n');

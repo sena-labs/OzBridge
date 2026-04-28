@@ -18,12 +18,12 @@ import { SKILL_TEMPLATES, SkillTemplate } from '../scaffold/skillTemplates.js';
  */
 export function createInitV2Command(): SlashCommandHandler {
   return async (prompt, stream, _token) => {
-    const folders = vscode.workspace.workspaceFolders;
-    if (!folders?.[0]) {
+    const folder = vscode.workspace.workspaceFolders?.[0];
+    if (!folder) {
       stream.markdown('❌ No workspace open. Open a folder before using `/init`.\n');
       return {};
     }
-    const root = folders[0].uri.fsPath;
+    const root = folder.uri.fsPath;
     const normalised = (prompt ?? '').trim().toLowerCase();
 
     if (normalised === 'all') {

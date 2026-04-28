@@ -85,6 +85,30 @@ describe('/schedule command', () => {
       expect(mock.getFullOutput()).toContain('Usage');
     });
 
+    it('dovrebbe accettare quote opposte annidate nel prompt', async () => {
+      cli.scheduleCreate.mockResolvedValue({
+        id: 's-nest', name: 'tests', cron: '0 9 * * *', prompt: "Run 'test' suite", paused: false,
+      });
+
+      await handler(`create tests "0 9 * * *" "Run 'test' suite"`, mock.stream as any, createMockToken() as any);
+
+      expect(cli.scheduleCreate).toHaveBeenCalledWith(expect.objectContaining({
+        prompt: "Run 'test' suite",
+      }));
+    });
+
+    it('dovrebbe accettare quote stesso tipo escapate con backslash', async () => {
+      cli.scheduleCreate.mockResolvedValue({
+        id: 's-esc', name: 'esc', cron: '0 9 * * *', prompt: 'He said "hi"', paused: false,
+      });
+
+      await handler('create esc "0 9 * * *" "He said \\"hi\\""', mock.stream as any, createMockToken() as any);
+
+      expect(cli.scheduleCreate).toHaveBeenCalledWith(expect.objectContaining({
+        prompt: 'He said "hi"',
+      }));
+    });
+
     // Gap: create passa environment dalla config
     it('dovrebbe passare environment alla CLI se configurato', async () => {
       handler = createScheduleCommand(

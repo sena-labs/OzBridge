@@ -136,6 +136,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const cli = new OzCliService(state.configManager);
   const ctx = new ContextCollector();
+  // NOTE: cli/ctx are intentionally not pushed onto context.subscriptions:
+  // OzCliService spawns one short-lived child process per call (with its
+  // own cleanup) and ContextCollector is a stateless aggregator. Neither
+  // owns long-lived OS resources, so there is no Disposable to release.
   state.runPoller = new RunPoller(cli, state.configManager);
   context.subscriptions.push({ dispose: () => state.runPoller?.disposeAll() });
 
@@ -228,8 +232,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // Observability dashboard (v0.8 deliverable H).
   const runStats = new RunStatsService(cli);
   context.subscriptions.push(
-    vscode.commands.registerCommand('ozBridge.dashboard.open', () => {
-      DashboardPanel.createOrShow(runStats);
+    vscode.commands.registerCommand('ozBridge.dashboard.open', async () => {
+      const panel = DashboardPanel.createOrShow(runStats);
+      await panel.refresh();
     }),
   );
 

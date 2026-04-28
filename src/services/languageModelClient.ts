@@ -14,13 +14,14 @@ export function createVsCodeLanguageModelClient(): ILanguageModelClient | undefi
   return {
     async sendRequest(prompt, cancellation) {
       const models = await vscode.lm.selectChatModels({ vendor: 'copilot' });
-      if (models.length === 0) {
+      const model = models.at(0);
+      if (!model) {
         throw new Error('No Copilot chat model is available');
       }
       const message = vscode.LanguageModelChatMessage.User(prompt);
       const token = (cancellation as vscode.CancellationToken | undefined)
         ?? new vscode.CancellationTokenSource().token;
-      const response = await models[0].sendRequest([message], {}, token);
+      const response = await model.sendRequest([message], {}, token);
       let buffer = '';
       for await (const chunk of response.text) {
         buffer += chunk;

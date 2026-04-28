@@ -179,11 +179,20 @@ export class DashboardPanel {
 
   /** Recomputes the summary and rerenders the webview HTML. */
   async refresh(): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
     try {
       const summary = await this.stats.computeSummary(this.windowDays);
+      if (this.disposed) {
+        return;
+      }
       const nonce = generateNonce();
       this.panel.webview.html = renderDashboardHtml(summary, nonce, this.panel.webview.cspSource);
     } catch (err) {
+      if (this.disposed) {
+        return;
+      }
       const message = err instanceof Error ? err.message : String(err);
       logError(`Dashboard refresh failed: ${message}`);
       const nonce = generateNonce();

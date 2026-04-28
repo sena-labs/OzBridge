@@ -82,13 +82,24 @@ export class McpServer {
     if (this.http) { return; }
     const server = http.createServer((req, res) => { this.handle(req, res); });
     this.http = server;
-    await new Promise<void>((resolve, reject) => {
-      server.once('error', reject);
-      server.listen(this.options.port, this.options.bindAddress, () => {
-        server.off('error', reject);
-        resolve();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const onError = (err: Error): void => {
+          server.off('error', onError);
+          reject(err);
+        };
+        server.once('error', onError);
+        server.listen(this.options.port, this.options.bindAddress, () => {
+          server.off('error', onError);
+          resolve();
+        });
       });
-    });
+    } catch (err) {
+      // Reset state so a subsequent start() attempt is not silently a no-op.
+      this.http = undefined;
+      try { server.close(); } catch { /* ignore */ }
+      throw err;
+    }
   }
 
   /** Closes the socket and terminates any in-flight SSE streams. Idempotent. */

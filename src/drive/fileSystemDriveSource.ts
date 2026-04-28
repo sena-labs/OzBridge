@@ -134,7 +134,14 @@ function listMarkdownFiles(dir: string): string[] {
   let entries: fs.Dirent[];
   try {
     entries = fs.readdirSync(absolute, { withFileTypes: true });
-  } catch {
+  } catch (err) {
+    // ENOENT is expected for optional skill/notebook directories; log other
+    // failures (permissions, I/O) so users aren't left wondering why the
+    // Drive view is empty.
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    if (code !== 'ENOENT') {
+      logWarn(`fileSystemDriveSource: cannot read directory ${absolute}: ${err instanceof Error ? err.message : String(err)}`);
+    }
     return [];
   }
   return entries
@@ -153,7 +160,11 @@ function listSkillFolders(skillsDir: string): string[] {
   let entries: fs.Dirent[];
   try {
     entries = fs.readdirSync(absolute, { withFileTypes: true });
-  } catch {
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    if (code !== 'ENOENT') {
+      logWarn(`fileSystemDriveSource: cannot read skills directory ${absolute}: ${err instanceof Error ? err.message : String(err)}`);
+    }
     return [];
   }
   const out: string[] = [];

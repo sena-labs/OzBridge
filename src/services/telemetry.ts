@@ -190,7 +190,17 @@ export class HttpAppInsightsReporter implements ITelemetryReporter {
       (typeof fetch === 'function' ? fetch.bind(globalThis) : undefined);
     if (this.flushIntervalMs > 0) {
       this.timer = setInterval(() => {
-        void this.flush();
+        // Surface unexpected failures of the periodic flush so they don't
+        // disappear into a fire-and-forget Promise. The flush() body is
+        // already defensive (try/catch around the network call) — this is a
+        // last-resort safety net for diagnostics.
+        this.flush().catch((err) => {
+          // Avoid using the project logger here to keep the telemetry
+          // service free of cross-cutting dependencies; console.warn is
+          // visible in the extension host log.
+          // eslint-disable-next-line no-console
+          console.warn('[telemetry] periodic flush failed:', err);
+        });
       }, this.flushIntervalMs);
       // Allow Node to exit even when the timer is still scheduled.
       this.timer?.unref?.();

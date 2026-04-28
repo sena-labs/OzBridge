@@ -20,6 +20,16 @@ import {
 import { parse } from '../parsers/jsonParser.js';
 import { getErrorMessage } from '../utils/error.js';
 
+/** Type predicate for {@link OzRunStatus}. */
+function isValidOzRunStatus(value: string): value is OzRunStatus {
+  return (
+    value === 'QUEUED' ||
+    value === 'INPROGRESS' ||
+    value === 'SUCCEEDED' ||
+    value === 'FAILED'
+  );
+}
+
 /**
  * Wraps the Warp Oz CLI (`oz`) via `child_process.spawn`.
  *
@@ -576,13 +586,20 @@ export class OzCliService implements IOzCliService {
       };
 
       const terminateProcess = () => {
+        // Cleanup order:
+        //   1. Mark `killed` so the eventual `proc.on('exit')` handler can
+        //      classify the termination correctly.
+        //   2. Send SIGTERM (best-effort — errors are intentionally
+        //      swallowed because the child may have already exited).
+        //   3. Schedule SIGKILL as a safety net guarded by `settled` so it
+        //      becomes a no-op once `cleanup()` has run.
         killed = true;
-        try { proc.kill('SIGTERM'); } catch { /* ignore */ }
+        try { proc.kill('SIGTERM'); } catch { /* already exited */ }
 
         // If the process ignores SIGTERM, force kill after a short grace period.
         forceKillHandle = setTimeout(() => {
           if (settled) { return; }
-          try { proc.kill('SIGKILL'); } catch { /* ignore */ }
+          try { proc.kill('SIGKILL'); } catch { /* already exited */ }
         }, 1_500);
       };
 
@@ -640,10 +657,13 @@ export class OzCliService implements IOzCliService {
         if (settled) { return; }
         settled = true;
 
-        if (err.message.includes('ENOENT') || err.message.includes('not found')) {
+        // `err` is typed as `Error` by Node, but be defensive in case the
+        // runtime hands us something else (e.g. a thrown string from a mock).
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('ENOENT') || msg.includes('not found')) {
           reject(new OzCliError(OzCliErrorKind.NOT_FOUND, `Oz CLI not found at '${ozPath}'`));
         } else {
-          reject(new OzCliError(OzCliErrorKind.CLI_ERROR, err.message));
+          reject(new OzCliError(OzCliErrorKind.CLI_ERROR, msg));
         }
       });
 
@@ -791,6 +811,10 @@ export class OzCliService implements IOzCliService {
    * Returns null if the output isn't NDJSON.
    */
   private tryParseNdjson(stdout: string): Omit<OzRunResult, 'exitCode' | 'durationMs'> | null {
+    // Spec: Oz CLI emits compact NDJSON (one JSON object per line, no
+    // embedded newlines). If the format ever switches to pretty-printed
+    // JSON the parser below would mis-tokenise the stream — callers should
+    // treat a `null` return as "not NDJSON" and fall back to plain output.
     const lines = stdout.trim().split(/\r?\n/);
     if (lines.length < 2) { return null; }
 
@@ -911,8 +935,7 @@ export class OzCliService implements IOzCliService {
       return 'UNKNOWN';
     }
     const upper = value.toUpperCase();
-    const valid: OzRunStatus[] = ['QUEUED', 'INPROGRESS', 'SUCCEEDED', 'FAILED'];
-    return valid.includes(upper as OzRunStatus) ? (upper as OzRunStatus) : 'UNKNOWN';
+    return isValidOzRunStatus(upper) ? upper : 'UNKNOWN';
   }
 
   /**

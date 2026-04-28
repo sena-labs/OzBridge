@@ -66,11 +66,16 @@ export class OutputFormatter {
 
   /**
    * Extracts the session URL from the raw output text of a cloud run.
-   * Looks for "View agent session: https://app.warp.dev/session/..."
+   * Looks for "View agent session: https://app.warp.dev/session/<uuid>".
+   *
+   * Matches a strict UUID v4-ish shape (8-4-4-4-12 hex groups) so that
+   * malformed paths like `/session/---` are not accepted as a valid URL.
    */
   private extractSessionUrl(result: OzRunResult): string | null {
     const text = result.output || (typeof result.raw === 'string' ? result.raw : '');
-    const match = text.match(/https:\/\/app\.warp\.dev\/session\/[a-f0-9-]+/i);
+    const match = text.match(
+      /https:\/\/app\.warp\.dev\/session\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i,
+    );
     return match ? match[0] : null;
   }
 
