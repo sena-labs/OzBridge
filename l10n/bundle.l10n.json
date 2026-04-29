@@ -1,6 +1,5 @@
 {
-  "OzBridge: Oz CLI not found. Install Warp to use @oz in chat.": "OzBridge: Oz CLI not found. Install Warp to use @oz in chat.",
-  "Install Warp": "Install Warp",
+  "OzBridge: openConversation accepts only warp:// URIs.": "OzBridge: openConversation accepts only warp:// URIs.",
   "Failure triage requires VS Code 1.96+ with a Copilot chat model installed.": "Failure triage requires VS Code 1.96+ with a Copilot chat model installed.",
   "Run id to triage": "Run id to triage",
   "OzBridge: triaging {0}…": "OzBridge: triaging {0}…",
@@ -50,5 +49,23 @@
   "OzBridge: no active editor to save.": "OzBridge: no active editor to save.",
   "OzBridge: no {0} directory available.": "OzBridge: no {0} directory available.",
   "Saved {0} skill to {1}": "Saved {0} skill to {1}",
-  "Save failed: {0}": "Save failed: {0}"
+  "Save failed: {0}": "Save failed: {0}",
+  "🌐 Open in browser": "🌐 Open in browser",
+  "📥 Install Warp": "📥 Install Warp",
+  "🔑 Login Warp": "🔑 Login Warp",
+  "💳 Manage Warp billing": "💳 Manage Warp billing",
+  "OzBridge · /init templates": "OzBridge · /init templates",
+  "Pick the skill / rule files to scaffold": "Pick the skill / rule files to scaffold",
+  "OzBridge: {0} active": "OzBridge: {0} active",
+  "OzBridge: 1 active run": "OzBridge: 1 active run",
+  "OzBridge: {0} active runs": "OzBridge: {0} active runs",
+  "OzBridge: unavailable": "OzBridge: unavailable",
+  "OzBridge: unable to list runs. Check Oz CLI availability and authentication.": "OzBridge: unable to list runs. Check Oz CLI availability and authentication.",
+  "OzBridge: unavailable. Check Oz CLI availability and authentication.": "OzBridge: unavailable. Check Oz CLI availability and authentication.",
+  "active & recent runs": "active & recent runs",
+  "No runs reported by Oz CLI.": "No runs reported by Oz CLI.",
+  "Status": "Status",
+  "Run ID": "Run ID",
+  "…and {0} more — click to open the sidebar.": "…and {0} more — click to open the sidebar.",
+  "Click to focus the OzBridge sidebar.": "Click to focus the OzBridge sidebar."
 }

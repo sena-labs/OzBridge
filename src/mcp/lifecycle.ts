@@ -14,15 +14,34 @@ export interface McpConfig {
   port: number;
   bindAddress: string;
   bearerToken: string;
+  maxSseSessions: number;
 }
 
 /** Extracts the `ozBridge.mcp.*` slice from the full config snapshot. */
 export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
+  const port =
+    typeof full.mcpPort === 'number'
+    && Number.isInteger(full.mcpPort)
+    && Number.isFinite(full.mcpPort)
+    && full.mcpPort >= 0
+    && full.mcpPort <= 65_535
+      ? full.mcpPort
+      : 3847;
+
+  const maxSseSessions =
+    typeof full.mcpMaxSseSessions === 'number'
+    && Number.isInteger(full.mcpMaxSseSessions)
+    && full.mcpMaxSseSessions >= 1
+    && full.mcpMaxSseSessions <= 256
+      ? full.mcpMaxSseSessions
+      : 16;
+
   return {
     enabled: full.mcpEnabled === true,
-    port: typeof full.mcpPort === 'number' && full.mcpPort >= 0 ? full.mcpPort : 3847,
+    port,
     bindAddress: full.mcpBindAddress || '127.0.0.1',
     bearerToken: full.mcpBearerToken || '',
+    maxSseSessions,
   };
 }
 
@@ -74,14 +93,28 @@ export class McpLifecycle implements vscode.Disposable {
     const cfg = readMcpConfig(this.cfgMgr.getConfig());
     this.current = { ...cfg };
 
+    // Security gate: when the user binds the MCP socket to an address other
+    // than loopback, refuse to start without a bearer token. This prevents
+    // exposing the JSON-RPC surface (which can spawn the Oz CLI) to the
+    // local network without authentication.
+    if (!isLoopbackAddress(cfg.bindAddress) && !cfg.bearerToken) {
+      logError(
+        `MCP server refused to start: bindAddress="${cfg.bindAddress}" requires `
+        + 'a non-empty ozBridge.mcpBearerToken. Either set 127.0.0.1 or configure a token.',
+      );
+      this.server = undefined;
+      return;
+    }
+
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
-    const serverInfo = { name: 'warp-vsc-bridge', version: this.extensionVersion };
+    const serverInfo = { name: 'oz-bridge', version: this.extensionVersion };
 
     try {
       const server = new McpServer(registry, serverInfo, {
         port: cfg.port,
         bindAddress: cfg.bindAddress,
         bearerToken: cfg.bearerToken || undefined,
+        maxSseSessions: cfg.maxSseSessions,
       });
       await server.start();
       this.server = server;
@@ -96,6 +129,7 @@ export class McpLifecycle implements vscode.Disposable {
             port: 0,
             bindAddress: cfg.bindAddress,
             bearerToken: cfg.bearerToken || undefined,
+            maxSseSessions: cfg.maxSseSessions,
           });
           await fallbackServer.start();
           this.server = fallbackServer;
@@ -145,6 +179,12 @@ function isPortInUseError(err: unknown): boolean {
   return (err as { code?: unknown }).code === 'EADDRINUSE';
 }
 
+/** Returns true for IPv4/IPv6 loopback bind addresses. */
+function isLoopbackAddress(address: string): boolean {
+  const a = address.trim().toLowerCase();
+  return a === '127.0.0.1' || a === 'localhost' || a === '::1';
+}
+
 /**
  * Registers the user-facing commands that drive the MCP lifecycle. The
  * returned disposables should be pushed into `context.subscriptions`.
@@ -157,11 +197,18 @@ export function registerMcpCommands(
     vscode.commands.registerCommand('ozBridge.mcp.start', async () => {
       await lifecycle.start();
       const ep = lifecycle.endpoint;
-      await vscode.window.showInformationMessage(
-        ep
-          ? vscode.l10n.t('OzBridge MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port))
-          : vscode.l10n.t('OzBridge MCP server failed to start — see the OzBridge output channel.'),
-      );
+      // UX: a missing endpoint after `start()` means the server failed to
+      // bind. Surface it as an error toast (red) instead of an info toast
+      // (blue) so the failure is communicated correctly.
+      if (ep) {
+        await vscode.window.showInformationMessage(
+          vscode.l10n.t('OzBridge MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port)),
+        );
+      } else {
+        await vscode.window.showErrorMessage(
+          vscode.l10n.t('OzBridge MCP server failed to start — see the OzBridge output channel.'),
+        );
+      }
     }),
 
     vscode.commands.registerCommand('ozBridge.mcp.stop', async () => {
@@ -220,7 +267,7 @@ function defaultRegistrars(): IMcpClientRegistrar[] {
 }
 
 /** Server name advertised to every MCP client we register with. */
-export const MCP_SERVER_NAME = 'warp-vsc-bridge';
+export const MCP_SERVER_NAME = 'oz-bridge';
 
 /**
  * Shared implementation behind the `registerClient` / `unregisterClient`

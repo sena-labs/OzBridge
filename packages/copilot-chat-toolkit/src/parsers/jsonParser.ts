@@ -13,6 +13,10 @@ export interface ParseResult<T> {
 /**
  * Attempts to extract a typed JSON value from raw CLI output.
  *
+ * **Type safety:** the generic `T` is an *unchecked* assertion — `parse` does
+ * no runtime validation that the parsed JSON matches `T`. For safety-critical
+ * call sites prefer {@link parseOrValidate}, which takes a type guard.
+ *
  * Applies a 5-level strategy:
  * 1. Empty input → `{ parsed: null, rawText: '' }`
  * 2. Direct `JSON.parse` of the trimmed string
@@ -28,7 +32,7 @@ export function parse<T>(stdout: string): ParseResult<T> {
   }
 
   try {
-    const parsed = JSON.parse(trimmed) as T;
+    const parsed = JSON.parse(trimmed) as unknown as T;
     return { parsed, rawText: trimmed };
   } catch {
     // Strategy 3: multi-line JSON block
@@ -40,7 +44,7 @@ export function parse<T>(stdout: string): ParseResult<T> {
       if (lastBrace > firstBrace) {
         const candidate = trimmed.substring(firstBrace, lastBrace + 1);
         try {
-          const parsed = JSON.parse(candidate) as T;
+          const parsed = JSON.parse(candidate) as unknown as T;
           return { parsed, rawText: trimmed };
         } catch {
           // fallthrough
@@ -54,7 +58,7 @@ export function parse<T>(stdout: string): ParseResult<T> {
       const t = line.trim();
       if ((t.startsWith('{') || t.startsWith('[')) && (t.endsWith('}') || t.endsWith(']'))) {
         try {
-          const parsed = JSON.parse(t) as T;
+          const parsed = JSON.parse(t) as unknown as T;
           return { parsed, rawText: trimmed };
         } catch {
           continue;
@@ -70,6 +74,9 @@ export function parse<T>(stdout: string): ParseResult<T> {
 /**
  * Parses raw CLI output into a typed value or throws a {@link CliError}.
  *
+ * **Type safety:** the generic `T` is unchecked. Prefer {@link parseOrValidate}
+ * when the caller needs a runtime guarantee that the parsed shape matches `T`.
+ *
  * @throws {CliError} with kind `PARSE_ERROR` if no JSON could be extracted.
  */
 export function parseOrThrow<T>(stdout: string, context: string): T {
@@ -78,6 +85,35 @@ export function parseOrThrow<T>(stdout: string, context: string): T {
     throw new CliError(
       CliErrorKind.PARSE_ERROR,
       `Failed to parse JSON from '${context}': ${result.rawText.substring(0, 200)}`,
+    );
+  }
+  return result.parsed;
+}
+
+/**
+ * Parses raw CLI output and validates the shape with `isT`. Throws a
+ * {@link CliError} (`PARSE_ERROR`) if no JSON could be extracted *or* if the
+ * parsed value does not satisfy the predicate.
+ *
+ * Use this when the caller wants a runtime safety net rather than the
+ * unchecked `as T` of {@link parse} / {@link parseOrThrow}.
+ */
+export function parseOrValidate<T>(
+  stdout: string,
+  isT: (value: unknown) => value is T,
+  context: string,
+): T {
+  const result = parse<unknown>(stdout);
+  if (result.parsed === null) {
+    throw new CliError(
+      CliErrorKind.PARSE_ERROR,
+      `Failed to parse JSON from '${context}': ${result.rawText.substring(0, 200)}`,
+    );
+  }
+  if (!isT(result.parsed)) {
+    throw new CliError(
+      CliErrorKind.PARSE_ERROR,
+      `Parsed JSON from '${context}' did not match expected shape`,
     );
   }
   return result.parsed;

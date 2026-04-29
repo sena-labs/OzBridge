@@ -87,7 +87,11 @@ beforeEach(() => {
 });
 
 describe('OzCliService — NDJSON edge cases', () => {
-  it('should fallback to full stdout when NDJSON has no agent text events', async () => {
+  it('should surface tool_result.output when NDJSON has no agent text events', async () => {
+    // Bridge-input audit (v1.2): previously the bridge dropped tool_result
+    // payloads when the agent emitted no final text and fell back to the
+    // raw stdout dump. The parser now folds tool_result outputs into the
+    // result so diagnostics from local tool calls are not lost.
     const ndjson = [
       '{"type":"system","event_type":"conversation_started","conversation_id":"conv-1"}',
       '{"type":"tool_call","tool":"read_files","files":[]}',
@@ -97,9 +101,22 @@ describe('OzCliService — NDJSON edge cases', () => {
     createMockProcess({ stdout: ndjson });
     const result = await cli.agentRun({ prompt: 'test' });
 
-    // No agent text events → output is the original stdout
-    expect(result.output).toBe(ndjson);
+    expect(result.output).toBe('content');
     expect(result.runId).toBe('conv-1');
+    expect(result.status).toBe('SUCCEEDED');
+  });
+
+  it('should fall back to raw stdout when NDJSON has neither agent text nor tool_result outputs', async () => {
+    const ndjson = [
+      '{"type":"system","event_type":"conversation_started","conversation_id":"conv-1b"}',
+      '{"type":"tool_call","tool":"read_files","files":[]}',
+    ].join('\n');
+
+    createMockProcess({ stdout: ndjson });
+    const result = await cli.agentRun({ prompt: 'test' });
+
+    expect(result.output).toBe(ndjson);
+    expect(result.runId).toBe('conv-1b');
     expect(result.status).toBe('SUCCEEDED');
   });
 

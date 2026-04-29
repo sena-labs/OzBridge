@@ -11,18 +11,48 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sena-labs/warp-vsc-bridge"
+    "url": "https://github.com/sena-labs/OzBridge"
   },
   "bugs": {
-    "url": "https://github.com/sena-labs/warp-vsc-bridge/issues"
+    "url": "https://github.com/sena-labs/OzBridge/issues"
   },
-  "homepage": "https://github.com/sena-labs/warp-vsc-bridge#readme",
+  "homepage": "https://github.com/sena-labs/OzBridge#readme",
   "icon": "media/warp-icon.png",
+  "galleryBanner": {
+    "color": "#0E1116",
+    "theme": "dark"
+  },
   "engines": {
-    "vscode": "^1.96.0"
+    "vscode": "^1.96.0",
+    "node": ">=20.19"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "OzBridge spawns the Oz CLI configured by the workspace via .warp/warp-bridge.yaml. In an untrusted workspace these workspace-scoped settings are ignored and only user/global configuration is honored; the CLI is still spawned from the user's PATH or globally configured ozPath."
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "OzBridge requires a local Oz CLI binary to spawn agent processes; virtual filesystems (e.g. vscode.dev, github.dev) are not supported."
+    }
   },
   "categories": [
     "Chat"
+  ],
+  "keywords": [
+    "chat",
+    "copilot",
+    "agent",
+    "AI",
+    "LLM",
+    "Warp",
+    "Oz",
+    "MCP",
+    "model-context-protocol",
+    "prompt"
+  ],
+  "extensionKind": [
+    "workspace"
   ],
   "activationEvents": [
     "onChatParticipant:ozbridge.oz",
@@ -31,8 +61,7 @@
     "onLanguageModelTool:oz_get_run",
     "onLanguageModelTool:oz_list_runs",
     "onView:ozBridge.runsView",
-    "onView:ozBridge.driveView",
-    "onCommand:ozBridge.dashboard.open"
+    "onView:ozBridge.driveView"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -100,6 +129,7 @@
         ],
         "inputSchema": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "prompt"
           ],
@@ -131,7 +161,7 @@
         "name": "oz_run_cloud",
         "displayName": "Run Warp Oz agent (cloud)",
         "toolReferenceName": "ozRunCloud",
-        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS \u2014 always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `oz_get_run`.",
+        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS — always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `oz_get_run`.",
         "userDescription": "Let Copilot launch cloud Warp Oz runs (with explicit confirmation to consume credits).",
         "canBeReferencedInPrompt": true,
         "icon": "$(cloud)",
@@ -143,6 +173,7 @@
         ],
         "inputSchema": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "prompt"
           ],
@@ -189,6 +220,7 @@
         ],
         "inputSchema": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "runId"
           ],
@@ -215,6 +247,8 @@
         ],
         "inputSchema": {
           "type": "object",
+          "additionalProperties": false,
+          "required": [],
           "properties": {
             "status": {
               "type": "string",
@@ -231,7 +265,8 @@
               "description": "Filter by status. `active` = QUEUED or INPROGRESS. `completed` = SUCCEEDED or FAILED."
             },
             "limit": {
-              "type": "number",
+              "type": "integer",
+              "minimum": 1,
               "description": "Maximum number of runs to return after filtering."
             }
           }
@@ -263,6 +298,16 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "ozBridge.runsView",
+        "contents": "%viewsWelcome.runs.empty%"
+      },
+      {
+        "view": "ozBridge.driveView",
+        "contents": "%viewsWelcome.drive.empty%"
+      }
+    ],
     "commands": [
       {
         "command": "ozBridge.tree.refresh",
@@ -429,12 +474,12 @@
       "view/item/context": [
         {
           "command": "ozBridge.tree.copyId",
-          "when": "view == ozBridge.runsView && viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/",
+          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed || viewItem == warpSchedule:running || viewItem == warpSchedule:paused || viewItem == warpEnvironment || viewItem == warpMcp)",
           "group": "warpGeneric@1"
         },
         {
           "command": "ozBridge.tree.openInBrowser",
-          "when": "view == ozBridge.runsView && viewItem =~ /^warpRun/",
+          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed)",
           "group": "warpGeneric@2"
         },
         {
@@ -449,27 +494,27 @@
         },
         {
           "command": "ozBridge.tree.deleteSchedule",
-          "when": "view == ozBridge.runsView && viewItem =~ /^warpSchedule/",
+          "when": "view == ozBridge.runsView && (viewItem == warpSchedule:running || viewItem == warpSchedule:paused)",
           "group": "warpSchedule@2"
         },
         {
           "command": "ozBridge.tree.handoff",
-          "when": "view == ozBridge.runsView && viewItem =~ /^warpRun/",
+          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed)",
           "group": "warpGeneric@3"
         },
         {
           "command": "ozBridge.drive.insertIntoChat",
-          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "when": "view == ozBridge.driveView && (viewItem == warpDrivePrompt || viewItem == warpDriveRule || viewItem == warpDriveSkill)",
           "group": "warpDrive@1"
         },
         {
           "command": "ozBridge.drive.copyContent",
-          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "when": "view == ozBridge.driveView && (viewItem == warpDrivePrompt || viewItem == warpDriveRule || viewItem == warpDriveSkill)",
           "group": "warpDrive@2"
         },
         {
           "command": "ozBridge.drive.openInEditor",
-          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "when": "view == ozBridge.driveView && (viewItem == warpDrivePrompt || viewItem == warpDriveRule || viewItem == warpDriveSkill)",
           "group": "warpDrive@3"
         }
       ]
@@ -480,62 +525,81 @@
         "ozBridge.ozPath": {
           "type": "string",
           "default": "oz",
-          "description": "Path to the Oz CLI executable"
+          "markdownDescription": "Path to the Oz CLI executable. Use the bare name `oz` to resolve from `PATH`, or an absolute path like `/usr/local/bin/oz` to pin a specific binary. See [Warp downloads](https://www.warp.dev/download).",
+          "scope": "machine-overridable"
         },
         "ozBridge.defaultModel": {
           "type": "string",
           "default": "auto",
-          "description": "Default AI model for agent runs"
+          "markdownDescription": "Default AI model for agent runs. Use `auto` to let Warp pick the best available model, or pin a specific id (e.g. `claude-3-7-sonnet`, `gpt-4o`)."
         },
         "ozBridge.defaultProfile": {
           "type": "string",
           "default": "Default",
-          "description": "Default Oz agent profile"
+          "markdownDescription": "Default Oz agent profile. Profiles are managed by the Warp app under **Settings → AI → Profiles**."
         },
         "ozBridge.defaultEnvironment": {
           "type": "string",
           "default": "",
-          "description": "Default cloud environment name (empty = none)"
+          "markdownDescription": "Default cloud environment id (empty = let Warp pick the first available, or run with no environment if none exist)."
         },
         "ozBridge.cloudPollingIntervalMs": {
-          "type": "number",
+          "type": "integer",
           "default": 5000,
-          "description": "Initial polling interval for cloud runs (ms)"
+          "minimum": 100,
+          "markdownDescription": "Initial polling interval for cloud runs (in **milliseconds**). The poller backs off exponentially from this value."
         },
         "ozBridge.cloudPollingTimeoutMs": {
-          "type": "number",
+          "type": "integer",
           "default": 1800000,
-          "description": "Max polling duration for cloud runs (ms, default 30 min)"
+          "minimum": 1000,
+          "markdownDescription": "Maximum polling duration for cloud runs (in **milliseconds**). Default `1800000` = 30 minutes."
         },
         "ozBridge.timeoutMs": {
-          "type": "number",
+          "type": "integer",
           "default": 300000,
-          "description": "Timeout for local agent runs (ms, default 5 min)"
+          "minimum": 1000,
+          "markdownDescription": "Timeout for local agent runs (in **milliseconds**). Default `300000` = 5 minutes."
         },
         "ozBridge.idleTimeoutMs": {
-          "type": "number",
+          "type": "integer",
           "default": 90000,
-          "description": "Idle timeout for the Oz CLI subprocess (ms). Aborts the run if no stdout/stderr is received for this long \u2014 prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to 0 to disable. Default 90 s."
+          "minimum": 0,
+          "markdownDescription": "Idle timeout for the Oz CLI subprocess (in **milliseconds**). Aborts the run if no `stdout` / `stderr` is received for this long — prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to `0` to disable. Default `90000` = 90 s."
         },
         "ozBridge.maxOutputChars": {
-          "type": "number",
+          "type": "integer",
           "default": 15000,
-          "description": "Max characters shown in chat before truncation"
+          "minimum": 100,
+          "markdownDescription": "Maximum number of characters streamed back to chat before truncation. Larger values consume more context budget on the LM side."
         },
         "ozBridge.mcpEnabled": {
           "type": "boolean",
           "default": false,
-          "description": "Start an embedded MCP server at activation so Claude Code, Cursor and Codex can drive Oz."
+          "markdownDescription": "Start an embedded MCP server at activation so **Claude Code**, **Cursor** and **Codex** can drive Oz. See [`docs/MCP.md`](https://github.com/sena-labs/OzBridge/blob/main/docs/MCP.md).",
+          "scope": "machine-overridable"
         },
         "ozBridge.mcpPort": {
-          "type": "number",
+          "type": "integer",
           "default": 3847,
-          "description": "TCP port the MCP server listens on when enabled."
+          "minimum": 0,
+          "maximum": 65535,
+          "markdownDescription": "TCP port the MCP server listens on when enabled. Set to `0` to let the OS allocate an ephemeral port.",
+          "scope": "machine-overridable"
+        },
+        "ozBridge.mcpMaxSseSessions": {
+          "type": "integer",
+          "default": 16,
+          "minimum": 1,
+          "maximum": 256,
+          "markdownDescription": "Maximum number of concurrent MCP SSE sessions. Additional `GET /sse` requests are rejected with **HTTP 503** once the cap is reached.",
+          "scope": "machine-overridable"
         },
         "ozBridge.mcpBindAddress": {
           "type": "string",
           "default": "127.0.0.1",
-          "description": "Network interface the MCP server binds to. Keep 127.0.0.1 unless you explicitly want to expose it."
+          "markdownDescription": "Network interface the MCP server binds to. Keep `127.0.0.1` unless you explicitly want to expose the server to other hosts. Setting `0.0.0.0` exposes it to the entire network — always pair with `#ozBridge.mcpBearerToken#`.",
+          "scope": "machine-overridable"
         },
         "ozBridge.mcpBearerToken": {
           "type": "string",
@@ -546,13 +610,13 @@
         "ozBridge.telemetry.connectionString": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Application Insights connection string (`InstrumentationKey=...;IngestionEndpoint=...`) for opt-in telemetry. Empty string keeps the transport disabled even when VS Code's `telemetry.telemetryLevel` is on. See [`PRIVACY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/PRIVACY.md) for what is and isn't collected.",
+          "markdownDescription": "Application Insights connection string (`InstrumentationKey=...;IngestionEndpoint=...`) for opt-in telemetry. Empty string keeps the transport disabled even when VS Code's `telemetry.telemetryLevel` is on. See [`PRIVACY.md`](https://github.com/sena-labs/OzBridge/blob/main/PRIVACY.md) for what is and isn't collected.",
           "scope": "machine-overridable"
         },
         "ozBridge.killSwitch.enabled": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "**Emergency kill-switch.** When `true`, the extension's `activate()` skips every wiring step (no commands, tools, MCP server, chat participant or trees are registered) and surfaces a single warning notification. Use only as an operator escape hatch for a critical regression or a supply-chain incident. See [`SECURITY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/SECURITY.md#kill-switch-v10-deliverable-t) for the policy.",
+          "markdownDescription": "**Emergency kill-switch.** When `true`, the extension's `activate()` skips every wiring step (no commands, tools, MCP server, chat participant or trees are registered) and surfaces a single warning notification. Use only as an operator escape hatch for a critical regression or a supply-chain incident. See [`SECURITY.md`](https://github.com/sena-labs/OzBridge/blob/main/SECURITY.md#kill-switch-v10-deliverable-t) for the policy.",
           "scope": "machine-overridable"
         },
         "ozBridge.killSwitch.reason": {
@@ -577,7 +641,7 @@
               "markdown": "media/walkthrough/install-cli.md"
             },
             "completionEvents": [
-              "onCommand:ozBridge.tree.refresh"
+              "onLanguageModelTool:oz_list_runs"
             ]
           },
           {
@@ -628,15 +692,16 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "package": "npx @vscode/vsce package --no-dependencies -o ozbridge.vsix"
+    "package": "vsce package --no-dependencies -o ozbridge.vsix"
   },
   "dependencies": {
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
-    "@types/vscode": "^1.116.0",
+    "@types/node": "^20.19.39",
+    "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.5",
+    "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.28.0",
     "typescript": "^6.0.3",
     "vitest": "^4.0.18"

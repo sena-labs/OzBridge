@@ -1,0 +1,16 @@
+{
+  "intent": "Use AI generation only as an optional ideation pass; final assets should stay faithful to real OzBridge UI patterns.",
+  "icon": "Design a crisp VS Code extension icon for OzBridge: developer tooling, bridge metaphor, dark background, neon cyan/green accents, readable at 32px, no mascots, no fake glossy 3D.",
+  "hero": "Create a realistic VS Code dark-theme screenshot for OzBridge showing the actual product layout: activity bar, Runs & Resources sidebar, Copilot Chat panel with @oz cloud run and status updates. Keep typography and spacing close to real VS Code.",
+  "gallery": [
+    "Realistic OzBridge sidebar screenshot with Active Runs, History, Schedules and quick actions.",
+    "Realistic Warp Drive screenshot with prompt tree on the left and markdown prompt preview in the editor.",
+    "Realistic MCP management screenshot with local endpoint, registered clients and runtime logs.",
+    "Realistic OzBridge dashboard webview screenshot with run analytics and failure triage cards."
+  ],
+  "review_rubric": [
+    "Would a developer mistake this for a real VS Code capture at first glance?",
+    "Are command names, view titles and labels consistent with the actual OzBridge extension?",
+    "Is the icon still recognizable and crisp at 32×32?"
+  ]
+}

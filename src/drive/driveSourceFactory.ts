@@ -13,7 +13,7 @@ import {
   FileSystemDriveOptions,
   FileSystemDriveSource,
 } from './fileSystemDriveSource.js';
-import { logInfo } from '../services/logger.js';
+import { logInfo, logWarn } from '../services/logger.js';
 
 /**
  * Options for {@link createOzBridgeDriveSource}. All fields are optional so
@@ -49,6 +49,7 @@ export interface CreateOzBridgeDriveSourceOptions {
  */
 export class CompositeDriveSource implements IDriveSource {
   readonly label: string;
+  private fallbackWarned = false;
 
   constructor(
     private readonly primary: IDriveSource,
@@ -75,6 +76,10 @@ export class CompositeDriveSource implements IDriveSource {
       return await op(this.primary);
     } catch (err) {
       if (err instanceof CliDriveNotAvailableError) {
+        if (!this.fallbackWarned) {
+          this.fallbackWarned = true;
+          logWarn('Warp Drive CLI unavailable: using filesystem fallback for this session.');
+        }
         return op(this.fallback);
       }
       throw err;

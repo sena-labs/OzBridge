@@ -799,9 +799,9 @@ body {
 
     <!-- OS TABS -->
     <div class="os-tabs">
-      <div class="os-tab active" onclick="switchOS('win')">🪟 Windows</div>
-      <div class="os-tab" onclick="switchOS('mac')">🍎 macOS</div>
-      <div class="os-tab" onclick="switchOS('linux')">🐧 Linux</div>
+      <div class="os-tab active" onclick="switchOS(event,'win')">🪟 Windows</div>
+      <div class="os-tab" onclick="switchOS(event,'mac')">🍎 macOS</div>
+      <div class="os-tab" onclick="switchOS(event,'linux')">🐧 Linux</div>
     </div>
 
     <!-- WINDOWS -->
@@ -952,8 +952,8 @@ body {
               <span>VS Code Terminal</span>
             </div>
             <div class="terminal-body">
-              <span class="prompt">PS&gt;</span> <span class="cmd">code --install-extension warp-vsc-bridge-0.1.0.vsix</span><br>
-              <span class="success">Extension 'warp-vsc-bridge-0.1.0.vsix' was successfully installed.</span>
+              <span class="prompt">PS&gt;</span> <span class="cmd">code --install-extension ozbridge.vsix</span><br>
+              <span class="success">Extension 'ozbridge.vsix' was successfully installed.</span>
             </div>
           </div>
           <div class="media-placeholder" data-media="gif-04-install-vsix.gif">
@@ -1286,7 +1286,7 @@ body {
         </tr>
         <tr>
           <td class="setting-key">cloudPollingIntervalMs</td>
-          <td class="setting-default">5000</td>
+          <td class="setting-default">15000</td>
           <td>Intervallo di polling per task cloud (ms).</td>
         </tr>
         <tr>
@@ -1296,7 +1296,7 @@ body {
         </tr>
         <tr>
           <td class="setting-key">maxOutputChars</td>
-          <td class="setting-default">5000</td>
+          <td class="setting-default">15000</td>
           <td>Lunghezza massima dell'output in chat. Aumenta se risposte troncate.</td>
         </tr>
       </tbody>
@@ -1319,7 +1319,7 @@ body {
       <div class="step-card">
         <div class="step-top"><div class="step-badge">✂️</div><h3>La risposta viene troncata</h3></div>
         <div class="step-body">
-          <p>Aumenta <code>ozBridge.maxOutputChars</code> a <strong>10000</strong> o più.</p>
+          <p>Aumenta <code>ozBridge.maxOutputChars</code> a <strong>15000</strong> o <strong>20000</strong> se hai output molto lunghi.</p>
         </div>
       </div>
     </div>
@@ -1457,7 +1457,7 @@ body {
         <span class="faq-arrow">▼</span>
       </div>
       <div class="faq-a">
-        <p>Aumenta <code>ozBridge.maxOutputChars</code> nelle impostazioni (default: 5000). Prova con <strong>10000</strong> o <strong>20000</strong>.</p>
+        <p>Aumenta <code>ozBridge.maxOutputChars</code> nelle impostazioni (default: 15000). Prova con <strong>20000</strong> o più solo se hai davvero bisogno di transcript più lunghi.</p>
       </div>
     </div>
   </section>
@@ -1511,8 +1511,8 @@ body {
 
   <!-- FOOTER -->
   <footer class="footer">
-    <p>OzBridge per VS Code — v0.1.0 — <a href="https://github.com/user/warp-vsc-bridge" target="_blank">Repository</a> · <a href="../LICENSE">Licenza MIT</a></p>
-    <p style="margin-top:8px;">Hai bisogno di aiuto? <a href="https://github.com/user/warp-vsc-bridge/issues" target="_blank">Apri un issue</a> oppure digita <code style="color:#01d68f">@oz /config</code> per un check rapido.</p>
+    <p>OzBridge per VS Code — v1.1.0 — <a href="https://github.com/sena-labs/OzBridge" target="_blank">Repository</a> · <a href="../LICENSE">Licenza MIT</a></p>
+    <p style="margin-top:8px;">Hai bisogno di aiuto? <a href="https://github.com/sena-labs/OzBridge/issues" target="_blank">Apri un issue</a> oppure digita <code style="color:#01d68f">@oz /config</code> per un check rapido.</p>
   </footer>
 
 </div><!-- /.main -->
@@ -1522,7 +1522,7 @@ body {
 
 <script>
 /* ===== OS TABS ===== */
-function switchOS(os) {
+function switchOS(event, os) {
   document.querySelectorAll('.os-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.os-content').forEach(c => c.classList.remove('active'));
   event.target.classList.add('active');

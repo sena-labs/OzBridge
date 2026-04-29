@@ -56,7 +56,7 @@ describe('CommandRouter — dispatch', () => {
     for (const cmd of expectedCommands) {
       // Dispatch senza errore — il comando è registrato
       const result = await dispatch(cmd);
-      expect(result).toBeDefined();
+      expect(result).toEqual(expect.objectContaining({ metadata: expect.any(Object) }));
       expect(typeof result).toBe('object');
     }
   });

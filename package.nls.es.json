@@ -34,11 +34,13 @@
   "walkthrough.gettingStarted.title": "Comienza con OzBridge",
   "walkthrough.gettingStarted.description": "Instala Warp, ejecuta tu primer agente Oz desde Copilot Chat, explora las vistas de OzBridge y habilita el puente MCP.",
   "walkthrough.step.installCli.title": "Instala la CLI de Warp",
-  "walkthrough.step.installCli.description": "Descarga Warp (≥ 0.2024.x) para que OzBridge pueda localizar el ejecutable `oz` en tu PATH. Ejecuta el comando OzBridge: Actualizar cuando termine la instalación.",
+  "walkthrough.step.installCli.description": "Descarga Warp (≥ 0.2024.x) para que OzBridge pueda localizar el ejecutable `oz` en tu PATH. Este paso se marca como completado la primera vez que OzBridge invoca con éxito la herramienta `oz_list_runs`.",
   "walkthrough.step.firstAgent.title": "Ejecuta tu primer prompt @oz",
   "walkthrough.step.firstAgent.description": "Abre una vista de Copilot Chat e invoca @oz con un prompt breve para ejecutar un agente Oz de extremo a extremo.",
   "walkthrough.step.exploreViews.title": "Explora las vistas de OzBridge",
   "walkthrough.step.exploreViews.description": "Abre las vistas Runs y Warp Drive desde la Activity Bar para gestionar ejecuciones, skills y prompts.",
   "walkthrough.step.enableMcp.title": "Habilita el puente MCP (opcional)",
-  "walkthrough.step.enableMcp.description": "Activa ozBridge.mcpEnabled o ejecuta OzBridge: Iniciar servidor MCP para que Claude Code, Cursor o Codex controlen OzBridge vía MCP."
+  "walkthrough.step.enableMcp.description": "Activa ozBridge.mcpEnabled o ejecuta OzBridge: Iniciar servidor MCP para que Claude Code, Cursor o Codex controlen OzBridge vía MCP.",
+  "viewsWelcome.runs.empty": "Aún no hay runs.\n[Ejecutar un agente](command:workbench.action.chat.open?%5B%7B%22query%22%3A%22%40oz%20%22%7D%5D)\n[Abrir el walkthrough de inicio](command:workbench.action.openWalkthrough?%22sena-labs.ozbridge%23ozBridge.gettingStarted%22)\nMás información sobre [OzBridge](https://github.com/sena-labs/OzBridge#readme).",
+  "viewsWelcome.drive.empty": "No hay prompts, reglas ni skills disponibles.\n[Guardar el chat actual como skill del workspace](command:ozBridge.skill.saveWorkspace)\n[Actualizar](command:ozBridge.tree.refresh)\nMás información sobre [Warp Drive](https://github.com/sena-labs/OzBridge#readme)."
 }

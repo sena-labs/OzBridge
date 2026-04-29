@@ -23,6 +23,29 @@ export type OzRunResult = RunResult;
 export type OzListResult<T> = ListResult<T>;
 export type { DiagnosticEntry, ContextPayload, SlashCommandHandler };
 
+/**
+ * LOW-3: centralised type-guard for the run-status enum.
+ *
+ * Previously inlined in `src/services/ozCliService.ts`. Other modules that
+ * need to validate a string before narrowing it to {@link OzRunStatus} should
+ * import from here so the canonical list of accepted values stays in sync
+ * with the {@link RunStatus} union exported by `copilot-chat-toolkit`.
+ */
+const KNOWN_OZ_RUN_STATUSES: ReadonlySet<OzRunStatus> = new Set<OzRunStatus>([
+  'QUEUED',
+  'INPROGRESS',
+  'SUCCEEDED',
+  'FAILED',
+  'CANCELLED',
+  'PAUSED',
+  'SKIPPED',
+  'UNKNOWN',
+]);
+
+export function isValidOzRunStatus(value: string): value is OzRunStatus {
+  return KNOWN_OZ_RUN_STATUSES.has(value as OzRunStatus);
+}
+
 // ============================================================================
 // OzBridge Configuration (extends toolkit's BridgeConfig)
 // ============================================================================
@@ -57,7 +80,19 @@ export interface WarpBridgeConfig extends BridgeConfig {
   mcpBindAddress: string;
   /** Optional bearer token required on every MCP request. */
   mcpBearerToken: string;
+  /**
+   * Maximum number of concurrent MCP SSE sessions. Additional `GET /sse`
+   * requests are rejected with HTTP 503 once the cap is reached. Default 16.
+   */
+  mcpMaxSseSessions: number;
 }
+
+/**
+ * Rebrand alias: prefer `OzBridgeConfig` for new code. The original
+ * `WarpBridgeConfig` name is retained for backward compatibility with
+ * existing imports across the codebase.
+ */
+export type OzBridgeConfig = WarpBridgeConfig;
 
 // IMPL: valori di default allineati con package.json contributes.configuration
 export const DEFAULT_CONFIG: WarpBridgeConfig = {
@@ -74,6 +109,7 @@ export const DEFAULT_CONFIG: WarpBridgeConfig = {
   mcpPort: 3847,
   mcpBindAddress: '127.0.0.1',
   mcpBearerToken: '',
+  mcpMaxSseSessions: 16,
 };
 
 // ============================================================================
@@ -153,6 +189,12 @@ export interface IOzCliService {
     skill?: string;
     cwd?: string;
     cancellation?: vscode.CancellationToken;
+    /**
+     * Optional progressive-event callback. When provided the CLI is
+     * invoked with `WARP_OUTPUT_FORMAT=ndjson` and every newline-
+     * delimited JSON event is forwarded as it arrives.
+     */
+    onProgress?: (eventLine: string) => void;
   }): Promise<OzRunResult>;
 
   agentRunCloud(opts: {
@@ -165,8 +207,8 @@ export interface IOzCliService {
     cancellation?: vscode.CancellationToken;
   }): Promise<OzRunResult>;
 
-  runList(): Promise<OzListResult<{ id: string; status: OzRunStatus }>>;
-  runGet(runId: string): Promise<OzRunResult>;
+  runList(opts?: { jq?: string }): Promise<OzListResult<{ id: string; status: OzRunStatus }>>;
+  runGet(runId: string, opts?: { jq?: string }): Promise<OzRunResult>;
 
   scheduleCreate(opts: {
     name: string;
@@ -175,16 +217,16 @@ export interface IOzCliService {
     skill?: string;
     environment?: string;
   }): Promise<OzSchedule>;
-  scheduleList(): Promise<OzListResult<OzSchedule>>;
+  scheduleList(opts?: { jq?: string }): Promise<OzListResult<OzSchedule>>;
   schedulePause(id: string): Promise<void>;
   scheduleUnpause(id: string): Promise<void>;
   scheduleDelete(id: string): Promise<void>;
 
-  modelList(): Promise<OzListResult<OzModel>>;
-  mcpList(): Promise<OzListResult<OzMcpServer>>;
-  profileList(): Promise<OzListResult<OzProfile>>;
-  environmentList(): Promise<OzListResult<OzEnvironment>>;
-  integrationList(): Promise<OzListResult<OzIntegration>>;
+  modelList(opts?: { jq?: string }): Promise<OzListResult<OzModel>>;
+  mcpList(opts?: { jq?: string }): Promise<OzListResult<OzMcpServer>>;
+  profileList(opts?: { jq?: string }): Promise<OzListResult<OzProfile>>;
+  environmentList(opts?: { jq?: string }): Promise<OzListResult<OzEnvironment>>;
+  integrationList(opts?: { jq?: string }): Promise<OzListResult<OzIntegration>>;
 
   /**
    * Invokes `oz drive list <category> --output-format json` and returns
@@ -193,7 +235,7 @@ export interface IOzCliService {
    * `NOT_FOUND` or `CLI_ERROR`/"unknown command" stderr when the
    * subcommand is unavailable, so the drive factory can fall back.
    */
-  driveList(category: 'prompt' | 'rule' | 'skill'): Promise<unknown>;
+  driveList(category: 'prompt' | 'rule' | 'skill', opts?: { jq?: string }): Promise<unknown>;
 
   /**
    * Invokes `oz drive get --id <id>` and returns the raw markdown body.

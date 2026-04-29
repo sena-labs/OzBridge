@@ -19,6 +19,7 @@ jobs:
   build-and-test:
     name: Build & test (Node ${{ matrix.node-version }} · ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -47,11 +48,47 @@ jobs:
       - name: Build extension (production)
         run: npm run build
 
+  # ── Stage 1b: Coverage gate (single job, enforces vitest thresholds) ───
+  coverage:
+    name: Coverage gate (Node 22 · ubuntu)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage (enforces thresholds in vitest.config.ts)
+        run: npx vitest run --coverage
+
+      - name: Audit production dependencies (high+ severity gate)
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: |
+            coverage/lcov.info
+            coverage/index.html
+          retention-days: 14
+
   # ── Stage 2: Package VSIX ──────────────────────────────────────────────
   package:
     name: Package VSIX
     needs: build-and-test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -74,7 +111,7 @@ jobs:
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v7
         with:
-          name: warp-vsc-bridge-vsix
+          name: ozbridge-vsix
           path: '*.vsix'
           retention-days: 30
 
@@ -83,100 +120,12 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: package
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Download VSIX artifact
         uses: actions/download-artifact@v8
         with:
-          name: warp-vsc-bridge-vsix
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          draft: true
-          generate_release_notes: true
-          files: '*.vsix'
-name: CI
-
-on:
-  push:
-    branches: [main]
-    tags: ['v*']
-  pull_request:
-    branches: [main]
-
-permissions:
-  contents: write          # needed by softprops/action-gh-release
-
-jobs:
-  # ── Stage 1: Type-check + Test + Build ──────────────────────────────────
-  build-and-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: ['20.19', '22.12']
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type-check
-        run: npm run compile
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build extension (production)
-        run: npm run build
-
-  # ── Stage 2: Package VSIX ──────────────────────────────────────────────
-  package:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v6
-        with:
-          node-version: '22'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build extension
-        run: npm run build
-
-      - name: Package VSIX
-        run: npm run package
-
-      - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: warp-vsc-bridge-vsix
-          path: '*.vsix'
-          retention-days: 30
-
-  # ── Stage 3: Release (only on v* tags) ─────────────────────────────────
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: package
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download VSIX artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: warp-vsc-bridge-vsix
+          name: ozbridge-vsix
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3

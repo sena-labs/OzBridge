@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { promises as fsp } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { parseFlatYaml } from '../services/yamlParser.js';
@@ -45,10 +46,9 @@ export interface FileSystemDriveOptions {
  * or when a user wants offline access to their local prompts / rules /
  * skills.
  *
- * All reads are synchronous (`fs.readFileSync`) — the directories are
- * small and reads happen lazily from the sidebar. The async signatures
- * in {@link IDriveSource} are honoured nonetheless so the contract
- * stays identical to the CLI source.
+ * All reads use {@link fs.promises} so they never block the extension
+ * host event loop. Public methods preserve their `Promise<T>` signatures
+ * matching the {@link IDriveSource} contract.
  */
 export class FileSystemDriveSource implements IDriveSource {
   readonly label = 'filesystem';
@@ -56,37 +56,34 @@ export class FileSystemDriveSource implements IDriveSource {
   private readonly promptsDir: string;
   private readonly rulesDir: string;
   private readonly skillsDir: string;
-  private readonly allowedRoots: string[];
+  private readonly allowedRootsPromise: Promise<string[]>;
 
   constructor(opts: FileSystemDriveOptions = {}) {
     const home = opts.homeDir ?? os.homedir();
     this.promptsDir = opts.promptsDir ?? path.join(home, '.warp', 'drive', 'prompts');
     this.rulesDir = opts.rulesDir ?? path.join(home, '.agents', 'rules');
     this.skillsDir = opts.skillsDir ?? path.join(home, '.agents', 'skills');
-    this.allowedRoots = [this.promptsDir, this.rulesDir, this.skillsDir].map(
-      toCanonicalRoot,
+    this.allowedRootsPromise = Promise.all(
+      [this.promptsDir, this.rulesDir, this.skillsDir].map(toCanonicalRoot),
     );
   }
 
   async listPrompts(): Promise<DrivePrompt[]> {
-    return listMarkdownFiles(this.promptsDir).flatMap((file) => {
-      const entry = parsePromptFile(file);
-      return entry ? [entry] : [];
-    });
+    const files = await listMarkdownFiles(this.promptsDir);
+    const parsed = await Promise.all(files.map(parsePromptFile));
+    return parsed.filter((e): e is DrivePrompt => e !== undefined);
   }
 
   async listRules(): Promise<DriveRule[]> {
-    return listMarkdownFiles(this.rulesDir).flatMap((file) => {
-      const entry = parseRuleFile(file);
-      return entry ? [entry] : [];
-    });
+    const files = await listMarkdownFiles(this.rulesDir);
+    const parsed = await Promise.all(files.map(parseRuleFile));
+    return parsed.filter((e): e is DriveRule => e !== undefined);
   }
 
   async listSkills(): Promise<DriveSkill[]> {
-    return listSkillFolders(this.skillsDir).flatMap((file) => {
-      const entry = parseSkillFile(file);
-      return entry ? [entry] : [];
-    });
+    const files = await listSkillFolders(this.skillsDir);
+    const parsed = await Promise.all(files.map(parseSkillFile));
+    return parsed.filter((e): e is DriveSkill => e !== undefined);
   }
 
   async read(id: string): Promise<string> {
@@ -95,14 +92,24 @@ export class FileSystemDriveSource implements IDriveSource {
       throw new Error('FileSystemDriveSource.read: empty id');
     }
     const resolved = path.resolve(trimmed);
-    const allowedByResolvedPath = this.allowedRoots.some((root) => isInside(resolved, root));
+    const allowedRoots = await this.allowedRootsPromise;
+    // CI-cross-platform fix: on macOS `/var` → `/private/var` and on
+    // Windows temp dirs may carry 8.3 short names, so a literal
+    // `path.resolve()` of the input cannot be compared directly against
+    // realpath-canonicalised roots. Canonicalise the *parent* directory
+    // (which exists for any read of a real file) and reconstruct the
+    // full path so the pre-stat traversal guard uses the same canonical
+    // form as the roots. The post-realpath guard below remains as the
+    // authoritative symlink-escape check.
+    const canonicalGuess = await canonicaliseViaParent(resolved);
+    const allowedByResolvedPath = allowedRoots.some((root) => isInside(canonicalGuess, root));
     if (!allowedByResolvedPath) {
       throw new Error(`FileSystemDriveSource.read: path outside allowed roots: ${resolved}`);
     }
 
     let canonicalResolved: string;
     try {
-      canonicalResolved = fs.realpathSync(resolved);
+      canonicalResolved = await fsp.realpath(resolved);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       throw new Error(`FileSystemDriveSource.read: ${msg}`);
@@ -111,12 +118,12 @@ export class FileSystemDriveSource implements IDriveSource {
     // Security: refuse reads outside the directories this source
     // governs. Prevents a compromised tree node from asking the
     // extension to leak arbitrary files, including symlink escapes.
-    const allowed = this.allowedRoots.some((root) => isInside(canonicalResolved, root));
+    const allowed = allowedRoots.some((root) => isInside(canonicalResolved, root));
     if (!allowed) {
       throw new Error(`FileSystemDriveSource.read: path outside allowed roots: ${canonicalResolved}`);
     }
     try {
-      return fs.readFileSync(canonicalResolved, 'utf8');
+      return await fsp.readFile(canonicalResolved, 'utf8');
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       throw new Error(`FileSystemDriveSource.read: ${msg}`);
@@ -129,12 +136,19 @@ export class FileSystemDriveSource implements IDriveSource {
 // ===========================================================================
 
 /** Lists every `.md` file immediately inside `dir`, sorted by name. */
-function listMarkdownFiles(dir: string): string[] {
+async function listMarkdownFiles(dir: string): Promise<string[]> {
   const absolute = path.resolve(dir);
   let entries: fs.Dirent[];
   try {
-    entries = fs.readdirSync(absolute, { withFileTypes: true });
-  } catch {
+    entries = await fsp.readdir(absolute, { withFileTypes: true });
+  } catch (err) {
+    // ENOENT is expected for optional skill/notebook directories; log other
+    // failures (permissions, I/O) so users aren't left wondering why the
+    // Drive view is empty.
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    if (code !== 'ENOENT') {
+      logWarn(`fileSystemDriveSource: cannot read directory ${absolute}: ${err instanceof Error ? err.message : String(err)}`);
+    }
     return [];
   }
   return entries
@@ -148,21 +162,26 @@ function listMarkdownFiles(dir: string): string[] {
  * of `skillsDir`. Skill folders without a `SKILL.md` file are
  * silently skipped.
  */
-function listSkillFolders(skillsDir: string): string[] {
+async function listSkillFolders(skillsDir: string): Promise<string[]> {
   const absolute = path.resolve(skillsDir);
   let entries: fs.Dirent[];
   try {
-    entries = fs.readdirSync(absolute, { withFileTypes: true });
-  } catch {
+    entries = await fsp.readdir(absolute, { withFileTypes: true });
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException | undefined)?.code;
+    if (code !== 'ENOENT') {
+      logWarn(`fileSystemDriveSource: cannot read skills directory ${absolute}: ${err instanceof Error ? err.message : String(err)}`);
+    }
     return [];
   }
   const out: string[] = [];
   for (const entry of entries) {
     if (!entry.isDirectory()) { continue; }
     const candidate = path.join(absolute, entry.name, 'SKILL.md');
-    if (fs.existsSync(candidate)) {
+    try {
+      await fsp.access(candidate);
       out.push(candidate);
-    }
+    } catch { /* missing SKILL.md — silently skip */ }
   }
   return out.sort();
 }
@@ -171,53 +190,56 @@ function listSkillFolders(skillsDir: string): string[] {
 // File parsers
 // ===========================================================================
 
-function parsePromptFile(filePath: string): DrivePrompt | undefined {
-  const meta = extractMetadata(filePath);
-  if (!meta) { return undefined; }
-  return {
-    id: filePath,
-    category: 'prompt',
-    name: meta.name,
-    description: meta.description,
-    tags: meta.tags,
-    source: 'filesystem',
-    updatedAt: meta.updatedAt,
-  };
+function parsePromptFile(filePath: string): Promise<DrivePrompt | undefined> {
+  return extractMetadata(filePath).then((meta) => {
+    if (!meta) { return undefined; }
+    return {
+      id: filePath,
+      category: 'prompt',
+      name: meta.name,
+      description: meta.description,
+      tags: meta.tags,
+      source: 'filesystem',
+      updatedAt: meta.updatedAt,
+    };
+  });
 }
 
-function parseRuleFile(filePath: string): DriveRule | undefined {
-  const meta = extractMetadata(filePath);
-  if (!meta) { return undefined; }
-  let scope: 'global' | 'project' | undefined;
-  if (meta.raw.scope === 'global' || meta.raw.scope === 'project') {
-    scope = meta.raw.scope;
-  }
-  return {
-    id: filePath,
-    category: 'rule',
-    name: meta.name,
-    description: meta.description,
-    tags: meta.tags,
-    source: 'filesystem',
-    updatedAt: meta.updatedAt,
-    scope,
-  };
+function parseRuleFile(filePath: string): Promise<DriveRule | undefined> {
+  return extractMetadata(filePath).then((meta) => {
+    if (!meta) { return undefined; }
+    let scope: 'global' | 'project' | undefined;
+    if (meta.raw.scope === 'global' || meta.raw.scope === 'project') {
+      scope = meta.raw.scope;
+    }
+    return {
+      id: filePath,
+      category: 'rule',
+      name: meta.name,
+      description: meta.description,
+      tags: meta.tags,
+      source: 'filesystem',
+      updatedAt: meta.updatedAt,
+      scope,
+    };
+  });
 }
 
-function parseSkillFile(filePath: string): DriveSkill | undefined {
-  const meta = extractMetadata(filePath, 'skill');
-  if (!meta) { return undefined; }
-  const model = typeof meta.raw.model === 'string' ? meta.raw.model : undefined;
-  return {
-    id: filePath,
-    category: 'skill',
-    name: meta.name,
-    description: meta.description,
-    tags: meta.tags,
-    source: 'filesystem',
-    updatedAt: meta.updatedAt,
-    model,
-  };
+function parseSkillFile(filePath: string): Promise<DriveSkill | undefined> {
+  return extractMetadata(filePath, 'skill').then((meta) => {
+    if (!meta) { return undefined; }
+    const model = typeof meta.raw.model === 'string' ? meta.raw.model : undefined;
+    return {
+      id: filePath,
+      category: 'skill',
+      name: meta.name,
+      description: meta.description,
+      tags: meta.tags,
+      source: 'filesystem',
+      updatedAt: meta.updatedAt,
+      model,
+    };
+  });
 }
 
 // ===========================================================================
@@ -245,13 +267,13 @@ interface ExtractedMetadata {
  *   splits it on commas.
  * - `updatedAt` is the file's `mtime` in ISO format.
  */
-function extractMetadata(
+async function extractMetadata(
   filePath: string,
   variety: 'prompt' | 'rule' | 'skill' = 'prompt',
-): ExtractedMetadata | undefined {
+): Promise<ExtractedMetadata | undefined> {
   let source: string;
   try {
-    source = fs.readFileSync(filePath, 'utf8');
+    source = await fsp.readFile(filePath, 'utf8');
   } catch (err) {
     logWarn(`fileSystemDriveSource: cannot read ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
     return undefined;
@@ -275,7 +297,8 @@ function extractMetadata(
 
   let updatedAt: string | undefined;
   try {
-    updatedAt = fs.statSync(filePath).mtime.toISOString();
+    const stats = await fsp.stat(filePath);
+    updatedAt = stats.mtime.toISOString();
   } catch { /* ignore — updatedAt stays undefined */ }
 
   return { name, description, tags, updatedAt, raw };
@@ -315,12 +338,29 @@ function splitTags(raw: unknown): string[] | undefined {
   return parts.length > 0 ? parts : undefined;
 }
 
-function toCanonicalRoot(p: string): string {
+function toCanonicalRoot(p: string): Promise<string> {
   const resolved = path.resolve(p);
+  return fsp.realpath(resolved).catch(() => resolved);
+}
+
+/**
+ * Returns the canonical (realpath-resolved) form of `target` by
+ * canonicalising its parent directory and re-joining the basename.
+ * Used by the read() pre-stat guard so it can compare against
+ * realpath-canonicalised roots even when the target file does not
+ * exist yet, on platforms (macOS, Windows) where the temp-dir
+ * realpath differs from the literal path. Falls back to the
+ * non-canonical form when the parent cannot be resolved (e.g. a
+ * traversal attempt into a non-existent directory).
+ */
+async function canonicaliseViaParent(target: string): Promise<string> {
+  const parent = path.dirname(target);
+  const base = path.basename(target);
   try {
-    return fs.realpathSync(resolved);
+    const canonicalParent = await fsp.realpath(parent);
+    return path.join(canonicalParent, base);
   } catch {
-    return resolved;
+    return target;
   }
 }
 

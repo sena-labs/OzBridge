@@ -20,13 +20,21 @@ packages/**
 # Scaffold output (created by /init, not part of the extension)
 .agents/**
 .warp/**
+.venv/**
+
+# Local secrets / machine-only files
+.env
+.env.*
+
+# Unreferenced placeholder hero asset (only emitted by scripts/generate_media.py)
+media/screenshot.svg
 
 # Misc
 node_modules/**
-*.ts
-!dist/**
 
-# Source maps (exclude after !dist re-include)
+# Bundled output is the only thing we ship from dist/, but exclude
+# source maps explicitly (esbuild emits `.map` alongside `.js`).
+!dist/**
 dist/**/*.map
 
 # VSIX artifacts (avoid recursive packaging)
@@ -42,6 +50,10 @@ scripts/**
 
 # PR body scratchpad (local-only, never ships to Marketplace)
 pr-body.md
+
+# Internal audit reports (developer-only, never ship to Marketplace)
+AUDIT_REPORT*.md
+OzBridge_AUDIT_FINDINGS.md
 
 test-out.txt
 *.txt

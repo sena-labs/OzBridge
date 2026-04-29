@@ -1,6 +1,5 @@
 {
-  "OzBridge: Oz CLI not found. Install Warp to use @oz in chat.": "OzBridge: Oz CLI no encontrado. Instala Warp para usar @oz en el chat.",
-  "Install Warp": "Instalar Warp",
+  "OzBridge: openConversation accepts only warp:// URIs.": "OzBridge: openConversation solo acepta URI warp://.",
   "Failure triage requires VS Code 1.96+ with a Copilot chat model installed.": "El análisis de errores requiere VS Code 1.96+ con un modelo de chat de Copilot instalado.",
   "Run id to triage": "ID de la ejecución a analizar",
   "OzBridge: triaging {0}…": "OzBridge: analizando {0}…",
@@ -50,5 +49,23 @@
   "OzBridge: no active editor to save.": "OzBridge: no hay editor activo para guardar.",
   "OzBridge: no {0} directory available.": "OzBridge: no hay directorio {0} disponible.",
   "Saved {0} skill to {1}": "Skill {0} guardada en {1}",
-  "Save failed: {0}": "Guardado fallido: {0}"
+  "Save failed: {0}": "Guardado fallido: {0}",
+  "🌐 Open in browser": "🌐 Abrir en el navegador",
+  "📥 Install Warp": "📥 Instalar Warp",
+  "🔑 Login Warp": "🔑 Iniciar sesión en Warp",
+  "💳 Manage Warp billing": "💳 Gestionar facturación de Warp",
+  "OzBridge · /init templates": "OzBridge · plantillas /init",
+  "Pick the skill / rule files to scaffold": "Elige los archivos de skill / regla a generar",
+  "OzBridge: {0} active": "OzBridge: {0} activas",
+  "OzBridge: 1 active run": "OzBridge: 1 ejecución activa",
+  "OzBridge: {0} active runs": "OzBridge: {0} ejecuciones activas",
+  "OzBridge: unavailable": "OzBridge: no disponible",
+  "OzBridge: unable to list runs. Check Oz CLI availability and authentication.": "OzBridge: no se pueden listar las ejecuciones. Verifica la disponibilidad de la CLI Oz y la autenticación.",
+  "OzBridge: unavailable. Check Oz CLI availability and authentication.": "OzBridge: no disponible. Verifica la disponibilidad de la CLI Oz y la autenticación.",
+  "active & recent runs": "ejecuciones activas y recientes",
+  "No runs reported by Oz CLI.": "La CLI Oz no reporta ejecuciones.",
+  "Status": "Estado",
+  "Run ID": "ID de ejecución",
+  "…and {0} more — click to open the sidebar.": "…y {0} más — haz clic para abrir la barra lateral.",
+  "Click to focus the OzBridge sidebar.": "Haz clic para abrir la barra lateral de OzBridge."
 }

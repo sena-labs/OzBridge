@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
+import { randomBytes } from 'node:crypto';
 import { IRunStatsService, RunStatsSummary } from '../services/runStats.js';
-import { logError } from '../services/logger.js';
+import { logError, logWarn } from '../services/logger.js';
 
 /**
  * Default observation window for the dashboard, in days. Keeps the
@@ -8,14 +9,11 @@ import { logError } from '../services/logger.js';
  */
 export const DEFAULT_DASHBOARD_WINDOW_DAYS = 14;
 
-/** Generates a cryptographically-weak nonce sufficient for CSP. */
+/** Generates a cryptographically-strong nonce suitable for CSP. */
 export function generateNonce(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let nonce = '';
-  for (let i = 0; i < 32; i++) {
-    nonce += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return nonce;
+  const bytes = randomBytes(32);
+  return Array.from(bytes, (b) => chars[b % chars.length]).join('');
 }
 
 /** Escapes a value for safe interpolation inside HTML text/attributes. */
@@ -82,7 +80,7 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; img-src ${cspSource} data:;" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; img-src ${cspSource};" />
 <title>OzBridge — Dashboard</title>
 <style nonce="${nonce}">
   body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background: var(--vscode-editor-background); margin: 0; padding: 16px; }
@@ -129,6 +127,31 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
 }
 
 /**
+ * Validates the structure of a message received from the dashboard webview.
+ * Returns `null` for any payload that doesn't match the strict shape we
+ * accept, so a compromised/malformed renderer cannot drive arbitrary
+ * branches in the host.
+ */
+type DashboardMessage = { type: 'refresh' };
+function parseDashboardMessage(msg: unknown): DashboardMessage | null {
+  if (typeof msg !== 'object' || msg === null) {
+    // LOW-4: surface malformed payloads in the output channel so support
+    // can correlate webview misbehaviour with host logs. We deliberately
+    // truncate to avoid dumping arbitrarily large objects.
+    logWarn(`Dashboard: dropped non-object message (typeof=${typeof msg}).`);
+    return null;
+  }
+  const obj = msg as Record<string, unknown>;
+  if (obj.type === 'refresh') { return { type: 'refresh' }; }
+  // LOW-4: log the rejected `type` discriminator (clipped to 64 chars to
+  // bound log size) so unknown commands sent by a stale or compromised
+  // renderer are visible during debugging.
+  const rawType = typeof obj.type === 'string' ? obj.type.slice(0, 64) : `<${typeof obj.type}>`;
+  logWarn(`Dashboard: rejected unexpected message type "${rawType}".`);
+  return null;
+}
+
+/**
  * Singleton webview panel that renders run statistics aggregated by
  * {@link IRunStatsService}.
  */
@@ -138,6 +161,11 @@ export class DashboardPanel {
 
   private readonly disposables: vscode.Disposable[] = [];
   private disposed = false;
+  // C-M1 (audit v4): in-flight guard to coalesce rapid Refresh button
+  // clicks. Without this, two parallel `computeSummary()` calls race and
+  // the second one's HTML overwrites the first — wasted work and a brief
+  // flicker. The flag is reset in `refresh()`'s `finally` block.
+  private refreshing = false;
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
@@ -146,8 +174,9 @@ export class DashboardPanel {
   ) {
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     this.panel.webview.onDidReceiveMessage(
-      (msg: { type?: string }) => {
-        if (msg && msg.type === 'refresh') {
+      (msg: unknown) => {
+        const parsed = parseDashboardMessage(msg);
+        if (parsed?.type === 'refresh') {
           this.stats.invalidate();
           void this.refresh();
         }
@@ -171,7 +200,15 @@ export class DashboardPanel {
       DashboardPanel.viewType,
       'OzBridge — Dashboard',
       vscode.ViewColumn.Active,
-      { enableScripts: true, retainContextWhenHidden: true },
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        // The dashboard HTML is fully self-contained (inline CSS, no external
+        // assets). Locking `localResourceRoots` to an empty list prevents the
+        // webview from loading any file via `asWebviewUri`, which is the
+        // safest default per VS Code webview hardening guidance.
+        localResourceRoots: [],
+      },
     );
     const instance = new DashboardPanel(panel, stats, windowDays);
     DashboardPanel.current = instance;
@@ -181,15 +218,33 @@ export class DashboardPanel {
 
   /** Recomputes the summary and rerenders the webview HTML. */
   async refresh(): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
+    // C-M1: skip when an earlier refresh is still in-flight. Subsequent
+    // refresh requests after the current one completes will pick up any
+    // newer state (the webview message handler invalidates stats first).
+    if (this.refreshing) {
+      return;
+    }
+    this.refreshing = true;
     try {
       const summary = await this.stats.computeSummary(this.windowDays);
+      if (this.disposed) {
+        return;
+      }
       const nonce = generateNonce();
       this.panel.webview.html = renderDashboardHtml(summary, nonce, this.panel.webview.cspSource);
     } catch (err) {
+      if (this.disposed) {
+        return;
+      }
       const message = err instanceof Error ? err.message : String(err);
       logError(`Dashboard refresh failed: ${message}`);
       const nonce = generateNonce();
-      this.panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}';" /><style nonce="${nonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-errorForeground);padding:16px;}</style></head><body>Failed to load dashboard: ${escapeHtml(message)}</body></html>`;
+      this.panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'nonce-${nonce}'; img-src ${this.panel.webview.cspSource};" /><style nonce="${nonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-errorForeground);padding:16px;}</style></head><body>Failed to load dashboard: ${escapeHtml(message)}</body></html>`;
+    } finally {
+      this.refreshing = false;
     }
   }
 

@@ -70,7 +70,11 @@ export function createCloudCommand(
         if (envResult.items.length > 0) {
           const env = envResult.items[0];
           environment = env.id;
-          stream.markdown(`ℹ️ No environment configured — auto-selected: \`${env.name}\` (\`${env.id}\`)\n\n`);
+          // B-L5: escape backticks so user-controlled environment names
+          // can't break out of the inline-code span and inject markdown.
+          const safeName = String(env.name).replace(/`/g, '\u02cb');
+          const safeId = String(env.id).replace(/`/g, '\u02cb');
+          stream.markdown(`ℹ️ No environment configured — auto-selected: \`${safeName}\` (\`${safeId}\`)\n\n`);
         } else {
           noEnvironment = true;
           stream.markdown('⚠️ No environments available — running without environment (not recommended)\n\n');
@@ -132,11 +136,19 @@ export function createCloudCommand(
 
           formatter.formatRunResult(finalResult, stream, { autoOpened: false });
 
-          // VS Code notification
-          const statusMsg = finalResult.status === 'SUCCEEDED'
-            ? vscode.l10n.t('✅ Cloud agent completed successfully')
-            : vscode.l10n.t('❌ Cloud agent failed');
-          vscode.window.showInformationMessage(vscode.l10n.t('OzBridge: {0} ({1})', statusMsg, result.runId));
+          // VS Code notification — use error toast on FAILED so the colour
+          // and icon match the semantic of the status.
+          const notification = vscode.l10n.t('OzBridge: {0} ({1})',
+            finalResult.status === 'SUCCEEDED'
+              ? vscode.l10n.t('✅ Cloud agent completed successfully')
+              : vscode.l10n.t('❌ Cloud agent failed'),
+            result.runId,
+          );
+          if (finalResult.status === 'SUCCEEDED') {
+            void vscode.window.showInformationMessage(notification);
+          } else {
+            void vscode.window.showErrorMessage(notification);
+          }
         } catch (pollErr) {
           // Mark as FAILED in the sidebar on polling error.
           tracker?.markRunStatus(result.runId, 'FAILED');

@@ -140,6 +140,9 @@ function statusLabel(status: OzRunStatus): string {
     case 'INPROGRESS': return '⏳ INPROGRESS';
     case 'SUCCEEDED': return '✅ SUCCEEDED';
     case 'FAILED': return '❌ FAILED';
+    case 'CANCELLED': return '⛔ CANCELLED';
+    case 'PAUSED': return '⏸️ PAUSED';
+    case 'SKIPPED': return '⏭️ SKIPPED';
     default: return '❓ UNKNOWN';
   }
 }

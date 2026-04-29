@@ -30,8 +30,8 @@ By participating, you agree to uphold this code.
 2. **Clone** your fork locally:
 
    ```bash
-   git clone https://github.com/<your-username>/warp-vsc-bridge.git
-   cd warp-vsc-bridge
+   git clone https://github.com/<your-username>/OzBridge.git
+   cd OzBridge
    ```
 
 3. **Install** dependencies:
@@ -134,6 +134,14 @@ request**. One PR = one reviewable unit of value. The playbook:
 
 Keep the branch focused: if the diff grows beyond ~400 lines of
 non-generated code, split it.
+
+### Telemetry safety checklist (required when touching telemetry events)
+
+When adding/changing any key in `TelemetryEventMap` (`src/services/telemetry.ts`):
+
+- Ensure no property name matches forbidden patterns (`prompt`, `content`, `output`, `path`, `workspace`, `runId`, `message`, `stack`, `email`, `user`, `token`).
+- Run `npm test -- --run test/services/telemetry.test.ts` and confirm the deny-list suite is green.
+- If a new event is introduced, update test fixtures in `test/services/telemetry.test.ts` in the same PR.
 
 ## Commit messages
 

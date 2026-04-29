@@ -1,7 +1,12 @@
 import * as vscode from 'vscode';
 import { IOzCliService } from '../types/index.js';
 import { ActiveRunsTracker } from '../services/activeRunsTracker.js';
-import { WarpRunsTreeProvider, WarpTreeNode } from './runsTreeProvider.js';
+import { OzRunsTreeProvider, OzTreeNode } from './runsTreeProvider.js';
+
+// Rebrand aliases for in-file usage; original names retained for legacy refs.
+const WarpRunsTreeProvider = OzRunsTreeProvider;
+type WarpRunsTreeProvider = OzRunsTreeProvider;
+type WarpTreeNode = OzTreeNode;
 
 /**
  * IDs of every command contributed by the sidebar surface. Kept here so both

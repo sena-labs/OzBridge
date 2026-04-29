@@ -14,6 +14,13 @@ export interface McpServerOptions {
   bindAddress?: string;
   /** If set, requests missing `Authorization: Bearer <token>` are rejected. */
   bearerToken?: string;
+  /**
+   * Maximum number of concurrent SSE sessions. Additional `GET /sse`
+   * requests are rejected with HTTP 503 once the cap is reached. Defaults
+   * to 16, which is generous for the typical "one MCP client per editor"
+   * scenario while preventing trivial DoS via reconnection loops.
+   */
+  maxSseSessions?: number;
 }
 
 export interface McpServerInfo {
@@ -53,7 +60,17 @@ const SUPPORTED_PROTOCOL_VERSIONS = ['2025-03-26', '2024-11-05'];
 export class McpServer {
   private http: http.Server | undefined;
   private readonly sessions = new Map<string, http.ServerResponse>();
-  private readonly options: Required<Pick<McpServerOptions, 'port' | 'bindAddress'>> & Pick<McpServerOptions, 'bearerToken'>;
+  /**
+   * Per-session keep-alive / max-lifetime timer handles. Tracked separately
+   * so {@link stop} can clear them deterministically even if `res.end()`
+   * throws and the `'close'` event never fires.
+   */
+  // B-L2: only the per-session `maxLifetime` is tracked here; the keepalive
+  // is a single shared interval (`globalKeepalive`) that fans out a `: keepalive`
+  // line to every active SSE response, instead of one `setInterval` per session.
+  private readonly sessionTimers = new Map<string, { maxLifetime: NodeJS.Timeout }>();
+  private globalKeepalive?: NodeJS.Timeout;
+  private readonly options: Required<Pick<McpServerOptions, 'port' | 'bindAddress' | 'maxSseSessions'>> & Pick<McpServerOptions, 'bearerToken'>;
 
   constructor(
     private readonly tools: Map<string, McpToolEntry>,
@@ -64,6 +81,7 @@ export class McpServer {
       port: options.port ?? 3847,
       bindAddress: options.bindAddress ?? '127.0.0.1',
       bearerToken: options.bearerToken,
+      maxSseSessions: Math.max(1, options.maxSseSessions ?? 16),
     };
   }
 
@@ -82,13 +100,24 @@ export class McpServer {
     if (this.http) { return; }
     const server = http.createServer((req, res) => { this.handle(req, res); });
     this.http = server;
-    await new Promise<void>((resolve, reject) => {
-      server.once('error', reject);
-      server.listen(this.options.port, this.options.bindAddress, () => {
-        server.off('error', reject);
-        resolve();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const onError = (err: Error): void => {
+          server.off('error', onError);
+          reject(err);
+        };
+        server.once('error', onError);
+        server.listen(this.options.port, this.options.bindAddress, () => {
+          server.off('error', onError);
+          resolve();
+        });
       });
-    });
+    } catch (err) {
+      // Reset state so a subsequent start() attempt is not silently a no-op.
+      this.http = undefined;
+      try { server.close(); } catch { /* ignore */ }
+      throw err;
+    }
   }
 
   /** Closes the socket and terminates any in-flight SSE streams. Idempotent. */
@@ -96,6 +125,17 @@ export class McpServer {
     if (!this.http) { return; }
     const server = this.http;
     this.http = undefined;
+    // Clear every per-session timer first so that, even if `res.end()`
+    // throws and the `'close'` event never fires, no stale timer keeps the
+    // event loop alive.
+    for (const timers of this.sessionTimers.values()) {
+      clearTimeout(timers.maxLifetime);
+    }
+    this.sessionTimers.clear();
+    if (this.globalKeepalive) {
+      clearInterval(this.globalKeepalive);
+      this.globalKeepalive = undefined;
+    }
     for (const res of this.sessions.values()) {
       try { res.end(); } catch { /* ignore */ }
     }
@@ -204,6 +244,13 @@ export class McpServer {
   }
 
   private openSseStream(_req: http.IncomingMessage, res: http.ServerResponse): void {
+    // DoS guard: refuse new sessions once the configured cap is reached.
+    // Prevents a misbehaving (or malicious) client from accumulating an
+    // unbounded number of timers + sockets via reconnection loops.
+    if (this.sessions.size >= this.options.maxSseSessions) {
+      sendJson(res, 503, { error: 'too_many_sessions', max: this.options.maxSseSessions });
+      return;
+    }
     const sessionId = crypto.randomUUID();
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -216,23 +263,42 @@ export class McpServer {
     res.write(`event: endpoint\ndata: /messages?sessionId=${sessionId}\n\n`);
     this.sessions.set(sessionId, res);
 
-    const keepalive = setInterval(() => {
-      try { res.write(': keepalive\n\n'); } catch { /* ignore */ }
-    }, 15_000);
+    // Single shared keepalive interval (B-L2): start lazily on the first
+    // session, stop in `cleanupSession` when the last session goes away.
+    if (!this.globalKeepalive) {
+      this.globalKeepalive = setInterval(() => {
+        for (const stream of this.sessions.values()) {
+          try { stream.write(': keepalive\n\n'); } catch { /* ignore */ }
+        }
+      }, 15_000);
+    }
 
     // Add maximum lifetime timer to prevent indefinite keepalive (30 minutes)
     // This prevents resource leaks if the client never properly closes the connection
     const maxLifetime = setTimeout(() => {
-      clearInterval(keepalive);
-      this.sessions.delete(sessionId);
+      this.cleanupSession(sessionId);
       try { res.end(); } catch { /* ignore */ }
     }, 1_800_000);
 
+    this.sessionTimers.set(sessionId, { maxLifetime });
+
     res.on('close', () => {
-      clearInterval(keepalive);
-      clearTimeout(maxLifetime);
-      this.sessions.delete(sessionId);
+      this.cleanupSession(sessionId);
     });
+  }
+
+  private cleanupSession(sessionId: string): void {
+    const timers = this.sessionTimers.get(sessionId);
+    if (timers) {
+      clearTimeout(timers.maxLifetime);
+      this.sessionTimers.delete(sessionId);
+    }
+    this.sessions.delete(sessionId);
+    // Stop the shared keepalive when no sessions remain.
+    if (this.sessions.size === 0 && this.globalKeepalive) {
+      clearInterval(this.globalKeepalive);
+      this.globalKeepalive = undefined;
+    }
   }
 
   private async handleMessage(
@@ -283,11 +349,9 @@ export interface JsonRpcResponse {
 }
 
 function isJsonRpcRequest(value: unknown): value is JsonRpcRequest {
-  return (
-    typeof value === 'object' && value !== null &&
-    (value as any).jsonrpc === '2.0' &&
-    typeof (value as any).method === 'string'
-  );
+  if (typeof value !== 'object' || value === null) { return false; }
+  const obj = value as Record<string, unknown>;
+  return obj.jsonrpc === '2.0' && typeof obj.method === 'string';
 }
 
 function jsonRpcResult(id: number | string | null, result: unknown): JsonRpcResponse {
@@ -328,7 +392,11 @@ function extractToolCallParams(params: unknown): { name: string | undefined; arg
   const name = 'name' in params && typeof params.name === 'string' ? params.name : undefined;
   let arguments_: Record<string, unknown> = {};
 
-  if ('arguments' in params && params.arguments && typeof params.arguments === 'object') {
+  if ('arguments' in params && params.arguments && typeof params.arguments === 'object'
+      && !Array.isArray(params.arguments)) {
+    // A-L15: arrays are typeof 'object' too — reject them so a malformed
+    // request like `{"arguments": ["foo"]}` doesn't surface to tools as a
+    // bogus `{0: "foo", length: 1}` Record.
     arguments_ = params.arguments as Record<string, unknown>;
   }
 
@@ -341,6 +409,17 @@ function sendJson(res: http.ServerResponse, status: number, payload: unknown): v
 }
 
 async function readBody(req: http.IncomingMessage, maxBytes = 1_048_576): Promise<string> {
+  // Bridge-input audit (v1.2): reject oversized payloads up front using
+  // the declared Content-Length header before we start buffering. This
+  // prevents an attacker from forcing the bridge to allocate up to
+  // `maxBytes` of memory per request just to discover the body exceeds
+  // the limit (the post-buffer check below remains as a defence in depth
+  // for chunked / mis-declared lengths).
+  const declaredLen = Number(req.headers['content-length'] ?? 0);
+  if (Number.isFinite(declaredLen) && declaredLen > maxBytes) {
+    req.resume(); // drain so the socket can be closed cleanly
+    throw new Error('payload too large');
+  }
   return await new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let received = 0;

@@ -14,18 +14,27 @@ export function createVsCodeLanguageModelClient(): ILanguageModelClient | undefi
   return {
     async sendRequest(prompt, cancellation) {
       const models = await vscode.lm.selectChatModels({ vendor: 'copilot' });
-      if (models.length === 0) {
+      const model = models.at(0);
+      if (!model) {
         throw new Error('No Copilot chat model is available');
       }
       const message = vscode.LanguageModelChatMessage.User(prompt);
-      const token = (cancellation as vscode.CancellationToken | undefined)
-        ?? new vscode.CancellationTokenSource().token;
-      const response = await models[0].sendRequest([message], {}, token);
-      let buffer = '';
-      for await (const chunk of response.text) {
-        buffer += chunk;
+      // When the caller does not provide a cancellation token, allocate a
+      // local source so we can dispose of it explicitly. Otherwise the source
+      // (and its internal listeners) would leak on every call.
+      const externalToken = cancellation as vscode.CancellationToken | undefined;
+      const localSource = externalToken ? undefined : new vscode.CancellationTokenSource();
+      const token = externalToken ?? localSource!.token;
+      try {
+        const response = await model.sendRequest([message], {}, token);
+        let buffer = '';
+        for await (const chunk of response.text) {
+          buffer += chunk;
+        }
+        return buffer;
+      } finally {
+        localSource?.dispose();
       }
-      return buffer;
     },
   };
 }

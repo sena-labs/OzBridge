@@ -108,14 +108,19 @@ describe('OzCliService', () => {
       expect(result.output).toBe('Result');
       expect(result.exitCode).toBe(0);
 
-      // Verifica args passati a spawn
+      // Verifica args passati a spawn. Il formato output è ora veicolato
+      // dall'env var WARP_OUTPUT_FORMAT (vedi exec()), non più ripetuto
+      // su ogni argv — quindi `--output-format` NON deve più comparire.
       const args = mockSpawn.mock.calls[0][1] as string[];
       expect(args).toContain('agent');
       expect(args).toContain('run');
       expect(args).toContain('-p');
       expect(args).toContain('fix the bug');
-      expect(args).toContain('--output-format');
-      expect(args).toContain('json');
+      expect(args).not.toContain('--output-format');
+
+      // L'env passato a spawn deve impostare WARP_OUTPUT_FORMAT=json
+      const spawnOpts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
+      expect(spawnOpts.env?.WARP_OUTPUT_FORMAT).toBe('json');
     });
 
     it('dovrebbe passare --model se specificato', async () => {
@@ -421,8 +426,25 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe rilevare exit code 402 come INSUFFICIENT_CREDITS', async () => {
+    it('dovrebbe NOT classificare exit 402 senza messaggio crediti come INSUFFICIENT_CREDITS', async () => {
+      // Warp’s insufficient_credits is documented as HTTP 403 with a
+      // canonical "add-on credits" body. A bare 402 is NOT enough to
+      // claim the user is out of credits — surface CLI_ERROR instead.
       createMockProcess({ stderr: 'HTTP 402', exitCode: 402 });
+      try {
+        await cli.agentRun({ prompt: 'test' });
+        expect.fail('should throw');
+      } catch (err) {
+        expect((err as OzCliError).kind).toBe(OzCliErrorKind.CLI_ERROR);
+        expect((err as OzCliError).exitCode).toBe(402);
+      }
+    });
+
+    it('dovrebbe rilevare 403 con "add-on credits" come INSUFFICIENT_CREDITS', async () => {
+      createMockProcess({
+        stderr: 'HTTP 403: Your team has run out of add-on credits.',
+        exitCode: 403,
+      });
       try {
         await cli.agentRun({ prompt: 'test' });
         expect.fail('should throw');
@@ -627,6 +649,37 @@ describe('OzCliService', () => {
   });
 
   // =========================================================================
+  // schedule pause/unpause/delete — arg shape regression
+  // (upstream warpdotdev/warp uses positional `schedule_id`, not `--id`).
+  // Passing `--id` makes the upstream CLI exit with `unexpected argument`.
+  // =========================================================================
+  describe('schedulePause/Unpause/Delete — argument shape', () => {
+    it('schedulePause dovrebbe passare l\'ID come argomento posizionale', async () => {
+      createMockProcess();
+      await cli.schedulePause('sched-1');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['schedule', 'pause', 'sched-1']);
+      expect(args).not.toContain('--id');
+    });
+
+    it('scheduleUnpause dovrebbe passare l\'ID come argomento posizionale', async () => {
+      createMockProcess();
+      await cli.scheduleUnpause('sched-2');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['schedule', 'unpause', 'sched-2']);
+      expect(args).not.toContain('--id');
+    });
+
+    it('scheduleDelete dovrebbe passare l\'ID come argomento posizionale', async () => {
+      createMockProcess();
+      await cli.scheduleDelete('sched-3');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['schedule', 'delete', 'sched-3']);
+      expect(args).not.toContain('--id');
+    });
+  });
+
+  // =========================================================================
   // agentRunCloud() — banner UUID extraction and id normalization
   // (issue: runId mismatch between chat banner and sidebar)
   // =========================================================================
@@ -690,6 +743,196 @@ describe('OzCliService', () => {
 
     it('dovrebbe tornare null per stringa vuota', () => {
       expect(OzCliService.extractCloudBannerRunId('')).toBeNull();
+    });
+  });
+
+  // =========================================================================
+  // WARP_OUTPUT_FORMAT env propagation (replaces repeated --output-format)
+  // =========================================================================
+  describe('WARP_OUTPUT_FORMAT env propagation', () => {
+    it('dovrebbe impostare WARP_OUTPUT_FORMAT=json per i comandi list', async () => {
+      createMockProcess({ stdout: '[]' });
+      await cli.runList();
+      const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
+      expect(opts.env?.WARP_OUTPUT_FORMAT).toBe('json');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).not.toContain('--output-format');
+    });
+
+    it('dovrebbe NON impostare WARP_OUTPUT_FORMAT per --help (checkAvailability)', async () => {
+      createMockProcess({ stdout: 'usage: oz...' });
+      await cli.checkAvailability();
+      const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
+      expect(opts.env?.WARP_OUTPUT_FORMAT).toBeUndefined();
+    });
+
+    it('dovrebbe NON impostare WARP_OUTPUT_FORMAT per driveGet (markdown raw)', async () => {
+      createMockProcess({ stdout: '# Markdown body' });
+      await cli.driveGet('drive-1');
+      const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
+      expect(opts.env?.WARP_OUTPUT_FORMAT).toBeUndefined();
+    });
+
+    it('buildChildEnv dovrebbe stripare le chiavi sensibili', () => {
+      const env = OzCliService.buildChildEnv('json', {
+        PATH: '/usr/bin',
+        GITHUB_TOKEN: 'ghp_secret',
+        OPENAI_API_KEY: 'sk-secret',
+        WARP_API_KEY: 'warp-keep-me',
+      } as NodeJS.ProcessEnv);
+      expect(env.PATH).toBe('/usr/bin');
+      expect(env.WARP_API_KEY).toBe('warp-keep-me');
+      expect(env.GITHUB_TOKEN).toBeUndefined();
+      expect(env.OPENAI_API_KEY).toBeUndefined();
+      expect(env.WARP_OUTPUT_FORMAT).toBe('json');
+    });
+
+    it('buildChildEnv con outputFormat=null non deve impostare WARP_OUTPUT_FORMAT', () => {
+      const env = OzCliService.buildChildEnv(null, { PATH: '/usr/bin' } as NodeJS.ProcessEnv);
+      expect(env.WARP_OUTPUT_FORMAT).toBeUndefined();
+    });
+
+    it('buildChildEnv con outputFormat=ndjson lo deve impostare', () => {
+      const env = OzCliService.buildChildEnv('ndjson', { PATH: '/usr/bin' } as NodeJS.ProcessEnv);
+      expect(env.WARP_OUTPUT_FORMAT).toBe('ndjson');
+    });
+  });
+
+  // =========================================================================
+  // --jq <FILTER> opt-in passthrough on read-only methods
+  // =========================================================================
+  describe('--jq filter passthrough', () => {
+    it('runList dovrebbe propagare --jq quando fornito', async () => {
+      createMockProcess({ stdout: '[]' });
+      await cli.runList({ jq: '.runs[].id' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--jq');
+      expect(args[args.indexOf('--jq') + 1]).toBe('.runs[].id');
+    });
+
+    it('runGet dovrebbe propagare --jq', async () => {
+      createMockProcess({ stdout: '{"id":"r1"}' });
+      await cli.runGet('r1', { jq: '.status' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--jq');
+      expect(args[args.indexOf('--jq') + 1]).toBe('.status');
+    });
+
+    it('integrationList dovrebbe propagare --jq', async () => {
+      createMockProcess({ stdout: '[]' });
+      await cli.integrationList({ jq: '.[].name' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--jq');
+    });
+
+    it('dovrebbe rifiutare jq filter con shell metacharacters', async () => {
+      await expect(cli.runList({ jq: '. ; rm -rf /' })).rejects.toThrow(/Invalid jq filter/);
+      await expect(cli.runList({ jq: '. && evil' })).rejects.toThrow(/Invalid jq filter/);
+      await expect(cli.runList({ jq: '. > out' })).rejects.toThrow(/Invalid jq filter/);
+      await expect(cli.runList({ jq: '$(evil)' })).rejects.toThrow(/Invalid jq filter/);
+      await expect(cli.runList({ jq: '`evil`' })).rejects.toThrow(/Invalid jq filter/);
+    });
+
+    it('dovrebbe accettare filtri jq legittimi con pipes interni a jq', async () => {
+      createMockProcess({ stdout: '[]' });
+      // jq usa `|` come pipe-operator interno; deve essere ammesso
+      await cli.runList({ jq: '.runs[] | select(.status=="SUCCEEDED") | .id' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--jq');
+    });
+  });
+
+  // =========================================================================
+  // integrationList fallback for feature-flagged subcommand
+  // =========================================================================
+  describe('integrationList() — feature-flag fallback', () => {
+    it('dovrebbe ritornare items vuoti quando il CLI emette "unrecognized subcommand"', async () => {
+      createMockProcess({
+        exitCode: 2,
+        stderr: "error: unrecognized subcommand 'integration'",
+      });
+      const result = await cli.integrationList();
+      expect(result.items).toEqual([]);
+    });
+
+    it('dovrebbe ritornare items vuoti per "unknown subcommand"', async () => {
+      createMockProcess({
+        exitCode: 2,
+        stderr: 'error: unknown subcommand integration',
+      });
+      const result = await cli.integrationList();
+      expect(result.items).toEqual([]);
+    });
+
+    it('dovrebbe propagare errori reali (non legati al feature-flag)', async () => {
+      createMockProcess({ exitCode: 1, stderr: 'unauthorized' });
+      await expect(cli.integrationList()).rejects.toThrow(OzCliError);
+    });
+  });
+
+  // =========================================================================
+  // agentRun() ndjson streaming via onProgress callback
+  // =========================================================================
+  describe('agentRun() — onProgress streaming (ndjson)', () => {
+    it('dovrebbe usare WARP_OUTPUT_FORMAT=ndjson quando onProgress è fornito', async () => {
+      createMockProcess({
+        stdout:
+          '{"type":"system","event_type":"conversation_started","conversation_id":"c-1"}\n' +
+          '{"type":"agent","text":"hello"}\n' +
+          '{"type":"agent","text":"done"}\n',
+      });
+      const events: string[] = [];
+      await cli.agentRun({ prompt: 'go', onProgress: (line) => events.push(line) });
+
+      const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
+      expect(opts.env?.WARP_OUTPUT_FORMAT).toBe('ndjson');
+      // Tutte e 3 le linee NDJSON devono essere consegnate al callback
+      expect(events).toHaveLength(3);
+      expect(events[0]).toContain('"conversation_started"');
+      expect(events[1]).toContain('"hello"');
+      expect(events[2]).toContain('"done"');
+    });
+
+    it('senza onProgress dovrebbe usare json (non ndjson)', async () => {
+      createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
+      await cli.agentRun({ prompt: 'go' });
+      const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
+      expect(opts.env?.WARP_OUTPUT_FORMAT).toBe('json');
+    });
+
+    it('errori del callback onProgress non devono bloccare il run', async () => {
+      createMockProcess({
+        stdout:
+          '{"type":"system","event_type":"conversation_started","conversation_id":"c-1"}\n' +
+          '{"type":"agent","text":"ok"}\n',
+      });
+      const result = await cli.agentRun({
+        prompt: 'go',
+        onProgress: () => { throw new Error('UI bug'); },
+      });
+      expect(result.exitCode).toBe(0);
+    });
+  });
+
+  // =========================================================================
+  // isUnrecognizedSubcommandError() — static helper
+  // =========================================================================
+  describe('OzCliService.isUnrecognizedSubcommandError()', () => {
+    it('riconosce "unrecognized subcommand"', () => {
+      const err = new OzCliError(OzCliErrorKind.CLI_ERROR, "unrecognized subcommand 'foo'", 2, '');
+      expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(true);
+    });
+    it('riconosce "unknown command"', () => {
+      const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'x', 2, 'error: unknown command bar');
+      expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(true);
+    });
+    it('non riconosce errori generici', () => {
+      const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'network failure', 1, '');
+      expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(false);
+    });
+    it('non riconosce errori di altro kind (es. NOT_AUTHENTICATED)', () => {
+      const err = new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'unrecognized subcommand', 1, '');
+      expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(false);
     });
   });
 });

@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { promises as fsp } from 'fs';
 import * as path from 'path';
 import {
   IMcpClientRegistrar,
@@ -52,26 +52,26 @@ export abstract class JsonMcpRegistrar implements IMcpClientRegistrar {
   abstract readonly configPath: string;
 
   async register(endpoint: McpClientEndpoint): Promise<void> {
-    const current = this.readConfig();
+    const current = await this.readConfig();
     const mcpServers: McpServersMap = { ...(current.mcpServers ?? {}) };
     mcpServers[endpoint.name] = buildServerEntry(endpoint);
     const next: JsonConfig = { ...current, mcpServers };
-    this.writeConfig(next);
+    await this.writeConfig(next);
   }
 
   async unregister(serverName: string): Promise<void> {
-    if (!fs.existsSync(this.configPath)) { return; }
-    const current = this.readConfig();
+    if (!(await pathExists(this.configPath))) { return; }
+    const current = await this.readConfig();
     if (!current.mcpServers || !(serverName in current.mcpServers)) { return; }
     const mcpServers: McpServersMap = { ...current.mcpServers };
     delete mcpServers[serverName];
     const next: JsonConfig = { ...current, mcpServers };
-    this.writeConfig(next);
+    await this.writeConfig(next);
   }
 
   async status(serverName: string): Promise<McpRegistrationStatus> {
-    if (!fs.existsSync(this.configPath)) { return 'not-configured'; }
-    const current = this.readConfig();
+    if (!(await pathExists(this.configPath))) { return 'not-configured'; }
+    const current = await this.readConfig();
     if (current.mcpServers && serverName in current.mcpServers) { return 'registered'; }
     return 'missing';
   }
@@ -80,9 +80,14 @@ export abstract class JsonMcpRegistrar implements IMcpClientRegistrar {
   // Internals (protected so tests can spy, not part of public API).
   // ------------------------------------------------------------------
 
-  protected readConfig(): JsonConfig {
-    if (!fs.existsSync(this.configPath)) { return {}; }
-    const raw = fs.readFileSync(this.configPath, 'utf8').trim();
+  protected async readConfig(): Promise<JsonConfig> {
+    let raw: string;
+    try {
+      raw = (await fsp.readFile(this.configPath, 'utf8')).trim();
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException | undefined)?.code === 'ENOENT') { return {}; }
+      throw err;
+    }
     if (!raw) { return {}; }
     try {
       const parsed = JSON.parse(raw);
@@ -95,8 +100,18 @@ export abstract class JsonMcpRegistrar implements IMcpClientRegistrar {
     }
   }
 
-  protected writeConfig(next: JsonConfig): void {
-    atomicWriteJson(this.configPath, next);
+  protected async writeConfig(next: JsonConfig): Promise<void> {
+    await atomicWriteJson(this.configPath, next);
+  }
+}
+
+/** True iff `p` exists; false on ENOENT. */
+async function pathExists(p: string): Promise<boolean> {
+  try {
+    await fsp.access(p);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -110,16 +125,21 @@ function buildServerEntry(endpoint: McpClientEndpoint): Record<string, unknown> 
 
 /**
  * Writes `value` to `file` atomically, pretty-printed with 2-space
- * indentation. Parent directories are created recursively.
+ * indentation. Parent directories are created recursively. All
+ * filesystem ops are async to avoid blocking the extension-host
+ * event loop on slower disks.
  */
-export function atomicWriteJson(file: string, value: unknown): void {
+export async function atomicWriteJson(file: string, value: unknown): Promise<void> {
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
   try {
     const dir = path.dirname(file);
-    fs.mkdirSync(dir, { recursive: true });
-    const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-    fs.writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-    fs.renameSync(tmp, file);
+    await fsp.mkdir(dir, { recursive: true });
+    await fsp.writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+    await fsp.rename(tmp, file);
   } catch (err) {
+    // Best-effort cleanup of orphan tmp file (e.g. when rename fails after
+    // a successful write) — never let a cleanup failure mask the real error.
+    try { await fsp.unlink(tmp); } catch { /* ignore */ }
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(`Failed to write config file ${file}: ${msg}`);
   }

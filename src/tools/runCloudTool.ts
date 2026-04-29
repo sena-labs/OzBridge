@@ -82,6 +82,20 @@ export class RunCloudTool implements vscode.LanguageModelTool<RunCloudInput> {
       return textResult('❌ **Missing input**: `prompt` is required and must not be empty.');
     }
 
+    // MED-3: defensive input validation. Reject environment values that are
+    // empty/whitespace or contain shell metacharacters that could not appear
+    // in a legitimate Warp environment id.
+    if (environment !== undefined) {
+      if (typeof environment !== 'string' || !environment.trim()) {
+        return textResult('❌ **Invalid input**: `environment` must be a non-empty string when provided.');
+      }
+      if (/[\s;|&`$<>"'\\]/.test(environment)) {
+        return textResult(
+          `❌ **Invalid input**: \`environment\` contains forbidden characters (received \`${environment}\`).`,
+        );
+      }
+    }
+
     try {
       const avail = await this.cli.checkAvailability();
       if (!avail.available) {

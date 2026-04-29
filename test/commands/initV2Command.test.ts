@@ -250,16 +250,16 @@ describe('/init v2 — legacy `all` shortcut', () => {
 });
 
 describe('atomicWrite', () => {
-  it('writes content and leaves no .tmp artifact behind', () => {
+  it('writes content and leaves no .tmp artifact behind', async () => {
     const file = path.join(workspace, 'atomic.md');
-    atomicWrite(file, 'payload');
+    await atomicWrite(file, 'payload');
     expect(fs.readFileSync(file, 'utf8')).toBe('payload');
     expect(fs.readdirSync(workspace).filter((f) => f.endsWith('.tmp'))).toEqual([]);
   });
 
-  it('creates parent directories recursively', () => {
+  it('creates parent directories recursively', async () => {
     const file = path.join(workspace, 'a', 'deeply', 'nested', 'file.md');
-    atomicWrite(file, 'x');
+    await atomicWrite(file, 'x');
     expect(fs.readFileSync(file, 'utf8')).toBe('x');
   });
 });
@@ -275,7 +275,7 @@ describe('SKILL_TEMPLATES registry', () => {
 
   it('produces deterministic bodies with expected frontmatter', () => {
     const skill = SKILL_TEMPLATES.find((t) => t.id.startsWith('skill:'));
-    expect(skill).toBeDefined();
+    expect(skill).toEqual(expect.objectContaining({ id: expect.stringMatching(/^skill:/), body: expect.any(Function) }));
     const body = skill!.body();
     expect(body).toMatch(/^---\nname: /);
     expect(body).toContain('## Instructions');

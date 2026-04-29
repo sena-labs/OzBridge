@@ -62,9 +62,11 @@ describe('a11y — runs tree provider', () => {
 
     for (const root of roots) {
       const item = provider.getTreeItem(root);
-      expect(item.accessibilityInformation, `${root.kind}/${root.id}`).toBeDefined();
+      expect(item.accessibilityInformation, `${root.kind}/${root.id}`).toMatchObject({
+        label: expect.any(String),
+        role: expect.stringMatching(/^(treeitem|button)$/),
+      });
       expect(item.accessibilityInformation?.label.length).toBeGreaterThan(0);
-      expect(item.accessibilityInformation?.role).toBe('treeitem');
       // Tooltip must be set so mouse + keyboard hover both surface info.
       expect(item.tooltip).toBeDefined();
     }
@@ -112,9 +114,11 @@ describe('a11y — runs tree provider', () => {
 
     for (const sample of samples) {
       const item = provider.getTreeItem(sample as never);
-      expect(item.accessibilityInformation, sample.kind).toBeDefined();
+      expect(item.accessibilityInformation, sample.kind).toMatchObject({
+        label: expect.any(String),
+        role: expect.stringMatching(/^(treeitem|button)$/),
+      });
       expect(item.accessibilityInformation?.label.length, sample.kind).toBeGreaterThan(3);
-      expect(item.accessibilityInformation?.role, sample.kind).toBe('treeitem');
     }
   });
 });
@@ -133,9 +137,11 @@ describe('a11y — drive tree provider', () => {
     const roots = await provider.getChildren();
     for (const root of roots) {
       const item = provider.getTreeItem(root);
-      expect(item.accessibilityInformation, root.id).toBeDefined();
+      expect(item.accessibilityInformation, root.id).toMatchObject({
+        label: expect.any(String),
+        role: expect.stringMatching(/^(treeitem|button)$/),
+      });
       expect(item.accessibilityInformation?.label.length).toBeGreaterThan(0);
-      expect(item.accessibilityInformation?.role).toBe('treeitem');
     }
 
     // Drill down into the prompt category to cover the entry branch.
@@ -144,7 +150,9 @@ describe('a11y — drive tree provider', () => {
       const children = await provider.getChildren(promptCat);
       for (const child of children) {
         const item = provider.getTreeItem(child);
-        expect(item.accessibilityInformation, child.id).toBeDefined();
+        expect(item.accessibilityInformation, child.id).toMatchObject({
+          label: expect.any(String),
+        });
         expect(item.accessibilityInformation?.label.length).toBeGreaterThan(0);
       }
     }

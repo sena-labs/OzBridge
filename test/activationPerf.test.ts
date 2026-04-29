@@ -13,6 +13,7 @@
  * the regression — never silently disable the assertion.
  */
 import { describe, it, expect } from 'vitest';
+import { vi } from 'vitest';
 
 /**
  * Budget envelope, in milliseconds.
@@ -82,12 +83,15 @@ describe('activation performance budget (v1.0 deliverable R)', () => {
     const min = sorted[0];
 
     // Surface the distribution in the test log so regressions are easy
-    // to triage without re-running locally.
-    // eslint-disable-next-line no-console
-    console.info(
-      `[perf] activate() — n=${samples.length} min=${min.toFixed(2)}ms ` +
-        `p50=${p50.toFixed(2)}ms p95=${p95.toFixed(2)}ms max=${max.toFixed(2)}ms`,
-    );
+    // to triage without re-running locally. Gated behind OZBRIDGE_PERF_LOG
+    // to keep CI output clean unless explicitly enabled.
+    if (process.env.OZBRIDGE_PERF_LOG) {
+      // eslint-disable-next-line no-console
+      console.info(
+        `[perf] activate() — n=${samples.length} min=${min.toFixed(2)}ms ` +
+          `p50=${p50.toFixed(2)}ms p95=${p95.toFixed(2)}ms max=${max.toFixed(2)}ms`,
+      );
+    }
 
     expect(p50, `activate p50 ${p50.toFixed(2)}ms exceeds budget ${BUDGETS.p50Ms}ms`).toBeLessThan(
       BUDGETS.p50Ms,
@@ -95,5 +99,21 @@ describe('activation performance budget (v1.0 deliverable R)', () => {
     expect(p95, `activate p95 ${p95.toFixed(2)}ms exceeds budget ${BUDGETS.p95Ms}ms`).toBeLessThan(
       BUDGETS.p95Ms,
     );
+  });
+
+  it('activate() does NOT eagerly start ActiveRunsTracker (lazy on view visibility / focus)', async () => {
+    const trackerModule = await import('../src/services/activeRunsTracker.js');
+    const startSpy = vi.spyOn(trackerModule.ActiveRunsTracker.prototype, 'start');
+
+    const { activate, deactivate } = await import('../src/extension.js');
+    const ctx = createMockExtensionContext();
+    activate(ctx as unknown as never);
+
+    // Lazy: start() is wired to sidebar visibility and the status-bar
+    // focus command, NOT to activate() itself. Activation must stay cheap.
+    expect(startSpy).not.toHaveBeenCalled();
+
+    await Promise.resolve(deactivate());
+    startSpy.mockRestore();
   });
 });

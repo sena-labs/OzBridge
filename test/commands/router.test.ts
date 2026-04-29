@@ -38,7 +38,7 @@ describe('CommandRouter', () => {
         createMockToken() as any,
       );
 
-      expect(result!.metadata).toBeDefined();
+      expect(result!.metadata).toMatchObject({ command: 'run' });
       expect((result!.metadata as any).command).toBe('run');
     });
 

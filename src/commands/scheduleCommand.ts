@@ -7,6 +7,59 @@ import {
 import { OutputFormatter } from '../parsers/outputFormatter.js';
 
 /**
+ * Parses a single quoted argument starting at the beginning of `s`.
+ *
+ * Supports both `"…"` and `'…'` quoting. Inside the quoted value the
+ * opposite quote character is allowed verbatim (so `"Run 'test' suite"`
+ * works), and a literal backslash can escape the surrounding quote or
+ * another backslash (`"He said \\"hi\\""`). Returns `null` if `s` does
+ * not start with a quote or the closing quote is missing.
+ */
+function parseQuotedArg(s: string): { value: string; rest: string } | null {
+  if (s.length === 0) { return null; }
+  const quote = s[0];
+  if (quote !== '"' && quote !== "'") { return null; }
+  let value = '';
+  let i = 1;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '\\' && i + 1 < s.length && (s[i + 1] === quote || s[i + 1] === '\\')) {
+      value += s[i + 1];
+      i += 2;
+      continue;
+    }
+    if (c === quote) {
+      return { value, rest: s.slice(i + 1) };
+    }
+    value += c;
+    i += 1;
+  }
+  return null;
+}
+
+/**
+ * Parses the arguments of `/schedule create <name> "<cron>" "<prompt>"`.
+ *
+ * Returns `null` when the input does not match the expected shape.
+ */
+function parseCreateArgs(
+  input: string,
+): { name: string; cron: string; prompt: string } | null {
+  const nameMatch = input.match(/^(\S+)\s+/);
+  if (!nameMatch) { return null; }
+  let rest = input.slice(nameMatch[0].length);
+
+  const cronArg = parseQuotedArg(rest);
+  if (!cronArg) { return null; }
+  rest = cronArg.rest.replace(/^\s+/, '');
+
+  const promptArg = parseQuotedArg(rest);
+  if (!promptArg || promptArg.rest.trim() !== '') { return null; }
+
+  return { name: nameMatch[1], cron: cronArg.value, prompt: promptArg.value };
+}
+
+/**
  * Creates the `/schedule` slash-command handler.
  *
  * Manages Warp cron schedules with 5 sub-commands:
@@ -46,12 +99,14 @@ export function createScheduleCommand(
         case 'create': {
           // Format: create <name> <cron> <prompt>
           // Ex: create daily-lint "0 9 * * *" "Run linting"
-          const createMatch = trimmed.match(/^create\s+(\S+)\s+(["'])([^"']+)\2\s+(["'])([^"']+)\4$/i);
-          if (!createMatch) {
-            stream.markdown('**Usage**: `/schedule create <name> "<cron>" "<prompt>"`\n\nExample: `/schedule create daily-lint "0 9 * * *" "Run linting"`\n_You can use single or double quotes._\n');
+          // Supports nested quotes of the opposite kind and `\\"` / `\\'` escapes.
+          const argsInput = trimmed.slice('create'.length).replace(/^\s+/, '');
+          const parsed = parseCreateArgs(argsInput);
+          if (!parsed) {
+            stream.markdown('**Usage**: `/schedule create <name> "<cron>" "<prompt>"`\n\nExample: `/schedule create daily-lint "0 9 * * *" "Run linting"`\n_You can use single or double quotes; nested quotes of the opposite kind are allowed (e.g. `"Run \'test\' suite"`)._\n');
             break;
           }
-          const [, name, , cron, , schedPrompt] = createMatch;
+          const { name, cron, prompt: schedPrompt } = parsed;
           stream.progress(`Creating schedule "${name}"...`);
           const schedule = await cli.scheduleCreate({
             name,

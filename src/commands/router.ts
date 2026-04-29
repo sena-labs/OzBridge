@@ -73,8 +73,27 @@ export class CommandRouter {
         return {};
       }
 
-      const result = await handler(request.prompt, stream, token);
-      return { ...result, metadata: { ...result.metadata, command: commandName } };
+      // HIGH-4 (AUDIT-ROADMAP-v1.2): top-level error boundary so any
+      // uncaught throw inside a sub-handler surfaces as a friendly
+      // markdown message in the chat instead of VS Code's red banner.
+      // Cancellation is re-thrown unchanged so the host can react.
+      try {
+        const result = await handler(request.prompt, stream, token);
+        return { ...result, metadata: { ...result.metadata, command: commandName } };
+      } catch (err) {
+        if (err instanceof vscode.CancellationError || token.isCancellationRequested) {
+          throw err;
+        }
+        const message = err instanceof Error ? err.message : String(err);
+        stream.markdown(
+          `\n\n❌ \`/${commandName}\` failed: ${message}\n\n` +
+          '_See the **OzBridge** Output channel for the full stack trace._',
+        );
+        return {
+          metadata: { command: commandName, error: true },
+          errorDetails: { message },
+        };
+      }
     };
   }
 }

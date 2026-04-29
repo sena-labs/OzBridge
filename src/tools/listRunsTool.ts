@@ -39,6 +39,15 @@ export class ListRunsTool implements vscode.LanguageModelTool<ListRunsInput> {
   ): Promise<vscode.LanguageModelToolResult> {
     const { status = 'all', limit } = options.input;
 
+    // MED-3: defensive input validation. The LM may hallucinate non-integer or
+    // negative `limit` values; surface a user-friendly error instead of
+    // silently truncating to zero.
+    if (limit !== undefined && (!Number.isInteger(limit) || limit <= 0)) {
+      return textResult(
+        `❌ **Invalid input**: \`limit\` must be a positive integer (received \`${String(limit)}\`).`,
+      );
+    }
+
     try {
       const list = await this.cli.runList();
 

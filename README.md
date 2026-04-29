@@ -1,6 +1,6 @@
 # OzBridge for VS Code
 
-[![Build](https://github.com/sena-labs/warp-vsc-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/warp-vsc-bridge/actions/workflows/ci.yml)
+[![Build](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -10,6 +10,24 @@ that Copilot Agent mode can invoke autonomously.
 
 ![OzBridge screenshot](media/screenshot.png)
 
+## Feature gallery
+
+### Runs & Resources
+
+![OzBridge sidebar with active runs, history and schedules](media/screenshot-runs.png)
+
+### Warp Drive
+
+![Warp Drive prompt and skills preview inside VS Code](media/screenshot-drive.png)
+
+### MCP bridge
+
+![Embedded MCP bridge status with registered clients](media/screenshot-mcp.png)
+
+### Dashboard
+
+![OzBridge dashboard with analytics and failure triage](media/screenshot-dashboard.png)
+
 ---
 
 ## Table of Contents
@@ -18,7 +36,7 @@ that Copilot Agent mode can invoke autonomously.
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Chat Participant (`@oz`)](#chat-participant-warp)
+  - [Chat Participant (`@oz`)](#chat-participant-oz)
   - [Slash Commands](#slash-commands)
   - [Agent Mode — Language Model Tools](#agent-mode--language-model-tools)
 - [Configuration](#configuration)
@@ -78,7 +96,7 @@ codium --install-extension sena-labs.ozbridge
 Direct links:
 
 - Marketplace — <https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge>
-- Open VSX — <https://open-vsx.org/extension/sena-labs/warp-vsc-bridge>
+- Open VSX — <https://open-vsx.org/extension/sena-labs/ozbridge>
 
 ### From VSIX (local)
 
@@ -86,12 +104,12 @@ Direct links:
 
 1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS).
 2. Type **"Extensions: Install from VSIX…"**.
-3. Select the `warp-vsc-bridge.vsix` file.
+3. Select the `ozbridge.vsix` file.
 
 **Option B — CLI:**
 
 ```bash
-code --install-extension warp-vsc-bridge.vsix
+code --install-extension ozbridge.vsix
 ```
 
 > **Note:** on Windows `code` may not be in your `PATH`. Use the full path or
@@ -100,8 +118,8 @@ code --install-extension warp-vsc-bridge.vsix
 ### From source
 
 ```bash
-git clone https://github.com/sena-labs/warp-vsc-bridge.git
-cd warp-vsc-bridge
+git clone https://github.com/sena-labs/OzBridge.git
+cd OzBridge
 npm install
 npm run build
 ```
@@ -385,7 +403,7 @@ npm run package
 
 ### Test Suite
 
-- **1109 tests** across 78 files
+- **1133 tests** across 80 files
 - **~2.3:1** test-to-code ratio
 - Framework: [Vitest](https://vitest.dev/) v4.0.18
 

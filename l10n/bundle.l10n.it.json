@@ -1,6 +1,5 @@
 {
-  "OzBridge: Oz CLI not found. Install Warp to use @oz in chat.": "OzBridge: Oz CLI non trovato. Installa Warp per usare @oz in chat.",
-  "Install Warp": "Installa Warp",
+  "OzBridge: openConversation accepts only warp:// URIs.": "OzBridge: openConversation accetta solo URI warp://.",
   "Failure triage requires VS Code 1.96+ with a Copilot chat model installed.": "Il triage degli errori richiede VS Code 1.96+ con un modello chat Copilot installato.",
   "Run id to triage": "ID della run da analizzare",
   "OzBridge: triaging {0}…": "OzBridge: analisi di {0}…",
@@ -50,5 +49,23 @@
   "OzBridge: no active editor to save.": "OzBridge: nessun editor attivo da salvare.",
   "OzBridge: no {0} directory available.": "OzBridge: nessuna directory {0} disponibile.",
   "Saved {0} skill to {1}": "Skill {0} salvata in {1}",
-  "Save failed: {0}": "Salvataggio fallito: {0}"
+  "Save failed: {0}": "Salvataggio fallito: {0}",
+  "🌐 Open in browser": "🌐 Apri nel browser",
+  "📥 Install Warp": "📥 Installa Warp",
+  "🔑 Login Warp": "🔑 Accedi a Warp",
+  "💳 Manage Warp billing": "💳 Gestisci fatturazione Warp",
+  "OzBridge · /init templates": "OzBridge · template /init",
+  "Pick the skill / rule files to scaffold": "Seleziona i file skill / rule da generare",
+  "OzBridge: {0} active": "OzBridge: {0} attive",
+  "OzBridge: 1 active run": "OzBridge: 1 run attiva",
+  "OzBridge: {0} active runs": "OzBridge: {0} run attive",
+  "OzBridge: unavailable": "OzBridge: non disponibile",
+  "OzBridge: unable to list runs. Check Oz CLI availability and authentication.": "OzBridge: impossibile elencare le run. Verifica la disponibilità della CLI Oz e l'autenticazione.",
+  "OzBridge: unavailable. Check Oz CLI availability and authentication.": "OzBridge: non disponibile. Verifica la disponibilità della CLI Oz e l'autenticazione.",
+  "active & recent runs": "run attive e recenti",
+  "No runs reported by Oz CLI.": "Nessuna run riportata dalla CLI Oz.",
+  "Status": "Stato",
+  "Run ID": "ID Run",
+  "…and {0} more — click to open the sidebar.": "…e altre {0} — clicca per aprire la sidebar.",
+  "Click to focus the OzBridge sidebar.": "Clicca per aprire la sidebar OzBridge."
 }

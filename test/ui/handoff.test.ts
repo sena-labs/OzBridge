@@ -7,7 +7,6 @@ import {
   HANDOFF_COMMANDS,
 } from '../../src/ui/handoff.js';
 import * as vscodeMock from '../mocks/vscode.js';
-import { createMockConfigManager } from '../helpers.js';
 
 beforeEach(() => {
   vscodeMock.commands._resetCommands();
@@ -35,12 +34,27 @@ describe('buildHandoffCommand', () => {
   });
 
   it('escapes double quotes, backslashes, dollars and backticks', () => {
-    const cmd = buildHandoffCommand({ prompt: 'say "hi" $x `date` C:\\tmp' });
-    expect(cmd).toBe('oz agent run --prompt "say \\"hi\\" \\$x \\`date\\` C:\\\\tmp"');
+    const platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
+    try {
+      const cmd = buildHandoffCommand({ prompt: 'say "hi" $x `date` C:\\tmp' });
+      expect(cmd).toBe('oz agent run --prompt "say \\\"hi\\\" \\$x \\`date\\` C:\\\\tmp"');
+    } finally {
+      platformSpy.mockRestore();
+    }
   });
 
   it('returns a bare `oz agent run` when neither runId nor prompt is given', () => {
     expect(buildHandoffCommand({})).toBe('oz agent run');
+  });
+
+  it('on Windows escapes cmd metacharacters and %VAR% expansion', () => {
+    const platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+    try {
+      const cmd = buildHandoffCommand({ prompt: 'say "hi" %USERPROFILE% & echo !' });
+      expect(cmd).toBe('oz agent run --prompt "say \\\"hi\\\" %%USERPROFILE%% ^& echo ^^!"');
+    } finally {
+      platformSpy.mockRestore();
+    }
   });
 });
 
@@ -102,7 +116,6 @@ describe('openHandoff', () => {
 describe('registerHandoffCommands', () => {
   it('registers both palette and tree command ids', () => {
     const disposables = registerHandoffCommands({
-      cfgMgr: createMockConfigManager(),
       getWorkspacePath: () => '/w',
     });
     expect(disposables).toHaveLength(2);
@@ -112,7 +125,6 @@ describe('registerHandoffCommands', () => {
 
   it('palette command prompts and then opens Warp with the entered prompt', async () => {
     registerHandoffCommands({
-      cfgMgr: createMockConfigManager(),
       getWorkspacePath: () => '/w',
     });
     vscodeMock.window.showInputBox.mockResolvedValueOnce('hello world' as any);
@@ -126,7 +138,6 @@ describe('registerHandoffCommands', () => {
 
   it('palette command is a no-op when the user cancels the input box', async () => {
     registerHandoffCommands({
-      cfgMgr: createMockConfigManager(),
       getWorkspacePath: () => '/w',
     });
     vscodeMock.window.showInputBox.mockResolvedValueOnce(undefined as any);
@@ -138,7 +149,6 @@ describe('registerHandoffCommands', () => {
 
   it('tree command opens Warp with the run id for a run node', async () => {
     registerHandoffCommands({
-      cfgMgr: createMockConfigManager(),
       getWorkspacePath: () => '/w',
     });
 
@@ -158,7 +168,6 @@ describe('registerHandoffCommands', () => {
 
   it('tree command warns when invoked on a non-run node', async () => {
     registerHandoffCommands({
-      cfgMgr: createMockConfigManager(),
       getWorkspacePath: () => '/w',
     });
 

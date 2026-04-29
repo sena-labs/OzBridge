@@ -32,7 +32,7 @@ deny-list assertion (`FORBIDDEN_KEY_REGEX` in
 | `errorRaised`        | `{ kind }`                           | Triage common failure classes             |
 
 Plus the AppInsights envelope: extension `version` and a static role
-tag (`warp-vsc-bridge`).
+tag (`oz-bridge`).
 
 ## What we **never** collect
 

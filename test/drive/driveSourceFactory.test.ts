@@ -6,6 +6,7 @@ import {
   CompositeDriveSource,
   createOzBridgeDriveSource,
 } from '../../src/drive/driveSourceFactory.js';
+import * as logger from '../../src/services/logger.js';
 import {
   CliDriveNotAvailableError,
   CliDriveRunner,
@@ -39,6 +40,14 @@ function makeSource(label: string, overrides: Partial<IDriveSource> = {}): IDriv
 // ---------------------------------------------------------------------------
 
 describe('CompositeDriveSource — fallback semantics', () => {
+  beforeEach(() => {
+    vi.spyOn(logger, 'logWarn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('returns primary results when the primary succeeds', async () => {
     const primary = makeSource('primary', {
       listPrompts: vi.fn(async () => [{
@@ -93,6 +102,21 @@ describe('CompositeDriveSource — fallback semantics', () => {
     const body = await composite.read('abc');
     expect(body).toContain('fallback content');
     expect(fallback.read).toHaveBeenCalledWith('abc');
+  });
+
+  it('logs fallback warning only once per session', async () => {
+    const primary = makeSource('primary', {
+      listPrompts: vi.fn(async () => { throw new CliDriveNotAvailableError(); }),
+    });
+    const fallback = makeSource('fallback', {
+      listPrompts: vi.fn(async () => []),
+    });
+    const composite = new CompositeDriveSource(primary, fallback);
+
+    await composite.listPrompts();
+    await composite.listPrompts();
+
+    expect(logger.logWarn).toHaveBeenCalledTimes(1);
   });
 
   it('computes a composed label for diagnostics', () => {

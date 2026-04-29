@@ -10,6 +10,7 @@ import { IRunPoller, IRunStatusProvider, RunStatus, RunResult, CliError, CliErro
  */
 export class BaseRunPoller implements IRunPoller {
   private readonly activePollers = new Set<AbortController>();
+  private disposing = false;
 
   /**
    * @param provider - Service that can fetch the current run status.
@@ -25,6 +26,9 @@ export class BaseRunPoller implements IRunPoller {
     onProgress: (status: RunStatus) => void,
     cancellation?: vscode.CancellationToken,
   ): Promise<RunResult> {
+    if (this.disposing) {
+      throw new CliError(CliErrorKind.CANCELLED, `Poller is disposing; cannot start new poll for ${runId}`);
+    }
     const abort = new AbortController();
     this.activePollers.add(abort);
 
@@ -41,10 +45,14 @@ export class BaseRunPoller implements IRunPoller {
   }
 
   disposeAll(): void {
-    for (const controller of this.activePollers) {
+    this.disposing = true;
+    // Snapshot to avoid iterator invalidation if abort handlers schedule
+    // anything that mutates the set synchronously.
+    const pending = Array.from(this.activePollers);
+    this.activePollers.clear();
+    for (const controller of pending) {
       controller.abort();
     }
-    this.activePollers.clear();
   }
 
   private async doPoll(
@@ -59,7 +67,16 @@ export class BaseRunPoller implements IRunPoller {
     const backoffFactor = 1.5;
 
     while (!signal.aborted) {
-      await this.sleep(interval, signal);
+      // Clamp the sleep to the time remaining before the global timeout so
+      // we never overshoot the deadline by up to a full backoff interval.
+      const remaining = config.timeoutMs - (Date.now() - startTime);
+      if (remaining <= 0) {
+        throw new CliError(
+          CliErrorKind.TIMEOUT,
+          `Polling timeout after ${config.timeoutMs / 1000}s for run ${runId}`,
+        );
+      }
+      await this.sleep(Math.min(interval, remaining), signal);
       if (signal.aborted) {
         break;
       }

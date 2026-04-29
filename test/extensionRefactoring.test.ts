@@ -2,8 +2,8 @@
  * Refactoring coverage tests for extension.ts:
  * - state encapsulation (globals → state object)
  * - deactivate() accesses state.runPoller
- * - t() is used for warning message (i18n, not hardcoded)
- * - user ignores the install button (action === undefined)
+ * - activation does not eagerly probe the Oz CLI
+ * - user-facing CLI errors are surfaced lazily by commands/views
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventEmitter as NodeEventEmitter } from 'node:events';
@@ -60,7 +60,11 @@ beforeEach(() => {
 });
 
 function flushMicrotasks(): Promise<void> {
-  return new Promise((resolve) => { setTimeout(resolve, 50); });
+  // Drain pending microtasks/macrotasks deterministically (C-M3): a real
+  // 50 ms timeout was flaky on slow CI runners. `setImmediate` runs after
+  // the current poll phase, which is sufficient for the activate() path's
+  // `void`-prefixed promises and registered callbacks under test here.
+  return new Promise((resolve) => { setImmediate(resolve); });
 }
 
 function createMockExtensionContext() {
@@ -95,27 +99,24 @@ describe('extension.ts — refactoring coverage', () => {
   });
 
   // -----------------------------------------------------------------------
-  // i18n: warning message usa t() e si traduce con locale inglese
+  // Lazy activation: no availability warning is shown during activate()
   // -----------------------------------------------------------------------
-  it('warning message dovrebbe essere in inglese con locale EN (da mock env.language)', async () => {
+  it('non dovrebbe mostrare warning CLI durante activate()', async () => {
     spawnBehavior = 'not-available';
-    // env.language è 'en' nel mock vscode.ts
 
     const { activate } = await import('../src/extension.js');
     activate(createMockExtensionContext() as any);
     await flushMicrotasks();
-
-    // Verifica che il messaggio contenga la stringa EN, non IT
-    expect(window.showWarningMessage).toHaveBeenCalledWith(
+    expect(window.showWarningMessage).not.toHaveBeenCalledWith(
       expect.stringContaining('Oz CLI not found'),
-      expect.any(String),
+      expect.anything(),
     );
   });
 
   // -----------------------------------------------------------------------
-  // i18n: installLabel viene usato per il confronto (non stringa hardcoded)
+  // Lazy activation: no install URL is opened while user ignores Oz features
   // -----------------------------------------------------------------------
-  it('non dovrebbe aprire URL se utente ignora il button (action === undefined)', async () => {
+  it('non dovrebbe aprire URL download durante activate()', async () => {
     spawnBehavior = 'not-available';
     window.showWarningMessage.mockResolvedValue(undefined);
 

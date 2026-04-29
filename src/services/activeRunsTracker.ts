@@ -44,10 +44,20 @@ export class ActiveRunsTracker implements vscode.Disposable {
   private timer: ReturnType<typeof setInterval> | undefined;
   private disposed = false;
   private starting = false;  // Guard flag to prevent multiple start() calls from running concurrently
+  private inFlight: Promise<void> | undefined;
   /** Last raw CLI snapshot (lower-cased ids). */
   private lastCli: TrackedRun[] = [];
   /** Merged view: CLI snapshot + sticky overrides (exposed via {@link latest}). */
   private last: TrackedRun[] = [];
+  /**
+   * `true` once a polling iteration has fired `onDidError` without a
+   * subsequent successful tick. Used by {@link tick} to force an
+   * `onDidChange` emission on the next success even when the merged
+   * list content is unchanged — otherwise the `StatusBarManager`
+   * stays stuck in its `unavailable` state forever after a single
+   * transient error.
+   */
+  private errorState = false;
   /**
    * Sticky status overrides keyed by normalised (lower-case) run id.
    * These are applied on top of the CLI snapshot until the CLI itself
@@ -110,17 +120,25 @@ export class ActiveRunsTracker implements vscode.Disposable {
 
     // Fire an immediate tick so consumers get data without waiting a full interval.
     // Then start the interval only if not disposed after the tick completes.
-    void this.tick().then(() => {
+    this.inFlight = this.tick();
+    void this.inFlight.then(() => {
       // Clear starting flag
       this.starting = false;
+      this.inFlight = undefined;
       // Re-check disposed state after async tick completes to prevent race condition
       // where dispose() is called while tick() is in progress
       if (!this.disposed && !this.timer) {
-        this.timer = setInterval(() => { void this.tick(); }, this.intervalMs);
+        this.timer = setInterval(() => {
+          if (this.inFlight) { return; }
+          this.inFlight = this.tick().finally(() => {
+            this.inFlight = undefined;
+          });
+        }, this.intervalMs);
       }
     }).catch(() => {
       // tick() already emits errors via onDidError, just prevent unhandled rejection
       this.starting = false;
+      this.inFlight = undefined;
     });
   }
 
@@ -132,11 +150,19 @@ export class ActiveRunsTracker implements vscode.Disposable {
     }
     // Also clear starting flag in case stop() is called while start() is in progress
     this.starting = false;
+    this.inFlight = undefined;
   }
 
   /** Manually triggers a poll (e.g. from a user-driven `Refresh` command). */
   async refresh(): Promise<void> {
-    await this.tick();
+    if (this.inFlight) {
+      await this.inFlight;
+      return;
+    }
+    this.inFlight = this.tick().finally(() => {
+      this.inFlight = undefined;
+    });
+    await this.inFlight;
   }
 
   dispose(): void {
@@ -174,11 +200,23 @@ export class ActiveRunsTracker implements vscode.Disposable {
       }
 
       const next = this.applyOverrides(cliRuns);
-      if (!sameList(next, this.last)) {
+      const listChanged = !sameList(next, this.last);
+      const recoveringFromError = this.errorState;
+      if (listChanged) {
         this.last = next;
+      }
+      // Always update the cached snapshot, then emit `onDidChange` if
+      // the list changed *or* we are recovering from a previous error
+      // — the latter is needed so `StatusBarManager.renderError()`
+      // gets cleared on recovery even when the list content didn't
+      // actually change between polls.
+      if (listChanged || recoveringFromError) {
+        this.last = next;
+        this.errorState = false;
         this._onDidChange.fire([...next]);
       }
     } catch (err) {
+      this.errorState = true;
       this._onDidError.fire(err);
     }
   }

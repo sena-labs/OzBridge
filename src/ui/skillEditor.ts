@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
+import { promises as fsp } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
@@ -80,8 +80,7 @@ export function registerSkillEditorCommands(deps: SkillEditorDeps = {}): vscode.
       const file = path.join(dir, 'SKILL.md');
 
       try {
-        await ensureDirectoryExists(dir);
-        if (fs.existsSync(file)) {
+        if (await pathExists(file)) {
           const overwrite = await vscode.window.showWarningMessage(
             vscode.l10n.t('{0} already exists. Overwrite?', file),
             { modal: true },
@@ -89,7 +88,7 @@ export function registerSkillEditorCommands(deps: SkillEditorDeps = {}): vscode.
           );
           if (overwrite !== vscode.l10n.t('Overwrite')) { return; }
         }
-        atomicWrite(file, skillTemplate(name.trim()));
+        await atomicWrite(file, skillTemplate(name.trim()));
         const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(file));
         await vscode.window.showTextDocument(doc);
       } catch (err) {
@@ -155,8 +154,7 @@ async function saveCurrentAs(
   const dir = path.join(base, '.agents', 'skills', name.trim());
   const file = path.join(dir, 'SKILL.md');
   try {
-    await ensureDirectoryExists(dir);
-    if (fs.existsSync(file)) {
+    if (await pathExists(file)) {
       const overwrite = await vscode.window.showWarningMessage(
         vscode.l10n.t('{0} already exists. Overwrite?', file),
         { modal: true },
@@ -164,30 +162,35 @@ async function saveCurrentAs(
       );
       if (overwrite !== vscode.l10n.t('Overwrite')) { return; }
     }
-    atomicWrite(file, content);
+    await atomicWrite(file, content);
     await vscode.window.showInformationMessage(vscode.l10n.t('Saved {0} skill to {1}', target.toLowerCase(), file));
   } catch (err) {
     await vscode.window.showErrorMessage(vscode.l10n.t('Save failed: {0}', errMsg(err)));
   }
 }
 
-async function ensureDirectoryExists(dir: string): Promise<void> {
+async function pathExists(p: string): Promise<boolean> {
   try {
-    fs.mkdirSync(dir, { recursive: true });
-  } catch (err) {
-    throw new Error(`cannot create ${dir}: ${errMsg(err)}`);
+    await fsp.access(p);
+    return true;
+  } catch {
+    return false;
   }
 }
 
 /**
  * Writes `content` to `file` atomically via a sibling `.tmp` file
- * followed by `fs.renameSync`. Prevents readers from observing a
- * partially-written file.
+ * followed by `fs.promises.rename`. Prevents readers from observing
+ * a partially-written file. Asynchronous to keep the extension-host
+ * event loop responsive on slower filesystems.
  */
-export function atomicWrite(file: string, content: string): void {
+export async function atomicWrite(file: string, content: string): Promise<void> {
+  // B-L6: ensure parent directory exists inside the helper so callers do not
+  // need a separate mkdir step (was previously done via `ensureDirectoryExists`).
+  await fsp.mkdir(path.dirname(file), { recursive: true });
   const tmp = `${file}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmp, content, 'utf8');
-  fs.renameSync(tmp, file);
+  await fsp.writeFile(tmp, content, 'utf8');
+  await fsp.rename(tmp, file);
 }
 
 function skillTemplate(name: string): string {

@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import {
   IOzCliService,
+  OzCliError,
+  OzCliErrorKind,
   OzRunStatus,
   OzSchedule,
   OzEnvironment,
@@ -74,6 +76,8 @@ interface MessageNode extends BaseNode {
  */
 export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, vscode.Disposable {
   static readonly HISTORY_LIMIT = 20;
+  /** MED-8: globalState key prefix for persisted category collapse state. */
+  private static readonly COLLAPSE_STATE_KEY = 'ozBridge.tree.categoryCollapsed';
 
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<OzTreeNode | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -84,6 +88,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
   constructor(
     private readonly cli: IOzCliService,
     private readonly tracker: ActiveRunsTracker,
+    private readonly memento?: vscode.Memento,
   ) {
     this.subscriptions.push(
       this.tracker.onDidChange(() => this._onDidChangeTreeData.fire()),
@@ -93,6 +98,31 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
+  }
+
+  /**
+   * MED-8: persist a category's collapse state so that user preference
+   * survives reload. Wire this from `TreeView.onDidCollapseElement` /
+   * `onDidExpandElement` in the extension activator.
+   */
+  setCategoryCollapsed(category: CategoryNode['category'], collapsed: boolean): void {
+    if (!this.memento) { return; }
+    const map = this.readCollapseMap();
+    map[category] = collapsed;
+    void this.memento.update(OzRunsTreeProvider.COLLAPSE_STATE_KEY, map);
+  }
+
+  private readCollapseMap(): Record<string, boolean> {
+    if (!this.memento) { return {}; }
+    const raw = this.memento.get<Record<string, boolean>>(OzRunsTreeProvider.COLLAPSE_STATE_KEY);
+    return raw && typeof raw === 'object' ? raw : {};
+  }
+
+  private categoryCollapsibleState(category: CategoryNode['category']): vscode.TreeItemCollapsibleState {
+    const collapsed = this.readCollapseMap()[category] === true;
+    return collapsed
+      ? vscode.TreeItemCollapsibleState.Collapsed
+      : vscode.TreeItemCollapsibleState.Expanded;
   }
 
   dispose(): void {
@@ -105,7 +135,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
   getTreeItem(element: OzTreeNode): vscode.TreeItem {
     switch (element.kind) {
       case 'category': {
-        const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Expanded);
+        const item = new vscode.TreeItem(element.label, this.categoryCollapsibleState(element.category));
         item.id = element.id;
         item.iconPath = new vscode.ThemeIcon(categoryIcon(element.category));
         item.contextValue = `warpCategory:${element.category}`;
@@ -218,6 +248,43 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
     }
   }
 
+  /**
+   * Resolves the parent category for any element. Required by the
+   * VS Code TreeView API so `treeView.reveal(element)` can expand
+   * ancestors. Returns `null` for top-level category nodes (and for
+   * unknown shapes) per VS Code's contract.
+   */
+  getParent(element: OzTreeNode): OzTreeNode | null {
+    switch (element.kind) {
+      case 'category':
+        return null;
+      case 'run':
+        return cat(element.active ? 'activeRuns' : 'history',
+          element.active ? 'Active Runs' : 'History');
+      case 'schedule':
+        return cat('schedules', 'Schedules');
+      case 'environment':
+        return cat('environments', 'Environments');
+      case 'mcp':
+        return cat('mcp', 'MCP Servers');
+      case 'message': {
+        // Message nodes encode their parent category in the id, e.g.
+        // `message:activeRuns:empty` or `message:mcp:error`.
+        const m = /^message:(activeRuns|history|schedules|environments|mcp):/.exec(element.id);
+        if (!m) { return null; }
+        const category = m[1] as CategoryNode['category'];
+        const labels: Record<CategoryNode['category'], string> = {
+          activeRuns: 'Active Runs',
+          history: 'History',
+          schedules: 'Schedules',
+          environments: 'Environments',
+          mcp: 'MCP Servers',
+        };
+        return cat(category, labels[category]);
+      }
+    }
+  }
+
   // ---------------------------------------------------------------------
   // Category resolvers
   // ---------------------------------------------------------------------
@@ -253,7 +320,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         schedule: s,
       }));
     } catch (err) {
-      return [msg('schedules:error', errorLabel(err))];
+      return [msg('schedules:error', errorLabel(err, 'schedules'))];
     }
   }
 
@@ -270,7 +337,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         environment: e,
       }));
     } catch (err) {
-      return [msg('environments:error', errorLabel(err))];
+      return [msg('environments:error', errorLabel(err, 'environments'))];
     }
   }
 
@@ -287,7 +354,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         server: m,
       }));
     } catch (err) {
-      return [msg('mcp:error', errorLabel(err))];
+      return [msg('mcp:error', errorLabel(err, 'MCP servers'))];
     }
   }
 }
@@ -329,6 +396,12 @@ function categoryIcon(category: CategoryNode['category']): string {
     case 'schedules': return 'calendar';
     case 'environments': return 'server-environment';
     case 'mcp': return 'plug';
+    default: {
+      // A-L13: exhaustiveness guard — adding a new CategoryNode variant
+      // without updating this switch becomes a compile-time error.
+      const _exhaustive: never = category;
+      return _exhaustive;
+    }
   }
 }
 
@@ -338,11 +411,45 @@ function runIcon(status: OzRunStatus): string {
     case 'INPROGRESS': return 'sync~spin';
     case 'SUCCEEDED': return 'check';
     case 'FAILED': return 'error';
+    case 'CANCELLED': return 'circle-slash';
+    case 'PAUSED': return 'debug-pause';
+    case 'SKIPPED': return 'debug-step-over';
     default: return 'question';
   }
 }
 
-function errorLabel(err: unknown): string {
-  if (err instanceof Error) { return `Error: ${err.message}`; }
-  return `Error: ${String(err)}`;
+/**
+ * Builds a sidebar-friendly error label that explains *why* a list could not
+ * be loaded without exposing the raw stack-trace style `OzCliError` message.
+ *
+ * The category name (e.g. "schedules", "environments") is folded into the
+ * message so the user can tell at a glance whether the failure is local to
+ * one tile or a systemic CLI problem.
+ */
+function errorLabel(err: unknown, category: string = 'this list'): string {
+  if (err instanceof OzCliError) {
+    switch (err.kind) {
+      case OzCliErrorKind.NOT_FOUND:
+        return `Oz CLI not found — install Warp to load ${category}.`;
+      case OzCliErrorKind.NOT_AUTHENTICATED:
+        return `Not authenticated — run \`oz login\` to load ${category}.`;
+      case OzCliErrorKind.STALLED:
+        return `Oz CLI did not respond for ${category}. Retry, or check Warp connectivity.`;
+      case OzCliErrorKind.TIMEOUT:
+        return `Oz CLI timed out loading ${category}. Increase \`ozBridge.timeoutMs\` or retry.`;
+      case OzCliErrorKind.CANCELLED:
+        return `Loading ${category} was cancelled.`;
+      case OzCliErrorKind.PARSE_ERROR:
+        return `Could not parse Oz CLI output for ${category}. Update Warp.`;
+      case OzCliErrorKind.INSUFFICIENT_CREDITS:
+        // Read-only listings cannot consume credits per Warp docs; if we get
+        // here it is almost certainly a generic auth/network failure being
+        // misclassified upstream. Avoid pointing the user at billing.
+        return `Oz CLI rejected the ${category} request. Retry, or run \`oz login\` if the issue persists.`;
+      default:
+        return `Oz CLI error loading ${category}: ${err.message}`;
+    }
+  }
+  if (err instanceof Error) { return `Error loading ${category}: ${err.message}`; }
+  return `Error loading ${category}: ${String(err)}`;
 }

@@ -77,6 +77,41 @@ describe('ActiveRunsTracker', () => {
     expect(changes).toEqual([[{ id: 'r2', status: 'SUCCEEDED' }]]);
   });
 
+  // Regression: after a transient error the StatusBar gets stuck on its
+  // `unavailable` red state because `onDidChange` only used to fire when
+  // the merged list content changed. If the CLI recovers but returns the
+  // exact same list, the tracker must emit a `onDidChange` once so the
+  // StatusBarManager can clear the red background.
+  it('emits onDidChange after recovery even when the list content is unchanged', async () => {
+    const sameList = makeListResult<{ id: string; status: OzRunStatus }>([
+      { id: 'r1', status: 'INPROGRESS' },
+    ]);
+    cli.runList
+      .mockResolvedValueOnce(sameList)              // tick 1: success populates last
+      .mockRejectedValueOnce(new Error('transient')) // tick 2: error
+      .mockResolvedValueOnce(sameList);              // tick 3: recovery, identical list
+
+    const tracker = new ActiveRunsTracker(cli, 1_000);
+    const errors: unknown[] = [];
+    const changes: TrackedRun[][] = [];
+    tracker.onDidError((e) => errors.push(e));
+    tracker.onDidChange((r) => changes.push([...r]));
+
+    tracker.start();
+    await vi.runOnlyPendingTimersAsync();
+    expect(changes).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    await Promise.resolve();
+    expect(errors).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(1_000);
+    await Promise.resolve();
+    // Recovery must fire onDidChange even though the content is unchanged.
+    expect(changes).toHaveLength(2);
+    expect(changes[1]).toEqual([{ id: 'r1', status: 'INPROGRESS' }]);
+  });
+
   it('refresh() triggers an immediate poll without waiting for the interval', async () => {
     cli.runList.mockResolvedValue(
       makeListResult<{ id: string; status: OzRunStatus }>([{ id: 'r1', status: 'QUEUED' }]),

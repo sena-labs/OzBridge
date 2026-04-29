@@ -1,4 +1,4 @@
-# Publishing `warp-vsc-bridge`
+# Publishing `ozbridge`
 
 Procedura end-to-end per pubblicare l'estensione sul **VS Code Marketplace** e su **Open VSX** con il publisher `sena-labs`.
 
@@ -76,7 +76,7 @@ Open VSX (gestito da Eclipse Foundation) è il registry per VSCodium, Cursor, Gi
 
 ## 4. Configurare i secret GitHub per CI
 
-Nel repository `sena-labs/warp-vsc-bridge`:
+Nel repository `sena-labs/OzBridge`:
 
 1. **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
 2. Aggiungi:
@@ -91,25 +91,25 @@ Dalla root del repository:
 
 ```powershell
 # Verifica configurazione
-npx @vscode/vsce show sena-labs.warp-vsc-bridge  # mostrerà "not found" la prima volta
+npx @vscode/vsce show sena-labs.ozbridge  # mostrerà "not found" la prima volta
 
 # Build + test + package
 npm ci
 npm run compile
 npm test
 npm run build
-npm run package  # produce warp-vsc-bridge.vsix
+npm run package  # produce ozbridge.vsix
 
 # Publish su VS Code Marketplace
-npx @vscode/vsce publish --packagePath warp-vsc-bridge.vsix -p $env:VSCE_PAT
+npx @vscode/vsce publish --packagePath ozbridge.vsix -p $env:VSCE_PAT
 
 # Publish su Open VSX
-npx ovsx publish warp-vsc-bridge.vsix -p $env:OVSX_TOKEN
+npx ovsx publish ozbridge.vsix -p $env:OVSX_TOKEN
 ```
 
 Dopo la pubblicazione:
-- Marketplace: https://marketplace.visualstudio.com/items?itemName=sena-labs.warp-vsc-bridge
-- Open VSX: https://open-vsx.org/extension/sena-labs/warp-vsc-bridge
+- Marketplace: https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge
+- Open VSX: https://open-vsx.org/extension/sena-labs/ozbridge
 
 La propagazione su Marketplace può richiedere 5-30 minuti. Open VSX è istantaneo.
 
@@ -141,7 +141,7 @@ Il workflow:
 | Sintomo | Causa | Soluzione |
 |---|---|---|
 | `ERROR 401 Unauthorized` su `vsce publish` | PAT scaduto o scope sbagliato | Rigenera PAT con scope `Marketplace → Manage` e **All accessible organizations** |
-| `ERROR Extension name conflicts with an existing extension` | Qualcuno ha già riservato `sena-labs.warp-vsc-bridge` | Cambia `name` in `package.json` o chiedi support Marketplace |
+| `ERROR Extension name conflicts with an existing extension` | Qualcuno ha già riservato `sena-labs.ozbridge` | Cambia `name` in `package.json` o chiedi support Marketplace |
 | `ovsx publish` fallisce con `Namespace sena-labs does not exist` | Namespace Open VSX non creato | Esegui `npx ovsx create-namespace sena-labs -p <TOKEN>` |
 | VSIX contiene file non desiderati | `.vscodeignore` incompleto | Verifica `.vscodeignore` esclude `test/`, `.github/`, `docs/`, `packages/*/src/` |
 | Version già pubblicata | Tag già pushato e workflow eseguito | Bumpa a versione successiva (`npm version patch`) |
@@ -154,11 +154,11 @@ Se mai serve rimuovere una versione:
 
 ```powershell
 # VS Code Marketplace
-npx @vscode/vsce unpublish sena-labs.warp-vsc-bridge --version 0.1.0
+npx @vscode/vsce unpublish sena-labs.ozbridge --version 0.1.0
 
 # Open VSX
-npx ovsx get sena-labs.warp-vsc-bridge  # verifica
-# Unpublish da UI: https://open-vsx.org/extension/sena-labs/warp-vsc-bridge/manage
+npx ovsx get sena-labs.ozbridge  # verifica
+# Unpublish da UI: https://open-vsx.org/extension/sena-labs/ozbridge/manage
 ```
 
 ⚠️ Unpublish è **sconsigliato**: rompe tutti gli utenti che hanno quella versione installata. Preferire bump di versione con patch.

@@ -66,7 +66,7 @@ describe('maybeOpenGettingStartedWalkthrough — first-run gating', () => {
   it('uses the qualified walkthrough id contributed in package.json', async () => {
     const globalState = createGlobalState();
     await maybeOpenGettingStartedWalkthrough({ globalState, host });
-    expect(WALKTHROUGH_ID).toBe('sena-labs.warp-vsc-bridge#ozBridge.gettingStarted');
+    expect(WALKTHROUGH_ID).toBe('sena-labs.ozbridge#ozBridge.gettingStarted');
     expect(host.executeCommand.mock.calls[0]?.[1]).toBe(WALKTHROUGH_ID);
   });
 

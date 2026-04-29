@@ -20,9 +20,9 @@ describe('Publishing readiness (deliverable M)', () => {
   it('repository, bugs and homepage point at the sena-labs org', () => {
     expect(PKG.repository).toBeDefined();
     expect(PKG.repository.type).toBe('git');
-    expect(PKG.repository.url).toMatch(/sena-labs\/warp-vsc-bridge/);
-    expect(PKG.bugs?.url).toMatch(/sena-labs\/warp-vsc-bridge\/issues/);
-    expect(PKG.homepage).toMatch(/sena-labs\/warp-vsc-bridge/);
+    expect(PKG.repository.url).toMatch(/sena-labs\/OzBridge/);
+    expect(PKG.bugs?.url).toMatch(/sena-labs\/OzBridge\/issues/);
+    expect(PKG.homepage).toMatch(/sena-labs\/OzBridge/);
   });
 
   it('ships the packaged icon referenced in package.json', () => {
@@ -75,5 +75,20 @@ describe('Publishing readiness (deliverable M)', () => {
     expect(readme).toMatch(/marketplace\.visualstudio\.com/i);
     expect(readme).toMatch(/open-vsx\.org/i);
     expect(readme).toMatch(/sena-labs\.ozbridge/);
+  });
+
+  it('.vscodeignore excludes esbuild source maps from the VSIX (audit B-L2)', () => {
+    const ignore = fs.readFileSync(path.join(ROOT, '.vscodeignore'), 'utf8');
+    const lines = ignore
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && !l.startsWith('#'));
+    // Either an exact `dist/**/*.map` rule or a broader `**/*.map` rule
+    // is acceptable. Without one of these, source maps would ship in the
+    // packaged VSIX and reveal internal structure.
+    const excludesMaps = lines.some((l) =>
+      l === 'dist/**/*.map' || l === '**/*.map' || l === '*.map',
+    );
+    expect(excludesMaps, '.vscodeignore must exclude *.map (none found)').toBe(true);
   });
 });

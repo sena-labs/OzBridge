@@ -1,6 +1,6 @@
 # Come creare le GIF per la Guida Rapida
 
-La guida HTML (`GUIDA-RAPIDA.html`) contiene **10 segnaposto** per GIF animate.
+La guida HTML (`GUIDA-RAPIDA.html`) contiene **9 segnaposto** per GIF animate.
 Questa nota spiega come registrarle e inserirle.
 
 ---
@@ -8,11 +8,11 @@ Questa nota spiega come registrarle e inserirle.
 ## Elenco GIF da registrare
 
 | # | File | Cosa registrare | Durata suggerita |
-|---|------|-----------------|------------------|
+| --- | --- | --- | --- |
 | 1 | `gif-01-download-warp.gif` | Apertura sito warp.dev → click Download → installer in esecuzione | 8–12 s |
 | 2 | `gif-02-verify-oz.gif` | Apertura PowerShell → `where oz` → output con percorso | 4–6 s |
 | 3 | `gif-03-oz-login.gif` | Terminale: `oz auth login` → apertura browser → callback riuscito | 8–12 s |
-| 4 | `gif-04-install-vsix.gif` | Terminale VS Code: `code --install-extension warp-vsc-bridge-0.1.0.vsix` → conferma | 5–8 s |
+| 4 | `gif-04-install-vsix.gif` | Terminale VS Code: `code --install-extension ozbridge.vsix` → conferma | 5–8 s |
 | 5 | `gif-05-reload-window.gif` | Ctrl+Shift+P → digitare "Reload" → click su Reload Window | 4–6 s |
 | 6 | `gif-06-first-config.gif` | Aprire chat Copilot → digitare `@oz /config` → vedere risposta ✅ | 6–10 s |
 | 7 | `gif-07-run-local.gif` | Chat: `@oz /run <prompt>` → risposta dell'agente con output | 8–15 s |
@@ -22,9 +22,11 @@ Questa nota spiega come registrarle e inserirle.
 ## Strumenti consigliati
 
 ### Windows — ScreenToGif (gratuito, open source)
-```
+
+```bash
 winget install NickeManarin.ScreenToGif
 ```
+
 1. Apri ScreenToGif → **Recorder**
 2. Ridimensiona il riquadro sull'area da catturare (consigliato: **800×450 px**)
 3. Premi **F7** per registrare, **F8** per fermare
@@ -32,22 +34,25 @@ winget install NickeManarin.ScreenToGif
 5. Salva come GIF con qualità alta (> 15 fps)
 
 ### macOS — Kap (gratuito)
-```
+
+```bash
 brew install --cask kap
 ```
 
 ### Linux — Peek (gratuito)
-```
+
+```bash
 sudo apt install peek
 ```
 
 ### Alternativa cross-platform — LICEcap
+
 Scarica da [cockos.com/licecap](https://www.cockos.com/licecap/)
 
 ## Specifiche consigliate
 
 | Proprietà | Valore |
-|-----------|--------|
+| --- | --- |
 | Risoluzione | 800 × 450 px (16:9) |
 | Frame rate | 15 fps |
 | Colori | 256 (standard GIF) |
@@ -76,3 +81,8 @@ con il nome del file. Per attivare la GIF, aggiungi un tag `<img>` dentro il
 ```
 
 L'immagine coprirà automaticamente il segnaposto grazie al CSS già presente.
+
+## Stato attuale del repository
+
+Attualmente nel repository sono presenti esattamente le 9 GIF elencate sopra (`gif-01` … `gif-09`).
+Se in futuro vuoi aggiungere una GIF #10 (ad esempio un recap della sidebar o del flusso MCP), aggiorna prima sia questa nota sia `GUIDA-RAPIDA.html` per mantenere la numerazione coerente.

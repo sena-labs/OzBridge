@@ -1,6 +1,5 @@
 {
-  "OzBridge: Oz CLI not found. Install Warp to use @oz in chat.": "OzBridge：未找到 Oz CLI。安装 Warp 以在聊天中使用 @oz。",
-  "Install Warp": "安装 Warp",
+  "OzBridge: openConversation accepts only warp:// URIs.": "OzBridge：openConversation 只接受 warp:// URI。",
   "Failure triage requires VS Code 1.96+ with a Copilot chat model installed.": "故障分类需要 VS Code 1.96+ 并安装 Copilot 聊天模型。",
   "Run id to triage": "要分析的运行 ID",
   "OzBridge: triaging {0}…": "OzBridge：正在分析 {0}…",
@@ -50,5 +49,23 @@
   "OzBridge: no active editor to save.": "OzBridge：没有活动的编辑器可保存。",
   "OzBridge: no {0} directory available.": "OzBridge：没有可用的 {0} 目录。",
   "Saved {0} skill to {1}": "已将技能 {0} 保存到 {1}",
-  "Save failed: {0}": "保存失败：{0}"
+  "Save failed: {0}": "保存失败：{0}",
+  "🌐 Open in browser": "🌐 在浏览器中打开",
+  "📥 Install Warp": "📥 安装 Warp",
+  "🔑 Login Warp": "🔑 登录 Warp",
+  "💳 Manage Warp billing": "💳 管理 Warp 计费",
+  "OzBridge · /init templates": "OzBridge · /init 模板",
+  "Pick the skill / rule files to scaffold": "选择要生成的 skill / rule 文件",
+  "OzBridge: {0} active": "OzBridge：{0} 个活动",
+  "OzBridge: 1 active run": "OzBridge：1 个活动运行",
+  "OzBridge: {0} active runs": "OzBridge：{0} 个活动运行",
+  "OzBridge: unavailable": "OzBridge：不可用",
+  "OzBridge: unable to list runs. Check Oz CLI availability and authentication.": "OzBridge：无法列出运行。请检查 Oz CLI 的可用性和身份验证。",
+  "OzBridge: unavailable. Check Oz CLI availability and authentication.": "OzBridge：不可用。请检查 Oz CLI 的可用性和身份验证。",
+  "active & recent runs": "活动及最近运行",
+  "No runs reported by Oz CLI.": "Oz CLI 未报告任何运行。",
+  "Status": "状态",
+  "Run ID": "运行 ID",
+  "…and {0} more — click to open the sidebar.": "…还有 {0} 个 — 点击以打开侧边栏。",
+  "Click to focus the OzBridge sidebar.": "点击以打开 OzBridge 侧边栏。"
 }

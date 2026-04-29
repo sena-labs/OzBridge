@@ -172,14 +172,36 @@ function extractRows(payload: unknown, category: DriveCategory): unknown[] {
 }
 
 function isNotAvailableError(err: unknown): boolean {
-  if (err instanceof OzCliError) {
-    // Treat the canonical `NOT_FOUND` (binary missing) *and* CLI_ERROR kinds
-    // that carry an "unknown command" stderr as "drive subcommand absent".
-    if (err.kind === OzCliErrorKind.NOT_FOUND) { return true; }
-    if (err.kind === OzCliErrorKind.CLI_ERROR) {
-      const stderr = (err.stderr ?? '').toLowerCase();
-      return stderr.includes('unknown command') || stderr.includes('no such subcommand');
-    }
+  if (!(err instanceof OzCliError)) { return false; }
+  // The canonical `NOT_FOUND` (binary missing) is always a drive-not-available
+  // signal — if the binary doesn't even exist there is no `drive` subcommand.
+  if (err.kind === OzCliErrorKind.NOT_FOUND) { return true; }
+  // STALLED on a drive call means the CLI accepted the command but produced
+  // nothing within the idle window. Treat it as drive-unavailable too so the
+  // sidebar transparently falls back to the filesystem source instead of
+  // surfacing an opaque "no output for 90s" tile to the user.
+  if (err.kind === OzCliErrorKind.STALLED) { return true; }
+  if (err.kind === OzCliErrorKind.CLI_ERROR) {
+    const stderr = ((err.stderr ?? '') + ' ' + (err.message ?? '')).toLowerCase();
+    // Match the union of Cobra (Go), clap (Rust), and Click (Python) error
+    // shapes the Oz CLI may emit when `drive` is not a registered subcommand:
+    //   * "unknown command 'drive'"            (Cobra/Go)
+    //   * "no such subcommand: drive"          (Cargo-style)
+    //   * "error: invalid value 'drive' for ..."  (clap, no `drive` known)
+    //   * "error: unrecognized argument 'drive'"  (Click/Python argparse)
+    //   * "unexpected argument 'drive'"        (clap v4)
+    //   * "unrecognized subcommand 'drive'"    (older clap)
+    return (
+      stderr.includes('unknown command') ||
+      stderr.includes('no such subcommand') ||
+      stderr.includes('unrecognized subcommand') ||
+      stderr.includes("invalid value 'drive'") ||
+      stderr.includes('invalid value "drive"') ||
+      stderr.includes("unrecognized argument 'drive'") ||
+      stderr.includes('unrecognized argument "drive"') ||
+      stderr.includes("unexpected argument 'drive'") ||
+      stderr.includes('unexpected argument "drive"')
+    );
   }
   return false;
 }

@@ -9,20 +9,32 @@ import { OutputFormatter } from '../parsers/outputFormatter.js';
 
 type HistoryFilter = 'all' | 'succeeded' | 'failed';
 
-function parseHistoryArgs(prompt: string): { filter: HistoryFilter; runId: string | null } {
+function parseHistoryArgs(
+  prompt: string,
+): { filter: HistoryFilter; runId: string | null; conflictingFilters: string[] } {
   const tokens = prompt.trim().split(/\s+/).filter(Boolean);
   let filter: HistoryFilter = 'all';
+  let filterSet = false;
   let runId: string | null = null;
+  const seenFilters: string[] = [];
 
   for (const token of tokens) {
     const lower = token.toLowerCase();
     if (lower === 'succeeded' || lower === 'failed' || lower === 'all') {
-      filter = lower;
+      // First filter token wins; subsequent ones are tracked so the
+      // command can warn the user instead of silently overriding.
+      if (!filterSet) {
+        filter = lower;
+        filterSet = true;
+      }
+      seenFilters.push(lower);
     } else if (!runId) {
       runId = token;
     }
   }
-  return { filter, runId };
+
+  const conflictingFilters = seenFilters.length > 1 ? seenFilters : [];
+  return { filter, runId, conflictingFilters };
 }
 
 function matchesFilter(status: OzRunStatus, filter: HistoryFilter): boolean {
@@ -54,7 +66,13 @@ export function createHistoryCommand(
   return async (prompt, stream, _token) => {
 
     try {
-      const { filter, runId } = parseHistoryArgs(prompt);
+      const { filter, runId, conflictingFilters } = parseHistoryArgs(prompt);
+
+      if (conflictingFilters.length > 0) {
+        stream.markdown(
+          `_⚠️ Multiple filter tokens (${conflictingFilters.join(', ')}); using \`${filter}\`._\n`,
+        );
+      }
 
       if (runId) {
         // Run ID provided → show detail

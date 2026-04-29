@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   ProgressiveRunSteerer,
   hasContinueFlag,
+  hasConversationFlag,
 } from '../../src/services/runSteerer.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import { createMockCli, makeRunResult } from '../helpers.js';
@@ -38,6 +39,28 @@ describe('hasContinueFlag', () => {
 
   it('does not match arbitrary text', () => {
     expect(hasContinueFlag('Usage: oz agent run --prompt PROMPT')).toBe(false);
+  });
+});
+
+describe('hasConversationFlag (upstream canonical name)', () => {
+  it('detects --conversation surrounded by whitespace', () => {
+    expect(hasConversationFlag('Usage: oz agent run [--conversation ID] --prompt P')).toBe(true);
+  });
+
+  it('detects --conversation followed by =', () => {
+    expect(hasConversationFlag('  --conversation=ID   resume an in-flight conversation')).toBe(true);
+  });
+
+  it('still detects legacy --continue spelling', () => {
+    expect(hasConversationFlag('  --continue ID   (legacy)')).toBe(true);
+  });
+
+  it('returns false on unrelated text', () => {
+    expect(hasConversationFlag('Usage: oz agent run --prompt PROMPT')).toBe(false);
+  });
+
+  it('hasContinueFlag is exported as deprecated alias of hasConversationFlag', () => {
+    expect(hasContinueFlag).toBe(hasConversationFlag);
   });
 });
 

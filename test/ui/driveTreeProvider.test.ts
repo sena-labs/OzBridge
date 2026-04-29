@@ -109,6 +109,35 @@ describe('OzDriveTreeProvider', () => {
     expect(provider.getTreeItem(entryNode).contextValue).toBe('warpDriveSkill');
   });
 
+  it('shows category source mode after loading children', async () => {
+    source = makeSource({
+      listPrompts: vi.fn(async () => [
+        { id: 'p1', category: 'prompt', name: 'Deploy', source: 'cli' } as DrivePrompt,
+      ]),
+      listRules: vi.fn(async () => [
+        { id: 'r1', category: 'rule', name: 'rule-a', source: 'filesystem' } as DriveRule,
+      ]),
+      listSkills: vi.fn(async () => [
+        { id: 's1', category: 'skill', name: 'skill-a', source: 'cli' } as DriveSkill,
+        { id: 's2', category: 'skill', name: 'skill-b', source: 'filesystem' } as DriveSkill,
+      ]),
+    });
+    provider = new OzDriveTreeProvider(source);
+
+    const roots = await provider.getChildren();
+    const promptCat = findCategory(roots, 'prompt');
+    const ruleCat = findCategory(roots, 'rule');
+    const skillCat = findCategory(roots, 'skill');
+
+    await provider.getChildren(promptCat);
+    await provider.getChildren(ruleCat);
+    await provider.getChildren(skillCat);
+
+    expect(provider.getTreeItem(promptCat).description).toBe('cli');
+    expect(provider.getTreeItem(ruleCat).description).toBe('filesystem');
+    expect(provider.getTreeItem(skillCat).description).toBe('mixed');
+  });
+
   it('refresh() fires onDidChangeTreeData', () => {
     const fired = vi.fn();
     provider.onDidChangeTreeData(fired);

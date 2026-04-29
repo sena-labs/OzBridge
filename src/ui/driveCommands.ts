@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
-import { IWarpDriveSource } from '../drive/warpDriveSource.js';
-import { WarpDriveTreeProvider, DriveTreeNode } from './driveTreeProvider.js';
+import { IDriveSource } from '../drive/warpDriveSource.js';
+import { OzDriveTreeProvider, DriveTreeNode } from './driveTreeProvider.js';
+
+// Rebrand aliases for in-file usage; original names retained for legacy refs.
+type IWarpDriveSource = IDriveSource;
+const WarpDriveTreeProvider = OzDriveTreeProvider;
+type WarpDriveTreeProvider = OzDriveTreeProvider;
 
 /** Command IDs contributed by the Warp Drive sidebar surface. */
 export const DRIVE_COMMANDS = {

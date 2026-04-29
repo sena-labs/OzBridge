@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 import * as path from 'path';
 import { OzBridgeConfig } from '../types/index.js';
 import { logInfo, logWarn } from './logger.js';
@@ -58,7 +59,7 @@ function coerce(key: keyof OzBridgeConfig, value: YamlScalar): unknown | undefin
       if (typeof value === 'boolean') { return value; }
       break;
   }
-  logWarn(`workspace config: ignoring \`${key}\`: got ${typeof value}, expected ${expectedKind(key)}`);
+  logWarn(`workspace config: ignoring \`${String(key)}\`: got ${typeof value}, expected ${expectedKind(key)}`);
   return undefined;
 }
 
@@ -88,34 +89,34 @@ function expectedKind(key: keyof OzBridgeConfig): string {
  */
 export class WorkspaceConfigResolver implements vscode.Disposable {
   private overrides: Partial<OzBridgeConfig> = {};
-  private readonly watcher: vscode.FileSystemWatcher | undefined;
   private readonly emitter = new vscode.EventEmitter<Partial<OzBridgeConfig>>();
-  private readonly disposables: vscode.Disposable[] = [];
+  private readonly watcherDisposables: vscode.Disposable[] = [];
   private disposed = false;
+  private workspaceRoot: string | undefined;
 
   /** Fires with the new override snapshot whenever the YAML file changes. */
   readonly onDidChange: vscode.Event<Partial<OzBridgeConfig>> = this.emitter.event;
 
-  constructor(private readonly workspaceRoot: string | undefined) {
-    if (!workspaceRoot) { return; }
+  constructor(workspaceRoot: string | undefined) {
+    this.workspaceRoot = workspaceRoot;
     // Initial read (synchronous so ConfigManager's first `getConfig()`
     // already reflects overrides).
     this.reload();
+    this.bindWatcher();
+  }
 
-    if (typeof vscode.workspace.createFileSystemWatcher === 'function') {
-      this.watcher = vscode.workspace.createFileSystemWatcher(
-        new vscode.RelativePattern(workspaceRoot, WORKSPACE_CONFIG_PATH),
-        false,
-        false,
-        false,
-      );
-      this.disposables.push(
-        this.watcher.onDidCreate(() => this.reloadAndEmit()),
-        this.watcher.onDidChange(() => this.reloadAndEmit()),
-        this.watcher.onDidDelete(() => this.reloadAndEmit()),
-        this.watcher,
-      );
-    }
+  /**
+   * Rebinds resolver and watcher to a new workspace root (or `undefined`).
+   * Useful when the extension activates in single-file mode and a folder is
+   * opened later, or when workspace folders change at runtime.
+   */
+  setWorkspaceRoot(workspaceRoot: string | undefined): void {
+    if (this.disposed) { return; }
+    if (this.workspaceRoot === workspaceRoot) { return; }
+    this.workspaceRoot = workspaceRoot;
+    this.disposeWatcher();
+    this.reloadAndEmit();
+    this.bindWatcher();
   }
 
   /** Snapshot of the last-read overrides. Empty when no file is present. */
@@ -132,9 +133,7 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
   dispose(): void {
     if (this.disposed) { return; }
     this.disposed = true;
-    for (const d of this.disposables) {
-      try { d.dispose(); } catch { /* ignore */ }
-    }
+    this.disposeWatcher();
     this.emitter.dispose();
   }
 
@@ -148,17 +147,71 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
     this.emitter.fire(this.getOverrides());
   }
 
-  private reload(): void {
-    this.overrides = {};
+  /**
+   * Async variant of {@link reloadAndEmit} used by file-watcher callbacks
+   * to avoid sync I/O on the extension-host event loop. The constructor
+   * and the public sync `refresh()`/`setWorkspaceRoot()` keep using
+   * {@link reload} so first-call semantics (ConfigManager's initial
+   * `getConfig()` already reflecting overrides) are preserved.
+   */
+  private async reloadAndEmitAsync(): Promise<void> {
+    if (this.disposed) { return; }
+    await this.reloadAsync();
+    if (this.disposed) { return; }
+    this.emitter.fire(this.getOverrides());
+  }
+
+  private bindWatcher(): void {
     if (!this.workspaceRoot) { return; }
+    if (typeof vscode.workspace.createFileSystemWatcher !== 'function') { return; }
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(this.workspaceRoot, WORKSPACE_CONFIG_PATH),
+      false,
+      false,
+      false,
+    );
+    this.watcherDisposables.push(
+      watcher.onDidCreate(() => { void this.reloadAndEmitAsync(); }),
+      watcher.onDidChange(() => { void this.reloadAndEmitAsync(); }),
+      watcher.onDidDelete(() => { void this.reloadAndEmitAsync(); }),
+      watcher,
+    );
+  }
+
+  private disposeWatcher(): void {
+    for (const d of this.watcherDisposables.splice(0)) {
+      try { d.dispose(); } catch { /* ignore */ }
+    }
+  }
+
+  private reload(): void {
+    if (!this.workspaceRoot) { this.overrides = {}; return; }
     const filePath = path.join(this.workspaceRoot, WORKSPACE_CONFIG_PATH);
     let source: string;
     try {
       source = fs.readFileSync(filePath, 'utf8');
     } catch {
       // File missing or unreadable — silently fall back to empty overrides.
+      this.overrides = {};
       return;
     }
+    this.applyParsedSource(source);
+  }
+
+  private async reloadAsync(): Promise<void> {
+    if (!this.workspaceRoot) { this.overrides = {}; return; }
+    const filePath = path.join(this.workspaceRoot, WORKSPACE_CONFIG_PATH);
+    let source: string;
+    try {
+      source = await fsp.readFile(filePath, 'utf8');
+    } catch {
+      this.overrides = {};
+      return;
+    }
+    this.applyParsedSource(source);
+  }
+
+  private applyParsedSource(source: string): void {
     const result = parseFlatYaml(source);
     for (const err of result.errors) {
       logWarn(`workspace config parse error (line ${err.line}): ${err.message}`);

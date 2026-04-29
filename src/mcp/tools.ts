@@ -122,8 +122,8 @@ const DESCRIPTORS: Record<string, McpToolDescriptor> = {
       properties: {
         status: {
           type: 'string',
-          enum: ['all', 'active', 'completed', 'QUEUED', 'INPROGRESS', 'SUCCEEDED', 'FAILED', 'UNKNOWN'],
-          description: 'Filter. `active` = QUEUED|INPROGRESS, `completed` = SUCCEEDED|FAILED.',
+          enum: ['all', 'active', 'completed', 'QUEUED', 'INPROGRESS', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'PAUSED', 'SKIPPED', 'UNKNOWN'],
+          description: 'Filter. `active` = QUEUED|INPROGRESS, `completed` = SUCCEEDED|FAILED|CANCELLED|SKIPPED.',
         },
         limit: { type: 'number', description: 'Maximum number of rows returned.' },
       },
@@ -143,10 +143,11 @@ export function buildToolRegistry(deps: McpToolDeps): Map<string, McpToolEntry> 
     invoke: async (input) => {
       try {
         const prompt = requireString(input, 'prompt');
+        const defaults = defaultsFor(deps);
         const result = await deps.cli.agentRun({
           prompt,
-          model: optionalString(input, 'model') ?? defaultModel(deps),
-          profile: optionalString(input, 'profile') ?? defaultProfile(deps),
+          model: optionalString(input, 'model') ?? defaults.model,
+          profile: optionalString(input, 'profile') ?? defaults.profile,
           skill: optionalString(input, 'skill'),
         });
         return okText(formatRunPayload(result));
@@ -161,10 +162,11 @@ export function buildToolRegistry(deps: McpToolDeps): Map<string, McpToolEntry> 
     invoke: async (input) => {
       try {
         const prompt = requireString(input, 'prompt');
-        const env = optionalString(input, 'environment') || defaultEnvironment(deps) || undefined;
+        const defaults = defaultsFor(deps);
+        const env = optionalString(input, 'environment') || defaults.environment || undefined;
         const result = await deps.cli.agentRunCloud({
           prompt,
-          model: optionalString(input, 'model') ?? defaultModel(deps),
+          model: optionalString(input, 'model') ?? defaults.model,
           environment: env,
           noEnvironment: !env,
           skill: optionalString(input, 'skill'),
@@ -231,19 +233,13 @@ function optionalString(input: Record<string, unknown>, key: string): string | u
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }
 
-function defaultModel(deps: McpToolDeps): string | undefined {
-  const m = deps.cfgMgr.getConfig().defaultModel;
-  return m && m !== 'auto' ? m : undefined;
-}
-
-function defaultProfile(deps: McpToolDeps): string | undefined {
-  const p = deps.cfgMgr.getConfig().defaultProfile;
-  return p && p !== 'Default' ? p : undefined;
-}
-
-function defaultEnvironment(deps: McpToolDeps): string | undefined {
-  const e = deps.cfgMgr.getConfig().defaultEnvironment;
-  return e || undefined;
+function defaultsFor(deps: McpToolDeps): { model?: string; profile?: string; environment?: string } {
+  const cfg = deps.cfgMgr.getConfig();
+  return {
+    model: cfg.defaultModel && cfg.defaultModel !== 'auto' ? cfg.defaultModel : undefined,
+    profile: cfg.defaultProfile && cfg.defaultProfile !== 'Default' ? cfg.defaultProfile : undefined,
+    environment: cfg.defaultEnvironment || undefined,
+  };
 }
 
 function okText(text: string): McpToolResult {

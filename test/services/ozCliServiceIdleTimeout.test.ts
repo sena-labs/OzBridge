@@ -64,7 +64,7 @@ describe('OzCliService — idle timeout (STALLED)', () => {
     expect(err.message).toMatch(/no output for 1s/i);
   });
 
-  it('reclassifies as INSUFFICIENT_CREDITS when stalled stderr matches credit keywords', async () => {
+  it('reclassifies as INSUFFICIENT_CREDITS when stalled stderr carries the documented Warp message', async () => {
     const cli = new OzCliService(createMockConfigManager({
       idleTimeoutMs: 1_000,
       timeoutMs: 60_000,
@@ -73,14 +73,59 @@ describe('OzCliService — idle timeout (STALLED)', () => {
 
     const promise = cli.agentRun({ prompt: 'hello' }).catch((e) => e);
 
-    // Emit a credits stderr signal then go silent.
-    proc.stderr.emit('data', Buffer.from('warning: account is out of credits\n'));
+    // Emit the documented Warp credits stderr signal then go silent.
+    proc.stderr.emit(
+      'data',
+      Buffer.from('warning: account is out of credits\n'),
+    );
 
     await vi.advanceTimersByTimeAsync(1_500);
     proc.emit('close', null);
 
     const err = (await promise) as OzCliError;
     expect(err.kind).toBe(OzCliErrorKind.INSUFFICIENT_CREDITS);
+  });
+
+  it('keeps STALLED when stalled stderr only carries an ambiguous "rate limit" message', async () => {
+    // Regression: a transient network rate-limit hit must NOT be
+    // surfaced to the user as "Out of Warp credits" — the issue is
+    // documented at
+    // https://docs.warp.dev/reference/api-and-sdk/troubleshooting/errors/insufficient-credits
+    // and is HTTP 403 with explicit "add-on credits" wording, not 429.
+    const cli = new OzCliService(createMockConfigManager({
+      idleTimeoutMs: 1_000,
+      timeoutMs: 60_000,
+    }));
+    const proc = createSilentProcess();
+
+    const promise = cli.agentRun({ prompt: 'hello' }).catch((e) => e);
+
+    proc.stderr.emit('data', Buffer.from('rate limit exceeded\n'));
+
+    await vi.advanceTimersByTimeAsync(1_500);
+    proc.emit('close', null);
+
+    const err = (await promise) as OzCliError;
+    expect(err.kind).toBe(OzCliErrorKind.STALLED);
+  });
+
+  it('keeps STALLED when stalled stderr is empty (true timeout, credit available)', async () => {
+    // Regression for the false-positive that prompted this change:
+    // a silent CLI hang must surface as STALLED so the user sees an
+    // accurate diagnostic instead of being pushed to billing.
+    const cli = new OzCliService(createMockConfigManager({
+      idleTimeoutMs: 1_000,
+      timeoutMs: 60_000,
+    }));
+    const proc = createSilentProcess();
+
+    const promise = cli.agentRun({ prompt: 'hello' }).catch((e) => e);
+
+    await vi.advanceTimersByTimeAsync(1_500);
+    proc.emit('close', null);
+
+    const err = (await promise) as OzCliError;
+    expect(err.kind).toBe(OzCliErrorKind.STALLED);
   });
 
   it('does NOT fire when streaming output keeps resetting the idle timer', async () => {

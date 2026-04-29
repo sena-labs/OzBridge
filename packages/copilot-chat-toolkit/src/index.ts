@@ -34,7 +34,7 @@ export {
 } from './types.js';
 
 // ── Parsers ──────────────────────────────────────────────────────────
-export { parse, parseOrThrow, ParseResult } from './parsers/jsonParser.js';
+export { parse, parseOrThrow, parseOrValidate, ParseResult } from './parsers/jsonParser.js';
 export { OutputFormatter, FormatterOptions } from './parsers/outputFormatter.js';
 
 // ── Services ────────────────────────────────────────────────────────────────
