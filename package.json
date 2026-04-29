@@ -659,7 +659,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "package": "npx @vscode/vsce package --no-dependencies -o ozbridge.vsix"
+    "package": "vsce package --no-dependencies -o ozbridge.vsix"
   },
   "dependencies": {
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
@@ -668,6 +668,7 @@
     "@types/node": "^25.6.0",
     "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.5",
+    "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.28.0",
     "typescript": "^6.0.3",
     "vitest": "^4.0.18"

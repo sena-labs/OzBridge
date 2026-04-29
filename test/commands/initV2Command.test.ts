@@ -275,7 +275,7 @@ describe('SKILL_TEMPLATES registry', () => {
 
   it('produces deterministic bodies with expected frontmatter', () => {
     const skill = SKILL_TEMPLATES.find((t) => t.id.startsWith('skill:'));
-    expect(skill).toBeDefined();
+    expect(skill).toEqual(expect.objectContaining({ id: expect.stringMatching(/^skill:/), body: expect.any(Function) }));
     const body = skill!.body();
     expect(body).toMatch(/^---\nname: /);
     expect(body).toContain('## Instructions');

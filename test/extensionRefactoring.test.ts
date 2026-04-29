@@ -60,7 +60,11 @@ beforeEach(() => {
 });
 
 function flushMicrotasks(): Promise<void> {
-  return new Promise((resolve) => { setTimeout(resolve, 50); });
+  // Drain pending microtasks/macrotasks deterministically (C-M3): a real
+  // 50 ms timeout was flaky on slow CI runners. `setImmediate` runs after
+  // the current poll phase, which is sufficient for the activate() path's
+  // `void`-prefixed promises and registered callbacks under test here.
+  return new Promise((resolve) => { setImmediate(resolve); });
 }
 
 function createMockExtensionContext() {

@@ -29,7 +29,7 @@ describe('activationEvents extended audit', () => {
 
   it('must include dashboard command activation event aligned with contributed command id', () => {
     const dashboard = (pkg.contributes?.commands ?? []).find((c) => c.command === 'ozBridge.dashboard.open');
-    expect(dashboard).toBeDefined();
+    expect(dashboard).toMatchObject({ command: 'ozBridge.dashboard.open' });
 
     const expected = `onCommand:${dashboard!.command}`;
     expect(pkg.activationEvents ?? []).toContain(expected);

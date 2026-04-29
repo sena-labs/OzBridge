@@ -66,7 +66,8 @@ beforeEach(() => {
 
 /** Flushes fire-and-forget promises. */
 function flushMicrotasks(): Promise<void> {
-  return new Promise((resolve) => { setTimeout(resolve, 50); });
+  // C-M3: deterministic drain via setImmediate (was setTimeout(50) — flaky).
+  return new Promise((resolve) => { setImmediate(resolve); });
 }
 
 function createMockExtensionContext() {

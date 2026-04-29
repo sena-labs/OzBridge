@@ -80,7 +80,6 @@ export function registerSkillEditorCommands(deps: SkillEditorDeps = {}): vscode.
       const file = path.join(dir, 'SKILL.md');
 
       try {
-        await ensureDirectoryExists(dir);
         if (await pathExists(file)) {
           const overwrite = await vscode.window.showWarningMessage(
             vscode.l10n.t('{0} already exists. Overwrite?', file),
@@ -155,7 +154,6 @@ async function saveCurrentAs(
   const dir = path.join(base, '.agents', 'skills', name.trim());
   const file = path.join(dir, 'SKILL.md');
   try {
-    await ensureDirectoryExists(dir);
     if (await pathExists(file)) {
       const overwrite = await vscode.window.showWarningMessage(
         vscode.l10n.t('{0} already exists. Overwrite?', file),
@@ -168,14 +166,6 @@ async function saveCurrentAs(
     await vscode.window.showInformationMessage(vscode.l10n.t('Saved {0} skill to {1}', target.toLowerCase(), file));
   } catch (err) {
     await vscode.window.showErrorMessage(vscode.l10n.t('Save failed: {0}', errMsg(err)));
-  }
-}
-
-async function ensureDirectoryExists(dir: string): Promise<void> {
-  try {
-    await fsp.mkdir(dir, { recursive: true });
-  } catch (err) {
-    throw new Error(`cannot create ${dir}: ${errMsg(err)}`);
   }
 }
 
@@ -195,6 +185,9 @@ async function pathExists(p: string): Promise<boolean> {
  * event loop responsive on slower filesystems.
  */
 export async function atomicWrite(file: string, content: string): Promise<void> {
+  // B-L6: ensure parent directory exists inside the helper so callers do not
+  // need a separate mkdir step (was previously done via `ensureDirectoryExists`).
+  await fsp.mkdir(path.dirname(file), { recursive: true });
   const tmp = `${file}.${Date.now()}.tmp`;
   await fsp.writeFile(tmp, content, 'utf8');
   await fsp.rename(tmp, file);

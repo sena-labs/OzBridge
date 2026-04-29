@@ -129,7 +129,7 @@ L'unica sezione clean è la C (Tests/Build/Deps/L10n) — 0 HIGH, suite robusta,
 | B-L3 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L805-L840) | `tryParseNdjson` re-parsing di stdout già consumato in streaming | pending |
 | B-L4 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L981-L988) | `validateCliArg` permissivo per `model/profile/skill/environment` | ⚠ FALSE-POSITIVE: regex già blocca shell metachars (`;|&$\`<>`); slash/dot/colon necessari per id reali tipo `openai/gpt-4`/`claude-3.5` |
 | B-L5 | [src/commands/cloudCommand.ts](src/commands/cloudCommand.ts#L72-L74) | `env.name`/`env.id` in code-span senza escape backtick | ✅ FIXED |
-| B-L6 | Vari registrars/scaffold | `mkdirSync(recursive)` ridondante per write atomic | pending |
+| B-L6 | [src/ui/skillEditor.ts](src/ui/skillEditor.ts#L197) | `mkdirSync(recursive)` ridondante per write atomic | ✅ FIXED (mkdir spostato dentro `atomicWrite`, drop `ensureDirectoryExists`) |
 | B-L7 | [src/extension.ts](src/extension.ts#L57-L66) | `isWarpUri` non valida `authority`/`path`, accetta `warp://attacker.com/...` | ✅ FIXED (allowlist `block`/`action`) |
 
 ---
@@ -147,11 +147,11 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 - **Moduli**: [src/utils/error.ts](src/utils/error.ts), [src/services/languageModelClient.ts](src/services/languageModelClient.ts) (factory non testata), [src/tools/baseTool.ts](src/tools/baseTool.ts) (solo indirettamente), tutto [packages/copilot-chat-toolkit/src/](packages/copilot-chat-toolkit/) **escluso da coverage** via `vitest.config.ts:23`.
 - **Fix**: aggiungere `test/utils/error.test.ts`, `test/services/languageModelClient.test.ts`, `test/tools/baseTool.test.ts`. Includere il package toolkit in coverage o spostarlo in suite separata.
 
-#### C-M2 — Asserzioni deboli (`toBeDefined()` su oggetti non triviali)
+#### C-M2 — Asserzioni deboli (`toBeDefined()` su oggetti non triviali) — ✅ FIXED
 - **File**: [test/commands/router.test.ts](test/commands/router.test.ts#L41), [test/commands/routerEdge.test.ts](test/commands/routerEdge.test.ts#L59), [test/commands/initV2Command.test.ts](test/commands/initV2Command.test.ts#L278), [test/edgeCasesErrorHandling2.test.ts](test/edgeCasesErrorHandling2.test.ts#L667), [test/audit/activationEventsExtended.test.ts](test/audit/activationEventsExtended.test.ts#L32).
 - **Fix**: `toMatchObject({...})`, `toEqual(...)`, `toHaveProperty(...)`.
 
-#### C-M3 — `flushMicrotasks` con `setTimeout(50)` reale (potenziale flake)
+#### C-M3 — `flushMicrotasks` con `setTimeout(50)` reale (potenziale flake) — ✅ FIXED (`extensionEdge`, `extensionRefactoring`); `dashboardPanel` usa `setTimeout(r,0)` equivalente
 - **File**: [test/extensionEdge.test.ts](test/extensionEdge.test.ts#L69), [test/extensionRefactoring.test.ts](test/extensionRefactoring.test.ts#L63), [test/ui/dashboardPanel.test.ts](test/ui/dashboardPanel.test.ts#L155).
 - **Fix**: `await new Promise<void>((r) => setImmediate(r))` o `vi.waitFor(...)`.
 
@@ -170,8 +170,8 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 | ID | File | Issue | Stato |
 |---|---|---|---|
 | C-L1 | [package.json](package.json#L386) | `@types/node@^25` vs esbuild `target: node20` — drift type API | pending |
-| C-L2 | [package.json](package.json#L380) | `@vscode/vsce` invocato via `npx`, non pinnato in devDeps | pending |
-| C-L3 | [tsconfig.json](tsconfig.json#L17-L18) | `declaration`/`declarationMap` set ma `compile` è `--noEmit` (config morta) | pending |
+| C-L2 | [package.json](package.json#L662) | `@vscode/vsce` invocato via `npx`, non pinnato in devDeps | ✅ FIXED (`@vscode/vsce@^3.9.1` in devDeps; script: `vsce package ...`) |
+| C-L3 | [tsconfig.json](tsconfig.json#L17-L18) | `declaration`/`declarationMap` set ma `compile` è `--noEmit` (config morta) | ✅ FIXED (flags rimossi) |
 | C-L4 | [test/services/runStats.test.ts](test/services/runStats.test.ts#L71) | Date locali senza TZ pin (potenziale flake su CI agent diversi) | pending |
 | C-L5 | [l10n/](l10n/) | Voci intenzionalmente identiche (brand names) — solo cosmetica | pending |
 | C-L6 | [.vscodeignore](.vscodeignore#L31) | `*.ts` blanket exclude — ordine fragile | pending |

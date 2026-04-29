@@ -664,7 +664,8 @@ describe('OzCliService — checkAvailability', () => {
     createMockProcess({ stdout: 'oz help output' });
     const result = await cli.checkAvailability();
     expect(result.available).toBe(true);
-    expect(result.path).toBeDefined();
+    expect(typeof result.path).toBe('string');
+    expect((result.path ?? '').length).toBeGreaterThan(0);
   });
 
   it('should return available:false when exec fails', async () => {
