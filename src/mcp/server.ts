@@ -409,6 +409,17 @@ function sendJson(res: http.ServerResponse, status: number, payload: unknown): v
 }
 
 async function readBody(req: http.IncomingMessage, maxBytes = 1_048_576): Promise<string> {
+  // Bridge-input audit (v1.2): reject oversized payloads up front using
+  // the declared Content-Length header before we start buffering. This
+  // prevents an attacker from forcing the bridge to allocate up to
+  // `maxBytes` of memory per request just to discover the body exceeds
+  // the limit (the post-buffer check below remains as a defence in depth
+  // for chunked / mis-declared lengths).
+  const declaredLen = Number(req.headers['content-length'] ?? 0);
+  if (Number.isFinite(declaredLen) && declaredLen > maxBytes) {
+    req.resume(); // drain so the socket can be closed cleanly
+    throw new Error('payload too large');
+  }
   return await new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let received = 0;

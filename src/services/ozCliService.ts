@@ -930,7 +930,19 @@ export class OzCliService implements IOzCliService {
       .map(e => (e.text as string).trim())
       .filter(Boolean);
 
-    const output = agentTexts.length > 0 ? agentTexts.join('\n\n') : stdout;
+    // Bridge-input audit (v1.2): also surface tool_result.output payloads
+    // so diagnostic information emitted by oz tool calls (errors, partial
+    // logs) is not silently discarded when the agent produces no final
+    // text. Captured both into `raw.toolOutputs` for downstream consumers
+    // and folded into `output` as a last-resort fallback.
+    const toolOutputs = events
+      .filter(e => e.type === 'tool_result' && typeof e.output === 'string')
+      .map(e => (e.output as string).trim())
+      .filter(Boolean);
+
+    const output = agentTexts.length > 0
+      ? agentTexts.join('\n\n')
+      : (toolOutputs.length > 0 ? toolOutputs.join('\n') : stdout);
 
     // Determine status: if there are agent messages, the run completed
     const hasError = events.some(e =>
@@ -941,7 +953,7 @@ export class OzCliService implements IOzCliService {
       runId: conversationId,
       status: hasError ? 'FAILED' : 'SUCCEEDED',
       output,
-      raw: { events },
+      raw: { events, toolOutputs },
     };
   }
 
@@ -1027,7 +1039,15 @@ export class OzCliService implements IOzCliService {
       return 'UNKNOWN';
     }
     const upper = value.toUpperCase();
-    return isValidOzRunStatus(upper) ? upper : 'UNKNOWN';
+    if (!isValidOzRunStatus(upper)) {
+      // Bridge-input audit (v1.2): when the upstream CLI introduces a new
+      // status value the bridge has not been taught about, surface it
+      // through the output channel so support can request a parser update
+      // instead of silently coercing to UNKNOWN.
+      logWarn(`parseStatus: unknown status value "${upper.slice(0, 64)}" coerced to UNKNOWN.`);
+      return 'UNKNOWN';
+    }
+    return upper;
   }
 
   /**
