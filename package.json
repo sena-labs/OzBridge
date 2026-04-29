@@ -611,13 +611,13 @@
         "ozBridge.telemetry.connectionString": {
           "type": "string",
           "default": "",
-          "markdownDescription": "Application Insights connection string (`InstrumentationKey=...;IngestionEndpoint=...`) for opt-in telemetry. Empty string keeps the transport disabled even when VS Code's `telemetry.telemetryLevel` is on. See [`PRIVACY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/PRIVACY.md) for what is and isn't collected.",
+          "markdownDescription": "Application Insights connection string (`InstrumentationKey=...;IngestionEndpoint=...`) for opt-in telemetry. Empty string keeps the transport disabled even when VS Code's `telemetry.telemetryLevel` is on. See [`PRIVACY.md`](https://github.com/sena-labs/OzBridge/blob/main/PRIVACY.md) for what is and isn't collected.",
           "scope": "machine-overridable"
         },
         "ozBridge.killSwitch.enabled": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "**Emergency kill-switch.** When `true`, the extension's `activate()` skips every wiring step (no commands, tools, MCP server, chat participant or trees are registered) and surfaces a single warning notification. Use only as an operator escape hatch for a critical regression or a supply-chain incident. See [`SECURITY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/SECURITY.md#kill-switch-v10-deliverable-t) for the policy.",
+          "markdownDescription": "**Emergency kill-switch.** When `true`, the extension's `activate()` skips every wiring step (no commands, tools, MCP server, chat participant or trees are registered) and surfaces a single warning notification. Use only as an operator escape hatch for a critical regression or a supply-chain incident. See [`SECURITY.md`](https://github.com/sena-labs/OzBridge/blob/main/SECURITY.md#kill-switch-v10-deliverable-t) for the policy.",
           "scope": "machine-overridable"
         },
         "ozBridge.killSwitch.reason": {

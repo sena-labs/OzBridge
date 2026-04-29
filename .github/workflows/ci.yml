@@ -111,7 +111,7 @@ jobs:
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v7
         with:
-          name: warp-vsc-bridge-vsix
+          name: ozbridge-vsix
           path: '*.vsix'
           retention-days: 30
 
@@ -125,7 +125,7 @@ jobs:
       - name: Download VSIX artifact
         uses: actions/download-artifact@v8
         with:
-          name: warp-vsc-bridge-vsix
+          name: ozbridge-vsix
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3

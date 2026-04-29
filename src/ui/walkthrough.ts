@@ -10,7 +10,7 @@ import * as vscode from 'vscode';
 export const WALKTHROUGH_STATE_KEY = 'ozBridge.walkthrough.shown';
 
 /** Fully qualified walkthrough id contributed in `package.json`. */
-export const WALKTHROUGH_ID = 'sena-labs.warp-vsc-bridge#ozBridge.gettingStarted';
+export const WALKTHROUGH_ID = 'sena-labs.ozbridge#ozBridge.gettingStarted';
 
 export interface GlobalStateLike {
   get<T>(key: string): T | undefined;

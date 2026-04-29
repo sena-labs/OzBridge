@@ -16,10 +16,10 @@ Chat sees inside VS Code.
    MCP server listening on http://127.0.0.1:3847/sse (4 tools)
    ```
 You can also start/stop the server on demand without touching settings:
-- `Warp: Start MCP server` (Command Palette)
-- `Warp: Stop MCP server`
-- `Warp: Show MCP server status`
-- `Warp: Copy MCP endpoint URL`
+- `OzBridge: Start MCP server` (Command Palette)
+- `OzBridge: Stop MCP server`
+- `OzBridge: Show MCP server status`
+- `OzBridge: Copy MCP endpoint URL`
 ## Endpoints
 | Route | Method | Purpose |
 | --- | --- | --- |
@@ -62,7 +62,7 @@ Add to `~/.claude.json`:
 ```json
 {
   "mcpServers": {
-    "warp-bridge": {
+    "oz-bridge": {
       "type": "sse",
       "url": "http://127.0.0.1:3847/sse",
       "headers": {
@@ -77,7 +77,7 @@ Add to `~/.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "warp-bridge": {
+    "oz-bridge": {
       "url": "http://127.0.0.1:3847/sse",
       "headers": {
         "Authorization": "Bearer my-secret"
@@ -90,7 +90,7 @@ Add to `~/.cursor/mcp.json`:
 Add to `~/.codex/config.toml`:
 ```toml
 [[mcp.servers]]
-name = "warp-bridge"
+name = "oz-bridge"
 url = "http://127.0.0.1:3847/sse"
 authorization = "Bearer my-secret"
 ```
@@ -127,7 +127,7 @@ data: {"jsonrpc":"2.0","id":2,"result":{"filter":"completed","count":5,"items":[
 - **Server fails to start with `EADDRINUSE`** — another process is
   bound to `ozBridge.mcpPort`. Pick a different port or set it to
   `0` to let the OS choose an ephemeral one (you can retrieve the
-  actual port via the `Warp: Show MCP server status` command).
+  actual port via the `OzBridge: Show MCP server status` command).
 - **Client connects but gets `401`** — the bearer token on the client
   doesn't match `ozBridge.mcpBearerToken`. Copy the token via the
   VS Code Settings UI, or clear it on both sides for local development.
@@ -145,7 +145,7 @@ data: {"jsonrpc":"2.0","id":2,"result":{"filter":"completed","count":5,"items":[
 - No prompt content or run output is persisted by the server; the
   bridge only forwards calls to the Oz CLI.
 - The server exits cleanly on extension `deactivate()` and idempotent
-  `Warp: Stop MCP server` calls, so there are no zombie listeners.
+  `OzBridge: Stop MCP server` calls, so there are no zombie listeners.
 ## Limitations in v0.6
 - `resources`, `prompts`, `sampling`, `logging` MCP capabilities are
   **not** implemented.

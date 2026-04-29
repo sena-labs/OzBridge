@@ -20,7 +20,7 @@ setups.
 choose to enable it (`ozBridge.telemetry.connectionString`), only a
 closed set of typed events is sent — never prompt content, run IDs,
 output, file paths or workspace paths. See
-[`PRIVACY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/PRIVACY.md)
+[`PRIVACY.md`](https://github.com/sena-labs/OzBridge/blob/main/PRIVACY.md)
 for the full contract.
 
 ---
@@ -31,5 +31,5 @@ an incident or while auditing), flip
 `ozBridge.killSwitch.enabled` to `true` in **Settings** and reload
 the window. The extension will activate in a no-op mode and surface
 the optional `ozBridge.killSwitch.reason` string in the status bar.
-See [`SECURITY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/SECURITY.md)
+See [`SECURITY.md`](https://github.com/sena-labs/OzBridge/blob/main/SECURITY.md)
 for the full kill-switch playbook.

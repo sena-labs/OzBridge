@@ -30,8 +30,8 @@ By participating, you agree to uphold this code.
 2. **Clone** your fork locally:
 
    ```bash
-   git clone https://github.com/<your-username>/warp-vsc-bridge.git
-   cd warp-vsc-bridge
+   git clone https://github.com/<your-username>/OzBridge.git
+   cd OzBridge
    ```
 
 3. **Install** dependencies:

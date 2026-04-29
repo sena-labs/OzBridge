@@ -1,6 +1,6 @@
 # OzBridge for VS Code
 
-[![Build](https://github.com/sena-labs/warp-vsc-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/warp-vsc-bridge/actions/workflows/ci.yml)
+[![Build](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -96,7 +96,7 @@ codium --install-extension sena-labs.ozbridge
 Direct links:
 
 - Marketplace — <https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge>
-- Open VSX — <https://open-vsx.org/extension/sena-labs/warp-vsc-bridge>
+- Open VSX — <https://open-vsx.org/extension/sena-labs/ozbridge>
 
 ### From VSIX (local)
 

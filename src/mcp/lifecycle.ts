@@ -107,7 +107,7 @@ export class McpLifecycle implements vscode.Disposable {
     }
 
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
-    const serverInfo = { name: 'warp-vsc-bridge', version: this.extensionVersion };
+    const serverInfo = { name: 'oz-bridge', version: this.extensionVersion };
 
     try {
       const server = new McpServer(registry, serverInfo, {
@@ -267,7 +267,7 @@ function defaultRegistrars(): IMcpClientRegistrar[] {
 }
 
 /** Server name advertised to every MCP client we register with. */
-export const MCP_SERVER_NAME = 'warp-vsc-bridge';
+export const MCP_SERVER_NAME = 'oz-bridge';
 
 /**
  * Shared implementation behind the `registerClient` / `unregisterClient`
