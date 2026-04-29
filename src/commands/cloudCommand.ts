@@ -70,7 +70,11 @@ export function createCloudCommand(
         if (envResult.items.length > 0) {
           const env = envResult.items[0];
           environment = env.id;
-          stream.markdown(`ℹ️ No environment configured — auto-selected: \`${env.name}\` (\`${env.id}\`)\n\n`);
+          // B-L5: escape backticks so user-controlled environment names
+          // can't break out of the inline-code span and inject markdown.
+          const safeName = String(env.name).replace(/`/g, '\u02cb');
+          const safeId = String(env.id).replace(/`/g, '\u02cb');
+          stream.markdown(`ℹ️ No environment configured — auto-selected: \`${safeName}\` (\`${safeId}\`)\n\n`);
         } else {
           noEnvironment = true;
           stream.markdown('⚠️ No environments available — running without environment (not recommended)\n\n');

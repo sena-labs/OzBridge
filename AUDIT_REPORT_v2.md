@@ -62,14 +62,14 @@ L'unica sezione clean è la C (Tests/Build/Deps/L10n) — 0 HIGH, suite robusta,
 
 ### LOW
 
-| ID | File | Issue |
-|---|---|---|
-| A-L10 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L108) | `checkAvailability` empty catch senza log |
-| A-L11 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L866-L915) | Cache `_resolvedOzPath` non invalidata su config change |
-| A-L12 | [src/extension.ts](src/extension.ts#L165) | `isWarpUri` guard incompleto, richiede cast esplicito |
-| A-L13 | [src/ui/runsTreeProvider.ts](src/ui/runsTreeProvider.ts#L328-L345) | `switch` su union senza `assertNever` exhaustiveness |
-| A-L14 | [src/extension.ts](src/extension.ts#L392-L396) | `Promise.allSettled` over-engineered nel `deactivate` |
-| A-L15 | [src/mcp/server.ts](src/mcp/server.ts#L343) | `params.arguments as Record<string,unknown>` accetta array |
+| ID | File | Issue | Stato |
+|---|---|---|---|
+| A-L10 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L108) | `checkAvailability` empty catch senza log | ✅ FIXED (logWarn) |
+| A-L11 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L866-L915) | Cache `_resolvedOzPath` non invalidata su config change | ✅ FIXED (`_resolvedFor` sentinel) |
+| A-L12 | [src/extension.ts](src/extension.ts#L165) | `isWarpUri` guard incompleto, richiede cast esplicito | ✅ FIXED (`is vscode.Uri`) |
+| A-L13 | [src/ui/runsTreeProvider.ts](src/ui/runsTreeProvider.ts#L328-L345) | `switch` su union senza `assertNever` exhaustiveness | ✅ FIXED (never default) |
+| A-L14 | [src/extension.ts](src/extension.ts#L392-L396) | `Promise.allSettled` over-engineered nel `deactivate` | pending |
+| A-L15 | [src/mcp/server.ts](src/mcp/server.ts#L343) | `params.arguments as Record<string,unknown>` accetta array | ✅ FIXED (`!Array.isArray`) |
 
 ---
 
@@ -122,15 +122,15 @@ L'unica sezione clean è la C (Tests/Build/Deps/L10n) — 0 HIGH, suite robusta,
 
 ### LOW
 
-| ID | File | Issue |
-|---|---|---|
-| B-L1 | [src/extension.ts](src/extension.ts#L353) | `logInfo("Oz CLI path: ...")` espone homedir completo |
-| B-L2 | [src/mcp/server.ts](src/mcp/server.ts#L230-L240) | 2 timer per-session — possibile interval globale condiviso |
-| B-L3 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L805-L840) | `tryParseNdjson` re-parsing di stdout già consumato in streaming |
-| B-L4 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L981-L988) | `validateCliArg` permissivo per `model/profile/skill/environment` |
-| B-L5 | [src/commands/cloudCommand.ts](src/commands/cloudCommand.ts#L72-L74) | `env.name`/`env.id` in code-span senza escape backtick |
-| B-L6 | Vari registrars/scaffold | `mkdirSync(recursive)` ridondante per write atomic |
-| B-L7 | [src/extension.ts](src/extension.ts#L57-L66) | `isWarpUri` non valida `authority`/`path`, accetta `warp://attacker.com/...` |
+| ID | File | Issue | Stato |
+|---|---|---|---|
+| B-L1 | [src/extension.ts](src/extension.ts#L353) | `logInfo("Oz CLI path: ...")` espone homedir completo | ✅ FIXED (`redactHome` → `~`) |
+| B-L2 | [src/mcp/server.ts](src/mcp/server.ts#L230-L240) | 2 timer per-session — possibile interval globale condiviso | pending |
+| B-L3 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L805-L840) | `tryParseNdjson` re-parsing di stdout già consumato in streaming | pending |
+| B-L4 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L981-L988) | `validateCliArg` permissivo per `model/profile/skill/environment` | ⚠ FALSE-POSITIVE: regex già blocca shell metachars (`;|&$\`<>`); slash/dot/colon necessari per id reali tipo `openai/gpt-4`/`claude-3.5` |
+| B-L5 | [src/commands/cloudCommand.ts](src/commands/cloudCommand.ts#L72-L74) | `env.name`/`env.id` in code-span senza escape backtick | ✅ FIXED |
+| B-L6 | Vari registrars/scaffold | `mkdirSync(recursive)` ridondante per write atomic | pending |
+| B-L7 | [src/extension.ts](src/extension.ts#L57-L66) | `isWarpUri` non valida `authority`/`path`, accetta `warp://attacker.com/...` | ✅ FIXED (allowlist `block`/`action`) |
 
 ---
 
@@ -167,13 +167,15 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 
 | ID | File | Issue |
 |---|---|---|
-| C-L1 | [package.json](package.json#L386) | `@types/node@^25` vs esbuild `target: node20` — drift type API |
-| C-L2 | [package.json](package.json#L380) | `@vscode/vsce` invocato via `npx`, non pinnato in devDeps |
-| C-L3 | [tsconfig.json](tsconfig.json#L17-L18) | `declaration`/`declarationMap` set ma `compile` è `--noEmit` (config morta) |
-| C-L4 | [test/services/runStats.test.ts](test/services/runStats.test.ts#L71) | Date locali senza TZ pin (potenziale flake su CI agent diversi) |
-| C-L5 | [l10n/](l10n/) | Voci intenzionalmente identiche (brand names) — solo cosmetica |
-| C-L6 | [.vscodeignore](.vscodeignore#L31) | `*.ts` blanket exclude — ordine fragile |
-| C-L7 | [test/audit/activationEventsExtended.test.ts](test/audit/activationEventsExtended.test.ts) | Coverage parziale sugli eventi `onLanguageModelTool:oz_*` |
+| ID | File | Issue | Stato |
+|---|---|---|---|
+| C-L1 | [package.json](package.json#L386) | `@types/node@^25` vs esbuild `target: node20` — drift type API | pending |
+| C-L2 | [package.json](package.json#L380) | `@vscode/vsce` invocato via `npx`, non pinnato in devDeps | pending |
+| C-L3 | [tsconfig.json](tsconfig.json#L17-L18) | `declaration`/`declarationMap` set ma `compile` è `--noEmit` (config morta) | pending |
+| C-L4 | [test/services/runStats.test.ts](test/services/runStats.test.ts#L71) | Date locali senza TZ pin (potenziale flake su CI agent diversi) | pending |
+| C-L5 | [l10n/](l10n/) | Voci intenzionalmente identiche (brand names) — solo cosmetica | pending |
+| C-L6 | [.vscodeignore](.vscodeignore#L31) | `*.ts` blanket exclude — ordine fragile | pending |
+| C-L7 | [test/audit/activationEventsExtended.test.ts](test/audit/activationEventsExtended.test.ts) | Coverage parziale sugli eventi `onLanguageModelTool:oz_*` | pending |
 
 ---
 

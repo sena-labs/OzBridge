@@ -25,6 +25,8 @@ describe('ozBridge.openConversation security', () => {
 
     const result = await commands.executeCommand('ozBridge.openConversation', {
       scheme: 'warp',
+      authority: 'action',
+      path: '/new_tab',
       toString: () => 'warp://action/new_tab?command=oz+run+list',
     });
 
@@ -39,6 +41,8 @@ describe('ozBridge.openConversation security', () => {
 
     const result = await commands.executeCommand('ozBridge.openConversation', {
       scheme: 'https',
+      authority: 'evil.example',
+      path: '/phish',
       toString: () => 'https://evil.example/phish',
     });
 

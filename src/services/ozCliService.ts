@@ -123,7 +123,12 @@ export class OzCliService implements IOzCliService {
       // don't perturb the CLI's default formatting for the probe.
       await this.exec(['--help'], undefined, undefined, { readOnly: true, outputFormat: null });
       return { available: true, version: null, path: this.resolveOzPath() };
-    } catch {
+    } catch (err) {
+      // A-L10: surface the underlying reason to the OutputChannel so users
+      // can diagnose missing PATH / wrong `ozBridge.ozPath` without enabling
+      // debug telemetry. Stays a warning — the caller maps the result to a
+      // first-run experience and a single notification.
+      logWarn('Oz CLI availability probe failed', getErrorMessage(err));
       return { available: false, version: null, path: null };
     }
   }
@@ -905,6 +910,14 @@ export class OzCliService implements IOzCliService {
   private resolveOzPath(): string {
     const configured = this.config.ozPath;
 
+    // Invalidate cache when the user changes `ozBridge.ozPath` (A-L11): the
+    // previous resolution was tied to the prior configured value, so a
+    // settings update must trigger a fresh `where.exe` lookup.
+    if (this._resolvedFor !== configured) {
+      this._resolvedOzPath = undefined;
+      this._resolvedFor = configured;
+    }
+
     // If user set an explicit absolute path, respect it
     if (configured !== 'oz') {
       return configured;
@@ -943,6 +956,7 @@ export class OzCliService implements IOzCliService {
   }
 
   private _resolvedOzPath: string | undefined;
+  private _resolvedFor: string | undefined;
 
   // IMPL: converte ExecResult in lista generica con fallback a rawText (R1)
   private toListResult<T>(result: ExecResult): OzListResult<T> {

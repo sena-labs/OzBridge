@@ -375,7 +375,11 @@ function extractToolCallParams(params: unknown): { name: string | undefined; arg
   const name = 'name' in params && typeof params.name === 'string' ? params.name : undefined;
   let arguments_: Record<string, unknown> = {};
 
-  if ('arguments' in params && params.arguments && typeof params.arguments === 'object') {
+  if ('arguments' in params && params.arguments && typeof params.arguments === 'object'
+      && !Array.isArray(params.arguments)) {
+    // A-L15: arrays are typeof 'object' too — reject them so a malformed
+    // request like `{"arguments": ["foo"]}` doesn't surface to tools as a
+    // bogus `{0: "foo", length: 1}` Record.
     arguments_ = params.arguments as Record<string, unknown>;
   }
 

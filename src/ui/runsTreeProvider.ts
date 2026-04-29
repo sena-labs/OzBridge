@@ -331,6 +331,12 @@ function categoryIcon(category: CategoryNode['category']): string {
     case 'schedules': return 'calendar';
     case 'environments': return 'server-environment';
     case 'mcp': return 'plug';
+    default: {
+      // A-L13: exhaustiveness guard — adding a new CategoryNode variant
+      // without updating this switch becomes a compile-time error.
+      const _exhaustive: never = category;
+      return _exhaustive;
+    }
   }
 }
 

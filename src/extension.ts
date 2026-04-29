@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as os from 'node:os';
 import { ConfigManager } from './services/configManager.js';
 import {
   WorkspaceConfigResolver,
@@ -63,13 +64,48 @@ function readExtensionVersion(context: vscode.ExtensionContext): string {
   return typeof v === 'string' && v.length > 0 ? v : '0.0.0';
 }
 
-function isWarpUri(value: unknown): value is { scheme: string } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as { scheme?: unknown }).scheme === 'string' &&
-    (value as { scheme: string }).scheme.toLowerCase() === 'warp'
-  );
+/**
+ * Replace the user's home directory with `~` in a filesystem path before
+ * logging. Avoids leaking the OS username in the OutputChannel (privacy:
+ * B-L1). Best-effort — falls back to the original string when `os.homedir()`
+ * is empty or not a prefix.
+ */
+function redactHome(p: string): string {
+  if (typeof p !== 'string' || p.length === 0) { return p; }
+  let home = '';
+  try { home = os.homedir(); } catch { home = ''; }
+  if (!home || home.length < 2) { return p; }
+  // Normalise separators for Windows (`C:\Users\foo` vs forward slashes).
+  const norm = (s: string) => s.replace(/\\/g, '/');
+  const homeN = norm(home).replace(/\/+$/, '');
+  const pN = norm(p);
+  if (pN === homeN) { return '~'; }
+  if (pN.startsWith(homeN + '/')) { return '~' + pN.slice(homeN.length); }
+  return p;
+}
+
+/**
+ * Type guard for `vscode.Uri`-shaped values restricted to the `warp://` scheme.
+ *
+ * Hardened (B-L7) to also validate `authority` and `path` so a crafted
+ * `warp://attacker.com/...` URI cannot be passed to `vscode.env.openExternal`
+ * via the public `ozBridge.openConversation` command. We accept only the two
+ * shapes Warp itself emits: `warp://block/<id>` and `warp://action/<verb>?...`.
+ */
+function isWarpUri(value: unknown): value is vscode.Uri {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const candidate = value as { scheme?: unknown; authority?: unknown; path?: unknown };
+  if (typeof candidate.scheme !== 'string' || candidate.scheme.toLowerCase() !== 'warp') {
+    return false;
+  }
+  const authority = typeof candidate.authority === 'string' ? candidate.authority.toLowerCase() : '';
+  if (authority !== 'block' && authority !== 'action') {
+    return false;
+  }
+  // path must start with '/' and contain at least one non-slash char
+  return typeof candidate.path === 'string' && /^\/[^/].*/.test(candidate.path);
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -183,7 +219,7 @@ export function activate(context: vscode.ExtensionContext): void {
         );
         return false;
       }
-      return vscode.env.openExternal(uri as vscode.Uri);
+      return vscode.env.openExternal(uri);
     },
   );
   context.subscriptions.push(openConvCmd);
@@ -371,7 +407,7 @@ export function activate(context: vscode.ExtensionContext): void {
   });
 
   logInfo('Extension activated');
-  logInfo(`Oz CLI path: ${state.configManager.getConfig().ozPath}`);
+  logInfo(`Oz CLI path: ${redactHome(state.configManager.getConfig().ozPath)}`);
 
   // Telemetry (v1.0 deliverable P) — strictly opt-in via VS Code's
   // global `telemetry.telemetryLevel` *and* an explicit AppInsights
