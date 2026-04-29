@@ -127,6 +127,20 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
 }
 
 /**
+ * Validates the structure of a message received from the dashboard webview.
+ * Returns `null` for any payload that doesn't match the strict shape we
+ * accept, so a compromised/malformed renderer cannot drive arbitrary
+ * branches in the host.
+ */
+type DashboardMessage = { type: 'refresh' };
+function parseDashboardMessage(msg: unknown): DashboardMessage | null {
+  if (typeof msg !== 'object' || msg === null) { return null; }
+  const obj = msg as Record<string, unknown>;
+  if (obj.type === 'refresh') { return { type: 'refresh' }; }
+  return null;
+}
+
+/**
  * Singleton webview panel that renders run statistics aggregated by
  * {@link IRunStatsService}.
  */
@@ -144,8 +158,9 @@ export class DashboardPanel {
   ) {
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
     this.panel.webview.onDidReceiveMessage(
-      (msg: { type?: string }) => {
-        if (msg && msg.type === 'refresh') {
+      (msg: unknown) => {
+        const parsed = parseDashboardMessage(msg);
+        if (parsed?.type === 'refresh') {
           this.stats.invalidate();
           void this.refresh();
         }

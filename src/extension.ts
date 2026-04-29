@@ -57,8 +57,11 @@ const state: {
   extensionLifetimeCts?: vscode.CancellationTokenSource;
 } = {};
 
-/** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
-const EXTENSION_VERSION = '1.1.0';
+/** Extension version sourced from `package.json` at activation time. */
+function readExtensionVersion(context: vscode.ExtensionContext): string {
+  const v = (context.extension?.packageJSON as { version?: unknown } | undefined)?.version;
+  return typeof v === 'string' && v.length > 0 ? v : '0.0.0';
+}
 
 function isWarpUri(value: unknown): value is { scheme: string } {
   return (
@@ -74,6 +77,8 @@ export function activate(context: vscode.ExtensionContext): void {
   const outputChannel = vscode.window.createOutputChannel('OzBridge');
   context.subscriptions.push(outputChannel);
   initLogger(outputChannel, '[ozbridge]');
+
+  const extensionVersion = readExtensionVersion(context);
 
   // ── Kill-switch (v1.0 deliverable T) ──────────────────────────────
   // Operator escape hatch for emergencies (critical regression in
@@ -325,7 +330,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   // MCP server export — opt-in via ozBridge.mcpEnabled.
-  state.mcp = new McpLifecycle(cli, state.configManager, EXTENSION_VERSION);
+  state.mcp = new McpLifecycle(cli, state.configManager, extensionVersion);
   context.subscriptions.push({ dispose: () => { void state.mcp?.dispose(); } });
   for (const disposable of registerMcpCommands(state.mcp, state.configManager)) {
     context.subscriptions.push(disposable);
@@ -378,9 +383,9 @@ export function activate(context: vscode.ExtensionContext): void {
   state.telemetry = createTelemetryReporter({
     env: { isTelemetryEnabled: vscode.env.isTelemetryEnabled ?? false },
     connectionString: telemetryConnectionString,
-    version: EXTENSION_VERSION,
+    version: extensionVersion,
   });
-  state.telemetry.track('extensionActivated', { version: EXTENSION_VERSION });
+  state.telemetry.track('extensionActivated', { version: extensionVersion });
   context.subscriptions.push({
     dispose: () => {
       void state.telemetry?.dispose();

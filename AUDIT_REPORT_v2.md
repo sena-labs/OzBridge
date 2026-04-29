@@ -51,14 +51,14 @@ L'unica sezione clean è la C (Tests/Build/Deps/L10n) — 0 HIGH, suite robusta,
 
 ### MEDIUM
 
-| ID | File | Issue | Fix |
-|---|---|---|---|
-| A-M4 | [src/mcp/server.ts](src/mcp/server.ts#L299-L301) | Doppio `as any` in `isJsonRpcRequest` | Usare `Record<string, unknown>` come fa `extractToolCallParams` |
-| A-M5 | [src/mcp/server.ts](src/mcp/server.ts#L230-L244) | Timer SSE `keepalive`/`maxLifetime` non puliti se `res.end()` throw | Tracciare per-session in `Map` e clear in `stop()` prima di `res.end()` |
-| A-M6 | [src/mcp/registrars/jsonRegistrarBase.ts](src/mcp/registrars/jsonRegistrarBase.ts#L115-L125) | Tmp file orfano se `renameSync` fallisce | `try { fs.unlinkSync(tmp); } catch {}` nel catch prima del rethrow |
-| A-M7 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L160) | Triple `try { onLine/onProgress } catch {}` muti | Degradare a `logWarn` per tracciare bug in OutputFormatter |
-| A-M8 | [packages/copilot-chat-toolkit/src/parsers/jsonParser.ts](packages/copilot-chat-toolkit/src/parsers/jsonParser.ts#L31) | `JSON.parse() as T` triplice senza validazione runtime | Cambiare firma a `unknown`, validazione al call site |
-| A-M9 | [src/commands/cloudCommand.ts](src/commands/cloudCommand.ts#L139) | Floating Promise su `showInformationMessage` | Prefissare `void` |
+| ID | File | Issue | Fix | Stato |
+|---|---|---|---|---|
+| A-M4 | [src/mcp/server.ts](src/mcp/server.ts#L299-L301) | Doppio `as any` in `isJsonRpcRequest` | Usare `Record<string, unknown>` come fa `extractToolCallParams` | ✅ FIXED |
+| A-M5 | [src/mcp/server.ts](src/mcp/server.ts#L230-L244) | Timer SSE `keepalive`/`maxLifetime` non puliti se `res.end()` throw | Tracciare per-session in `Map` e clear in `stop()` prima di `res.end()` | ✅ FIXED (in B-H5) |
+| A-M6 | [src/mcp/registrars/jsonRegistrarBase.ts](src/mcp/registrars/jsonRegistrarBase.ts#L115-L125) | Tmp file orfano se `renameSync` fallisce | `try { fs.unlinkSync(tmp); } catch {}` nel catch prima del rethrow | ✅ FIXED |
+| A-M7 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L160) | Triple `try { onLine/onProgress } catch {}` muti | Degradare a `logWarn` per tracciare bug in OutputFormatter | ✅ FIXED |
+| A-M8 | [packages/copilot-chat-toolkit/src/parsers/jsonParser.ts](packages/copilot-chat-toolkit/src/parsers/jsonParser.ts#L31) | `JSON.parse() as T` triplice senza validazione runtime | Cambiare firma a `unknown`, validazione al call site | pending |
+| A-M9 | [src/commands/cloudCommand.ts](src/commands/cloudCommand.ts#L139) | Floating Promise su `showInformationMessage` | Prefissare `void` | ✅ FIXED (in B-H3) |
 
 ### LOW
 
@@ -109,16 +109,16 @@ L'unica sezione clean è la C (Tests/Build/Deps/L10n) — 0 HIGH, suite robusta,
 
 ### MEDIUM
 
-| ID | File | Issue | Fix |
-|---|---|---|---|
-| B-M1 | [src/ui/statusBarItem.ts](src/ui/statusBarItem.ts#L91) | `MarkdownString(undefined, true)` `isTrusted` non giustificato | Rimuovere il secondo arg |
-| B-M2 | [src/mcp/tools.ts](src/mcp/tools.ts#L233-L246), [src/extension.ts](src/extension.ts#L84-L91) | `getConfig()` chiamato 2-3 volte nello stesso callback | Cache locale `const cfg = ...` |
-| B-M3 | [package.json](package.json#L506-L510) | `ozBridge.ozPath` (e `mcpEnabled/Port/BindAddress`) senza `scope: machine` | Aggiungere `"scope": "machine"` |
-| B-M4 | [src/ui/dashboardPanel.ts](src/ui/dashboardPanel.ts#L146-L155) | `onDidReceiveMessage` senza validazione struttura | `parseDashboardMessage(): DashboardMessage \| null` |
-| B-M5 | [src/ui/driveTreeProvider.ts](src/ui/driveTreeProvider.ts#L200-L214) | Frontmatter YAML utente in `appendMarkdown` non escapato | `appendText` o escape `*_[]()<>` |
-| B-M6 | [package.json](package.json#L27-L62) | `onStartupFinished` + 33 eventi granulari = duplicazione | Tenere uno solo dei due (vedi C-M4) |
-| B-M7 | [src/extension.ts](src/extension.ts#L54) | `EXTENSION_VERSION = '1.1.0'` hard-coded | `context.extension.packageJSON.version` |
-| B-M8 | [src/mcp/registrars/codexRegistrar.ts](src/mcp/registrars/codexRegistrar.ts#L46-L66) | TOCTOU `existsSync` + `readFileSync` | `fs.promises.readFile` + gestire `ENOENT` |
+| ID | File | Issue | Fix | Stato |
+|---|---|---|---|---|
+| B-M1 | [src/ui/statusBarItem.ts](src/ui/statusBarItem.ts#L91) | `MarkdownString(undefined, true)` `isTrusted` non giustificato | Rimuovere il secondo arg | ⚠ FALSE-POSITIVE: secondo arg è `supportThemeIcons`, necessario per `$(clock)` icons |
+| B-M2 | [src/mcp/tools.ts](src/mcp/tools.ts#L233-L246), [src/extension.ts](src/extension.ts#L84-L91) | `getConfig()` chiamato 2-3 volte nello stesso callback | Cache locale `const cfg = ...` | ✅ FIXED (defaultsFor helper) |
+| B-M3 | [package.json](package.json#L506-L510) | `ozBridge.ozPath` (e `mcpEnabled/Port/BindAddress`) senza `scope: machine` | Aggiungere `"scope": "machine"` | ✅ FIXED |
+| B-M4 | [src/ui/dashboardPanel.ts](src/ui/dashboardPanel.ts#L146-L155) | `onDidReceiveMessage` senza validazione struttura | `parseDashboardMessage(): DashboardMessage \| null` | ✅ FIXED |
+| B-M5 | [src/ui/driveTreeProvider.ts](src/ui/driveTreeProvider.ts#L200-L214) | Frontmatter YAML utente in `appendMarkdown` non escapato | `appendText` o escape `*_[]()<>` | ✅ FIXED |
+| B-M6 | [package.json](package.json#L27-L62) | `onStartupFinished` + 33 eventi granulari = duplicazione | Tenere uno solo dei due (vedi C-M4) | ✅ FIXED (rimosso onStartupFinished) |
+| B-M7 | [src/extension.ts](src/extension.ts#L54) | `EXTENSION_VERSION = '1.1.0'` hard-coded | `context.extension.packageJSON.version` | ✅ FIXED |
+| B-M8 | [src/mcp/registrars/codexRegistrar.ts](src/mcp/registrars/codexRegistrar.ts#L46-L66) | TOCTOU `existsSync` + `readFileSync` | `fs.promises.readFile` + gestire `ENOENT` | ✅ FIXED (in B-H4) |
 
 ### LOW
 

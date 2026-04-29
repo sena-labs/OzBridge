@@ -19,6 +19,7 @@ import {
 } from '../types/index.js';
 import { parse } from '../parsers/jsonParser.js';
 import { getErrorMessage } from '../utils/error.js';
+import { logWarn } from 'copilot-chat-toolkit';
 
 /** Type predicate for {@link OzRunStatus}. */
 function isValidOzRunStatus(value: string): value is OzRunStatus {
@@ -174,7 +175,7 @@ export class OzCliService implements IOzCliService {
     let onLine: ((line: string) => void) | undefined;
     if (onProgress) {
       onLine = (line) => {
-        try { onProgress(line); } catch { /* swallow callback errors */ }
+        try { onProgress(line); } catch (cbErr) { logWarn('ozCliService onProgress callback threw', getErrorMessage(cbErr)); }
       };
     }
 
@@ -651,7 +652,7 @@ export class OzCliService implements IOzCliService {
             const line = lineBuffer.slice(0, nl).replace(/\r$/, '');
             lineBuffer = lineBuffer.slice(nl + 1);
             if (line.length > 0) {
-              try { onLine(line); } catch { /* swallow sink errors */ }
+              try { onLine(line); } catch (cbErr) { logWarn('ozCliService onLine callback threw', getErrorMessage(cbErr)); }
             }
           }
         }
@@ -705,7 +706,7 @@ export class OzCliService implements IOzCliService {
         // Flush any trailing partial line so callers don't lose the
         // last event when the CLI exits without a final newline.
         if (onLine && lineBuffer.length > 0) {
-          try { onLine(lineBuffer); } catch { /* swallow sink errors */ }
+          try { onLine(lineBuffer); } catch (cbErr) { logWarn('ozCliService onLine callback (flush) threw', getErrorMessage(cbErr)); }
           lineBuffer = '';
         }
 

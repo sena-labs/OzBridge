@@ -25,7 +25,6 @@
     "Chat"
   ],
   "activationEvents": [
-    "onStartupFinished",
     "onChatParticipant:ozbridge.oz",
     "onLanguageModelTool:oz_run_local",
     "onLanguageModelTool:oz_run_cloud",
@@ -506,7 +505,8 @@
         "ozBridge.ozPath": {
           "type": "string",
           "default": "oz",
-          "description": "Path to the Oz CLI executable"
+          "description": "Path to the Oz CLI executable",
+          "scope": "machine-overridable"
         },
         "ozBridge.defaultModel": {
           "type": "string",
@@ -551,19 +551,22 @@
         "ozBridge.mcpEnabled": {
           "type": "boolean",
           "default": false,
-          "description": "Start an embedded MCP server at activation so Claude Code, Cursor and Codex can drive Oz."
+          "description": "Start an embedded MCP server at activation so Claude Code, Cursor and Codex can drive Oz.",
+          "scope": "machine-overridable"
         },
         "ozBridge.mcpPort": {
           "type": "number",
           "default": 3847,
           "minimum": 0,
           "maximum": 65535,
-          "description": "TCP port the MCP server listens on when enabled."
+          "description": "TCP port the MCP server listens on when enabled.",
+          "scope": "machine-overridable"
         },
         "ozBridge.mcpBindAddress": {
           "type": "string",
           "default": "127.0.0.1",
-          "description": "Network interface the MCP server binds to. Keep 127.0.0.1 unless you explicitly want to expose it."
+          "description": "Network interface the MCP server binds to. Keep 127.0.0.1 unless you explicitly want to expose it.",
+          "scope": "machine-overridable"
         },
         "ozBridge.mcpBearerToken": {
           "type": "string",

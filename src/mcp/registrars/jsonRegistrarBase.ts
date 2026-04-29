@@ -130,13 +130,16 @@ function buildServerEntry(endpoint: McpClientEndpoint): Record<string, unknown> 
  * event loop on slower disks.
  */
 export async function atomicWriteJson(file: string, value: unknown): Promise<void> {
+  const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
   try {
     const dir = path.dirname(file);
     await fsp.mkdir(dir, { recursive: true });
-    const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
     await fsp.writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
     await fsp.rename(tmp, file);
   } catch (err) {
+    // Best-effort cleanup of orphan tmp file (e.g. when rename fails after
+    // a successful write) — never let a cleanup failure mask the real error.
+    try { await fsp.unlink(tmp); } catch { /* ignore */ }
     const msg = err instanceof Error ? err.message : String(err);
     throw new Error(`Failed to write config file ${file}: ${msg}`);
   }

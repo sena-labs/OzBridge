@@ -199,16 +199,24 @@ function capitalise(s: string): string {
 }
 function buildTooltip(entry: DriveEntry): vscode.MarkdownString {
   const md = new vscode.MarkdownString();
-  md.appendMarkdown(`**${entry.name}**\n\n`);
+  md.appendText(entry.name);
+  md.appendMarkdown('\n\n');
   if (entry.description) {
-    md.appendMarkdown(`${entry.description}\n\n`);
+    // User-supplied frontmatter — render as plain text so markdown syntax
+    // (unbalanced brackets, backticks, `<script>`) cannot affect the tooltip.
+    md.appendText(entry.description);
+    md.appendMarkdown('\n\n');
   }
   md.appendMarkdown(`_source: ${entry.source}_`);
   if (entry.tags && entry.tags.length > 0) {
-    md.appendMarkdown(`  ·  _tags: ${entry.tags.join(', ')}_`);
+    md.appendMarkdown('  ·  _tags: ');
+    md.appendText(entry.tags.join(', '));
+    md.appendMarkdown('_');
   }
   if (entry.updatedAt) {
-    md.appendMarkdown(`\n\n_updated: ${entry.updatedAt}_`);
+    md.appendMarkdown('\n\n_updated: ');
+    md.appendText(entry.updatedAt);
+    md.appendMarkdown('_');
   }
   return md;
 }

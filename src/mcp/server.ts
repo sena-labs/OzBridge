@@ -332,11 +332,9 @@ export interface JsonRpcResponse {
 }
 
 function isJsonRpcRequest(value: unknown): value is JsonRpcRequest {
-  return (
-    typeof value === 'object' && value !== null &&
-    (value as any).jsonrpc === '2.0' &&
-    typeof (value as any).method === 'string'
-  );
+  if (typeof value !== 'object' || value === null) { return false; }
+  const obj = value as Record<string, unknown>;
+  return obj.jsonrpc === '2.0' && typeof obj.method === 'string';
 }
 
 function jsonRpcResult(id: number | string | null, result: unknown): JsonRpcResponse {

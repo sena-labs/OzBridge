@@ -49,8 +49,11 @@ describe('activationEvents extended audit', () => {
     }
   });
 
-  it('must activate after startup so status bar/sidebar services are initialized', () => {
-    expect(pkg.activationEvents ?? []).toContain('onStartupFinished');
+  it('relies on granular activation events instead of onStartupFinished (cold-start cost)', () => {
+    const events = pkg.activationEvents ?? [];
+    expect(events).not.toContain('onStartupFinished');
+    // Sanity: at least one onView:* must be present so the sidebar wakes the extension.
+    expect(events.some((e) => e.startsWith('onView:ozBridge.'))).toBe(true);
   });
 
   it('must not contain stale warpBridge activation prefixes', () => {
