@@ -1,42 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd" aria-hidden="true">
   <!--
     OzBridge activity-bar / view icon. Monochrome silhouette using
-    `currentColor` so VS Code can theme it (white / black / accent).
-    Mirrors the marketplace icon (`ozbridge-icon.png`): a stylised
-    mascot crouched in front of a halo of sun rays. Kept intentionally
-    simple so it remains legible at 16-24 px.
+    `currentColor` so VS Code can theme it. Mirrors the marketplace
+    icon (`ozbridge-icon.png`): an armadillo mascot standing on top of
+    a stone bridge arch, with sun rays radiating behind it.
   -->
-  <!-- sun rays radiating from a central pivot -->
+  <!-- sun rays behind the mascot, pivoting at (12,6) -->
   <g>
-    <rect x="11.4" y="1.2" width="1.2" height="6" rx="0.5"/>
-    <rect x="11.4" y="1.2" width="1.2" height="6" rx="0.5" transform="rotate(25 12 7.2)"/>
-    <rect x="11.4" y="1.2" width="1.2" height="6" rx="0.5" transform="rotate(-25 12 7.2)"/>
-    <rect x="11.4" y="1.2" width="1.2" height="6" rx="0.5" transform="rotate(50 12 7.2)"/>
-    <rect x="11.4" y="1.2" width="1.2" height="6" rx="0.5" transform="rotate(-50 12 7.2)"/>
+    <rect x="11.55" y="0.4" width="0.9" height="3.4" rx="0.35"/>
+    <rect x="11.55" y="0.4" width="0.9" height="3.4" rx="0.35" transform="rotate(30 12 6)"/>
+    <rect x="11.55" y="0.4" width="0.9" height="3.4" rx="0.35" transform="rotate(-30 12 6)"/>
+    <rect x="11.55" y="0.4" width="0.9" height="3.4" rx="0.35" transform="rotate(60 12 6)"/>
+    <rect x="11.55" y="0.4" width="0.9" height="3.4" rx="0.35" transform="rotate(-60 12 6)"/>
   </g>
-  <!-- mascot silhouette: rounded back + head with ear, on a small ground line -->
-  <path d="M3.2 17.4
-           C 3.2 12.9, 7.8 10.0, 12.0 10.0
-           C 14.5 10.0, 16.8 11.0, 18.0 12.6
-           L 19.4 11.4
-           C 19.7 11.2, 20.1 11.3, 20.2 11.6
-           L 20.6 12.8
-           C 20.7 13.1, 20.5 13.4, 20.2 13.5
-           L 19.0 13.7
-           C 19.6 14.7, 19.9 15.9, 19.9 17.2
-           L 19.9 17.8
-           L 16.4 17.8
-           L 16.4 17.2
-           C 16.4 16.7, 16.0 16.4, 15.6 16.4
-           C 15.1 16.4, 14.8 16.7, 14.8 17.2
-           L 14.8 17.8
-           L 8.6 17.8
-           L 8.6 17.2
-           C 8.6 16.7, 8.3 16.4, 7.8 16.4
-           C 7.3 16.4, 7.0 16.7, 7.0 17.2
-           L 7.0 17.8
-           L 3.2 17.8
-           Z"/>
-  <!-- ground bar -->
-  <rect x="2" y="18.8" width="20" height="1.4" rx="0.5"/>
+  <!-- armadillo mascot, facing right, sitting atop the arch -->
+  <path d="M4.6 12.3
+           C 4.6 9.6, 7.0 7.6, 10.0 7.6
+           L 14.2 7.6
+           L 14.7 5.3
+           C 14.8 4.9, 15.4 4.9, 15.5 5.3
+           L 15.9 7.0
+           C 17.1 7.2, 18.1 7.8, 18.6 8.7
+           L 19.4 8.4
+           C 19.7 8.3, 20.0 8.5, 20.0 8.8
+           C 20.0 9.1, 19.8 9.3, 19.5 9.4
+           L 18.9 9.6
+           C 19.0 9.9, 19.1 10.3, 19.1 10.7
+           C 19.1 11.5, 18.7 12.2, 18.1 12.7
+           L 4.6 12.7 Z"/>
+  <!-- bridge: outer silhouette with arch opening cut out (evenodd) -->
+  <path d="M2.2 21.6
+           L 2.2 17.0
+           C 2.2 14.3, 6.6 12.8, 12.0 12.8
+           C 17.4 12.8, 21.8 14.3, 21.8 17.0
+           L 21.8 21.6 Z
+           M5.6 20.0
+           L 5.6 17.4
+           C 5.6 15.7, 8.4 14.7, 12.0 14.7
+           C 15.6 14.7, 18.4 15.7, 18.4 17.4
+           L 18.4 20.0 Z"/>
+  <!-- ground line beneath the bridge piers -->
+  <rect x="1.6" y="21.4" width="20.8" height="1.2" rx="0.5"/>
 </svg>
