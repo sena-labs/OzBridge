@@ -220,6 +220,43 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
     }
   }
 
+  /**
+   * Resolves the parent category for any element. Required by the
+   * VS Code TreeView API so `treeView.reveal(element)` can expand
+   * ancestors. Returns `null` for top-level category nodes (and for
+   * unknown shapes) per VS Code's contract.
+   */
+  getParent(element: OzTreeNode): OzTreeNode | null {
+    switch (element.kind) {
+      case 'category':
+        return null;
+      case 'run':
+        return cat(element.active ? 'activeRuns' : 'history',
+          element.active ? 'Active Runs' : 'History');
+      case 'schedule':
+        return cat('schedules', 'Schedules');
+      case 'environment':
+        return cat('environments', 'Environments');
+      case 'mcp':
+        return cat('mcp', 'MCP Servers');
+      case 'message': {
+        // Message nodes encode their parent category in the id, e.g.
+        // `message:activeRuns:empty` or `message:mcp:error`.
+        const m = /^message:(activeRuns|history|schedules|environments|mcp):/.exec(element.id);
+        if (!m) { return null; }
+        const category = m[1] as CategoryNode['category'];
+        const labels: Record<CategoryNode['category'], string> = {
+          activeRuns: 'Active Runs',
+          history: 'History',
+          schedules: 'Schedules',
+          environments: 'Environments',
+          mcp: 'MCP Servers',
+        };
+        return cat(category, labels[category]);
+      }
+    }
+  }
+
   // ---------------------------------------------------------------------
   // Category resolvers
   // ---------------------------------------------------------------------

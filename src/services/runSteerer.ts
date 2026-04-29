@@ -12,9 +12,11 @@ import {
  * Default {@link IRunSteerer} with a documented progressive fallback.
  *
  * On the first call (`steer` or `capabilities`) it probes
- * `oz agent run --help` once and caches whether the `--continue` flag
- * is exposed. Subsequent calls reuse the cached capability without
- * re-spawning the CLI.
+ * `oz agent run --help` once and caches whether the `--conversation`
+ * flag (upstream's resume flag, gated by the `CloudConversations`
+ * feature) is exposed. Subsequent calls reuse the cached capability
+ * without re-spawning the CLI. The legacy `--continue` token is also
+ * accepted for forward-compat with hypothetical custom CLI builds.
  *
  * - **Native path** (`nativeContinue === true`): delegates to
  *   {@link IOzCliService.agentContinue}.
@@ -76,7 +78,7 @@ export class ProgressiveRunSteerer implements IRunSteerer {
     try {
       const help = await this.cli.helpAgentRun();
       return {
-        nativeContinue: hasContinueFlag(help),
+        nativeContinue: hasConversationFlag(help),
         detectedAt: Date.now(),
       };
     } catch {
@@ -86,19 +88,28 @@ export class ProgressiveRunSteerer implements IRunSteerer {
 }
 
 /**
- * Detects whether the `--continue` flag is documented in the help text
- * of `oz agent run`.
+ * Detects whether the resume flag is documented in the help text of
+ * `oz agent run`. Upstream uses `--conversation`; the legacy spelling
+ * `--continue` is also accepted so we keep working against custom
+ * builds that haven't migrated yet.
  *
  * Exported for unit tests; the heuristic accepts the literal token
- * `--continue` followed by whitespace, an `=`, or end-of-string. This
- * matches typical help layouts (`  --continue ID`, `--continue=ID`,
- * synopsis brackets `[--continue ID]`) while still rejecting unrelated
+ * followed by whitespace, an `=`, or end-of-string. This matches
+ * typical help layouts (`  --conversation ID`, `--conversation=ID`,
+ * synopsis brackets `[--conversation ID]`) while rejecting unrelated
  * tokens like `--continue-on-error` (the trailing `-` falls outside
  * the allowed suffix set).
  */
-export function hasContinueFlag(helpText: string): boolean {
+export function hasConversationFlag(helpText: string): boolean {
   if (!helpText) {
     return false;
   }
-  return /--continue(?:\s|=|$)/m.test(helpText);
+  return /--(?:conversation|continue)(?:\s|=|$)/m.test(helpText);
 }
+
+/**
+ * @deprecated Renamed to {@link hasConversationFlag}. Kept as an alias
+ * because the upstream Oz CLI flag is `--conversation`, not
+ * `--continue`. Will be removed in v2.0.
+ */
+export const hasContinueFlag = hasConversationFlag;

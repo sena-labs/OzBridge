@@ -21,6 +21,16 @@
   "engines": {
     "vscode": "^1.96.0"
   },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "OzBridge spawns the Oz CLI configured by the workspace via .warp/warp-bridge.yaml. In an untrusted workspace these workspace-scoped settings are ignored and only user/global configuration is honored; the CLI is still spawned from the user's PATH or globally configured ozPath."
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "OzBridge requires a local Oz CLI binary to spawn agent processes; virtual filesystems (e.g. vscode.dev, github.dev) are not supported."
+    }
+  },
   "categories": [
     "Chat"
   ],

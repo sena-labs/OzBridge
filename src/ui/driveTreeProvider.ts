@@ -161,6 +161,29 @@ export class OzDriveTreeProvider implements vscode.TreeDataProvider<DriveTreeNod
     this.categorySources.set(category, computeSourceMode(entries));
     return entries;
   }
+
+  /**
+   * Resolves the parent category for any element. Required by the
+   * VS Code TreeView API so `treeView.reveal(element)` can expand
+   * ancestors. Returns `null` for top-level category nodes.
+   *
+   * Entries carry their category in `entry.category`; messages encode
+   * it in their id (e.g. `message:prompt:empty`).
+   */
+  getParent(element: DriveTreeNode): DriveTreeNode | null {
+    switch (element.kind) {
+      case 'category':
+        return null;
+      case 'entry':
+        return cat(element.entry.category, labelForCategory(element.entry.category));
+      case 'message': {
+        const m = /^message:(prompt|rule|skill):/.exec(element.id);
+        if (!m) { return null; }
+        const category = m[1] as DriveCategory;
+        return cat(category, labelForCategory(category));
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -178,6 +201,13 @@ function emptyLabelFor(category: DriveCategory): string {
     case 'prompt': return 'No prompts available';
     case 'rule': return 'No rules available';
     case 'skill': return 'No skills available';
+  }
+}
+function labelForCategory(category: DriveCategory): string {
+  switch (category) {
+    case 'prompt': return 'Prompts';
+    case 'rule': return 'Rules';
+    case 'skill': return 'Skills';
   }
 }
 function categoryIcon(category: DriveCategory): string {

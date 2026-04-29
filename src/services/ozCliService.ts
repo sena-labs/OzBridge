@@ -475,9 +475,14 @@ export class OzCliService implements IOzCliService {
     }
     this.sanitizeId(opts.runId, 'runId');
 
+    // Upstream Oz CLI exposes the resume flag as `--conversation <ID>`
+    // (see warpdotdev/warp `crates/warp_cli/src/agent.rs`). The flag is
+    // gated by the `CloudConversations` feature flag; if absent, callers
+    // should rely on {@link IRunSteerer} which probes `--help` and falls
+    // back to {@link agentRunCloud} with an inlined run-id prefix.
     const args = [
       'agent', 'run',
-      '--continue', opts.runId,
+      '--conversation', opts.runId,
       '--prompt', opts.prompt,
     ];
 

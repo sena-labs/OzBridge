@@ -47,7 +47,7 @@ beforeEach(() => {
 });
 
 describe('OzCliService.agentContinue()', () => {
-  it('builds the expected argv with --continue and --prompt (output format via env)', async () => {
+  it('builds the expected argv with --conversation and --prompt (output format via env)', async () => {
     createMockProcess({
       stdout: JSON.stringify({ run_id: 'r1', status: 'INPROGRESS', output: 'ok' }),
     });
@@ -58,7 +58,7 @@ describe('OzCliService.agentContinue()', () => {
     const args = mockSpawn.mock.calls[0][1] as string[];
     expect(args).toEqual([
       'agent', 'run',
-      '--continue', 'run-1',
+      '--conversation', 'run-1',
       '--prompt', 'do x',
     ]);
     // `--output-format` is now set globally via WARP_OUTPUT_FORMAT.
