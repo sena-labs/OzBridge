@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { randomBytes } from 'node:crypto';
 import { IRunStatsService, RunStatsSummary } from '../services/runStats.js';
-import { logError } from '../services/logger.js';
+import { logError, logWarn } from '../services/logger.js';
 
 /**
  * Default observation window for the dashboard, in days. Keeps the
@@ -134,9 +134,20 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
  */
 type DashboardMessage = { type: 'refresh' };
 function parseDashboardMessage(msg: unknown): DashboardMessage | null {
-  if (typeof msg !== 'object' || msg === null) { return null; }
+  if (typeof msg !== 'object' || msg === null) {
+    // LOW-4: surface malformed payloads in the output channel so support
+    // can correlate webview misbehaviour with host logs. We deliberately
+    // truncate to avoid dumping arbitrarily large objects.
+    logWarn(`Dashboard: dropped non-object message (typeof=${typeof msg}).`);
+    return null;
+  }
   const obj = msg as Record<string, unknown>;
   if (obj.type === 'refresh') { return { type: 'refresh' }; }
+  // LOW-4: log the rejected `type` discriminator (clipped to 64 chars to
+  // bound log size) so unknown commands sent by a stale or compromised
+  // renderer are visible during debugging.
+  const rawType = typeof obj.type === 'string' ? obj.type.slice(0, 64) : `<${typeof obj.type}>`;
+  logWarn(`Dashboard: rejected unexpected message type "${rawType}".`);
   return null;
 }
 

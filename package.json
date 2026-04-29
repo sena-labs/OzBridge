@@ -18,6 +18,10 @@
   },
   "homepage": "https://github.com/sena-labs/OzBridge#readme",
   "icon": "media/warp-icon.png",
+  "galleryBanner": {
+    "color": "#0E1116",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.96.0",
     "node": ">=20.19"
@@ -470,12 +474,12 @@
       "view/item/context": [
         {
           "command": "ozBridge.tree.copyId",
-          "when": "view == ozBridge.runsView && viewItem =~ /^warp(Run|Schedule|Environment|Mcp)/",
+          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed || viewItem == warpSchedule:running || viewItem == warpSchedule:paused || viewItem == warpEnvironment || viewItem == warpMcp)",
           "group": "warpGeneric@1"
         },
         {
           "command": "ozBridge.tree.openInBrowser",
-          "when": "view == ozBridge.runsView && viewItem =~ /^warpRun/",
+          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed)",
           "group": "warpGeneric@2"
         },
         {
@@ -490,27 +494,27 @@
         },
         {
           "command": "ozBridge.tree.deleteSchedule",
-          "when": "view == ozBridge.runsView && viewItem =~ /^warpSchedule/",
+          "when": "view == ozBridge.runsView && (viewItem == warpSchedule:running || viewItem == warpSchedule:paused)",
           "group": "warpSchedule@2"
         },
         {
           "command": "ozBridge.tree.handoff",
-          "when": "view == ozBridge.runsView && viewItem =~ /^warpRun/",
+          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed)",
           "group": "warpGeneric@3"
         },
         {
           "command": "ozBridge.drive.insertIntoChat",
-          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "when": "view == ozBridge.driveView && (viewItem == warpDrivePrompt || viewItem == warpDriveRule || viewItem == warpDriveSkill)",
           "group": "warpDrive@1"
         },
         {
           "command": "ozBridge.drive.copyContent",
-          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "when": "view == ozBridge.driveView && (viewItem == warpDrivePrompt || viewItem == warpDriveRule || viewItem == warpDriveSkill)",
           "group": "warpDrive@2"
         },
         {
           "command": "ozBridge.drive.openInEditor",
-          "when": "view == ozBridge.driveView && viewItem =~ /^warpDrive(Prompt|Rule|Skill)$/",
+          "when": "view == ozBridge.driveView && (viewItem == warpDrivePrompt || viewItem == warpDriveRule || viewItem == warpDriveSkill)",
           "group": "warpDrive@3"
         }
       ]

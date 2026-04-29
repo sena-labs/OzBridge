@@ -122,8 +122,8 @@ const DESCRIPTORS: Record<string, McpToolDescriptor> = {
       properties: {
         status: {
           type: 'string',
-          enum: ['all', 'active', 'completed', 'QUEUED', 'INPROGRESS', 'SUCCEEDED', 'FAILED', 'UNKNOWN'],
-          description: 'Filter. `active` = QUEUED|INPROGRESS, `completed` = SUCCEEDED|FAILED.',
+          enum: ['all', 'active', 'completed', 'QUEUED', 'INPROGRESS', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'PAUSED', 'SKIPPED', 'UNKNOWN'],
+          description: 'Filter. `active` = QUEUED|INPROGRESS, `completed` = SUCCEEDED|FAILED|CANCELLED|SKIPPED.',
         },
         limit: { type: 'number', description: 'Maximum number of rows returned.' },
       },

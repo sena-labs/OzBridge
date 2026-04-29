@@ -411,6 +411,9 @@ function runIcon(status: OzRunStatus): string {
     case 'INPROGRESS': return 'sync~spin';
     case 'SUCCEEDED': return 'check';
     case 'FAILED': return 'error';
+    case 'CANCELLED': return 'circle-slash';
+    case 'PAUSED': return 'debug-pause';
+    case 'SKIPPED': return 'debug-step-over';
     default: return 'question';
   }
 }

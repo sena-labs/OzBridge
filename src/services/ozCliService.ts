@@ -16,20 +16,11 @@ import {
   OzCliError,
   OzCliErrorKind,
   IConfigManager,
+  isValidOzRunStatus,
 } from '../types/index.js';
 import { parse } from '../parsers/jsonParser.js';
 import { getErrorMessage } from '../utils/error.js';
 import { logWarn } from 'copilot-chat-toolkit';
-
-/** Type predicate for {@link OzRunStatus}. */
-function isValidOzRunStatus(value: string): value is OzRunStatus {
-  return (
-    value === 'QUEUED' ||
-    value === 'INPROGRESS' ||
-    value === 'SUCCEEDED' ||
-    value === 'FAILED'
-  );
-}
 
 /**
  * Wraps the Warp Oz CLI (`oz`) via `child_process.spawn`.

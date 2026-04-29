@@ -24,8 +24,28 @@ export interface PollingConfig {
 // CLI Results
 // ============================================================================
 
-/** Terminal status of an agent run. */
-export type RunStatus = 'QUEUED' | 'INPROGRESS' | 'SUCCEEDED' | 'FAILED' | 'UNKNOWN';
+/**
+ * Terminal status of an agent run.
+ *
+ * - `QUEUED` — accepted, waiting for a worker.
+ * - `INPROGRESS` — currently executing.
+ * - `SUCCEEDED` — completed without errors.
+ * - `FAILED` — completed with errors.
+ * - `CANCELLED` — terminated by user/system request before completion (LOW-2).
+ * - `PAUSED` — execution suspended, may resume later (LOW-2).
+ * - `SKIPPED` — eligible run that was bypassed (e.g. schedule overlap, LOW-2).
+ * - `UNKNOWN` — status string did not match any known enum value
+ *   (forward-compatible fallback so the UI never crashes).
+ */
+export type RunStatus =
+  | 'QUEUED'
+  | 'INPROGRESS'
+  | 'SUCCEEDED'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'PAUSED'
+  | 'SKIPPED'
+  | 'UNKNOWN';
 
 /** Result of an agent execution (local or cloud). */
 export interface RunResult {

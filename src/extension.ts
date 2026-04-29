@@ -166,8 +166,8 @@ export function activate(context: vscode.ExtensionContext): void {
     return;
   }
 
-  // Inizializza servizi
-  // Il WorkspaceConfigResolver legge `.warp/warp-bridge.yaml` dal workspace
+  // Initialize services.
+  // WorkspaceConfigResolver loads `.warp/warp-bridge.yaml` from the workspace
   // corrente e offre override typed che vincono sui settings VS Code.
   state.workspaceConfigResolver = new WorkspaceConfigResolver(firstWorkspaceFolderPath());
   context.subscriptions.push(state.workspaceConfigResolver);
@@ -200,7 +200,7 @@ export function activate(context: vscode.ExtensionContext): void {
   state.runPoller = new RunPoller(cli, state.configManager);
   context.subscriptions.push({ dispose: () => state.runPoller?.disposeAll() });
 
-  // Avvia l'ActiveRunsTracker — feed event-driven per Status Bar e sidebar.
+  // Start the ActiveRunsTracker — event-driven feed for Status Bar and sidebar.
   // Created here (before the chat participant) so it can be threaded into
   // the cloud command, enabling immediate sidebar updates on terminal status.
   state.tracker = new ActiveRunsTracker(cli);
@@ -209,7 +209,7 @@ export function activate(context: vscode.ExtensionContext): void {
     state.tracker?.start();
   };
 
-  // Registra comando per aprire conversazioni direttamente in Warp (bypassa il browser)
+  // Register command to open conversations directly in Warp (bypassing the browser).
   const openConvCmd = vscode.commands.registerCommand(
     'ozBridge.openConversation',
     async (uri: unknown) => {
@@ -224,10 +224,10 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   context.subscriptions.push(openConvCmd);
 
-  // Registra Chat Participant
+  // Register Chat Participant.
   registerChatParticipant(context, cli, ctx, state.configManager, state.runPoller, state.tracker);
 
-  // Registra Language Model Tools — Agent-Native integration.
+  // Register Language Model Tools — Agent-Native integration.
   // Questi tool permettono a Copilot Agent mode di invocare Oz senza @oz.
   // Il runtime di VS Code < 1.96 (`vscode.lm` assente) è gestito con graceful fallback.
   if (typeof vscode.lm?.registerTool === 'function') {
@@ -243,7 +243,13 @@ export function activate(context: vscode.ExtensionContext): void {
   // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
   const treeProvider = new OzRunsTreeProvider(cli, state.tracker, context.globalState);
   context.subscriptions.push(treeProvider);
-  const runsTreeView = vscode.window.createTreeView('ozBridge.runsView', { treeDataProvider: treeProvider });
+  const runsTreeView = vscode.window.createTreeView('ozBridge.runsView', {
+    treeDataProvider: treeProvider,
+    // LOW-6: be explicit about the (default) single-selection behaviour
+    // so future readers / linters don't mistake the omission for a TODO.
+    canSelectMany: false,
+    showCollapseAll: true,
+  });
   context.subscriptions.push(runsTreeView);
   // MED-8: persist category collapse preference across reloads.
   // Guarded with `typeof` so test mocks of `createTreeView` that omit
@@ -401,7 +407,7 @@ export function activate(context: vscode.ExtensionContext): void {
     });
   }
 
-  // Comando aggiuntivo: focus sulla sidebar — usato dal click sulla Status Bar.
+  // Auxiliary command: focus the sidebar — invoked from the Status Bar click.
   context.subscriptions.push(
     vscode.commands.registerCommand(StatusBarManager.FOCUS_COMMAND, () => {
       ensureRunsTrackerStarted();

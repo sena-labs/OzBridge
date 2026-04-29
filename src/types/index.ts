@@ -23,6 +23,29 @@ export type OzRunResult = RunResult;
 export type OzListResult<T> = ListResult<T>;
 export type { DiagnosticEntry, ContextPayload, SlashCommandHandler };
 
+/**
+ * LOW-3: centralised type-guard for the run-status enum.
+ *
+ * Previously inlined in `src/services/ozCliService.ts`. Other modules that
+ * need to validate a string before narrowing it to {@link OzRunStatus} should
+ * import from here so the canonical list of accepted values stays in sync
+ * with the {@link RunStatus} union exported by `copilot-chat-toolkit`.
+ */
+const KNOWN_OZ_RUN_STATUSES: ReadonlySet<OzRunStatus> = new Set<OzRunStatus>([
+  'QUEUED',
+  'INPROGRESS',
+  'SUCCEEDED',
+  'FAILED',
+  'CANCELLED',
+  'PAUSED',
+  'SKIPPED',
+  'UNKNOWN',
+]);
+
+export function isValidOzRunStatus(value: string): value is OzRunStatus {
+  return KNOWN_OZ_RUN_STATUSES.has(value as OzRunStatus);
+}
+
 // ============================================================================
 // OzBridge Configuration (extends toolkit's BridgeConfig)
 // ============================================================================
