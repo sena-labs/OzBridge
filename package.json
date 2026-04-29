@@ -17,7 +17,7 @@
     "url": "https://github.com/sena-labs/OzBridge/issues"
   },
   "homepage": "https://github.com/sena-labs/OzBridge#readme",
-  "icon": "media/warp-icon.png",
+  "icon": "media/ozbridge-icon.png",
   "galleryBanner": {
     "color": "#0E1116",
     "theme": "dark"
@@ -278,7 +278,7 @@
         {
           "id": "ozBridgeSidebar",
           "title": "OzBridge",
-          "icon": "media/warp-icon.svg"
+          "icon": "media/ozbridge-icon.svg"
         }
       ]
     },
@@ -287,13 +287,13 @@
         {
           "id": "ozBridge.runsView",
           "name": "Runs & Resources",
-          "icon": "media/warp-icon.svg",
+          "icon": "media/ozbridge-icon.svg",
           "contextualTitle": "OzBridge"
         },
         {
           "id": "ozBridge.driveView",
           "name": "Warp Drive",
-          "icon": "media/warp-icon.svg",
+          "icon": "media/ozbridge-icon.svg",
           "contextualTitle": "OzBridge"
         }
       ]
