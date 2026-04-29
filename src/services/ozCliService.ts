@@ -48,19 +48,42 @@ interface ExecResult {
 
 /**
  * Sensitive parent-env keys never propagated to the spawned `oz` child.
- * Mirrors the deny-list shipped by `npm exec` / `pnpm exec`.
+ * Mirrors the deny-list shipped by `npm exec` / `pnpm exec` and extends it
+ * with additional well-known credential keys (MED-6).
  */
 const SENSITIVE_ENV_KEYS = new Set([
   'NPM_TOKEN',
   'GITHUB_TOKEN',
   'GH_TOKEN',
+  'GITLAB_TOKEN',
+  'GITLAB_PRIVATE_TOKEN',
+  'JIRA_API_TOKEN',
+  'SLACK_TOKEN',
+  'SLACK_BOT_TOKEN',
+  'SLACK_APP_TOKEN',
   'AWS_SECRET_ACCESS_KEY',
   'AWS_SESSION_TOKEN',
   'OPENAI_API_KEY',
   'ANTHROPIC_API_KEY',
   'GEMINI_API_KEY',
   'AZURE_OPENAI_API_KEY',
+  'HUGGINGFACE_TOKEN',
+  'HF_TOKEN',
 ]);
+
+/**
+ * Prefix-based blocklist for credential families with many variants.
+ * Any env var whose name starts with one of these prefixes is filtered
+ * out of the child process environment regardless of suffix (MED-6).
+ */
+const SENSITIVE_ENV_PREFIXES = [
+  'STRIPE_',
+  'TWILIO_',
+  'SENDGRID_',
+  'MAILGUN_',
+  'PAGERDUTY_',
+  'DATADOG_',
+];
 
 /**
  * Permissive validator for `--jq <FILTER>` values. Allows the characters
@@ -545,12 +568,15 @@ export class OzCliService implements IOzCliService {
       const ozPath = this.resolveOzPath();
       const spawnCwd = cwd || undefined;
 
+      // On Windows we need shell:true for .cmd wrappers and unresolved
+      // names (like 'oz') so cmd.exe can locate them.  Only skip the
+      // shell when we resolved to a concrete .exe path. Declared at the
+      // outer scope so `terminateProcess` (MED-7 taskkill branch) can
+      // see it.
+      const needsShell = process.platform === 'win32' && !/\.exe$/i.test(ozPath);
+
       let proc: ChildProcess;
       try {
-        // On Windows we need shell:true for .cmd wrappers and unresolved
-        // names (like 'oz') so cmd.exe can locate them.  Only skip the
-        // shell when we resolved to a concrete .exe path.
-        const needsShell = process.platform === 'win32' && !/\.exe$/i.test(ozPath);
 
         // Inherit the full parent environment so the Oz CLI sees every
         // platform variable it needs to function. Stripping the env down
@@ -627,6 +653,20 @@ export class OzCliService implements IOzCliService {
         // timers on the event loop.
         if (killed) { return; }
         killed = true;
+        // MED-7: on Windows when we spawn via `shell: true` (because the CLI
+        // resolved to a `.cmd` / `.bat` shim) `proc.kill()` only kills the
+        // shell wrapper, not the descendant `oz.exe` process. Use
+        // `taskkill /T /F` to reap the entire process tree, then still
+        // invoke `proc.kill()` as a belt-and-braces signal for the
+        // wrapper itself (and to satisfy mocks in unit tests).
+        if (process.platform === 'win32' && needsShell && proc.pid !== undefined) {
+          try {
+            spawn('taskkill', ['/PID', String(proc.pid), '/T', '/F'], {
+              windowsHide: true,
+              stdio: 'ignore',
+            });
+          } catch { /* best-effort */ }
+        }
         try { proc.kill('SIGTERM'); } catch { /* already exited */ }
 
         // Clear any previous force-kill handle (defensive — should be unset
@@ -852,6 +892,17 @@ export class OzCliService implements IOzCliService {
    * Returns null if the output isn't NDJSON.
    */
   private tryParseNdjson(stdout: string): Omit<OzRunResult, 'exitCode' | 'durationMs'> | null {
+    return OzCliService.parseNdjson(stdout);
+  }
+
+  /**
+   * MED-5: NDJSON parser exposed as a static for direct unit testing of
+   * edge cases (partial frames, embedded newlines in pretty-printed JSON,
+   * non-JSON noise on stdout, mixed `\r\n` and `\n` line endings).
+   *
+   * @internal
+   */
+  static parseNdjson(stdout: string): Omit<OzRunResult, 'exitCode' | 'durationMs'> | null {
     // Spec: Oz CLI emits compact NDJSON (one JSON object per line, no
     // embedded newlines). If the format ever switches to pretty-printed
     // JSON the parser below would mis-tokenise the stream — callers should
@@ -1005,6 +1056,7 @@ export class OzCliService implements IOzCliService {
     const env: Record<string, string | undefined> = {};
     for (const [key, value] of Object.entries(parentEnv)) {
       if (SENSITIVE_ENV_KEYS.has(key)) { continue; }
+      if (SENSITIVE_ENV_PREFIXES.some((p) => key.startsWith(p))) { continue; }
       env[key] = value;
     }
     if (outputFormat) {

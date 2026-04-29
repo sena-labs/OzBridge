@@ -27,26 +27,20 @@ describe('activationEvents extended audit', () => {
     }
   });
 
-  it('must include dashboard command activation event aligned with contributed command id', () => {
-    const dashboard = (pkg.contributes?.commands ?? []).find((c) => c.command === 'ozBridge.dashboard.open');
-    expect(dashboard).toMatchObject({ command: 'ozBridge.dashboard.open' });
-
-    const expected = `onCommand:${dashboard!.command}`;
-    expect(pkg.activationEvents ?? []).toContain(expected);
-  });
-
-  it('must explicitly activate for every contributed command', () => {
-    const commands = (pkg.contributes?.commands ?? []).map((c) => c.command);
-    const activation = new Set(pkg.activationEvents ?? []);
-
-    expect(commands.length).toBeGreaterThan(0);
-    for (const command of commands) {
-      const expected = `onCommand:${command}`;
-      expect(
-        activation.has(expected),
-        `Missing activation event ${expected}. Command Palette invocation may not wake the extension on older VS Code hosts.`,
-      ).toBe(true);
-    }
+  it('must NOT declare redundant onCommand:* activation events for contributed commands', () => {
+    // VS Code ≥1.74 auto-generates onCommand activation events for every
+    // contributed command; declaring them explicitly is redundant noise that
+    // we audited away in v1.2 (MED-1). engines.vscode is pinned at ^1.96 so
+    // this is safe.
+    const commands = new Set((pkg.contributes?.commands ?? []).map((c) => c.command));
+    const redundant = (pkg.activationEvents ?? [])
+      .filter((e) => e.startsWith('onCommand:'))
+      .map((e) => e.slice('onCommand:'.length))
+      .filter((cmd) => commands.has(cmd));
+    expect(
+      redundant,
+      `Found redundant onCommand activation events for contributed commands: ${redundant.join(', ')}`,
+    ).toEqual([]);
   });
 
   it('relies on granular activation events instead of onStartupFinished (cold-start cost)', () => {

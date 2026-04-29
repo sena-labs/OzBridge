@@ -57,33 +57,7 @@
     "onLanguageModelTool:oz_get_run",
     "onLanguageModelTool:oz_list_runs",
     "onView:ozBridge.runsView",
-    "onView:ozBridge.driveView",
-    "onCommand:ozBridge.tree.refresh",
-    "onCommand:ozBridge.tree.copyId",
-    "onCommand:ozBridge.tree.openInBrowser",
-    "onCommand:ozBridge.tree.showRun",
-    "onCommand:ozBridge.tree.pauseSchedule",
-    "onCommand:ozBridge.tree.unpauseSchedule",
-    "onCommand:ozBridge.tree.deleteSchedule",
-    "onCommand:ozBridge.handoff",
-    "onCommand:ozBridge.tree.handoff",
-    "onCommand:ozBridge.mcp.start",
-    "onCommand:ozBridge.mcp.stop",
-    "onCommand:ozBridge.mcp.status",
-    "onCommand:ozBridge.mcp.copyEndpointUrl",
-    "onCommand:ozBridge.mcp.registerClient",
-    "onCommand:ozBridge.mcp.unregisterClient",
-    "onCommand:ozBridge.drive.refresh",
-    "onCommand:ozBridge.drive.insertIntoChat",
-    "onCommand:ozBridge.drive.copyContent",
-    "onCommand:ozBridge.drive.openInEditor",
-    "onCommand:ozBridge.skill.edit",
-    "onCommand:ozBridge.skill.new",
-    "onCommand:ozBridge.skill.saveGlobal",
-    "onCommand:ozBridge.skill.saveWorkspace",
-    "onCommand:ozBridge.dashboard.open",
-    "onCommand:ozBridge.triageFailure",
-    "onCommand:ozBridge.exportDataset"
+    "onView:ozBridge.driveView"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -547,58 +521,58 @@
         "ozBridge.ozPath": {
           "type": "string",
           "default": "oz",
-          "description": "Path to the Oz CLI executable",
+          "markdownDescription": "Path to the Oz CLI executable. Use the bare name `oz` to resolve from `PATH`, or an absolute path like `/usr/local/bin/oz` to pin a specific binary. See [Warp downloads](https://www.warp.dev/download).",
           "scope": "machine-overridable"
         },
         "ozBridge.defaultModel": {
           "type": "string",
           "default": "auto",
-          "description": "Default AI model for agent runs"
+          "markdownDescription": "Default AI model for agent runs. Use `auto` to let Warp pick the best available model, or pin a specific id (e.g. `claude-3-7-sonnet`, `gpt-4o`)."
         },
         "ozBridge.defaultProfile": {
           "type": "string",
           "default": "Default",
-          "description": "Default Oz agent profile"
+          "markdownDescription": "Default Oz agent profile. Profiles are managed by the Warp app under **Settings → AI → Profiles**."
         },
         "ozBridge.defaultEnvironment": {
           "type": "string",
           "default": "",
-          "description": "Default cloud environment name (empty = none)"
+          "markdownDescription": "Default cloud environment id (empty = let Warp pick the first available, or run with no environment if none exist)."
         },
         "ozBridge.cloudPollingIntervalMs": {
           "type": "integer",
           "default": 5000,
           "minimum": 100,
-          "description": "Initial polling interval for cloud runs (ms)"
+          "markdownDescription": "Initial polling interval for cloud runs (in **milliseconds**). The poller backs off exponentially from this value."
         },
         "ozBridge.cloudPollingTimeoutMs": {
           "type": "integer",
           "default": 1800000,
           "minimum": 1000,
-          "description": "Max polling duration for cloud runs (ms, default 30 min)"
+          "markdownDescription": "Maximum polling duration for cloud runs (in **milliseconds**). Default `1800000` = 30 minutes."
         },
         "ozBridge.timeoutMs": {
           "type": "integer",
           "default": 300000,
           "minimum": 1000,
-          "description": "Timeout for local agent runs (ms, default 5 min)"
+          "markdownDescription": "Timeout for local agent runs (in **milliseconds**). Default `300000` = 5 minutes."
         },
         "ozBridge.idleTimeoutMs": {
           "type": "integer",
           "default": 90000,
           "minimum": 0,
-          "description": "Idle timeout for the Oz CLI subprocess (ms). Aborts the run if no stdout/stderr is received for this long — prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to 0 to disable. Default 90 s."
+          "markdownDescription": "Idle timeout for the Oz CLI subprocess (in **milliseconds**). Aborts the run if no `stdout` / `stderr` is received for this long — prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to `0` to disable. Default `90000` = 90 s."
         },
         "ozBridge.maxOutputChars": {
           "type": "integer",
           "default": 15000,
           "minimum": 100,
-          "description": "Max characters shown in chat before truncation"
+          "markdownDescription": "Maximum number of characters streamed back to chat before truncation. Larger values consume more context budget on the LM side."
         },
         "ozBridge.mcpEnabled": {
           "type": "boolean",
           "default": false,
-          "description": "Start an embedded MCP server at activation so Claude Code, Cursor and Codex can drive Oz.",
+          "markdownDescription": "Start an embedded MCP server at activation so **Claude Code**, **Cursor** and **Codex** can drive Oz. See [`docs/MCP.md`](https://github.com/sena-labs/OzBridge/blob/main/docs/MCP.md).",
           "scope": "machine-overridable"
         },
         "ozBridge.mcpPort": {
@@ -606,7 +580,7 @@
           "default": 3847,
           "minimum": 0,
           "maximum": 65535,
-          "description": "TCP port the MCP server listens on when enabled.",
+          "markdownDescription": "TCP port the MCP server listens on when enabled. Set to `0` to let the OS allocate an ephemeral port.",
           "scope": "machine-overridable"
         },
         "ozBridge.mcpMaxSseSessions": {
@@ -614,13 +588,13 @@
           "default": 16,
           "minimum": 1,
           "maximum": 256,
-          "description": "Maximum number of concurrent MCP SSE sessions. Additional GET /sse requests are rejected with HTTP 503 once the cap is reached.",
+          "markdownDescription": "Maximum number of concurrent MCP SSE sessions. Additional `GET /sse` requests are rejected with **HTTP 503** once the cap is reached.",
           "scope": "machine-overridable"
         },
         "ozBridge.mcpBindAddress": {
           "type": "string",
           "default": "127.0.0.1",
-          "description": "Network interface the MCP server binds to. Keep 127.0.0.1 unless you explicitly want to expose it.",
+          "markdownDescription": "Network interface the MCP server binds to. Keep `127.0.0.1` unless you explicitly want to expose the server to other hosts. Setting `0.0.0.0` exposes it to the entire network — always pair with `#ozBridge.mcpBearerToken#`.",
           "scope": "machine-overridable"
         },
         "ozBridge.mcpBearerToken": {

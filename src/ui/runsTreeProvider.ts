@@ -76,6 +76,8 @@ interface MessageNode extends BaseNode {
  */
 export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, vscode.Disposable {
   static readonly HISTORY_LIMIT = 20;
+  /** MED-8: globalState key prefix for persisted category collapse state. */
+  private static readonly COLLAPSE_STATE_KEY = 'ozBridge.tree.categoryCollapsed';
 
   private readonly _onDidChangeTreeData = new vscode.EventEmitter<OzTreeNode | undefined | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
@@ -86,6 +88,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
   constructor(
     private readonly cli: IOzCliService,
     private readonly tracker: ActiveRunsTracker,
+    private readonly memento?: vscode.Memento,
   ) {
     this.subscriptions.push(
       this.tracker.onDidChange(() => this._onDidChangeTreeData.fire()),
@@ -95,6 +98,31 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
 
   refresh(): void {
     this._onDidChangeTreeData.fire();
+  }
+
+  /**
+   * MED-8: persist a category's collapse state so that user preference
+   * survives reload. Wire this from `TreeView.onDidCollapseElement` /
+   * `onDidExpandElement` in the extension activator.
+   */
+  setCategoryCollapsed(category: CategoryNode['category'], collapsed: boolean): void {
+    if (!this.memento) { return; }
+    const map = this.readCollapseMap();
+    map[category] = collapsed;
+    void this.memento.update(OzRunsTreeProvider.COLLAPSE_STATE_KEY, map);
+  }
+
+  private readCollapseMap(): Record<string, boolean> {
+    if (!this.memento) { return {}; }
+    const raw = this.memento.get<Record<string, boolean>>(OzRunsTreeProvider.COLLAPSE_STATE_KEY);
+    return raw && typeof raw === 'object' ? raw : {};
+  }
+
+  private categoryCollapsibleState(category: CategoryNode['category']): vscode.TreeItemCollapsibleState {
+    const collapsed = this.readCollapseMap()[category] === true;
+    return collapsed
+      ? vscode.TreeItemCollapsibleState.Collapsed
+      : vscode.TreeItemCollapsibleState.Expanded;
   }
 
   dispose(): void {
@@ -107,7 +135,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
   getTreeItem(element: OzTreeNode): vscode.TreeItem {
     switch (element.kind) {
       case 'category': {
-        const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.Expanded);
+        const item = new vscode.TreeItem(element.label, this.categoryCollapsibleState(element.category));
         item.id = element.id;
         item.iconPath = new vscode.ThemeIcon(categoryIcon(element.category));
         item.contextValue = `warpCategory:${element.category}`;

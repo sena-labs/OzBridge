@@ -241,10 +241,33 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusBar);
 
   // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
-  const treeProvider = new OzRunsTreeProvider(cli, state.tracker);
+  const treeProvider = new OzRunsTreeProvider(cli, state.tracker, context.globalState);
   context.subscriptions.push(treeProvider);
   const runsTreeView = vscode.window.createTreeView('ozBridge.runsView', { treeDataProvider: treeProvider });
   context.subscriptions.push(runsTreeView);
+  // MED-8: persist category collapse preference across reloads.
+  // Guarded with `typeof` so test mocks of `createTreeView` that omit
+  // these optional events (legacy fixtures) keep activating cleanly.
+  if (typeof runsTreeView.onDidCollapseElement === 'function') {
+    context.subscriptions.push(
+      runsTreeView.onDidCollapseElement((e) => {
+        if (e.element && (e.element as { kind?: string }).kind === 'category') {
+          const cat = (e.element as { category: 'activeRuns' | 'history' | 'schedules' | 'environments' | 'mcp' }).category;
+          treeProvider.setCategoryCollapsed(cat, true);
+        }
+      }),
+    );
+  }
+  if (typeof runsTreeView.onDidExpandElement === 'function') {
+    context.subscriptions.push(
+      runsTreeView.onDidExpandElement((e) => {
+        if (e.element && (e.element as { kind?: string }).kind === 'category') {
+          const cat = (e.element as { category: 'activeRuns' | 'history' | 'schedules' | 'environments' | 'mcp' }).category;
+          treeProvider.setCategoryCollapsed(cat, false);
+        }
+      }),
+    );
+  }
   context.subscriptions.push(
     runsTreeView.onDidChangeVisibility((event) => {
       if (event.visible) {
