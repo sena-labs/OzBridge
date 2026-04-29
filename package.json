@@ -24,6 +24,21 @@
   "categories": [
     "Chat"
   ],
+  "keywords": [
+    "chat",
+    "copilot",
+    "agent",
+    "AI",
+    "LLM",
+    "Warp",
+    "Oz",
+    "MCP",
+    "model-context-protocol",
+    "prompt"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
   "activationEvents": [
     "onChatParticipant:ozbridge.oz",
     "onLanguageModelTool:oz_run_local",
@@ -125,6 +140,7 @@
         ],
         "inputSchema": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "prompt"
           ],
@@ -168,6 +184,7 @@
         ],
         "inputSchema": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "prompt"
           ],
@@ -214,6 +231,7 @@
         ],
         "inputSchema": {
           "type": "object",
+          "additionalProperties": false,
           "required": [
             "runId"
           ],
@@ -240,6 +258,7 @@
         ],
         "inputSchema": {
           "type": "object",
+          "additionalProperties": false,
           "properties": {
             "status": {
               "type": "string",

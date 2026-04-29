@@ -150,7 +150,7 @@ describe('WorkspaceConfigResolver — watcher integration', () => {
     workspace.createFileSystemWatcher.mockClear();
   });
 
-  it('fires onDidChange and refreshes overrides when the watcher reports a change', () => {
+  it('fires onDidChange and refreshes overrides when the watcher reports a change', async () => {
     writeYaml('defaultProfile: first');
     const resolver = new WorkspaceConfigResolver(workspaceRoot);
     const watcher = lastWatcher();
@@ -163,6 +163,10 @@ describe('WorkspaceConfigResolver — watcher integration', () => {
     // firing — this mirrors what VS Code does when the file is saved.
     writeYaml('defaultProfile: second');
     watcher!._fireChange();
+    await new Promise<void>((resolve) => {
+      const sub = resolver.onDidChange(() => { sub.dispose(); resolve(); });
+      setTimeout(() => { sub.dispose(); resolve(); }, 1000);
+    });
 
     expect(events).toHaveLength(1);
     expect(events[0].defaultProfile).toBe('second');
@@ -170,7 +174,7 @@ describe('WorkspaceConfigResolver — watcher integration', () => {
     resolver.dispose();
   });
 
-  it('emits on onDidCreate when the YAML is created after the watcher is up', () => {
+  it('emits on onDidCreate when the YAML is created after the watcher is up', async () => {
     // Start without a YAML file — resolver reads `{}` initially.
     const resolver = new WorkspaceConfigResolver(workspaceRoot);
     expect(resolver.getOverrides()).toEqual({});
@@ -182,13 +186,17 @@ describe('WorkspaceConfigResolver — watcher integration', () => {
 
     writeYaml('mcpEnabled: true');
     watcher!._fireCreate();
+    await new Promise<void>((resolve) => {
+      const sub = resolver.onDidChange(() => { sub.dispose(); resolve(); });
+      setTimeout(() => { sub.dispose(); resolve(); }, 1000);
+    });
 
     expect(fired).toHaveBeenCalledTimes(1);
     expect(resolver.getOverrides().mcpEnabled).toBe(true);
     resolver.dispose();
   });
 
-  it('clears overrides on onDidDelete', () => {
+  it('clears overrides on onDidDelete', async () => {
     writeYaml('defaultProfile: gone-soon');
     const resolver = new WorkspaceConfigResolver(workspaceRoot);
     expect(resolver.getOverrides().defaultProfile).toBe('gone-soon');
@@ -199,6 +207,10 @@ describe('WorkspaceConfigResolver — watcher integration', () => {
 
     fs.rmSync(path.join(workspaceRoot, WORKSPACE_CONFIG_PATH), { force: true });
     watcher!._fireDelete();
+    await new Promise<void>((resolve) => {
+      const sub = resolver.onDidChange(() => { sub.dispose(); resolve(); });
+      setTimeout(() => { sub.dispose(); resolve(); }, 1000);
+    });
 
     expect(snapshots).toHaveLength(1);
     expect(snapshots[0]).toEqual({});
@@ -206,7 +218,7 @@ describe('WorkspaceConfigResolver — watcher integration', () => {
     resolver.dispose();
   });
 
-  it('stops dispatching events after dispose()', () => {
+  it('stops dispatching events after dispose()', async () => {
     writeYaml('defaultProfile: first');
     const resolver = new WorkspaceConfigResolver(workspaceRoot);
     const watcher = lastWatcher();
@@ -217,6 +229,7 @@ describe('WorkspaceConfigResolver — watcher integration', () => {
     // After dispose, internal reloadAndEmit is a no-op. Even if a stray
     // event arrives (e.g. during VS Code shutdown), nothing fires.
     watcher!._fireChange();
+    await new Promise((r) => setTimeout(r, 50));
     expect(fired).not.toHaveBeenCalled();
   });
 });

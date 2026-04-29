@@ -47,6 +47,37 @@ jobs:
       - name: Build extension (production)
         run: npm run build
 
+  # ── Stage 1b: Coverage gate (single job, enforces vitest thresholds) ───
+  coverage:
+    name: Coverage gate (Node 22 · ubuntu)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage (enforces thresholds in vitest.config.ts)
+        run: npx vitest run --coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: |
+            coverage/lcov.info
+            coverage/index.html
+          retention-days: 14
+
   # ── Stage 2: Package VSIX ──────────────────────────────────────────────
   package:
     name: Package VSIX

@@ -50,5 +50,11 @@
   "OzBridge: no active editor to save.": "OzBridge：没有活动的编辑器可保存。",
   "OzBridge: no {0} directory available.": "OzBridge：没有可用的 {0} 目录。",
   "Saved {0} skill to {1}": "已将技能 {0} 保存到 {1}",
-  "Save failed: {0}": "保存失败：{0}"
+  "Save failed: {0}": "保存失败：{0}",
+  "🌐 Open in browser": "🌐 在浏览器中打开",
+  "📥 Install Warp": "📥 安装 Warp",
+  "🔑 Login Warp": "🔑 登录 Warp",
+  "💳 Manage Warp billing": "💳 管理 Warp 计费",
+  "OzBridge · /init templates": "OzBridge · /init 模板",
+  "Pick the skill / rule files to scaffold": "选择要生成的 skill / rule 文件"
 }

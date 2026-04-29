@@ -50,5 +50,11 @@
   "OzBridge: no active editor to save.": "OzBridge: no active editor to save.",
   "OzBridge: no {0} directory available.": "OzBridge: no {0} directory available.",
   "Saved {0} skill to {1}": "Saved {0} skill to {1}",
-  "Save failed: {0}": "Save failed: {0}"
+  "Save failed: {0}": "Save failed: {0}",
+  "🌐 Open in browser": "🌐 Open in browser",
+  "📥 Install Warp": "📥 Install Warp",
+  "🔑 Login Warp": "🔑 Login Warp",
+  "💳 Manage Warp billing": "💳 Manage Warp billing",
+  "OzBridge · /init templates": "OzBridge · /init templates",
+  "Pick the skill / rule files to scaffold": "Pick the skill / rule files to scaffold"
 }

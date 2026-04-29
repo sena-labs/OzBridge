@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import * as fsp from 'fs/promises';
 import * as path from 'path';
 import { OzBridgeConfig } from '../types/index.js';
 import { logInfo, logWarn } from './logger.js';
@@ -146,6 +147,20 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
     this.emitter.fire(this.getOverrides());
   }
 
+  /**
+   * Async variant of {@link reloadAndEmit} used by file-watcher callbacks
+   * to avoid sync I/O on the extension-host event loop. The constructor
+   * and the public sync `refresh()`/`setWorkspaceRoot()` keep using
+   * {@link reload} so first-call semantics (ConfigManager's initial
+   * `getConfig()` already reflecting overrides) are preserved.
+   */
+  private async reloadAndEmitAsync(): Promise<void> {
+    if (this.disposed) { return; }
+    await this.reloadAsync();
+    if (this.disposed) { return; }
+    this.emitter.fire(this.getOverrides());
+  }
+
   private bindWatcher(): void {
     if (!this.workspaceRoot) { return; }
     if (typeof vscode.workspace.createFileSystemWatcher !== 'function') { return; }
@@ -156,9 +171,9 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
       false,
     );
     this.watcherDisposables.push(
-      watcher.onDidCreate(() => this.reloadAndEmit()),
-      watcher.onDidChange(() => this.reloadAndEmit()),
-      watcher.onDidDelete(() => this.reloadAndEmit()),
+      watcher.onDidCreate(() => { void this.reloadAndEmitAsync(); }),
+      watcher.onDidChange(() => { void this.reloadAndEmitAsync(); }),
+      watcher.onDidDelete(() => { void this.reloadAndEmitAsync(); }),
       watcher,
     );
   }
@@ -170,16 +185,33 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
   }
 
   private reload(): void {
-    this.overrides = {};
-    if (!this.workspaceRoot) { return; }
+    if (!this.workspaceRoot) { this.overrides = {}; return; }
     const filePath = path.join(this.workspaceRoot, WORKSPACE_CONFIG_PATH);
     let source: string;
     try {
       source = fs.readFileSync(filePath, 'utf8');
     } catch {
       // File missing or unreadable — silently fall back to empty overrides.
+      this.overrides = {};
       return;
     }
+    this.applyParsedSource(source);
+  }
+
+  private async reloadAsync(): Promise<void> {
+    if (!this.workspaceRoot) { this.overrides = {}; return; }
+    const filePath = path.join(this.workspaceRoot, WORKSPACE_CONFIG_PATH);
+    let source: string;
+    try {
+      source = await fsp.readFile(filePath, 'utf8');
+    } catch {
+      this.overrides = {};
+      return;
+    }
+    this.applyParsedSource(source);
+  }
+
+  private applyParsedSource(source: string): void {
     const result = parseFlatYaml(source);
     for (const err of result.errors) {
       logWarn(`workspace config parse error (line ${err.line}): ${err.message}`);

@@ -50,5 +50,11 @@
   "OzBridge: no active editor to save.": "OzBridge: no hay editor activo para guardar.",
   "OzBridge: no {0} directory available.": "OzBridge: no hay directorio {0} disponible.",
   "Saved {0} skill to {1}": "Skill {0} guardada en {1}",
-  "Save failed: {0}": "Guardado fallido: {0}"
+  "Save failed: {0}": "Guardado fallido: {0}",
+  "🌐 Open in browser": "🌐 Abrir en el navegador",
+  "📥 Install Warp": "📥 Instalar Warp",
+  "🔑 Login Warp": "🔑 Iniciar sesión en Warp",
+  "💳 Manage Warp billing": "💳 Gestionar facturación de Warp",
+  "OzBridge · /init templates": "OzBridge · plantillas /init",
+  "Pick the skill / rule files to scaffold": "Elige los archivos de skill / regla a generar"
 }

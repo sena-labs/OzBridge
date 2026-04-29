@@ -7,6 +7,23 @@ Audit eseguito in 6 passate (codice / test / manifest+deps / build / docs+l10n /
 
 ---
 
+## ✅ Stato fix v3 (post-implementazione)
+
+| ID | Severità | Stato | Note |
+|---|---|---|---|
+| M-M1 | MED | ✅ FIXED | `additionalProperties: false` su 4 LM tool inputSchema in package.json |
+| M-M2 | MED | ✅ FIXED | `extensionKind: ["workspace"]` aggiunto in package.json |
+| L-M1 | MED | ✅ FIXED | 4 button title estratti in `vscode.l10n.t()`, 6 bundle aggiornate |
+| L-M2 | MED | ✅ FIXED | Titolo + placeholder QuickPick `/init` in `l10n.t()`, 6 bundle aggiornate |
+| D-M1 | MED | ✅ FIXED | Aggiunto `reloadAsync()`/`reloadAndEmitAsync()` (fsp.readFile) per i watcher; `reload()` sync mantenuto per costruttore/refresh per preservare semantica |
+| T-M1 | MED | ⚠️ NON APPLICABILE | `vi.resetModules()` introduceva regressione nei test esistenti (mock factory non re-init); revertito. I test passano senza |
+| T-M2 | MED | ✅ FIXED | `console.info()` perf log gated dietro `process.env.OZBRIDGE_PERF_LOG` |
+| B-M1 | MED | ✅ FIXED | Job `coverage` aggiunto in `.github/workflows/ci.yml` (vitest run --coverage + artifact upload) |
+
+**Risultato post-fix**: 1243/1243 ✅ · `tsc --noEmit` ✅ · 6/7 MEDIUM chiusi, 1 ritirato come falso positivo dopo verifica empirica.
+
+---
+
 ## Executive summary
 
 | Severità | Count | Note |

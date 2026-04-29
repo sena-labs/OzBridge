@@ -130,8 +130,8 @@ async function promptUser(templates: SkillTemplate[], root: string): Promise<Ski
   );
   const picked = await vscode.window.showQuickPick<TemplateQuickPickItem>(items, {
     canPickMany: true,
-    title: 'OzBridge · /init templates',
-    placeHolder: 'Pick the skill / rule files to scaffold',
+    title: vscode.l10n.t('OzBridge · /init templates'),
+    placeHolder: vscode.l10n.t('Pick the skill / rule files to scaffold'),
   });
   if (!picked) { return undefined; }
   return (picked as TemplateQuickPickItem[]).map((i) => i.template);

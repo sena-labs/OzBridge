@@ -57,7 +57,7 @@ export class OutputFormatter {
       stream.button({
         command: 'vscode.open',
         arguments: [vscode.Uri.parse(sessionUrl)],
-        title: '🌐 Open in browser',
+        title: vscode.l10n.t('🌐 Open in browser'),
       });
     }
     // autoOpened: Warp terminal opened automatically via --open flag
@@ -115,7 +115,7 @@ export class OutputFormatter {
         stream.button({
           command: 'vscode.open',
           arguments: [vscode.Uri.parse(WARP_INSTALL_URL)],
-          title: '📥 Install Warp',
+          title: vscode.l10n.t('📥 Install Warp'),
         });
         break;
 
@@ -124,7 +124,7 @@ export class OutputFormatter {
         stream.button({
           command: 'vscode.open',
           arguments: [vscode.Uri.parse(WARP_LOGIN_URL)],
-          title: '🔑 Login Warp',
+          title: vscode.l10n.t('🔑 Login Warp'),
         });
         break;
 
@@ -140,7 +140,7 @@ export class OutputFormatter {
         stream.button({
           command: 'vscode.open',
           arguments: [vscode.Uri.parse('https://app.warp.dev/settings/billing')],
-          title: '💳 Manage Warp billing',
+          title: vscode.l10n.t('💳 Manage Warp billing'),
         });
         break;
 
