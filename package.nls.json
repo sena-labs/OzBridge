@@ -34,11 +34,13 @@
   "walkthrough.gettingStarted.title": "Get Started with OzBridge",
   "walkthrough.gettingStarted.description": "Install Warp, run your first Oz agent from Copilot Chat, explore the Warp views and enable the MCP bridge.",
   "walkthrough.step.installCli.title": "Install the Warp CLI",
-  "walkthrough.step.installCli.description": "Download Warp (≥ 0.2024.x) so OzBridge can locate the `oz` executable on your PATH. Run the OzBridge: Refresh command once installation is complete.",
+  "walkthrough.step.installCli.description": "Download Warp (≥ 0.2024.x) so OzBridge can locate the `oz` executable on your PATH. This step is marked complete the first time OzBridge successfully calls the `oz_list_runs` tool.",
   "walkthrough.step.firstAgent.title": "Run your first @oz prompt",
   "walkthrough.step.firstAgent.description": "Open a Copilot Chat view and invoke @oz with a short prompt to run an Oz agent end-to-end.",
   "walkthrough.step.exploreViews.title": "Explore the OzBridge views",
   "walkthrough.step.exploreViews.description": "Open the Runs and Warp Drive views from the Activity Bar to manage runs, skills and prompts.",
   "walkthrough.step.enableMcp.title": "Enable the MCP bridge (optional)",
-  "walkthrough.step.enableMcp.description": "Toggle ozBridge.mcpEnabled or run OzBridge: Start MCP server to let Claude Code, Cursor or Codex drive OzBridge over MCP."
+  "walkthrough.step.enableMcp.description": "Toggle ozBridge.mcpEnabled or run OzBridge: Start MCP server to let Claude Code, Cursor or Codex drive OzBridge over MCP.",
+  "viewsWelcome.runs.empty": "No runs yet.\n[Run an agent](command:workbench.action.chat.open?%5B%7B%22query%22%3A%22%40oz%20%22%7D%5D)\n[Open the Getting Started walkthrough](command:workbench.action.openWalkthrough?%22sena-labs.ozbridge%23ozBridge.gettingStarted%22)\nLearn more about [OzBridge](https://github.com/sena-labs/OzBridge#readme).",
+  "viewsWelcome.drive.empty": "No prompts, rules or skills are available yet.\n[Save current chat as a workspace skill](command:ozBridge.skill.saveWorkspace)\n[Refresh](command:ozBridge.tree.refresh)\nLearn more about [Warp Drive](https://github.com/sena-labs/OzBridge#readme)."
 }

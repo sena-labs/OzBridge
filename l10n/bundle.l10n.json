@@ -55,5 +55,17 @@
   "🔑 Login Warp": "🔑 Login Warp",
   "💳 Manage Warp billing": "💳 Manage Warp billing",
   "OzBridge · /init templates": "OzBridge · /init templates",
-  "Pick the skill / rule files to scaffold": "Pick the skill / rule files to scaffold"
+  "Pick the skill / rule files to scaffold": "Pick the skill / rule files to scaffold",
+  "OzBridge: {0} active": "OzBridge: {0} active",
+  "OzBridge: 1 active run": "OzBridge: 1 active run",
+  "OzBridge: {0} active runs": "OzBridge: {0} active runs",
+  "OzBridge: unavailable": "OzBridge: unavailable",
+  "OzBridge: unable to list runs. Check Oz CLI availability and authentication.": "OzBridge: unable to list runs. Check Oz CLI availability and authentication.",
+  "OzBridge: unavailable. Check Oz CLI availability and authentication.": "OzBridge: unavailable. Check Oz CLI availability and authentication.",
+  "active & recent runs": "active & recent runs",
+  "No runs reported by Oz CLI.": "No runs reported by Oz CLI.",
+  "Status": "Status",
+  "Run ID": "Run ID",
+  "…and {0} more — click to open the sidebar.": "…and {0} more — click to open the sidebar.",
+  "Click to focus the OzBridge sidebar.": "Click to focus the OzBridge sidebar."
 }

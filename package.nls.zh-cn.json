@@ -34,11 +34,13 @@
   "walkthrough.gettingStarted.title": "开始使用 OzBridge",
   "walkthrough.gettingStarted.description": "安装 Warp，从 Copilot Chat 运行您的第一个 Oz 代理，探索 OzBridge 视图并启用 MCP 桥接。",
   "walkthrough.step.installCli.title": "安装 Warp CLI",
-  "walkthrough.step.installCli.description": "下载 Warp（≥ 0.2024.x），以便 OzBridge 可以在您的 PATH 中找到 `oz` 可执行文件。安装完成后运行 OzBridge：刷新命令。",
+  "walkthrough.step.installCli.description": "下载 Warp（≥ 0.2024.x），以便 OzBridge 可以在您的 PATH 中找到 `oz` 可执行文件。当 OzBridge 首次成功调用 `oz_list_runs` 工具时，此步骤将被标记为完成。",
   "walkthrough.step.firstAgent.title": "运行您的第一个 @oz 提示",
   "walkthrough.step.firstAgent.description": "打开 Copilot Chat 视图并使用简短提示调用 @oz 以端到端运行 Oz 代理。",
   "walkthrough.step.exploreViews.title": "探索 OzBridge 视图",
   "walkthrough.step.exploreViews.description": "从活动栏打开 Runs 和 Warp Drive 视图以管理运行、技能和提示。",
   "walkthrough.step.enableMcp.title": "启用 MCP 桥接（可选）",
-  "walkthrough.step.enableMcp.description": "切换 ozBridge.mcpEnabled 或运行 OzBridge：启动 MCP 服务器以让 Claude Code、Cursor 或 Codex 通过 MCP 驱动 OzBridge。"
+  "walkthrough.step.enableMcp.description": "切换 ozBridge.mcpEnabled 或运行 OzBridge：启动 MCP 服务器以让 Claude Code、Cursor 或 Codex 通过 MCP 驱动 OzBridge。",
+  "viewsWelcome.runs.empty": "还没有运行记录。\n[运行代理](command:workbench.action.chat.open?%5B%7B%22query%22%3A%22%40oz%20%22%7D%5D)\n[打开入门指南](command:workbench.action.openWalkthrough?%22sena-labs.ozbridge%23ozBridge.gettingStarted%22)\n了解更多关于 [OzBridge](https://github.com/sena-labs/OzBridge#readme) 的信息。",
+  "viewsWelcome.drive.empty": "暂无可用的提示、规则或技能。\n[将当前聊天保存为工作区技能](command:ozBridge.skill.saveWorkspace)\n[刷新](command:ozBridge.tree.refresh)\n了解更多关于 [Warp Drive](https://github.com/sena-labs/OzBridge#readme) 的信息。"
 }

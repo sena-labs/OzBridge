@@ -19,7 +19,8 @@
   "homepage": "https://github.com/sena-labs/OzBridge#readme",
   "icon": "media/warp-icon.png",
   "engines": {
-    "vscode": "^1.96.0"
+    "vscode": "^1.96.0",
+    "node": ">=20.19"
   },
   "capabilities": {
     "untrustedWorkspaces": {
@@ -319,6 +320,16 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "ozBridge.runsView",
+        "contents": "%viewsWelcome.runs.empty%"
+      },
+      {
+        "view": "ozBridge.driveView",
+        "contents": "%viewsWelcome.drive.empty%"
+      }
+    ],
     "commands": [
       {
         "command": "ozBridge.tree.refresh",
@@ -652,7 +663,7 @@
               "markdown": "media/walkthrough/install-cli.md"
             },
             "completionEvents": [
-              "onCommand:ozBridge.tree.refresh"
+              "onLanguageModelTool:oz_list_runs"
             ]
           },
           {

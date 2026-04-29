@@ -55,5 +55,17 @@
   "🔑 Login Warp": "🔑 登录 Warp",
   "💳 Manage Warp billing": "💳 管理 Warp 计费",
   "OzBridge · /init templates": "OzBridge · /init 模板",
-  "Pick the skill / rule files to scaffold": "选择要生成的 skill / rule 文件"
+  "Pick the skill / rule files to scaffold": "选择要生成的 skill / rule 文件",
+  "OzBridge: {0} active": "OzBridge：{0} 个活动",
+  "OzBridge: 1 active run": "OzBridge：1 个活动运行",
+  "OzBridge: {0} active runs": "OzBridge：{0} 个活动运行",
+  "OzBridge: unavailable": "OzBridge：不可用",
+  "OzBridge: unable to list runs. Check Oz CLI availability and authentication.": "OzBridge：无法列出运行。请检查 Oz CLI 的可用性和身份验证。",
+  "OzBridge: unavailable. Check Oz CLI availability and authentication.": "OzBridge：不可用。请检查 Oz CLI 的可用性和身份验证。",
+  "active & recent runs": "活动及最近运行",
+  "No runs reported by Oz CLI.": "Oz CLI 未报告任何运行。",
+  "Status": "状态",
+  "Run ID": "运行 ID",
+  "…and {0} more — click to open the sidebar.": "…还有 {0} 个 — 点击以打开侧边栏。",
+  "Click to focus the OzBridge sidebar.": "点击以打开 OzBridge 侧边栏。"
 }
