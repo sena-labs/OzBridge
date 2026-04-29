@@ -692,15 +692,18 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "screenshots:build": "node scripts/screenshots/capture.mjs",
     "package": "vsce package --no-dependencies -o ozbridge.vsix"
   },
   "dependencies": {
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^20.19.39",
     "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.5",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.28.0",
     "typescript": "^6.0.3",
