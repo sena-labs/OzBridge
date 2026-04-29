@@ -141,9 +141,9 @@ describe('ozBridge.skill.saveWorkspace / saveGlobal', () => {
 });
 
 describe('atomicWrite', () => {
-  it('writes a file atomically (tmp + rename)', () => {
+  it('writes a file atomically (tmp + rename)', async () => {
     const file = path.join(workspace, 'atom.md');
-    atomicWrite(file, 'hello');
+    await atomicWrite(file, 'hello');
     expect(fs.readFileSync(file, 'utf8')).toBe('hello');
     expect(fs.readdirSync(workspace).filter((f) => f.endsWith('.tmp'))).toEqual([]);
   });

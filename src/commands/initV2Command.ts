@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import * as fs from 'fs';
+import { promises as fsp } from 'fs';
 import * as path from 'path';
 import { SlashCommandHandler } from '../types/index.js';
 import { SKILL_TEMPLATES, SkillTemplate } from '../scaffold/skillTemplates.js';
@@ -59,9 +59,9 @@ async function scaffoldAll(root: string, templates: SkillTemplate[]): Promise<Sc
   const summary = emptySummary();
   for (const t of templates) {
     const absolute = path.join(root, t.relativePath);
-    if (fs.existsSync(absolute)) { summary.skipped.push(t.relativePath); continue; }
+    if (await pathExists(absolute)) { summary.skipped.push(t.relativePath); continue; }
     try {
-      atomicWrite(absolute, t.body());
+      await atomicWrite(absolute, t.body());
       summary.created.push(t.relativePath);
     } catch (err) {
       summary.errored.push({ path: t.relativePath, reason: errMsg(err) });
@@ -78,7 +78,7 @@ async function scaffoldSelected(
   const summary = emptySummary();
   for (const t of templates) {
     const absolute = path.join(root, t.relativePath);
-    const exists = fs.existsSync(absolute);
+    const exists = await pathExists(absolute);
     if (exists && askBeforeOverwrite) {
       const choice = await vscode.window.showWarningMessage(
         vscode.l10n.t('{0} already exists. Overwrite?', t.relativePath),
@@ -91,7 +91,7 @@ async function scaffoldSelected(
       }
     }
     try {
-      atomicWrite(absolute, t.body());
+      await atomicWrite(absolute, t.body());
       (exists ? summary.overwritten : summary.created).push(t.relativePath);
     } catch (err) {
       summary.errored.push({ path: t.relativePath, reason: errMsg(err) });
@@ -115,17 +115,19 @@ interface TemplateQuickPickItem extends vscode.QuickPickItem {
  * before confirming.
  */
 async function promptUser(templates: SkillTemplate[], root: string): Promise<SkillTemplate[] | undefined> {
-  const items: TemplateQuickPickItem[] = templates.map((t) => {
-    const absolute = path.join(root, t.relativePath);
-    const exists = fs.existsSync(absolute);
-    return {
-      template: t,
-      label: `$(${exists ? 'file' : 'new-file'}) ${t.relativePath}`,
-      description: exists ? '[exists]' : '[new]',
-      detail: t.description,
-      picked: !exists,
-    };
-  });
+  const items: TemplateQuickPickItem[] = await Promise.all(
+    templates.map(async (t) => {
+      const absolute = path.join(root, t.relativePath);
+      const exists = await pathExists(absolute);
+      return {
+        template: t,
+        label: `$(${exists ? 'file' : 'new-file'}) ${t.relativePath}`,
+        description: exists ? '[exists]' : '[new]',
+        detail: t.description,
+        picked: !exists,
+      };
+    }),
+  );
   const picked = await vscode.window.showQuickPick<TemplateQuickPickItem>(items, {
     canPickMany: true,
     title: 'OzBridge · /init templates',
@@ -169,13 +171,24 @@ function errMsg(err: unknown): string {
 
 /**
  * Atomic write: stage content in a sibling `.tmp` file, then
- * `fs.renameSync` on top of the final path. `mkdirSync` on the parent
- * directory is always recursive.
+ * `fs.promises.rename` on top of the final path. `mkdir` on the parent
+ * directory is always recursive. Asynchronous to avoid blocking the
+ * extension-host event loop on slower filesystems.
  */
-export function atomicWrite(file: string, content: string): void {
+export async function atomicWrite(file: string, content: string): Promise<void> {
   const dir = path.dirname(file);
-  fs.mkdirSync(dir, { recursive: true });
+  await fsp.mkdir(dir, { recursive: true });
   const tmp = `${file}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmp, content, 'utf8');
-  fs.renameSync(tmp, file);
+  await fsp.writeFile(tmp, content, 'utf8');
+  await fsp.rename(tmp, file);
+}
+
+/** True when `p` exists, false otherwise (including ENOENT and EACCES). */
+async function pathExists(p: string): Promise<boolean> {
+  try {
+    await fsp.access(p);
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -14,6 +14,13 @@ export interface McpServerOptions {
   bindAddress?: string;
   /** If set, requests missing `Authorization: Bearer <token>` are rejected. */
   bearerToken?: string;
+  /**
+   * Maximum number of concurrent SSE sessions. Additional `GET /sse`
+   * requests are rejected with HTTP 503 once the cap is reached. Defaults
+   * to 16, which is generous for the typical "one MCP client per editor"
+   * scenario while preventing trivial DoS via reconnection loops.
+   */
+  maxSseSessions?: number;
 }
 
 export interface McpServerInfo {
@@ -53,7 +60,13 @@ const SUPPORTED_PROTOCOL_VERSIONS = ['2025-03-26', '2024-11-05'];
 export class McpServer {
   private http: http.Server | undefined;
   private readonly sessions = new Map<string, http.ServerResponse>();
-  private readonly options: Required<Pick<McpServerOptions, 'port' | 'bindAddress'>> & Pick<McpServerOptions, 'bearerToken'>;
+  /**
+   * Per-session keep-alive / max-lifetime timer handles. Tracked separately
+   * so {@link stop} can clear them deterministically even if `res.end()`
+   * throws and the `'close'` event never fires.
+   */
+  private readonly sessionTimers = new Map<string, { keepalive: NodeJS.Timeout; maxLifetime: NodeJS.Timeout }>();
+  private readonly options: Required<Pick<McpServerOptions, 'port' | 'bindAddress' | 'maxSseSessions'>> & Pick<McpServerOptions, 'bearerToken'>;
 
   constructor(
     private readonly tools: Map<string, McpToolEntry>,
@@ -64,6 +77,7 @@ export class McpServer {
       port: options.port ?? 3847,
       bindAddress: options.bindAddress ?? '127.0.0.1',
       bearerToken: options.bearerToken,
+      maxSseSessions: Math.max(1, options.maxSseSessions ?? 16),
     };
   }
 
@@ -107,6 +121,14 @@ export class McpServer {
     if (!this.http) { return; }
     const server = this.http;
     this.http = undefined;
+    // Clear every per-session timer first so that, even if `res.end()`
+    // throws and the `'close'` event never fires, no stale timer keeps the
+    // event loop alive.
+    for (const timers of this.sessionTimers.values()) {
+      clearInterval(timers.keepalive);
+      clearTimeout(timers.maxLifetime);
+    }
+    this.sessionTimers.clear();
     for (const res of this.sessions.values()) {
       try { res.end(); } catch { /* ignore */ }
     }
@@ -215,6 +237,13 @@ export class McpServer {
   }
 
   private openSseStream(_req: http.IncomingMessage, res: http.ServerResponse): void {
+    // DoS guard: refuse new sessions once the configured cap is reached.
+    // Prevents a misbehaving (or malicious) client from accumulating an
+    // unbounded number of timers + sockets via reconnection loops.
+    if (this.sessions.size >= this.options.maxSseSessions) {
+      sendJson(res, 503, { error: 'too_many_sessions', max: this.options.maxSseSessions });
+      return;
+    }
     const sessionId = crypto.randomUUID();
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -234,16 +263,25 @@ export class McpServer {
     // Add maximum lifetime timer to prevent indefinite keepalive (30 minutes)
     // This prevents resource leaks if the client never properly closes the connection
     const maxLifetime = setTimeout(() => {
-      clearInterval(keepalive);
-      this.sessions.delete(sessionId);
+      this.cleanupSession(sessionId);
       try { res.end(); } catch { /* ignore */ }
     }, 1_800_000);
 
+    this.sessionTimers.set(sessionId, { keepalive, maxLifetime });
+
     res.on('close', () => {
-      clearInterval(keepalive);
-      clearTimeout(maxLifetime);
-      this.sessions.delete(sessionId);
+      this.cleanupSession(sessionId);
     });
+  }
+
+  private cleanupSession(sessionId: string): void {
+    const timers = this.sessionTimers.get(sessionId);
+    if (timers) {
+      clearInterval(timers.keepalive);
+      clearTimeout(timers.maxLifetime);
+      this.sessionTimers.delete(sessionId);
+    }
+    this.sessions.delete(sessionId);
   }
 
   private async handleMessage(

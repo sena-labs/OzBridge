@@ -88,7 +88,24 @@ function validateJqFilter(filter: string): void {
 }
 
 export class OzCliService implements IOzCliService {
+  /**
+   * Optional extension-lifetime cancellation token. When set, every
+   * spawned child process is killed automatically once the token is
+   * cancelled (typically from `deactivate()`), preventing orphaned `oz`
+   * processes when the host shuts down with calls in flight.
+   */
+  private extensionToken: vscode.CancellationToken | undefined;
+
   constructor(private readonly configManager: IConfigManager) {}
+
+  /**
+   * Registers a token that will cancel **every** subsequent `exec()` call
+   * in addition to any caller-provided token. Intended for the extension
+   * host to broadcast a global cancellation on `deactivate()`.
+   */
+  setExtensionToken(token: vscode.CancellationToken): void {
+    this.extensionToken = token;
+  }
 
   /** Accesso dinamico alla config — ogni lettura riflette le impostazioni correnti */
   private get config() {
@@ -506,7 +523,7 @@ export class OzCliService implements IOzCliService {
     const outputFormat = options?.outputFormat === undefined ? 'json' : options.outputFormat;
     const onLine = options?.onLine;
     return new Promise((resolve, reject) => {
-      if (cancellation?.isCancellationRequested) {
+      if (cancellation?.isCancellationRequested || this.extensionToken?.isCancellationRequested) {
         reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
         return;
       }
@@ -593,10 +610,18 @@ export class OzCliService implements IOzCliService {
         //      swallowed because the child may have already exited).
         //   3. Schedule SIGKILL as a safety net guarded by `settled` so it
         //      becomes a no-op once `cleanup()` has run.
+        // Idempotency: `terminateProcess` may be called multiple times
+        // (idle timer, global timeout, cancellation). Skip the work once we
+        // have already initiated termination so we don't pile up SIGKILL
+        // timers on the event loop.
+        if (killed) { return; }
         killed = true;
         try { proc.kill('SIGTERM'); } catch { /* already exited */ }
 
-        // If the process ignores SIGTERM, force kill after a short grace period.
+        // Clear any previous force-kill handle (defensive — should be unset
+        // here thanks to the `killed` guard above) before scheduling a new
+        // one, so we never leak a pending timer.
+        if (forceKillHandle) { clearTimeout(forceKillHandle); }
         forceKillHandle = setTimeout(() => {
           if (settled) { return; }
           try { proc.kill('SIGKILL'); } catch { /* already exited */ }
@@ -612,6 +637,7 @@ export class OzCliService implements IOzCliService {
           clearTimeout(idleHandle);
         }
         cancelListener?.dispose();
+        extensionCancelListener?.dispose();
       };
 
       proc.stdout?.on('data', (chunk: Buffer) => {
@@ -649,6 +675,10 @@ export class OzCliService implements IOzCliService {
 
       // CancellationToken
       const cancelListener = cancellation?.onCancellationRequested(() => {
+        terminateProcess();
+      });
+      // Extension-lifetime cancellation: fires on `deactivate()`.
+      const extensionCancelListener = this.extensionToken?.onCancellationRequested(() => {
         terminateProcess();
       });
 

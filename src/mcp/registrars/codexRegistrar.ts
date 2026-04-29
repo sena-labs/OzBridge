@@ -1,4 +1,4 @@
-import * as fs from 'fs';
+import { promises as fsp } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import {
@@ -43,25 +43,23 @@ export class CodexRegistrar implements IMcpClientRegistrar {
   }
 
   async register(endpoint: McpClientEndpoint): Promise<void> {
-    const original = fs.existsSync(this.configPath)
-      ? fs.readFileSync(this.configPath, 'utf8')
-      : '';
+    const original = (await readIfExists(this.configPath)) ?? '';
     const withoutExisting = removeMcpServerBlock(original, endpoint.name);
     const appended = appendMcpServerBlock(withoutExisting, endpoint);
-    atomicWriteText(this.configPath, appended);
+    await atomicWriteText(this.configPath, appended);
   }
 
   async unregister(serverName: string): Promise<void> {
-    if (!fs.existsSync(this.configPath)) { return; }
-    const original = fs.readFileSync(this.configPath, 'utf8');
+    const original = await readIfExists(this.configPath);
+    if (original === undefined) { return; }
     const next = removeMcpServerBlock(original, serverName);
     if (next === original) { return; }
-    atomicWriteText(this.configPath, next);
+    await atomicWriteText(this.configPath, next);
   }
 
   async status(serverName: string): Promise<McpRegistrationStatus> {
-    if (!fs.existsSync(this.configPath)) { return 'not-configured'; }
-    const original = fs.readFileSync(this.configPath, 'utf8');
+    const original = await readIfExists(this.configPath);
+    if (original === undefined) { return 'not-configured'; }
     return findMcpServerBlock(original, serverName) !== undefined
       ? 'registered'
       : 'missing';
@@ -166,10 +164,22 @@ function unescapeTomlString(value: string): string {
   return value.replace(/\\"/g, '"').replace(/\\\\/g, '\\');
 }
 
-function atomicWriteText(file: string, content: string): void {
+async function atomicWriteText(file: string, content: string): Promise<void> {
   const dir = path.dirname(file);
-  fs.mkdirSync(dir, { recursive: true });
+  await fsp.mkdir(dir, { recursive: true });
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  fs.writeFileSync(tmp, content, 'utf8');
-  fs.renameSync(tmp, file);
+  await fsp.writeFile(tmp, content, 'utf8');
+  await fsp.rename(tmp, file);
+}
+
+/** Reads the file content, or undefined when it does not exist (ENOENT). */
+async function readIfExists(file: string): Promise<string | undefined> {
+  try {
+    return await fsp.readFile(file, 'utf8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException | undefined)?.code === 'ENOENT') {
+      return undefined;
+    }
+    throw err;
+  }
 }

@@ -83,6 +83,19 @@ export class McpLifecycle implements vscode.Disposable {
     const cfg = readMcpConfig(this.cfgMgr.getConfig());
     this.current = { ...cfg };
 
+    // Security gate: when the user binds the MCP socket to an address other
+    // than loopback, refuse to start without a bearer token. This prevents
+    // exposing the JSON-RPC surface (which can spawn the Oz CLI) to the
+    // local network without authentication.
+    if (!isLoopbackAddress(cfg.bindAddress) && !cfg.bearerToken) {
+      logError(
+        `MCP server refused to start: bindAddress="${cfg.bindAddress}" requires `
+        + 'a non-empty ozBridge.mcpBearerToken. Either set 127.0.0.1 or configure a token.',
+      );
+      this.server = undefined;
+      return;
+    }
+
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
     const serverInfo = { name: 'warp-vsc-bridge', version: this.extensionVersion };
 
@@ -154,6 +167,12 @@ function isPortInUseError(err: unknown): boolean {
   return (err as { code?: unknown }).code === 'EADDRINUSE';
 }
 
+/** Returns true for IPv4/IPv6 loopback bind addresses. */
+function isLoopbackAddress(address: string): boolean {
+  const a = address.trim().toLowerCase();
+  return a === '127.0.0.1' || a === 'localhost' || a === '::1';
+}
+
 /**
  * Registers the user-facing commands that drive the MCP lifecycle. The
  * returned disposables should be pushed into `context.subscriptions`.
@@ -166,11 +185,18 @@ export function registerMcpCommands(
     vscode.commands.registerCommand('ozBridge.mcp.start', async () => {
       await lifecycle.start();
       const ep = lifecycle.endpoint;
-      await vscode.window.showInformationMessage(
-        ep
-          ? vscode.l10n.t('OzBridge MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port))
-          : vscode.l10n.t('OzBridge MCP server failed to start — see the OzBridge output channel.'),
-      );
+      // UX: a missing endpoint after `start()` means the server failed to
+      // bind. Surface it as an error toast (red) instead of an info toast
+      // (blue) so the failure is communicated correctly.
+      if (ep) {
+        await vscode.window.showInformationMessage(
+          vscode.l10n.t('OzBridge MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port)),
+        );
+      } else {
+        await vscode.window.showErrorMessage(
+          vscode.l10n.t('OzBridge MCP server failed to start — see the OzBridge output channel.'),
+        );
+      }
     }),
 
     vscode.commands.registerCommand('ozBridge.mcp.stop', async () => {

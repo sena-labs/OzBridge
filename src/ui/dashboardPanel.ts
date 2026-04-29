@@ -169,7 +169,15 @@ export class DashboardPanel {
       DashboardPanel.viewType,
       'OzBridge — Dashboard',
       vscode.ViewColumn.Active,
-      { enableScripts: true, retainContextWhenHidden: true },
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        // The dashboard HTML is fully self-contained (inline CSS, no external
+        // assets). Locking `localResourceRoots` to an empty list prevents the
+        // webview from loading any file via `asWebviewUri`, which is the
+        // safest default per VS Code webview hardening guidance.
+        localResourceRoots: [],
+      },
     );
     const instance = new DashboardPanel(panel, stats, windowDays);
     DashboardPanel.current = instance;

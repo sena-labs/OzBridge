@@ -49,6 +49,12 @@ const state: {
   mcp?: McpLifecycle;
   driveSource?: IDriveSource;
   telemetry?: ITelemetryReporter;
+  /**
+   * Extension-lifetime cancellation source. Cancelled in `deactivate()`
+   * before any other cleanup so in-flight Oz CLI invocations terminate
+   * promptly instead of being left orphaned by the host shutdown.
+   */
+  extensionLifetimeCts?: vscode.CancellationTokenSource;
 } = {};
 
 /** Extension version baked into the MCP `serverInfo`. Kept in sync with `package.json`. */
@@ -135,6 +141,16 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(state.configManager);
 
   const cli = new OzCliService(state.configManager);
+  // Broadcast extension shutdown to every spawned `oz` process. The token
+  // source is cancelled in `deactivate()` before tracker/mcp disposal so
+  // long-running CLI calls do not survive a host reload.
+  state.extensionLifetimeCts = new vscode.CancellationTokenSource();
+  cli.setExtensionToken(state.extensionLifetimeCts.token);
+  context.subscriptions.push({
+    dispose: () => {
+      state.extensionLifetimeCts?.dispose();
+    },
+  });
   const ctx = new ContextCollector();
   // NOTE: cli/ctx are intentionally not pushed onto context.subscriptions:
   // OzCliService spawns one short-lived child process per call (with its
@@ -389,6 +405,9 @@ export function activate(context: vscode.ExtensionContext): void {
  * `context.subscriptions`) is safe.
  */
 export function deactivate(): Promise<void> | void {
+  // Signal cancellation FIRST so any pending `oz` child processes are
+  // killed before we tear down the trackers/MCP server that own them.
+  try { state.extensionLifetimeCts?.cancel(); } catch { /* ignore */ }
   return Promise.allSettled([
     Promise.resolve().then(() => state.runPoller?.disposeAll()),
     Promise.resolve().then(() => state.tracker?.dispose()),

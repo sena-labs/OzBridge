@@ -147,7 +147,7 @@ describe('/cloud command', () => {
     );
   });
 
-  it('dovrebbe chiamare showInformationMessage dopo polling FAILED', async () => {
+  it('dovrebbe chiamare showErrorMessage dopo polling FAILED', async () => {
     const { window } = await import('../mocks/vscode.js');
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-fail-notify', status: 'QUEUED' }));
@@ -155,7 +155,7 @@ describe('/cloud command', () => {
 
     await handler('prompt', mock.stream as any, createMockToken() as any);
 
-    expect(window.showInformationMessage).toHaveBeenCalledWith(
+    expect(window.showErrorMessage).toHaveBeenCalledWith(
       expect.stringContaining('Cloud agent failed'),
     );
   });
