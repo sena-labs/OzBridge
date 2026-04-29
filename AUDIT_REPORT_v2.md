@@ -191,8 +191,8 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 | 6 | B-H5 | HIGH | `mcp/server.ts` — cap SSE + bearer obbligatorio non-loopback | 30min | ✅ FIXED |
 | 7 | A-H3 | HIGH | `extension.ts` — extension-lifetime cancellation token | 30min | ✅ FIXED |
 | 8 | B-H4 | HIGH | Migrazione `fs.promises` (5 file) | 2-4h | ✅ FIXED |
-| 9 | B-M3 | MED | `package.json` — `scope: machine` su settings sensibili | 5min | pending |
-| 10 | C-M4 + B-M6 | MED | `activationEvents` cleanup | 10min | pending |
+| 9 | B-M3 | MED | `package.json` — `scope: machine` su settings sensibili | 5min | ✅ FIXED |
+| 10 | C-M4 + B-M6 | MED | `activationEvents` cleanup | 10min | ✅ FIXED |
 
 **Stima totale "blocker pre-release"**: tutti gli 8 HIGH risolti — suite 1207/1207 verde dopo applicazione. Restano solo MEDIUM/LOW non bloccanti.
 
