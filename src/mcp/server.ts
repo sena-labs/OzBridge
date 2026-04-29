@@ -65,7 +65,11 @@ export class McpServer {
    * so {@link stop} can clear them deterministically even if `res.end()`
    * throws and the `'close'` event never fires.
    */
-  private readonly sessionTimers = new Map<string, { keepalive: NodeJS.Timeout; maxLifetime: NodeJS.Timeout }>();
+  // B-L2: only the per-session `maxLifetime` is tracked here; the keepalive
+  // is a single shared interval (`globalKeepalive`) that fans out a `: keepalive`
+  // line to every active SSE response, instead of one `setInterval` per session.
+  private readonly sessionTimers = new Map<string, { maxLifetime: NodeJS.Timeout }>();
+  private globalKeepalive?: NodeJS.Timeout;
   private readonly options: Required<Pick<McpServerOptions, 'port' | 'bindAddress' | 'maxSseSessions'>> & Pick<McpServerOptions, 'bearerToken'>;
 
   constructor(
@@ -125,10 +129,13 @@ export class McpServer {
     // throws and the `'close'` event never fires, no stale timer keeps the
     // event loop alive.
     for (const timers of this.sessionTimers.values()) {
-      clearInterval(timers.keepalive);
       clearTimeout(timers.maxLifetime);
     }
     this.sessionTimers.clear();
+    if (this.globalKeepalive) {
+      clearInterval(this.globalKeepalive);
+      this.globalKeepalive = undefined;
+    }
     for (const res of this.sessions.values()) {
       try { res.end(); } catch { /* ignore */ }
     }
@@ -256,9 +263,15 @@ export class McpServer {
     res.write(`event: endpoint\ndata: /messages?sessionId=${sessionId}\n\n`);
     this.sessions.set(sessionId, res);
 
-    const keepalive = setInterval(() => {
-      try { res.write(': keepalive\n\n'); } catch { /* ignore */ }
-    }, 15_000);
+    // Single shared keepalive interval (B-L2): start lazily on the first
+    // session, stop in `cleanupSession` when the last session goes away.
+    if (!this.globalKeepalive) {
+      this.globalKeepalive = setInterval(() => {
+        for (const stream of this.sessions.values()) {
+          try { stream.write(': keepalive\n\n'); } catch { /* ignore */ }
+        }
+      }, 15_000);
+    }
 
     // Add maximum lifetime timer to prevent indefinite keepalive (30 minutes)
     // This prevents resource leaks if the client never properly closes the connection
@@ -267,7 +280,7 @@ export class McpServer {
       try { res.end(); } catch { /* ignore */ }
     }, 1_800_000);
 
-    this.sessionTimers.set(sessionId, { keepalive, maxLifetime });
+    this.sessionTimers.set(sessionId, { maxLifetime });
 
     res.on('close', () => {
       this.cleanupSession(sessionId);
@@ -277,11 +290,15 @@ export class McpServer {
   private cleanupSession(sessionId: string): void {
     const timers = this.sessionTimers.get(sessionId);
     if (timers) {
-      clearInterval(timers.keepalive);
       clearTimeout(timers.maxLifetime);
       this.sessionTimers.delete(sessionId);
     }
     this.sessions.delete(sessionId);
+    // Stop the shared keepalive when no sessions remain.
+    if (this.sessions.size === 0 && this.globalKeepalive) {
+      clearInterval(this.globalKeepalive);
+      this.globalKeepalive = undefined;
+    }
   }
 
   private async handleMessage(

@@ -57,7 +57,7 @@ L'unica sezione clean è la C (Tests/Build/Deps/L10n) — 0 HIGH, suite robusta,
 | A-M5 | [src/mcp/server.ts](src/mcp/server.ts#L230-L244) | Timer SSE `keepalive`/`maxLifetime` non puliti se `res.end()` throw | Tracciare per-session in `Map` e clear in `stop()` prima di `res.end()` | ✅ FIXED (in B-H5) |
 | A-M6 | [src/mcp/registrars/jsonRegistrarBase.ts](src/mcp/registrars/jsonRegistrarBase.ts#L115-L125) | Tmp file orfano se `renameSync` fallisce | `try { fs.unlinkSync(tmp); } catch {}` nel catch prima del rethrow | ✅ FIXED |
 | A-M7 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L160) | Triple `try { onLine/onProgress } catch {}` muti | Degradare a `logWarn` per tracciare bug in OutputFormatter | ✅ FIXED |
-| A-M8 | [packages/copilot-chat-toolkit/src/parsers/jsonParser.ts](packages/copilot-chat-toolkit/src/parsers/jsonParser.ts#L31) | `JSON.parse() as T` triplice senza validazione runtime | Cambiare firma a `unknown`, validazione al call site | pending |
+| A-M8 | [packages/copilot-chat-toolkit/src/parsers/jsonParser.ts](packages/copilot-chat-toolkit/src/parsers/jsonParser.ts#L31) | `JSON.parse() as T` triplice senza validazione runtime | ✅ FIXED (cast `as unknown as T` + JSDoc warning + nuovo `parseOrValidate<T>(stdout, isT, ctx)`) |
 | A-M9 | [src/commands/cloudCommand.ts](src/commands/cloudCommand.ts#L139) | Floating Promise su `showInformationMessage` | Prefissare `void` | ✅ FIXED (in B-H3) |
 
 ### LOW
@@ -68,7 +68,7 @@ L'unica sezione clean è la C (Tests/Build/Deps/L10n) — 0 HIGH, suite robusta,
 | A-L11 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L866-L915) | Cache `_resolvedOzPath` non invalidata su config change | ✅ FIXED (`_resolvedFor` sentinel) |
 | A-L12 | [src/extension.ts](src/extension.ts#L165) | `isWarpUri` guard incompleto, richiede cast esplicito | ✅ FIXED (`is vscode.Uri`) |
 | A-L13 | [src/ui/runsTreeProvider.ts](src/ui/runsTreeProvider.ts#L328-L345) | `switch` su union senza `assertNever` exhaustiveness | ✅ FIXED (never default) |
-| A-L14 | [src/extension.ts](src/extension.ts#L392-L396) | `Promise.allSettled` over-engineered nel `deactivate` | pending |
+| A-L14 | [src/extension.ts](src/extension.ts#L452) | `Promise.allSettled` over-engineered nel `deactivate` | ✅ FIXED (try/catch sync + `.catch()` su mcp.dispose) |
 | A-L15 | [src/mcp/server.ts](src/mcp/server.ts#L343) | `params.arguments as Record<string,unknown>` accetta array | ✅ FIXED (`!Array.isArray`) |
 
 ---
@@ -125,8 +125,8 @@ L'unica sezione clean è la C (Tests/Build/Deps/L10n) — 0 HIGH, suite robusta,
 | ID | File | Issue | Stato |
 |---|---|---|---|
 | B-L1 | [src/extension.ts](src/extension.ts#L353) | `logInfo("Oz CLI path: ...")` espone homedir completo | ✅ FIXED (`redactHome` → `~`) |
-| B-L2 | [src/mcp/server.ts](src/mcp/server.ts#L230-L240) | 2 timer per-session — possibile interval globale condiviso | pending |
-| B-L3 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L805-L840) | `tryParseNdjson` re-parsing di stdout già consumato in streaming | pending |
+| B-L2 | [src/mcp/server.ts](src/mcp/server.ts#L230-L240) | 2 timer per-session — possibile interval globale condiviso | ✅ FIXED (`globalKeepalive` singolo condiviso, fanout su `sessions`) |
+| B-L3 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L805-L840) | `tryParseNdjson` re-parsing di stdout già consumato in streaming | ⚠ DEFERRED (refactor invasivo `ExecResult.events?`; costo perf trascurabile su NDJSON tipico <50 eventi) |
 | B-L4 | [src/services/ozCliService.ts](src/services/ozCliService.ts#L981-L988) | `validateCliArg` permissivo per `model/profile/skill/environment` | ⚠ FALSE-POSITIVE: regex già blocca shell metachars (`;|&$\`<>`); slash/dot/colon necessari per id reali tipo `openai/gpt-4`/`claude-3.5` |
 | B-L5 | [src/commands/cloudCommand.ts](src/commands/cloudCommand.ts#L72-L74) | `env.name`/`env.id` in code-span senza escape backtick | ✅ FIXED |
 | B-L6 | [src/ui/skillEditor.ts](src/ui/skillEditor.ts#L197) | `mkdirSync(recursive)` ridondante per write atomic | ✅ FIXED (mkdir spostato dentro `atomicWrite`, drop `ensureDirectoryExists`) |
@@ -155,7 +155,7 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 - **File**: [test/extensionEdge.test.ts](test/extensionEdge.test.ts#L69), [test/extensionRefactoring.test.ts](test/extensionRefactoring.test.ts#L63), [test/ui/dashboardPanel.test.ts](test/ui/dashboardPanel.test.ts#L155).
 - **Fix**: `await new Promise<void>((r) => setImmediate(r))` o `vi.waitFor(...)`.
 
-#### C-M4 — `activationEvents` ridondanti
+#### C-M4 — `activationEvents` ridondanti — ✅ FIXED (vedi B-M6: `onStartupFinished` rimosso, mantenuti i 33 eventi granulari)
 - **File**: [package.json](package.json#L26-L60). `onStartupFinished` + 33 eventi granulari.
 - **Fix**: scegliere una strategia (preferibile: rimuovere `onStartupFinished`, mantenere granulari per cold-start cost).
 
@@ -172,9 +172,9 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 | C-L1 | [package.json](package.json#L386) | `@types/node@^25` vs esbuild `target: node20` — drift type API | pending |
 | C-L2 | [package.json](package.json#L662) | `@vscode/vsce` invocato via `npx`, non pinnato in devDeps | ✅ FIXED (`@vscode/vsce@^3.9.1` in devDeps; script: `vsce package ...`) |
 | C-L3 | [tsconfig.json](tsconfig.json#L17-L18) | `declaration`/`declarationMap` set ma `compile` è `--noEmit` (config morta) | ✅ FIXED (flags rimossi) |
-| C-L4 | [test/services/runStats.test.ts](test/services/runStats.test.ts#L71) | Date locali senza TZ pin (potenziale flake su CI agent diversi) | pending |
-| C-L5 | [l10n/](l10n/) | Voci intenzionalmente identiche (brand names) — solo cosmetica | pending |
-| C-L6 | [.vscodeignore](.vscodeignore#L31) | `*.ts` blanket exclude — ordine fragile | pending |
+| C-L4 | [test/services/runStats.test.ts](test/services/runStats.test.ts#L71) | Date locali senza TZ pin (potenziale flake su CI agent diversi) | ⚠ FALSE-POSITIVE (`formatLocalDate` + `new Date(y,m,d)` usano TZ locale in modo coerente; nessun mix UTC/local) |
+| C-L5 | [l10n/](l10n/) | Voci intenzionalmente identiche (brand names) — solo cosmetica | ⚠ NOT-APPLICABLE (cosmetico, voci intenzionali) |
+| C-L6 | [.vscodeignore](.vscodeignore#L31) | `*.ts` blanket exclude — ordine fragile | ✅ FIXED (rimosso `*.ts` redundant; `src/test/packages/**` già escludono) |
 | C-L7 | [test/audit/activationEventsExtended.test.ts](test/audit/activationEventsExtended.test.ts) | Coverage parziale sugli eventi `onLanguageModelTool:oz_*` | pending |
 
 ---

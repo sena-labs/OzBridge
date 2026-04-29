@@ -32,10 +32,10 @@ media/file.*
 
 # Misc
 node_modules/**
-*.ts
-!dist/**
 
-# Source maps (exclude after !dist re-include)
+# Bundled output is the only thing we ship from dist/, but exclude
+# source maps explicitly (esbuild emits `.map` alongside `.js`).
+!dist/**
 dist/**/*.map
 
 # VSIX artifacts (avoid recursive packaging)

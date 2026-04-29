@@ -449,9 +449,10 @@ export function deactivate(): Promise<void> | void {
   // Signal cancellation FIRST so any pending `oz` child processes are
   // killed before we tear down the trackers/MCP server that own them.
   try { state.extensionLifetimeCts?.cancel(); } catch { /* ignore */ }
-  return Promise.allSettled([
-    Promise.resolve().then(() => state.runPoller?.disposeAll()),
-    Promise.resolve().then(() => state.tracker?.dispose()),
-    Promise.resolve().then(() => state.mcp?.dispose()),
-  ]).then(() => undefined);
+  // A-L14: dispose the synchronous owners directly (no need to wrap them in
+  // `Promise.resolve().then(...)` just to feed `Promise.allSettled`). Only
+  // `mcp.dispose()` is async and may reject, so swallow its rejection.
+  try { state.runPoller?.disposeAll(); } catch { /* ignore */ }
+  try { state.tracker?.dispose(); } catch { /* ignore */ }
+  return state.mcp?.dispose().catch(() => undefined);
 }
