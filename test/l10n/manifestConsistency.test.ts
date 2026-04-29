@@ -5,7 +5,7 @@ import * as path from 'node:path';
 const ROOT = path.resolve(__dirname, '..', '..');
 const PKG = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 const NLS = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.nls.json'), 'utf8')) as Record<string, string>;
-const LOCALES = ['it', 'es'] as const;
+const LOCALES = ['it', 'es', 'de', 'fr', 'zh-cn'] as const;
 
 function collectKeys(value: unknown, acc: Set<string>): void {
   if (typeof value === 'string') {

@@ -4,7 +4,7 @@ import * as path from 'node:path';
 
 const L10N_DIR = path.resolve(__dirname, '..', '..', 'l10n');
 const SOURCE = 'bundle.l10n.json';
-const LOCALES = ['it', 'es'] as const;
+const LOCALES = ['it', 'es', 'de', 'fr', 'zh-cn'] as const;
 
 function load(name: string): Record<string, string> {
   return JSON.parse(fs.readFileSync(path.join(L10N_DIR, name), 'utf8'));
