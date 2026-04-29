@@ -60,4 +60,23 @@ describe('activationEvents extended audit', () => {
     const stale = (pkg.activationEvents ?? []).filter((e) => /warpBridge\./.test(e));
     expect(stale, `Stale activation events detected: ${stale.join(', ')}`).toEqual([]);
   });
+
+  // C-L7: pin the four LM tool activation events explicitly so accidental
+  // removal/rename surfaces here (in addition to the dynamic check in
+  // test/manifestActivationConsistency.test.ts).
+  it('must explicitly include onLanguageModelTool activation events for every oz_* tool', () => {
+    const required = [
+      'onLanguageModelTool:oz_run_local',
+      'onLanguageModelTool:oz_run_cloud',
+      'onLanguageModelTool:oz_get_run',
+      'onLanguageModelTool:oz_list_runs',
+    ];
+    const activation = new Set(pkg.activationEvents ?? []);
+    for (const ev of required) {
+      expect(
+        activation.has(ev),
+        `Missing activation event ${ev}. Agent-mode invocation of the tool would fail to wake the extension.`,
+      ).toBe(true);
+    }
+  });
 });

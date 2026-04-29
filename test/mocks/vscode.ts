@@ -363,6 +363,20 @@ export class LanguageModelToolResult {
 }
 
 /**
+ * Minimal mock of `vscode.LanguageModelChatMessage`. Only the static `User`
+ * factory used by `createVsCodeLanguageModelClient` is implemented.
+ */
+export class LanguageModelChatMessage {
+  constructor(public readonly role: number, public readonly content: string) {}
+  static User(content: string): LanguageModelChatMessage {
+    return new LanguageModelChatMessage(1, content);
+  }
+  static Assistant(content: string): LanguageModelChatMessage {
+    return new LanguageModelChatMessage(2, content);
+  }
+}
+
+/**
  * In-memory registry of tools registered via `lm.registerTool`.
  * Exposed so tests can grab a specific tool by name and invoke it directly.
  */
@@ -384,6 +398,12 @@ export const lm = {
   /** Test-only helpers — not part of the real VS Code API. */
   _getTool: (name: string) => registeredTools.get(name),
   _reset: () => { registeredTools.clear(); },
+  /**
+   * Mock-able language model selector. Tests can replace this via
+   * `(vscode.lm as any).selectChatModels = vi.fn(...)`. Left undefined by
+   * default so callers correctly hit the "API unavailable" path.
+   */
+  selectChatModels: undefined as undefined | ((selector?: unknown) => Promise<unknown[]>),
 };
 
 // ---------------------------------------------------------------------------

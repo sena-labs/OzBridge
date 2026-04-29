@@ -156,7 +156,7 @@
         "name": "oz_run_cloud",
         "displayName": "Run Warp Oz agent (cloud)",
         "toolReferenceName": "ozRunCloud",
-        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS \u2014 always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `oz_get_run`.",
+        "modelDescription": "Launches a Warp Oz agent in the cloud. CONSUMES WARP CREDITS — always ask the user for confirmation before invoking. By default waits for the run to reach a terminal status (SUCCEEDED or FAILED) and returns the final output; pass `wait: false` to return immediately with the run id, which the agent can later query via `oz_get_run`.",
         "userDescription": "Let Copilot launch cloud Warp Oz runs (with explicit confirmation to consume credits).",
         "canBeReferencedInPrompt": true,
         "icon": "$(cloud)",
@@ -541,7 +541,7 @@
         "ozBridge.idleTimeoutMs": {
           "type": "number",
           "default": 90000,
-          "description": "Idle timeout for the Oz CLI subprocess (ms). Aborts the run if no stdout/stderr is received for this long \u2014 prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to 0 to disable. Default 90 s."
+          "description": "Idle timeout for the Oz CLI subprocess (ms). Aborts the run if no stdout/stderr is received for this long — prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to 0 to disable. Default 90 s."
         },
         "ozBridge.maxOutputChars": {
           "type": "number",
@@ -665,7 +665,7 @@
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
+    "@types/node": "^20.19.39",
     "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.5",
     "@vscode/vsce": "^3.9.1",

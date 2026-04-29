@@ -142,10 +142,10 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 
 ### MEDIUM
 
-#### C-M1 — Moduli source senza test diretti
+#### C-M1 — Moduli source senza test diretti — ✅ FIXED
 - **Categoria**: Test
 - **Moduli**: [src/utils/error.ts](src/utils/error.ts), [src/services/languageModelClient.ts](src/services/languageModelClient.ts) (factory non testata), [src/tools/baseTool.ts](src/tools/baseTool.ts) (solo indirettamente), tutto [packages/copilot-chat-toolkit/src/](packages/copilot-chat-toolkit/) **escluso da coverage** via `vitest.config.ts:23`.
-- **Fix**: aggiungere `test/utils/error.test.ts`, `test/services/languageModelClient.test.ts`, `test/tools/baseTool.test.ts`. Includere il package toolkit in coverage o spostarlo in suite separata.
+- **Fix**: aggiunti [test/utils/error.test.ts](test/utils/error.test.ts) (8 tests), [test/services/languageModelClient.test.ts](test/services/languageModelClient.test.ts) (8 tests, incluso regression A-H1), [test/tools/baseTool.test.ts](test/tools/baseTool.test.ts) (19 tests). Coverage di `error.ts` e `languageModelClient.ts` ora 100%.
 
 #### C-M2 — Asserzioni deboli (`toBeDefined()` su oggetti non triviali) — ✅ FIXED
 - **File**: [test/commands/router.test.ts](test/commands/router.test.ts#L41), [test/commands/routerEdge.test.ts](test/commands/routerEdge.test.ts#L59), [test/commands/initV2Command.test.ts](test/commands/initV2Command.test.ts#L278), [test/edgeCasesErrorHandling2.test.ts](test/edgeCasesErrorHandling2.test.ts#L667), [test/audit/activationEventsExtended.test.ts](test/audit/activationEventsExtended.test.ts#L32).
@@ -159,9 +159,9 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 - **File**: [package.json](package.json#L26-L60). `onStartupFinished` + 33 eventi granulari.
 - **Fix**: scegliere una strategia (preferibile: rimuovere `onStartupFinished`, mantenere granulari per cold-start cost).
 
-#### C-M5 — Coverage thresholds assenti in `vitest.config.ts`
+#### C-M5 — Coverage thresholds assenti in `vitest.config.ts` — ✅ FIXED
 - **File**: [vitest.config.ts](vitest.config.ts#L18-L21).
-- **Fix**: `thresholds: { lines: 85, functions: 85, branches: 75, statements: 85 }` calibrato sui valori attuali.
+- **Fix**: aggiunto `thresholds: { statements: 85, branches: 78, functions: 89, lines: 86 }` calibrato a ~3 punti sotto i valori attuali (88.59 / 81.11 / 92.03 / 89.77) per assorbire fluttuazioni locali ma intercettare regressioni reali.
 
 ### LOW
 
@@ -169,13 +169,13 @@ _Nessuna._ 0 missing translation, 0 `it.skip`/`it.only`, 0 test failure, 0 vuln 
 |---|---|---|
 | ID | File | Issue | Stato |
 |---|---|---|---|
-| C-L1 | [package.json](package.json#L386) | `@types/node@^25` vs esbuild `target: node20` — drift type API | pending |
+| C-L1 | [package.json](package.json#L386) | `@types/node@^25` vs esbuild `target: node20` — drift type API | ✅ FIXED (`@types/node@^20.19.0` allineato al target esbuild; `tsc --noEmit` clean) |
 | C-L2 | [package.json](package.json#L662) | `@vscode/vsce` invocato via `npx`, non pinnato in devDeps | ✅ FIXED (`@vscode/vsce@^3.9.1` in devDeps; script: `vsce package ...`) |
 | C-L3 | [tsconfig.json](tsconfig.json#L17-L18) | `declaration`/`declarationMap` set ma `compile` è `--noEmit` (config morta) | ✅ FIXED (flags rimossi) |
 | C-L4 | [test/services/runStats.test.ts](test/services/runStats.test.ts#L71) | Date locali senza TZ pin (potenziale flake su CI agent diversi) | ⚠ FALSE-POSITIVE (`formatLocalDate` + `new Date(y,m,d)` usano TZ locale in modo coerente; nessun mix UTC/local) |
 | C-L5 | [l10n/](l10n/) | Voci intenzionalmente identiche (brand names) — solo cosmetica | ⚠ NOT-APPLICABLE (cosmetico, voci intenzionali) |
 | C-L6 | [.vscodeignore](.vscodeignore#L31) | `*.ts` blanket exclude — ordine fragile | ✅ FIXED (rimosso `*.ts` redundant; `src/test/packages/**` già escludono) |
-| C-L7 | [test/audit/activationEventsExtended.test.ts](test/audit/activationEventsExtended.test.ts) | Coverage parziale sugli eventi `onLanguageModelTool:oz_*` | pending |
+| C-L7 | [test/audit/activationEventsExtended.test.ts](test/audit/activationEventsExtended.test.ts) | Coverage parziale sugli eventi `onLanguageModelTool:oz_*` | ✅ FIXED (aggiunto test esplicito che pinna `oz_run_local`/`oz_run_cloud`/`oz_get_run`/`oz_list_runs`) |
 
 ---
 
