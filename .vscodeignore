@@ -52,5 +52,9 @@ scripts/**
 # PR body scratchpad (local-only, never ships to Marketplace)
 pr-body.md
 
+# Internal audit reports (developer-only, never ship to Marketplace)
+AUDIT_REPORT*.md
+OzBridge_AUDIT_FINDINGS.md
+
 test-out.txt
 *.txt
