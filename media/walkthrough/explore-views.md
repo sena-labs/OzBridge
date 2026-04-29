@@ -1,8 +1,9 @@
-# Explore the Warp views
+# Explore the OzBridge views
 
 OzBridge contributes two tree views to the Activity Bar:
 
-- **Warp Runs** — live and historical agent runs grouped by status.
+- **Runs & Resources** — live and historical agent runs grouped by
+  status, plus environments, schedules and embedded MCP servers.
   Right-click a run to copy its id, open it in the browser, or hand
   it off to the Warp desktop app.
 - **Warp Drive** — your shared skills, rules and prompts. Insert a

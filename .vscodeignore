@@ -26,9 +26,8 @@ packages/**
 .env
 .env.*
 
-# Temporary media artifacts
-media/screenshot*.*
-media/file.*
+# Unreferenced placeholder hero asset (only emitted by scripts/generate_media.py)
+media/screenshot.svg
 
 # Misc
 node_modules/**
