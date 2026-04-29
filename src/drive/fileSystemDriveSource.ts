@@ -93,7 +93,16 @@ export class FileSystemDriveSource implements IDriveSource {
     }
     const resolved = path.resolve(trimmed);
     const allowedRoots = await this.allowedRootsPromise;
-    const allowedByResolvedPath = allowedRoots.some((root) => isInside(resolved, root));
+    // CI-cross-platform fix: on macOS `/var` → `/private/var` and on
+    // Windows temp dirs may carry 8.3 short names, so a literal
+    // `path.resolve()` of the input cannot be compared directly against
+    // realpath-canonicalised roots. Canonicalise the *parent* directory
+    // (which exists for any read of a real file) and reconstruct the
+    // full path so the pre-stat traversal guard uses the same canonical
+    // form as the roots. The post-realpath guard below remains as the
+    // authoritative symlink-escape check.
+    const canonicalGuess = await canonicaliseViaParent(resolved);
+    const allowedByResolvedPath = allowedRoots.some((root) => isInside(canonicalGuess, root));
     if (!allowedByResolvedPath) {
       throw new Error(`FileSystemDriveSource.read: path outside allowed roots: ${resolved}`);
     }
@@ -332,6 +341,27 @@ function splitTags(raw: unknown): string[] | undefined {
 function toCanonicalRoot(p: string): Promise<string> {
   const resolved = path.resolve(p);
   return fsp.realpath(resolved).catch(() => resolved);
+}
+
+/**
+ * Returns the canonical (realpath-resolved) form of `target` by
+ * canonicalising its parent directory and re-joining the basename.
+ * Used by the read() pre-stat guard so it can compare against
+ * realpath-canonicalised roots even when the target file does not
+ * exist yet, on platforms (macOS, Windows) where the temp-dir
+ * realpath differs from the literal path. Falls back to the
+ * non-canonical form when the parent cannot be resolved (e.g. a
+ * traversal attempt into a non-existent directory).
+ */
+async function canonicaliseViaParent(target: string): Promise<string> {
+  const parent = path.dirname(target);
+  const base = path.basename(target);
+  try {
+    const canonicalParent = await fsp.realpath(parent);
+    return path.join(canonicalParent, base);
+  } catch {
+    return target;
+  }
 }
 
 function isInside(target: string, root: string): boolean {
