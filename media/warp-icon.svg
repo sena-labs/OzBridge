@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+  <!--
+    OzBridge activity-bar icon. Monochrome silhouette that uses
+    `currentColor` so VS Code can tint it according to the active
+    theme (white / black / accent). The shape evokes a bridge (two
+    arches + deck) with an antenna/spark on top to suggest the AI
+    handoff between the editor and the Warp / Oz CLI.
+  -->
+  <!-- deck -->
+  <rect x="2" y="15" width="20" height="2" rx="0.5"/>
+  <!-- left arch -->
+  <path d="M3 15a4 4 0 018 0h-1.6a2.4 2.4 0 00-4.8 0H3z"/>
+  <!-- right arch -->
+  <path d="M13 15a4 4 0 018 0h-1.6a2.4 2.4 0 00-4.8 0H13z"/>
+  <!-- pylons -->
+  <rect x="11" y="5" width="2" height="10" rx="0.5"/>
+  <!-- spark / signal on top of central pylon -->
+  <circle cx="12" cy="3.2" r="1.4"/>
+  <!-- ground line -->
+  <rect x="2" y="19" width="20" height="1.2" rx="0.4" opacity="0.55"/>
+</svg>

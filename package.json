@@ -278,7 +278,7 @@
         {
           "id": "ozBridgeSidebar",
           "title": "OzBridge",
-          "icon": "media/warp-icon.png"
+          "icon": "media/warp-icon.svg"
         }
       ]
     },
@@ -287,13 +287,13 @@
         {
           "id": "ozBridge.runsView",
           "name": "Runs & Resources",
-          "icon": "media/warp-icon.png",
+          "icon": "media/warp-icon.svg",
           "contextualTitle": "OzBridge"
         },
         {
           "id": "ozBridge.driveView",
           "name": "Warp Drive",
-          "icon": "media/warp-icon.png",
+          "icon": "media/warp-icon.svg",
           "contextualTitle": "OzBridge"
         }
       ]
