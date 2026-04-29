@@ -259,6 +259,7 @@
         "inputSchema": {
           "type": "object",
           "additionalProperties": false,
+          "required": [],
           "properties": {
             "status": {
               "type": "string",

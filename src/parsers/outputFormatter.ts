@@ -13,6 +13,13 @@ import {
 const WARP_INSTALL_URL = 'https://www.warp.dev/download';
 const WARP_LOGIN_URL = 'https://app.warp.dev';
 
+/**
+ * Maximum number of stderr characters embedded in chat error messages.
+ * Keeps the chat stream readable while still surfacing enough context
+ * for diagnosis. Applies uniformly across `formatError` branches.
+ */
+const STDERR_MAX_CHARS = 500;
+
 /** Formats Oz CLI output (run results, lists, errors) for the VS Code Chat stream. */
 export class OutputFormatter {
   private readonly cfgMgr: IConfigManager;
@@ -135,7 +142,7 @@ export class OutputFormatter {
           + 'Open the Warp account dashboard to top up or upgrade your plan, then retry.\n',
         );
         if (error.stderr) {
-          stream.markdown(`\n<details><summary>CLI output</summary>\n\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n\n</details>\n`);
+          stream.markdown(`\n<details><summary>CLI output</summary>\n\n\`\`\`\n${error.stderr.substring(0, STDERR_MAX_CHARS)}\n\`\`\`\n\n</details>\n`);
         }
         stream.button({
           command: 'vscode.open',
@@ -172,7 +179,7 @@ export class OutputFormatter {
       case OzCliErrorKind.PARSE_ERROR:
         stream.markdown(
           '⚠️ **Parsing error.** Unexpected output from Oz CLI.\n\n' +
-          `\`\`\`\n${error.stderr?.substring(0, 500) ?? error.message}\n\`\`\`\n`,
+          `\`\`\`\n${error.stderr?.substring(0, STDERR_MAX_CHARS) ?? error.message}\n\`\`\`\n`,
         );
         break;
 
@@ -184,7 +191,7 @@ export class OutputFormatter {
         // Avoid printing the same payload twice when OzCliError was
         // constructed with `message = stderr` (typical non-zero exits).
         if (error.stderr && error.stderr.trim() !== error.message.trim()) {
-          stream.markdown(`\n**stderr:**\n\`\`\`\n${error.stderr.substring(0, 500)}\n\`\`\`\n`);
+          stream.markdown(`\n**stderr:**\n\`\`\`\n${error.stderr.substring(0, STDERR_MAX_CHARS)}\n\`\`\`\n`);
         }
         break;
     }

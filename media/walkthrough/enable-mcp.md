@@ -22,3 +22,14 @@ closed set of typed events is sent — never prompt content, run IDs,
 output, file paths or workspace paths. See
 [`PRIVACY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/PRIVACY.md)
 for the full contract.
+
+---
+
+**Operator kill-switch.** If you ever need to stop OzBridge from
+wiring up its chat participant, LM tools and MCP server (e.g. during
+an incident or while auditing), flip
+`ozBridge.killSwitch.enabled` to `true` in **Settings** and reload
+the window. The extension will activate in a no-op mode and surface
+the optional `ozBridge.killSwitch.reason` string in the status bar.
+See [`SECURITY.md`](https://github.com/sena-labs/warp-vsc-bridge/blob/main/SECURITY.md)
+for the full kill-switch playbook.
