@@ -275,7 +275,8 @@
               "description": "Filter by status. `active` = QUEUED or INPROGRESS. `completed` = SUCCEEDED or FAILED."
             },
             "limit": {
-              "type": "number",
+              "type": "integer",
+              "minimum": 1,
               "description": "Maximum number of runs to return after filtering."
             }
           }
@@ -543,28 +544,33 @@
           "description": "Default cloud environment name (empty = none)"
         },
         "ozBridge.cloudPollingIntervalMs": {
-          "type": "number",
+          "type": "integer",
           "default": 5000,
+          "minimum": 100,
           "description": "Initial polling interval for cloud runs (ms)"
         },
         "ozBridge.cloudPollingTimeoutMs": {
-          "type": "number",
+          "type": "integer",
           "default": 1800000,
+          "minimum": 1000,
           "description": "Max polling duration for cloud runs (ms, default 30 min)"
         },
         "ozBridge.timeoutMs": {
-          "type": "number",
+          "type": "integer",
           "default": 300000,
+          "minimum": 1000,
           "description": "Timeout for local agent runs (ms, default 5 min)"
         },
         "ozBridge.idleTimeoutMs": {
-          "type": "number",
+          "type": "integer",
           "default": 90000,
+          "minimum": 0,
           "description": "Idle timeout for the Oz CLI subprocess (ms). Aborts the run if no stdout/stderr is received for this long — prevents 5-minute hangs when Warp is silently unresponsive (e.g. depleted credits, network outage). Set to 0 to disable. Default 90 s."
         },
         "ozBridge.maxOutputChars": {
-          "type": "number",
+          "type": "integer",
           "default": 15000,
+          "minimum": 100,
           "description": "Max characters shown in chat before truncation"
         },
         "ozBridge.mcpEnabled": {
@@ -574,11 +580,19 @@
           "scope": "machine-overridable"
         },
         "ozBridge.mcpPort": {
-          "type": "number",
+          "type": "integer",
           "default": 3847,
           "minimum": 0,
           "maximum": 65535,
           "description": "TCP port the MCP server listens on when enabled.",
+          "scope": "machine-overridable"
+        },
+        "ozBridge.mcpMaxSseSessions": {
+          "type": "integer",
+          "default": 16,
+          "minimum": 1,
+          "maximum": 256,
+          "description": "Maximum number of concurrent MCP SSE sessions. Additional GET /sse requests are rejected with HTTP 503 once the cap is reached.",
           "scope": "machine-overridable"
         },
         "ozBridge.mcpBindAddress": {

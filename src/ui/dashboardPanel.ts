@@ -150,6 +150,11 @@ export class DashboardPanel {
 
   private readonly disposables: vscode.Disposable[] = [];
   private disposed = false;
+  // C-M1 (audit v4): in-flight guard to coalesce rapid Refresh button
+  // clicks. Without this, two parallel `computeSummary()` calls race and
+  // the second one's HTML overwrites the first — wasted work and a brief
+  // flicker. The flag is reset in `refresh()`'s `finally` block.
+  private refreshing = false;
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
@@ -205,6 +210,13 @@ export class DashboardPanel {
     if (this.disposed) {
       return;
     }
+    // C-M1: skip when an earlier refresh is still in-flight. Subsequent
+    // refresh requests after the current one completes will pick up any
+    // newer state (the webview message handler invalidates stats first).
+    if (this.refreshing) {
+      return;
+    }
+    this.refreshing = true;
     try {
       const summary = await this.stats.computeSummary(this.windowDays);
       if (this.disposed) {
@@ -220,6 +232,8 @@ export class DashboardPanel {
       logError(`Dashboard refresh failed: ${message}`);
       const nonce = generateNonce();
       this.panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'nonce-${nonce}'; img-src ${this.panel.webview.cspSource};" /><style nonce="${nonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-errorForeground);padding:16px;}</style></head><body>Failed to load dashboard: ${escapeHtml(message)}</body></html>`;
+    } finally {
+      this.refreshing = false;
     }
   }
 

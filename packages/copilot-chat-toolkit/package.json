@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "description": "A reusable toolkit for building VS Code Copilot Chat extensions — JSON parsing, context collection, skill detection, command routing, and more.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sena-labs/OzBridge.git",
+    "directory": "packages/copilot-chat-toolkit"
+  },
+  "bugs": {
+    "url": "https://github.com/sena-labs/OzBridge/issues"
+  },
+  "homepage": "https://github.com/sena-labs/OzBridge/tree/main/packages/copilot-chat-toolkit#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": { "node": ">=20" },

@@ -445,14 +445,27 @@ export function activate(context: vscode.ExtensionContext): void {
  * `disposeAll()` is idempotent, so calling it here (in addition to
  * `context.subscriptions`) is safe.
  */
-export function deactivate(): Promise<void> | void {
+export async function deactivate(): Promise<void> {
   // Signal cancellation FIRST so any pending `oz` child processes are
   // killed before we tear down the trackers/MCP server that own them.
   try { state.extensionLifetimeCts?.cancel(); } catch { /* ignore */ }
   // A-L14: dispose the synchronous owners directly (no need to wrap them in
   // `Promise.resolve().then(...)` just to feed `Promise.allSettled`). Only
-  // `mcp.dispose()` is async and may reject, so swallow its rejection.
+  // `mcp.dispose()` and `telemetry.dispose()` are async and may reject, so
+  // run them in parallel via `allSettled` and ignore individual failures.
   try { state.runPoller?.disposeAll(); } catch { /* ignore */ }
   try { state.tracker?.dispose(); } catch { /* ignore */ }
-  return state.mcp?.dispose().catch(() => undefined);
+  // X-M1 (audit v4): await telemetry flush+dispose so buffered AppInsights
+  // events are not lost when VS Code tears the extension host down. A
+  // 1.5 s race guards against a hung HTTP transport blocking deactivation.
+  const telemetryShutdown = (async (): Promise<void> => {
+    try { await state.telemetry?.dispose(); } catch { /* ignore */ }
+  })();
+  const telemetryGuard = new Promise<void>((resolve) => {
+    setTimeout(resolve, 1500).unref?.();
+  });
+  await Promise.allSettled([
+    Promise.race([telemetryShutdown, telemetryGuard]),
+    state.mcp?.dispose().catch(() => undefined),
+  ]);
 }

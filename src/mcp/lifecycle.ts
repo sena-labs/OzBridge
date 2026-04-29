@@ -14,6 +14,7 @@ export interface McpConfig {
   port: number;
   bindAddress: string;
   bearerToken: string;
+  maxSseSessions: number;
 }
 
 /** Extracts the `ozBridge.mcp.*` slice from the full config snapshot. */
@@ -27,11 +28,20 @@ export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
       ? full.mcpPort
       : 3847;
 
+  const maxSseSessions =
+    typeof full.mcpMaxSseSessions === 'number'
+    && Number.isInteger(full.mcpMaxSseSessions)
+    && full.mcpMaxSseSessions >= 1
+    && full.mcpMaxSseSessions <= 256
+      ? full.mcpMaxSseSessions
+      : 16;
+
   return {
     enabled: full.mcpEnabled === true,
     port,
     bindAddress: full.mcpBindAddress || '127.0.0.1',
     bearerToken: full.mcpBearerToken || '',
+    maxSseSessions,
   };
 }
 
@@ -104,6 +114,7 @@ export class McpLifecycle implements vscode.Disposable {
         port: cfg.port,
         bindAddress: cfg.bindAddress,
         bearerToken: cfg.bearerToken || undefined,
+        maxSseSessions: cfg.maxSseSessions,
       });
       await server.start();
       this.server = server;
@@ -118,6 +129,7 @@ export class McpLifecycle implements vscode.Disposable {
             port: 0,
             bindAddress: cfg.bindAddress,
             bearerToken: cfg.bearerToken || undefined,
+            maxSseSessions: cfg.maxSseSessions,
           });
           await fallbackServer.start();
           this.server = fallbackServer;

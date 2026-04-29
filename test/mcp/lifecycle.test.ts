@@ -18,15 +18,18 @@ describe('readMcpConfig', () => {
       port: 3847,
       bindAddress: '127.0.0.1',
       bearerToken: '',
+      maxSseSessions: 16,
     });
   });
 
   it('uses provided values when valid', () => {
     const cfg = readMcpConfig({
       mcpEnabled: true, mcpPort: 9000, mcpBindAddress: '0.0.0.0', mcpBearerToken: 'tok',
+      mcpMaxSseSessions: 32,
     } as any);
     expect(cfg).toEqual({
       enabled: true, port: 9000, bindAddress: '0.0.0.0', bearerToken: 'tok',
+      maxSseSessions: 32,
     });
   });
 

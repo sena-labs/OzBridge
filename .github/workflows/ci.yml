@@ -19,6 +19,7 @@ jobs:
   build-and-test:
     name: Build & test (Node ${{ matrix.node-version }} · ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -52,6 +53,7 @@ jobs:
     name: Coverage gate (Node 22 · ubuntu)
     needs: build-and-test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -86,6 +88,7 @@ jobs:
     name: Package VSIX
     needs: build-and-test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -117,6 +120,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: package
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Download VSIX artifact
         uses: actions/download-artifact@v8

@@ -57,6 +57,11 @@ export interface WarpBridgeConfig extends BridgeConfig {
   mcpBindAddress: string;
   /** Optional bearer token required on every MCP request. */
   mcpBearerToken: string;
+  /**
+   * Maximum number of concurrent MCP SSE sessions. Additional `GET /sse`
+   * requests are rejected with HTTP 503 once the cap is reached. Default 16.
+   */
+  mcpMaxSseSessions: number;
 }
 
 /**
@@ -81,6 +86,7 @@ export const DEFAULT_CONFIG: WarpBridgeConfig = {
   mcpPort: 3847,
   mcpBindAddress: '127.0.0.1',
   mcpBearerToken: '',
+  mcpMaxSseSessions: 16,
 };
 
 // ============================================================================
