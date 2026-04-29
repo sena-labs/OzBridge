@@ -19,8 +19,14 @@ Audit eseguito in 6 passate (codice / test / manifest+deps / build / docs+l10n /
 | T-M1 | MED | ⚠️ NON APPLICABILE | `vi.resetModules()` introduceva regressione nei test esistenti (mock factory non re-init); revertito. I test passano senza |
 | T-M2 | MED | ✅ FIXED | `console.info()` perf log gated dietro `process.env.OZBRIDGE_PERF_LOG` |
 | B-M1 | MED | ✅ FIXED | Job `coverage` aggiunto in `.github/workflows/ci.yml` (vitest run --coverage + artifact upload) |
+| M-L1 | LOW | ✅ FIXED | `keywords` aggiunti al manifest principale |
+| T-L1 | LOW | ✅ FIXED | A11y assertions consolidate via `toMatchObject({label, role})` |
+| T-L2 | LOW | ✅ FIXED | Aggiunto positive sibling (`install/warp` + `checkAvailability` call count) in cloudCommand test |
+| T-L3 | LOW | ✅ FIXED | `disposeAll()` in try/finally con `useRealTimers()` in runPoller test (activeRunsTracker non chiama disposeAll, già safe) |
+| B-L1 | LOW | ✅ FIXED | Step `npm audit --audit-level=high --omit=dev` aggiunto al job `coverage` in CI |
+| B-L2 | LOW | ✅ FIXED | Nuovo test in `publishingReadiness.test.ts` che asserisce esclusione `*.map` da `.vscodeignore` |
 
-**Risultato post-fix**: 1243/1243 ✅ · `tsc --noEmit` ✅ · 6/7 MEDIUM chiusi, 1 ritirato come falso positivo dopo verifica empirica.
+**Risultato post-fix**: 1244/1244 ✅ · `tsc --noEmit` ✅ · 13 finding chiusi (6 MED + 6 LOW + 1 keywords nel batch MED), 1 ritirato (T-M1) come falso positivo dopo verifica empirica.
 
 ---
 

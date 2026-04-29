@@ -31,7 +31,11 @@ describe('/cloud command', () => {
 
     await handler('deploy app', mock.stream as any, createMockToken() as any);
 
+    // Positive sibling: assert the install/help message is rendered, not just
+    // that agentRunCloud was skipped (refactor-resistance, see audit T-L2).
     expect(mock.getFullOutput()).toContain('not found');
+    expect(mock.getFullOutput().toLowerCase()).toMatch(/install|warp/);
+    expect(cli.checkAvailability).toHaveBeenCalledTimes(1);
     expect(cli.agentRunCloud).not.toHaveBeenCalled();
   });
 

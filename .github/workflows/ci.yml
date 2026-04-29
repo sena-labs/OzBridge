@@ -68,6 +68,9 @@ jobs:
       - name: Run tests with coverage (enforces thresholds in vitest.config.ts)
         run: npx vitest run --coverage
 
+      - name: Audit production dependencies (high+ severity gate)
+        run: npm audit --audit-level=high --omit=dev
+
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v7

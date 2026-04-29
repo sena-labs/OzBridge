@@ -17,8 +17,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  poller.disposeAll();
-  vi.useRealTimers();
+  try {
+    poller?.disposeAll();
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 describe('RunPoller', () => {
