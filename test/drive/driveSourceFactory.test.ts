@@ -134,7 +134,7 @@ describe('createOzBridgeDriveSource', () => {
   let promptsDir: string;
 
   beforeEach(() => {
-    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'warp-vsc-drive-factory-'));
+    tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ozbridge-drive-factory-'));
     promptsDir = path.join(tmp, 'prompts');
     fs.mkdirSync(promptsDir, { recursive: true });
   });

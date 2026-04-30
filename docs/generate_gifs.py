@@ -326,7 +326,7 @@ def gif_03_oz_login():
 def gif_04_install_vsix():
     """Install VSIX from VS Code terminal."""
     frames = []
-    cmd = "code --install-extension warp-vsc-bridge-0.1.0.vsix"
+    cmd = "code --install-extension ozbridge-1.0.0.vsix"
 
     for i in range(16):
         img = new_frame()
@@ -359,7 +359,7 @@ def gif_04_install_vsix():
             d.text((75, y), "Installing extensions...", fill=YELLOW, font=FONT_MONO_SM)
         if i >= 14:
             y += 25
-            d.text((75, y), "Extension 'warp-vsc-bridge-0.1.0.vsix'", fill=WHITE, font=FONT_MONO_SM)
+            d.text((75, y), "Extension 'ozbridge-1.0.0.vsix'", fill=WHITE, font=FONT_MONO_SM)
             y += 20
             d.text((75, y), "was successfully installed.", fill=GREEN, font=FONT_MONO_SM)
 

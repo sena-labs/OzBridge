@@ -1,4 +1,4 @@
-# WARP-VSC-BRIDGE — Documento di Design Architetturale v1.0
+# OzBridge — Documento di Design Architetturale v1.0
 
 **Data**: 24 febbraio 2026  
 **Fase**: Design Agent (fase 2 della pipeline a 7 agenti)  
