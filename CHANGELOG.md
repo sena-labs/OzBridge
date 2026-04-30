@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Schedule editing.** New `cli.scheduleGet` / `cli.scheduleUpdate`
+  service methods plus `/schedule get <id>` and
+  `/schedule update <id> [--name "x"] [--cron "y"] [--prompt "z"]`
+  chat sub-commands. The runs tree now exposes an
+  **Edit Schedule…** action on running and paused schedule nodes
+  (`ozBridge.tree.editSchedule`). Only the fields the user actually
+  changes are sent to the CLI.
+- **Artifact download.** `cli.artifactGet` / `cli.artifactDownload`
+  wrap `oz artifact get` and `oz artifact download -o`. A new
+  **Download Artifact…** command (`ozBridge.tree.downloadArtifact`)
+  prompts for the destination via `showSaveDialog`, pre-fills the
+  filename from the artifact metadata, and offers
+  *Reveal in Explorer* on success. Output paths are validated to
+  reject empty values and NUL bytes before reaching the CLI.
+- **Secrets management.** Full CRUD on Warp secrets via
+  `cli.secretList` / `secretCreate` / `secretUpdate` /
+  `secretDelete`. A new **Secrets** category in the runs tree lists
+  every secret (icon `key`); per-item context actions cover create
+  (`ozBridge.tree.createSecret`), update
+  (`ozBridge.tree.updateSecret`), delete (with modal confirmation,
+  `ozBridge.tree.deleteSecret`) and copy-name
+  (`ozBridge.tree.copySecretName`). On older Warp CLIs that do not
+  expose the `secret` subcommand the category degrades to an
+  informational message instead of breaking the tree.
+
+### Security
+- Secret values are piped through **stdin only** when invoking
+  `oz secret create` and `oz secret update --value` — they never
+  appear in `argv` (visible in `ps`/Task Manager) nor in the
+  environment block. The new `OzCliService.exec({ stdin })` option
+  performs the write and immediately closes the stream; failures are
+  swallowed with a warning so the spawn lifecycle remains
+  deterministic.
+
+### Fixed
+- `/schedule update <id> --name "…"` now correctly skips the schedule
+  id when parsing flag arguments. The previous implementation passed
+  the id into the flag parser and always fell through to the
+  *Usage:* banner.
+
 ## [1.1.0] — 2026-04-21
 
 ### Changed (BREAKING)

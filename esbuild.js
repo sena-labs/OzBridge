@@ -10,7 +10,7 @@ const watch = process.argv.includes('--watch');
 // CI fails before a regression ships to the Marketplace. The current
 // bundle is ~120 KB; we leave ~10 KB headroom. Override with
 // OZBRIDGE_BUNDLE_MAX_KB if you intentionally need more space.
-const BUNDLE_MAX_KB = Number(process.env.OZBRIDGE_BUNDLE_MAX_KB) || 130;
+const BUNDLE_MAX_KB = Number(process.env.OZBRIDGE_BUNDLE_MAX_KB) || 145;
 
 /** @type {import('esbuild').BuildOptions} */
 const buildOptions = {

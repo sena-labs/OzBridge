@@ -60,6 +60,35 @@ function parseCreateArgs(
 }
 
 /**
+ * Parses the optional flags of `/schedule update <id> [--name "x"] [--cron "y"] [--prompt "z"]`.
+ *
+ * Flags can appear in any order. Each flag MUST be followed by a quoted
+ * value. Returns `null` only when the input contains a flag-like token
+ * that is not one of the recognised flags (so the caller can show the
+ * usage banner). An empty input yields an empty record (the caller then
+ * tells the user that nothing would be changed).
+ */
+function parseUpdateArgs(
+  input: string,
+): { name?: string; cron?: string; prompt?: string } | null {
+  const result: { name?: string; cron?: string; prompt?: string } = {};
+  let rest = input.replace(/^\s+/, '');
+  while (rest.length > 0) {
+    const flagMatch = rest.match(/^(--name|--cron|--prompt)\s+/);
+    if (!flagMatch) { return null; }
+    const flag = flagMatch[1];
+    rest = rest.slice(flagMatch[0].length);
+    const arg = parseQuotedArg(rest);
+    if (!arg) { return null; }
+    rest = arg.rest.replace(/^\s+/, '');
+    if (flag === '--name') { result.name = arg.value; }
+    else if (flag === '--cron') { result.cron = arg.value; }
+    else if (flag === '--prompt') { result.prompt = arg.value; }
+  }
+  return result;
+}
+
+/**
  * Creates the `/schedule` slash-command handler.
  *
  * Manages Warp cron schedules with 5 sub-commands:
@@ -154,8 +183,50 @@ export function createScheduleCommand(
           break;
         }
 
+        case 'get': {
+          const id = parts[1];
+          if (!id) {
+            stream.markdown('**Usage**: `/schedule get <id>`\n');
+            break;
+          }
+          stream.progress(`Fetching schedule ${id}...`);
+          const sched = await cli.scheduleGet(id);
+          stream.markdown(
+            `**Schedule** \`${sched.id}\`\n\n` +
+            `- **Name**: \`${sched.name}\`\n` +
+            `- **Cron**: \`${sched.cron}\`\n` +
+            `- **Status**: ${sched.paused ? '⏸️ paused' : '▶️ running'}\n` +
+            `- **Prompt**:\n\n\`\`\`\n${sched.prompt}\n\`\`\`\n`,
+          );
+          break;
+        }
+
+        case 'update': {
+          // Format: update <id> [--name "<x>"] [--cron "<y>"] [--prompt "<z>"]
+          const id = parts[1];
+          if (!id) {
+            stream.markdown('**Usage**: `/schedule update <id> [--name "<name>"] [--cron "<cron>"] [--prompt "<prompt>"]`\n');
+            break;
+          }
+          const updates = parseUpdateArgs(
+            trimmed.slice('update'.length).replace(/^\s+/, '').slice(id.length).replace(/^\s+/, ''),
+          );
+          if (!updates) {
+            stream.markdown('**Usage**: `/schedule update <id> [--name "<name>"] [--cron "<cron>"] [--prompt "<prompt>"]`\n');
+            break;
+          }
+          if (!updates.name && !updates.cron && !updates.prompt) {
+            stream.markdown('_Nothing to update — pass at least one of `--name`, `--cron`, `--prompt`._\n');
+            break;
+          }
+          stream.progress(`Updating schedule ${id}...`);
+          const updated = await cli.scheduleUpdate({ id, ...updates });
+          stream.markdown(`✅ **Schedule updated**: \`${updated.name}\` (ID: \`${updated.id}\`)\n\nCron: \`${updated.cron}\`\n`);
+          break;
+        }
+
         default:
-          stream.markdown('**Available commands**:\n- `/schedule list` — list all schedules\n- `/schedule create <name> "<cron>" "<prompt>"` — create a schedule\n- `/schedule pause <id>` — pause\n- `/schedule unpause <id>` — resume\n- `/schedule delete <id>` — delete\n');
+          stream.markdown('**Available commands**:\n- `/schedule list` — list all schedules\n- `/schedule get <id>` — show one schedule\n- `/schedule create <name> "<cron>" "<prompt>"` — create a schedule\n- `/schedule update <id> [--name "<x>"] [--cron "<y>"] [--prompt "<z>"]` — edit a schedule\n- `/schedule pause <id>` — pause\n- `/schedule unpause <id>` — resume\n- `/schedule delete <id>` — delete\n');
           break;
       }
     } catch (err) {

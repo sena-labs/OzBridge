@@ -55,6 +55,7 @@ describe('OzRunsTreeProvider', () => {
       'category:schedules',
       'category:environments',
       'category:mcp',
+      'category:secrets',
     ]);
   });
 

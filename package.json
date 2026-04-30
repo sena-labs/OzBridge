@@ -344,6 +344,38 @@
         "icon": "$(trash)"
       },
       {
+        "command": "ozBridge.tree.editSchedule",
+        "title": "%command.tree.editSchedule.title%",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "ozBridge.tree.downloadArtifact",
+        "title": "%command.tree.downloadArtifact.title%",
+        "category": "%category.warp%",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "ozBridge.tree.createSecret",
+        "title": "%command.tree.createSecret.title%",
+        "category": "%category.warp%",
+        "icon": "$(add)"
+      },
+      {
+        "command": "ozBridge.tree.updateSecret",
+        "title": "%command.tree.updateSecret.title%",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "ozBridge.tree.deleteSecret",
+        "title": "%command.tree.deleteSecret.title%",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "ozBridge.tree.copySecretName",
+        "title": "%command.tree.copySecretName.title%",
+        "icon": "$(copy)"
+      },
+      {
         "command": "ozBridge.handoff",
         "title": "%command.handoff.title%",
         "category": "%category.warp%",
@@ -466,6 +498,11 @@
           "group": "navigation"
         },
         {
+          "command": "ozBridge.tree.createSecret",
+          "when": "view == ozBridge.runsView",
+          "group": "navigation@2"
+        },
+        {
           "command": "ozBridge.drive.refresh",
           "when": "view == ozBridge.driveView",
           "group": "navigation"
@@ -474,7 +511,7 @@
       "view/item/context": [
         {
           "command": "ozBridge.tree.copyId",
-          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed || viewItem == warpSchedule:running || viewItem == warpSchedule:paused || viewItem == warpEnvironment || viewItem == warpMcp)",
+          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed || viewItem == warpSchedule:running || viewItem == warpSchedule:paused || viewItem == warpEnvironment || viewItem == warpMcp || viewItem == warpSecret)",
           "group": "warpGeneric@1"
         },
         {
@@ -496,6 +533,26 @@
           "command": "ozBridge.tree.deleteSchedule",
           "when": "view == ozBridge.runsView && (viewItem == warpSchedule:running || viewItem == warpSchedule:paused)",
           "group": "warpSchedule@2"
+        },
+        {
+          "command": "ozBridge.tree.editSchedule",
+          "when": "view == ozBridge.runsView && (viewItem == warpSchedule:running || viewItem == warpSchedule:paused)",
+          "group": "warpSchedule@0"
+        },
+        {
+          "command": "ozBridge.tree.copySecretName",
+          "when": "view == ozBridge.runsView && viewItem == warpSecret",
+          "group": "warpSecret@1"
+        },
+        {
+          "command": "ozBridge.tree.updateSecret",
+          "when": "view == ozBridge.runsView && viewItem == warpSecret",
+          "group": "warpSecret@2"
+        },
+        {
+          "command": "ozBridge.tree.deleteSecret",
+          "when": "view == ozBridge.runsView && viewItem == warpSecret",
+          "group": "warpSecret@3"
         },
         {
           "command": "ozBridge.tree.handoff",
@@ -692,6 +749,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test --config=test/e2e/playwright.config.ts",
+    "test:e2e:headed": "playwright test --config=test/e2e/playwright.config.ts --headed",
     "screenshots:build": "node scripts/screenshots/capture.mjs",
     "package": "vsce package --no-dependencies -o ozbridge.vsix"
   },

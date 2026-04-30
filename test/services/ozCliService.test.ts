@@ -935,4 +935,227 @@ describe('OzCliService', () => {
       expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(false);
     });
   });
+
+  // =========================================================================
+  // scheduleGet / scheduleUpdate
+  // =========================================================================
+  describe('scheduleGet()', () => {
+    it('dovrebbe rifiutare ID non valido', async () => {
+      await expect(cli.scheduleGet('bad id!')).rejects.toThrow('Invalid schedule id');
+    });
+
+    it('dovrebbe ritornare lo schedule parsato', async () => {
+      createMockProcess({
+        stdout: JSON.stringify({ id: 's1', name: 'daily', cron: '0 9 * * *', prompt: 'lint', paused: false }),
+      });
+      const r = await cli.scheduleGet('s1');
+      expect(r.id).toBe('s1');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['schedule', 'get', 's1']);
+    });
+
+    it('dovrebbe lanciare PARSE_ERROR su output non parsabile', async () => {
+      createMockProcess({ stdout: 'not json' });
+      await expect(cli.scheduleGet('s1')).rejects.toThrow(OzCliError);
+    });
+  });
+
+  describe('scheduleUpdate()', () => {
+    it('dovrebbe rifiutare ID non valido', async () => {
+      await expect(cli.scheduleUpdate({ id: 'bad id!' })).rejects.toThrow('Invalid schedule id');
+    });
+
+    it('dovrebbe inviare solo i campi specificati', async () => {
+      createMockProcess({
+        stdout: JSON.stringify({ id: 's1', name: 'new-name', cron: '0 9 * * *', prompt: 'p', paused: false }),
+      });
+      await cli.scheduleUpdate({ id: 's1', name: 'new-name' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args.slice(0, 3)).toEqual(['schedule', 'update', 's1']);
+      expect(args).toContain('--name');
+      expect(args).toContain('new-name');
+      expect(args).not.toContain('--cron');
+      expect(args).not.toContain('-p');
+    });
+
+    it('dovrebbe supportare --remove-environment / --remove-skill', async () => {
+      createMockProcess({
+        stdout: JSON.stringify({ id: 's1', name: 'n', cron: '0 9 * * *', prompt: 'p', paused: false }),
+      });
+      await cli.scheduleUpdate({ id: 's1', removeEnvironment: true, removeSkill: true });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--remove-environment');
+      expect(args).toContain('--remove-skill');
+    });
+
+    it('dovrebbe rifiutare cron con caratteri non validi', async () => {
+      await expect(
+        cli.scheduleUpdate({ id: 's1', cron: '0 9 * * *; rm -rf /' }),
+      ).rejects.toThrow('Invalid cron expression');
+    });
+  });
+
+  // =========================================================================
+  // artifactGet / artifactDownload + normalizeArtifact
+  // =========================================================================
+  describe('artifactGet()', () => {
+    it('dovrebbe rifiutare uid non valido', async () => {
+      await expect(cli.artifactGet('bad uid!')).rejects.toThrow('Invalid artifact uid');
+    });
+
+    it('dovrebbe normalizzare le chiavi alternative', async () => {
+      createMockProcess({
+        stdout: JSON.stringify({ id: 'a1', filename: 'log.txt', mime_type: 'text/plain', size: 42, runId: 'r1' }),
+      });
+      const r = await cli.artifactGet('a1');
+      expect(r.uid).toBe('a1');
+      expect(r.name).toBe('log.txt');
+      expect(r.contentType).toBe('text/plain');
+      expect(r.sizeBytes).toBe(42);
+      expect(r.runId).toBe('r1');
+    });
+
+    it('dovrebbe usare uid passato se mancante in payload', async () => {
+      createMockProcess({ stdout: JSON.stringify({ name: 'x' }) });
+      const r = await cli.artifactGet('a-fallback');
+      expect(r.uid).toBe('a-fallback');
+    });
+
+    it('dovrebbe lanciare PARSE_ERROR su output non parsabile', async () => {
+      createMockProcess({ stdout: 'nope' });
+      await expect(cli.artifactGet('a1')).rejects.toThrow(OzCliError);
+    });
+  });
+
+  describe('artifactDownload()', () => {
+    it('dovrebbe rifiutare uid non valido', async () => {
+      await expect(cli.artifactDownload('bad uid!', '/tmp/out')).rejects.toThrow('Invalid artifact uid');
+    });
+
+    it('dovrebbe rifiutare outPath vuoto', async () => {
+      await expect(cli.artifactDownload('a1', '')).rejects.toThrow(/Invalid outPath/);
+      await expect(cli.artifactDownload('a1', '   ')).rejects.toThrow(/Invalid outPath/);
+    });
+
+    it('dovrebbe rifiutare outPath con NUL byte', async () => {
+      await expect(cli.artifactDownload('a1', '/tmp/x\u0000bad')).rejects.toThrow(/NUL byte/);
+    });
+
+    it('dovrebbe chiamare la CLI con -o e ritornare outPath', async () => {
+      createMockProcess({ stdout: '' });
+      const result = await cli.artifactDownload('a1', '/tmp/out.bin');
+      expect(result).toBe('/tmp/out.bin');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['artifact', 'download', 'a1', '-o', '/tmp/out.bin']);
+    });
+  });
+
+  // =========================================================================
+  // Secrets — argv non deve mai contenere il valore (stdin only)
+  // =========================================================================
+  describe('secret*()', () => {
+    function createMockProcessWithStdin(opts: { stdout?: string; exitCode?: number } = {}) {
+      const stdinWrites: string[] = [];
+      const stdin = {
+        write: vi.fn((chunk: string | Buffer) => {
+          stdinWrites.push(typeof chunk === 'string' ? chunk : chunk.toString('utf8'));
+          return true;
+        }),
+        end: vi.fn(),
+      };
+      const proc = Object.assign(new EventEmitter(), {
+        stdout: new EventEmitter(),
+        stderr: new EventEmitter(),
+        stdin,
+        kill: vi.fn(),
+        pid: 9999,
+      });
+      mockSpawn.mockReturnValue(proc as any);
+      process.nextTick(() => {
+        if (opts.stdout) { proc.stdout.emit('data', Buffer.from(opts.stdout)); }
+        proc.emit('close', opts.exitCode ?? 0);
+      });
+      return { proc, stdin, stdinWrites };
+    }
+
+    it('secretList dovrebbe chiamare `secret list`', async () => {
+      createMockProcess({ stdout: '[]' });
+      const r = await cli.secretList();
+      expect(r.items).toEqual([]);
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['secret', 'list']);
+    });
+
+    it('secretList dovrebbe propagare --jq', async () => {
+      createMockProcess({ stdout: '[]' });
+      await cli.secretList({ jq: '.[].name' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--jq');
+    });
+
+    it('secretCreate NON deve mettere il valore in argv (stdin only)', async () => {
+      const { stdinWrites } = createMockProcessWithStdin({ stdout: '' });
+      await cli.secretCreate({ name: 'API_KEY', value: 'super-secret-VALUE' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['secret', 'create', 'API_KEY', '-t', 'raw-value']);
+      expect(stdinWrites.join('')).toBe('super-secret-VALUE');
+      for (const a of args) {
+        expect(a).not.toContain('super-secret-VALUE');
+      }
+    });
+
+    it('secretCreate dovrebbe rifiutare nomi non validi', async () => {
+      await expect(cli.secretCreate({ name: 'bad;name', value: 'v' })).rejects.toThrow('Invalid secret name');
+    });
+
+    it('secretCreate dovrebbe rifiutare value vuoto', async () => {
+      await expect(cli.secretCreate({ name: 'N', value: '' })).rejects.toThrow(/cannot be empty/);
+    });
+
+    it('secretCreate dovrebbe propagare --team / -d', async () => {
+      createMockProcessWithStdin({ stdout: '' });
+      await cli.secretCreate({ name: 'N', value: 'v', description: 'desc', scope: 'team' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--team');
+      expect(args).toContain('-d');
+      expect(args).toContain('desc');
+    });
+
+    it('secretUpdate con value usa --value e pipa via stdin', async () => {
+      const { stdinWrites } = createMockProcessWithStdin({ stdout: '' });
+      await cli.secretUpdate({ name: 'N', value: 'new-value' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--value');
+      expect(args).not.toContain('new-value');
+      expect(stdinWrites.join('')).toBe('new-value');
+    });
+
+    it('secretUpdate solo description NON usa --value e non pipa nulla', async () => {
+      const { stdinWrites } = createMockProcessWithStdin({ stdout: '' });
+      await cli.secretUpdate({ name: 'N', description: 'new desc' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).not.toContain('--value');
+      expect(args).toContain('-d');
+      expect(args).toContain('new desc');
+      expect(stdinWrites.length).toBe(0);
+    });
+
+    it('secretUpdate richiede almeno value o description', async () => {
+      await expect(cli.secretUpdate({ name: 'N' })).rejects.toThrow(/value or description/);
+    });
+
+    it('secretDelete dovrebbe sempre passare --force', async () => {
+      createMockProcess({ stdout: '' });
+      await cli.secretDelete('API_KEY');
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toEqual(['secret', 'delete', 'API_KEY', '--force']);
+    });
+
+    it('secretDelete dovrebbe propagare scope personal', async () => {
+      createMockProcess({ stdout: '' });
+      await cli.secretDelete('K', { scope: 'personal' });
+      const args = mockSpawn.mock.calls[0][1] as string[];
+      expect(args).toContain('--personal');
+    });
+  });
 });

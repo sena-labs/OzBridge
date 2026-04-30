@@ -160,6 +160,36 @@ export interface OzSchedule {
   paused: boolean;
 }
 
+/**
+ * Metadata for an artifact produced by an agent run.
+ * Returned by `oz artifact get <uid>` and listed inside `OzRunResult.raw.artifacts`.
+ */
+export interface OzArtifact {
+  uid: string;
+  /** Original filename or display name (best-effort extraction). */
+  name?: string;
+  /** MIME type, when reported by the CLI. */
+  contentType?: string;
+  /** Size in bytes, when reported. */
+  sizeBytes?: number;
+  /** Run id this artifact belongs to. */
+  runId?: string;
+  /** Raw JSON payload (forward-compatible passthrough). */
+  raw: unknown;
+}
+
+/** A secret stored in Warp's secure storage. Returned by `oz secret list`. */
+export interface OzSecret {
+  /** Unique secret name (used as identifier for update/delete). */
+  name: string;
+  /** Optional human-readable description. */
+  description?: string;
+  /** Secret type (e.g. `raw-value`, `anthropic-api-key`). */
+  type?: string;
+  /** Scope: `team` | `personal` | other. */
+  scope?: string;
+}
+
 // ============================================================================
 // Mappa Agenti → Skill
 // ============================================================================
@@ -218,9 +248,58 @@ export interface IOzCliService {
     environment?: string;
   }): Promise<OzSchedule>;
   scheduleList(opts?: { jq?: string }): Promise<OzListResult<OzSchedule>>;
+  /** Returns the full configuration of a schedule via `oz schedule get`. */
+  scheduleGet(id: string): Promise<OzSchedule>;
+  /**
+   * Updates one or more fields of an existing schedule via `oz schedule update`.
+   * All optional fields are mutated only when present and non-empty.
+   */
+  scheduleUpdate(opts: {
+    id: string;
+    name?: string;
+    cron?: string;
+    prompt?: string;
+    skill?: string;
+    environment?: string;
+    removeEnvironment?: boolean;
+    removeSkill?: boolean;
+  }): Promise<OzSchedule>;
   schedulePause(id: string): Promise<void>;
   scheduleUnpause(id: string): Promise<void>;
   scheduleDelete(id: string): Promise<void>;
+
+  /** Reads artifact metadata by UID via `oz artifact get`. */
+  artifactGet(uid: string): Promise<OzArtifact>;
+  /**
+   * Downloads an artifact to `outPath` via `oz artifact download -o`.
+   * Returns the absolute path of the written file.
+   */
+  artifactDownload(uid: string, outPath: string): Promise<string>;
+
+  /** Lists Warp secrets via `oz secret list`. */
+  secretList(opts?: { jq?: string }): Promise<OzListResult<OzSecret>>;
+  /**
+   * Creates a new raw secret. The value is passed via stdin so it never
+   * appears on the command line.
+   */
+  secretCreate(opts: {
+    name: string;
+    value: string;
+    description?: string;
+    scope?: 'team' | 'personal';
+  }): Promise<void>;
+  /**
+   * Updates an existing secret's value and/or description. The new value,
+   * when present, is passed via stdin.
+   */
+  secretUpdate(opts: {
+    name: string;
+    value?: string;
+    description?: string;
+    scope?: 'team' | 'personal';
+  }): Promise<void>;
+  /** Deletes a secret without confirmation (`oz secret delete --force`). */
+  secretDelete(name: string, opts?: { scope?: 'team' | 'personal' }): Promise<void>;
 
   modelList(opts?: { jq?: string }): Promise<OzListResult<OzModel>>;
   mcpList(opts?: { jq?: string }): Promise<OzListResult<OzMcpServer>>;

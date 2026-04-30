@@ -258,7 +258,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       runsTreeView.onDidCollapseElement((e) => {
         if (e.element && (e.element as { kind?: string }).kind === 'category') {
-          const cat = (e.element as { category: 'activeRuns' | 'history' | 'schedules' | 'environments' | 'mcp' }).category;
+          const cat = (e.element as { category: 'activeRuns' | 'history' | 'schedules' | 'environments' | 'mcp' | 'secrets' }).category;
           treeProvider.setCategoryCollapsed(cat, true);
         }
       }),
@@ -268,7 +268,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       runsTreeView.onDidExpandElement((e) => {
         if (e.element && (e.element as { kind?: string }).kind === 'category') {
-          const cat = (e.element as { category: 'activeRuns' | 'history' | 'schedules' | 'environments' | 'mcp' }).category;
+          const cat = (e.element as { category: 'activeRuns' | 'history' | 'schedules' | 'environments' | 'mcp' | 'secrets' }).category;
           treeProvider.setCategoryCollapsed(cat, false);
         }
       }),
