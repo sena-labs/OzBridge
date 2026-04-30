@@ -192,6 +192,81 @@ describe('/schedule command', () => {
     expect(output).toContain('/schedule create');
   });
 
+  // --- get ---
+  describe('get', () => {
+    it('dovrebbe mostrare i campi dello schedule', async () => {
+      cli.scheduleGet.mockResolvedValue({
+        id: 's1', name: 'daily', cron: '0 9 * * *', prompt: 'lint', paused: false,
+      });
+
+      await handler('get s1', mock.stream as any, createMockToken() as any);
+
+      expect(cli.scheduleGet).toHaveBeenCalledWith('s1');
+      const out = mock.getFullOutput();
+      expect(out).toContain('daily');
+      expect(out).toContain('0 9 * * *');
+      expect(out).toContain('running');
+    });
+
+    it('dovrebbe mostrare usage senza id', async () => {
+      await handler('get', mock.stream as any, createMockToken() as any);
+      expect(cli.scheduleGet).not.toHaveBeenCalled();
+      expect(mock.getFullOutput()).toContain('Usage');
+    });
+
+    it('paused schedule dovrebbe mostrare paused', async () => {
+      cli.scheduleGet.mockResolvedValue({
+        id: 's1', name: 'd', cron: '* * * * *', prompt: 'p', paused: true,
+      });
+      await handler('get s1', mock.stream as any, createMockToken() as any);
+      expect(mock.getFullOutput()).toContain('paused');
+    });
+  });
+
+  // --- update ---
+  describe('update', () => {
+    it('dovrebbe inviare solo il --name specificato', async () => {
+      cli.scheduleUpdate.mockResolvedValue({
+        id: 's1', name: 'new-name', cron: '0 9 * * *', prompt: 'p', paused: false,
+      });
+
+      await handler('update s1 --name "new-name"', mock.stream as any, createMockToken() as any);
+
+      expect(cli.scheduleUpdate).toHaveBeenCalledWith({ id: 's1', name: 'new-name' });
+      expect(mock.getFullOutput()).toContain('Schedule updated');
+    });
+
+    it('dovrebbe accettare più flag in qualsiasi ordine', async () => {
+      cli.scheduleUpdate.mockResolvedValue({
+        id: 's1', name: 'n', cron: '*/5 * * * *', prompt: 'do x', paused: false,
+      });
+
+      await handler('update s1 --cron "*/5 * * * *" --prompt "do x" --name "n"', mock.stream as any, createMockToken() as any);
+
+      expect(cli.scheduleUpdate).toHaveBeenCalledWith({
+        id: 's1', name: 'n', cron: '*/5 * * * *', prompt: 'do x',
+      });
+    });
+
+    it('dovrebbe mostrare usage senza id', async () => {
+      await handler('update', mock.stream as any, createMockToken() as any);
+      expect(cli.scheduleUpdate).not.toHaveBeenCalled();
+      expect(mock.getFullOutput()).toContain('Usage');
+    });
+
+    it('senza alcun flag non chiama scheduleUpdate', async () => {
+      await handler('update s1', mock.stream as any, createMockToken() as any);
+      expect(cli.scheduleUpdate).not.toHaveBeenCalled();
+      expect(mock.getFullOutput()).toContain('Nothing to update');
+    });
+
+    it('flag sconosciuto mostra usage', async () => {
+      await handler('update s1 --bogus "x"', mock.stream as any, createMockToken() as any);
+      expect(cli.scheduleUpdate).not.toHaveBeenCalled();
+      expect(mock.getFullOutput()).toContain('Usage');
+    });
+  });
+
   // --- error handling ---
   it('should handle OzCliError', async () => {
     cli.scheduleList.mockRejectedValue(new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'login'));

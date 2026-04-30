@@ -13,6 +13,8 @@ import {
   OzEnvironment,
   OzIntegration,
   OzSchedule,
+  OzArtifact,
+  OzSecret,
   OzCliError,
   OzCliErrorKind,
   IConfigManager,
@@ -359,6 +361,163 @@ export class OzCliService implements IOzCliService {
     await this.exec(['schedule', 'delete', id]);
   }
 
+  async scheduleGet(id: string): Promise<OzSchedule> {
+    this.sanitizeId(id, 'schedule id');
+    const result = await this.exec(['schedule', 'get', id], undefined, undefined, { readOnly: true });
+    const parsed = parse<OzSchedule>(result.stdout);
+    if (!parsed.parsed) {
+      throw new OzCliError(OzCliErrorKind.PARSE_ERROR, 'Failed to parse schedule get output', result.exitCode, result.stderr);
+    }
+    return parsed.parsed;
+  }
+
+  async scheduleUpdate(opts: {
+    id: string;
+    name?: string;
+    cron?: string;
+    prompt?: string;
+    skill?: string;
+    environment?: string;
+    removeEnvironment?: boolean;
+    removeSkill?: boolean;
+  }): Promise<OzSchedule> {
+    this.sanitizeId(opts.id, 'schedule id');
+    const args: string[] = ['schedule', 'update', opts.id];
+
+    if (opts.name) {
+      this.validateCliArg(opts.name, 'schedule name');
+      args.push('--name', opts.name);
+    }
+    if (opts.cron) {
+      this.validateCliArg(opts.cron, 'cron expression');
+      args.push('--cron', opts.cron);
+    }
+    if (opts.prompt && opts.prompt.trim().length > 0) {
+      args.push('-p', opts.prompt);
+    }
+    if (opts.skill) {
+      this.validateCliArg(opts.skill, 'skill');
+      args.push('--skill', opts.skill);
+    } else if (opts.removeSkill) {
+      args.push('--remove-skill');
+    }
+    if (opts.environment) {
+      this.validateCliArg(opts.environment, 'environment');
+      args.push('-e', opts.environment);
+    } else if (opts.removeEnvironment) {
+      args.push('--remove-environment');
+    }
+
+    const result = await this.exec(args);
+    const parsed = parse<OzSchedule>(result.stdout);
+    if (!parsed.parsed) {
+      throw new OzCliError(OzCliErrorKind.PARSE_ERROR, 'Failed to parse schedule update output', result.exitCode, result.stderr);
+    }
+    return parsed.parsed;
+  }
+
+  // =========================================================================
+  // Artifacts
+  // =========================================================================
+
+  async artifactGet(uid: string): Promise<OzArtifact> {
+    this.sanitizeId(uid, 'artifact uid');
+    const result = await this.exec(['artifact', 'get', uid], undefined, undefined, { readOnly: true });
+    const parsed = parse<Record<string, unknown>>(result.stdout);
+    if (!parsed.parsed) {
+      throw new OzCliError(OzCliErrorKind.PARSE_ERROR, 'Failed to parse artifact get output', result.exitCode, result.stderr);
+    }
+    return OzCliService.normalizeArtifact(uid, parsed.parsed);
+  }
+
+  async artifactDownload(uid: string, outPath: string): Promise<string> {
+    this.sanitizeId(uid, 'artifact uid');
+    if (typeof outPath !== 'string' || outPath.trim().length === 0) {
+      throw new OzCliError(OzCliErrorKind.CLI_ERROR, 'Invalid outPath: must be a non-empty string');
+    }
+    // outPath comes from a `vscode.window.showSaveDialog` result so the
+    // user already authored it. We still forbid NUL bytes which would
+    // truncate strings inside libuv / Win32 path APIs.
+    if (outPath.includes('\u0000')) {
+      throw new OzCliError(OzCliErrorKind.CLI_ERROR, 'Invalid outPath: contains NUL byte');
+    }
+    await this.exec(['artifact', 'download', uid, '-o', outPath], undefined, undefined, { readOnly: true });
+    return outPath;
+  }
+
+  // =========================================================================
+  // Secrets
+  // =========================================================================
+
+  async secretList(opts?: { jq?: string }): Promise<OzListResult<OzSecret>> {
+    const args = ['secret', 'list'];
+    if (opts?.jq) {
+      validateJqFilter(opts.jq);
+      args.push('--jq', opts.jq);
+    }
+    const result = await this.exec(args, undefined, undefined, { readOnly: true });
+    return this.toListResult(result);
+  }
+
+  async secretCreate(opts: {
+    name: string;
+    value: string;
+    description?: string;
+    scope?: 'team' | 'personal';
+  }): Promise<void> {
+    this.validateCliArg(opts.name, 'secret name');
+    if (typeof opts.value !== 'string' || opts.value.length === 0) {
+      throw new OzCliError(OzCliErrorKind.CLI_ERROR, 'Secret value cannot be empty');
+    }
+    if (opts.description) { this.validateCliArg(opts.description, 'secret description'); }
+
+    const args: string[] = ['secret', 'create', opts.name, '-t', 'raw-value'];
+    if (opts.description) { args.push('-d', opts.description); }
+    if (opts.scope === 'team') { args.push('--team'); }
+    if (opts.scope === 'personal') { args.push('--personal'); }
+
+    // SECURITY: pipe the secret value through stdin so it never appears
+    // in argv (visible via `ps`/Task Manager) or in the env block.
+    await this.exec(args, undefined, undefined, { stdin: opts.value });
+  }
+
+  async secretUpdate(opts: {
+    name: string;
+    value?: string;
+    description?: string;
+    scope?: 'team' | 'personal';
+  }): Promise<void> {
+    this.validateCliArg(opts.name, 'secret name');
+    if (opts.description) { this.validateCliArg(opts.description, 'secret description'); }
+    if (opts.value === undefined && opts.description === undefined) {
+      throw new OzCliError(OzCliErrorKind.CLI_ERROR, 'secretUpdate requires at least value or description');
+    }
+
+    const args: string[] = ['secret', 'update', opts.name];
+    if (opts.description) { args.push('-d', opts.description); }
+    if (opts.scope === 'team') { args.push('--team'); }
+    if (opts.scope === 'personal') { args.push('--personal'); }
+
+    if (opts.value !== undefined) {
+      // Upstream expects the new value via the `--value` interactive
+      // prompt — which reads from stdin when not a TTY. We therefore
+      // pipe the value identically to `secretCreate` and avoid placing
+      // it in argv.
+      args.push('--value');
+      await this.exec(args, undefined, undefined, { stdin: opts.value });
+    } else {
+      await this.exec(args);
+    }
+  }
+
+  async secretDelete(name: string, opts?: { scope?: 'team' | 'personal' }): Promise<void> {
+    this.validateCliArg(name, 'secret name');
+    const args: string[] = ['secret', 'delete', name, '--force'];
+    if (opts?.scope === 'team') { args.push('--team'); }
+    if (opts?.scope === 'personal') { args.push('--personal'); }
+    await this.exec(args);
+  }
+
   // =========================================================================
   // Discovery
   // =========================================================================
@@ -439,6 +598,38 @@ export class OzCliService implements IOzCliService {
     }
     const haystack = `${err.message} ${err.stderr ?? ''}`.toLowerCase();
     return /unrecognized subcommand|unknown subcommand|unknown command|unrecognized argument/.test(haystack);
+  }
+
+  /**
+   * Normalises the heterogeneous JSON shape returned by `oz artifact get`
+   * into a stable {@link OzArtifact}. Upstream key names have shifted
+   * across releases (`uid|id`, `name|filename`, `content_type|mime_type`,
+   * `size_bytes|size`, `run_id|runId`), so we coalesce them defensively
+   * and always preserve the raw payload for forward compatibility.
+   */
+  static normalizeArtifact(uid: string, raw: Record<string, unknown>): OzArtifact {
+    const pickString = (...keys: string[]): string | undefined => {
+      for (const k of keys) {
+        const v = raw[k];
+        if (typeof v === 'string' && v.length > 0) { return v; }
+      }
+      return undefined;
+    };
+    const pickNumber = (...keys: string[]): number | undefined => {
+      for (const k of keys) {
+        const v = raw[k];
+        if (typeof v === 'number' && Number.isFinite(v)) { return v; }
+      }
+      return undefined;
+    };
+    return {
+      uid: pickString('uid', 'id', 'artifact_uid') ?? uid,
+      name: pickString('name', 'filename', 'file_name'),
+      contentType: pickString('content_type', 'contentType', 'mime_type', 'mimeType'),
+      sizeBytes: pickNumber('size_bytes', 'sizeBytes', 'size'),
+      runId: pickString('run_id', 'runId'),
+      raw,
+    };
   }
 
   // =========================================================================
@@ -537,6 +728,13 @@ export class OzCliService implements IOzCliService {
        * `outputFormat: 'ndjson'` for progressive event delivery.
        */
       onLine?: (line: string) => void;
+      /**
+       * Optional UTF-8 string written to the child's stdin and then
+       * the stream is closed. Used by commands like `oz secret create`
+       * / `oz secret update` that read sensitive values from stdin so
+       * they never appear in `argv`.
+       */
+      stdin?: string;
     },
   ): Promise<ExecResult> {
     // Read-only commands (list/get) cannot consume Warp credits per
@@ -547,6 +745,7 @@ export class OzCliService implements IOzCliService {
     const readOnly = options?.readOnly === true;
     const outputFormat = options?.outputFormat === undefined ? 'json' : options.outputFormat;
     const onLine = options?.onLine;
+    const stdinPayload = options?.stdin;
     return new Promise((resolve, reject) => {
       if (cancellation?.isCancellationRequested || this.extensionToken?.isCancellationRequested) {
         reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
@@ -617,6 +816,19 @@ export class OzCliService implements IOzCliService {
       let settled = false;
       let forceKillHandle: NodeJS.Timeout | undefined;
       let idleHandle: NodeJS.Timeout | undefined;
+
+      // Pipe sensitive payloads (e.g. secret values) through stdin so
+      // they never appear in argv or in process listings. We write
+      // synchronously and immediately end() the stream — there is no
+      // upstream command that expects multi-chunk interactive input.
+      if (stdinPayload !== undefined) {
+        try {
+          proc.stdin?.write(stdinPayload);
+          proc.stdin?.end();
+        } catch (writeErr) {
+          logWarn('ozCliService stdin write failed', getErrorMessage(writeErr));
+        }
+      }
 
       const idleMs = this.config.idleTimeoutMs ?? 0;
 
@@ -1017,7 +1229,18 @@ export class OzCliService implements IOzCliService {
   private _resolvedOzPath: string | undefined;
   private _resolvedFor: string | undefined;
 
-  // IMPL: converte ExecResult in lista generica con fallback a rawText (R1)
+  // IMPL: converte ExecResult in lista generica con fallback a rawText (R1).
+  //
+  // Bug-fix (dashboard 90s timeout): the Warp CLI returns paginated list
+  // endpoints wrapped in an envelope object such as
+  // `{ "page_info": {...}, "runs": [...] }`. Without unwrapping, callers
+  // would iterate over a single envelope object whose `id` field is
+  // `undefined`, then forward `undefined` to commands like `oz run get`,
+  // which hangs until the per-call idle timeout fires (90s). We now
+  // detect a small set of well-known envelope keys and surface the
+  // inner array directly. Falls back to wrapping the object as a single
+  // item only when no envelope key is found, preserving the previous
+  // behaviour for non-paginated single-record responses.
   private toListResult<T>(result: ExecResult): OzListResult<T> {
     const { parsed, rawText } = parse<T[]>(result.stdout);
 
@@ -1025,8 +1248,29 @@ export class OzCliService implements IOzCliService {
       return { items: parsed };
     }
 
-    // Se il parse ha prodotto un singolo oggetto, wrappalo in array
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    if (parsed && typeof parsed === 'object') {
+      const envelope = parsed as Record<string, unknown>;
+      const ENVELOPE_KEYS = [
+        'runs',
+        'items',
+        'data',
+        'results',
+        'schedules',
+        'models',
+        'mcp_servers',
+        'mcpServers',
+        'profiles',
+        'environments',
+        'integrations',
+        'secrets',
+      ];
+      for (const key of ENVELOPE_KEYS) {
+        const inner = envelope[key];
+        if (Array.isArray(inner)) {
+          return { items: inner as T[] };
+        }
+      }
+      // Single-record response (e.g., schedule create): wrap as one item.
       return { items: [parsed as T] };
     }
 
@@ -1078,6 +1322,16 @@ export class OzCliService implements IOzCliService {
 
   /** Valida che un ID utente contenga solo caratteri sicuri (protezione injection) */
   private sanitizeId(id: string, paramName: string): void {
+    // Defensive: reject non-strings, empty values, and stringified `undefined`/`null`
+    // that could slip through if a caller forwards a missing field. Without this
+    // guard, the value would be sent to the Oz CLI which then fails with an
+    // opaque "Invalid task ID: failed to parse a UUID".
+    if (typeof id !== 'string' || id.length === 0 || id === 'undefined' || id === 'null') {
+      throw new OzCliError(
+        OzCliErrorKind.CLI_ERROR,
+        `Invalid ${paramName}: missing or empty identifier`,
+      );
+    }
     if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
       throw new OzCliError(
         OzCliErrorKind.CLI_ERROR,

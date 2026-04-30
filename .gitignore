@@ -3,5 +3,7 @@ dist/
 *.vsix
 .vscode-test/
 coverage/
+test-results/
+playwright-report/
 .env
 .env.*

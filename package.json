@@ -17,7 +17,7 @@
     "url": "https://github.com/sena-labs/OzBridge/issues"
   },
   "homepage": "https://github.com/sena-labs/OzBridge#readme",
-  "icon": "media/warp-icon.png",
+  "icon": "media/ozbridge-icon.png",
   "galleryBanner": {
     "color": "#0E1116",
     "theme": "dark"
@@ -278,7 +278,7 @@
         {
           "id": "ozBridgeSidebar",
           "title": "OzBridge",
-          "icon": "media/warp-icon.png"
+          "icon": "media/ozbridge-icon.svg"
         }
       ]
     },
@@ -287,13 +287,13 @@
         {
           "id": "ozBridge.runsView",
           "name": "Runs & Resources",
-          "icon": "media/warp-icon.png",
+          "icon": "media/ozbridge-icon.svg",
           "contextualTitle": "OzBridge"
         },
         {
           "id": "ozBridge.driveView",
           "name": "Warp Drive",
-          "icon": "media/warp-icon.png",
+          "icon": "media/ozbridge-icon.svg",
           "contextualTitle": "OzBridge"
         }
       ]
@@ -342,6 +342,38 @@
         "command": "ozBridge.tree.deleteSchedule",
         "title": "%command.tree.deleteSchedule.title%",
         "icon": "$(trash)"
+      },
+      {
+        "command": "ozBridge.tree.editSchedule",
+        "title": "%command.tree.editSchedule.title%",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "ozBridge.tree.downloadArtifact",
+        "title": "%command.tree.downloadArtifact.title%",
+        "category": "%category.warp%",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "ozBridge.tree.createSecret",
+        "title": "%command.tree.createSecret.title%",
+        "category": "%category.warp%",
+        "icon": "$(add)"
+      },
+      {
+        "command": "ozBridge.tree.updateSecret",
+        "title": "%command.tree.updateSecret.title%",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "ozBridge.tree.deleteSecret",
+        "title": "%command.tree.deleteSecret.title%",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "ozBridge.tree.copySecretName",
+        "title": "%command.tree.copySecretName.title%",
+        "icon": "$(copy)"
       },
       {
         "command": "ozBridge.handoff",
@@ -466,6 +498,11 @@
           "group": "navigation"
         },
         {
+          "command": "ozBridge.tree.createSecret",
+          "when": "view == ozBridge.runsView",
+          "group": "navigation@2"
+        },
+        {
           "command": "ozBridge.drive.refresh",
           "when": "view == ozBridge.driveView",
           "group": "navigation"
@@ -474,7 +511,7 @@
       "view/item/context": [
         {
           "command": "ozBridge.tree.copyId",
-          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed || viewItem == warpSchedule:running || viewItem == warpSchedule:paused || viewItem == warpEnvironment || viewItem == warpMcp)",
+          "when": "view == ozBridge.runsView && (viewItem == warpRun:active || viewItem == warpRun:completed || viewItem == warpSchedule:running || viewItem == warpSchedule:paused || viewItem == warpEnvironment || viewItem == warpMcp || viewItem == warpSecret)",
           "group": "warpGeneric@1"
         },
         {
@@ -496,6 +533,26 @@
           "command": "ozBridge.tree.deleteSchedule",
           "when": "view == ozBridge.runsView && (viewItem == warpSchedule:running || viewItem == warpSchedule:paused)",
           "group": "warpSchedule@2"
+        },
+        {
+          "command": "ozBridge.tree.editSchedule",
+          "when": "view == ozBridge.runsView && (viewItem == warpSchedule:running || viewItem == warpSchedule:paused)",
+          "group": "warpSchedule@0"
+        },
+        {
+          "command": "ozBridge.tree.copySecretName",
+          "when": "view == ozBridge.runsView && viewItem == warpSecret",
+          "group": "warpSecret@1"
+        },
+        {
+          "command": "ozBridge.tree.updateSecret",
+          "when": "view == ozBridge.runsView && viewItem == warpSecret",
+          "group": "warpSecret@2"
+        },
+        {
+          "command": "ozBridge.tree.deleteSecret",
+          "when": "view == ozBridge.runsView && viewItem == warpSecret",
+          "group": "warpSecret@3"
         },
         {
           "command": "ozBridge.tree.handoff",
@@ -692,15 +749,20 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test --config=test/e2e/playwright.config.ts",
+    "test:e2e:headed": "playwright test --config=test/e2e/playwright.config.ts --headed",
+    "screenshots:build": "node scripts/screenshots/capture.mjs",
     "package": "vsce package --no-dependencies -o ozbridge.vsix"
   },
   "dependencies": {
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^20.19.39",
     "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.5",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.9.1",
     "esbuild": "^0.28.0",
     "typescript": "^6.0.3",

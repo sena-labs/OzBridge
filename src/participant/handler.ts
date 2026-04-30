@@ -38,7 +38,7 @@ export function registerChatParticipant(
   const handler = router.createHandler();
 
   const participant = vscode.chat.createChatParticipant(PARTICIPANT_ID, handler);
-  participant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'warp-icon.png');
+  participant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'ozbridge-icon.png');
   participant.followupProvider = new FollowupProvider();
 
   context.subscriptions.push(participant);

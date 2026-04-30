@@ -925,10 +925,10 @@ def generate_icon() -> None:
     draw.ellipse((120, 78, 136, 94), fill=PALETTE['text'])
     draw.line((96, 188, 160, 188), fill=PALETTE['blue'], width=10)
     draw.line((96, 188, 132, 188), fill=PALETTE['green'], width=10)
-    write_icon_svg(MEDIA_DIR / 'warp-icon.svg')
-    save_png(img, MEDIA_DIR / 'warp-icon.png')
-    save_png(img.resize((128, 128), Image.Resampling.LANCZOS), MEDIA_DIR / 'warp-icon-128.png')
-    save_png(img.resize((32, 32), Image.Resampling.LANCZOS), MEDIA_DIR / 'warp-icon-32.png')
+    write_icon_svg(MEDIA_DIR / 'ozbridge-icon.svg')
+    save_png(img, MEDIA_DIR / 'ozbridge-icon.png')
+    save_png(img.resize((128, 128), Image.Resampling.LANCZOS), MEDIA_DIR / 'ozbridge-icon-128.png')
+    save_png(img.resize((32, 32), Image.Resampling.LANCZOS), MEDIA_DIR / 'ozbridge-icon-32.png')
 
 
 def parse_args() -> argparse.Namespace:

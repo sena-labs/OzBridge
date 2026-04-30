@@ -7,6 +7,7 @@ import {
   OzSchedule,
   OzEnvironment,
   OzMcpServer,
+  OzSecret,
 } from '../types/index.js';
 import { ActiveRunsTracker, TrackedRun } from '../services/activeRunsTracker.js';
 
@@ -23,6 +24,7 @@ export type OzTreeNode =
   | ScheduleNode
   | EnvironmentNode
   | McpNode
+  | SecretNode
   | MessageNode;
 
 interface BaseNode {
@@ -32,7 +34,7 @@ interface BaseNode {
 
 interface CategoryNode extends BaseNode {
   readonly kind: 'category';
-  readonly category: 'activeRuns' | 'history' | 'schedules' | 'environments' | 'mcp';
+  readonly category: 'activeRuns' | 'history' | 'schedules' | 'environments' | 'mcp' | 'secrets';
 }
 
 interface RunNode extends BaseNode {
@@ -55,6 +57,11 @@ interface EnvironmentNode extends BaseNode {
 interface McpNode extends BaseNode {
   readonly kind: 'mcp';
   readonly server: OzMcpServer;
+}
+
+interface SecretNode extends BaseNode {
+  readonly kind: 'secret';
+  readonly secret: OzSecret;
 }
 
 interface MessageNode extends BaseNode {
@@ -216,6 +223,22 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         };
         return item;
       }
+      case 'secret': {
+        const item = new vscode.TreeItem(element.label, vscode.TreeItemCollapsibleState.None);
+        item.id = element.id;
+        item.description = element.secret.scope || element.secret.type || undefined;
+        item.iconPath = new vscode.ThemeIcon('key');
+        const tipParts = [`Secret \`${element.secret.name}\``];
+        if (element.secret.description) { tipParts.push(element.secret.description); }
+        if (element.secret.scope) { tipParts.push(`scope: ${element.secret.scope}`); }
+        item.tooltip = tipParts.join('\n');
+        item.contextValue = 'warpSecret';
+        item.accessibilityInformation = {
+          label: `Secret ${element.secret.name}${element.secret.scope ? `, scope ${element.secret.scope}` : ''}`,
+          role: 'treeitem',
+        };
+        return item;
+      }
     }
   }
 
@@ -227,6 +250,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         cat('schedules', 'Schedules'),
         cat('environments', 'Environments'),
         cat('mcp', 'MCP Servers'),
+        cat('secrets', 'Secrets'),
       ];
     }
 
@@ -245,6 +269,8 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         return this.environmentNodes();
       case 'mcp':
         return this.mcpNodes();
+      case 'secrets':
+        return this.secretNodes();
     }
   }
 
@@ -267,10 +293,12 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
         return cat('environments', 'Environments');
       case 'mcp':
         return cat('mcp', 'MCP Servers');
+      case 'secret':
+        return cat('secrets', 'Secrets');
       case 'message': {
         // Message nodes encode their parent category in the id, e.g.
         // `message:activeRuns:empty` or `message:mcp:error`.
-        const m = /^message:(activeRuns|history|schedules|environments|mcp):/.exec(element.id);
+        const m = /^message:(activeRuns|history|schedules|environments|mcp|secrets):/.exec(element.id);
         if (!m) { return null; }
         const category = m[1] as CategoryNode['category'];
         const labels: Record<CategoryNode['category'], string> = {
@@ -279,6 +307,7 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
           schedules: 'Schedules',
           environments: 'Environments',
           mcp: 'MCP Servers',
+          secrets: 'Secrets',
         };
         return cat(category, labels[category]);
       }
@@ -357,6 +386,32 @@ export class OzRunsTreeProvider implements vscode.TreeDataProvider<OzTreeNode>, 
       return [msg('mcp:error', errorLabel(err, 'MCP servers'))];
     }
   }
+
+  private async secretNodes(): Promise<OzTreeNode[]> {
+    try {
+      const list = await this.cli.secretList();
+      if (list.items.length === 0) {
+        return [msg('secrets:empty', 'No secrets stored')];
+      }
+      return list.items.map<SecretNode>((s) => ({
+        kind: 'secret',
+        id: `secret:${s.name}`,
+        label: s.name,
+        secret: s,
+      }));
+    } catch (err) {
+      // Older CLIs that lack `oz secret` will surface as
+      // `unrecognized subcommand`. Treat that as an empty/legacy state
+      // rather than an error so the rest of the tree stays functional.
+      if (err instanceof OzCliError && (err.kind === OzCliErrorKind.CLI_ERROR || err.kind === OzCliErrorKind.NOT_FOUND)) {
+        const stderrLower = `${err.message} ${err.stderr ?? ''}`.toLowerCase();
+        if (/unrecognized subcommand|unknown subcommand|unknown command/.test(stderrLower)) {
+          return [msg('secrets:unsupported', 'Secrets require a newer Warp CLI')];
+        }
+      }
+      return [msg('secrets:error', errorLabel(err, 'secrets'))];
+    }
+  }
 }
 
 // ===========================================================================
@@ -396,6 +451,7 @@ function categoryIcon(category: CategoryNode['category']): string {
     case 'schedules': return 'calendar';
     case 'environments': return 'server-environment';
     case 'mcp': return 'plug';
+    case 'secrets': return 'key';
     default: {
       // A-L13: exhaustiveness guard — adding a new CategoryNode variant
       // without updating this switch becomes a compile-time error.

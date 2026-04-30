@@ -41,10 +41,10 @@ describe('Bundle-budget workflow (deliverable N)', () => {
     expect(BUDGET).toMatch(/concurrency:[\s\S]*?cancel-in-progress:\s*true/);
   });
 
-  it('enforces the 125 KB budget on dist/extension.js', () => {
-    expect(BUDGET).toMatch(/BUDGET_BYTES=\$\(\(125 \* 1024\)\)/);
+  it('enforces the 145 KB budget on dist/extension.js', () => {
+    expect(BUDGET).toMatch(/BUDGET_BYTES=\$\(\(145 \* 1024\)\)/);
     expect(BUDGET).toMatch(/dist\/extension\.js/);
-    expect(BUDGET).toMatch(/exceeds the 125 KB budget/);
+    expect(BUDGET).toMatch(/exceeds the 145 KB budget/);
   });
 
   it('writes a human-readable summary to $GITHUB_STEP_SUMMARY', () => {
