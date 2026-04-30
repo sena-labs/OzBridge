@@ -213,11 +213,14 @@ describe('RunStatsService', () => {
   });
 
   it('caches terminal runs and re-fetches non-terminal ones on subsequent calls', async () => {
+    // List items without `status` force the runGet fallback path, which
+    // is what the cache logic guards. The fast-path (status present in
+    // the list payload) is covered by a dedicated test below.
     cli.runList.mockResolvedValue({
       items: [
-        { id: 'r-success', status: 'SUCCEEDED' },
-        { id: 'r-running', status: 'INPROGRESS' },
-      ],
+        { id: 'r-success' },
+        { id: 'r-running' },
+      ] as unknown as { id: string; status: 'SUCCEEDED' | 'INPROGRESS' }[],
     });
     cli.runGet.mockImplementation(async (id: string) => {
       if (id === 'r-success') {
@@ -245,7 +248,9 @@ describe('RunStatsService', () => {
   });
 
   it('invalidate() clears the entire cache when called without args', async () => {
-    cli.runList.mockResolvedValue({ items: [{ id: 'r-1', status: 'SUCCEEDED' }] });
+    cli.runList.mockResolvedValue({
+      items: [{ id: 'r-1' }] as unknown as { id: string; status: 'SUCCEEDED' }[],
+    });
     cli.runGet.mockResolvedValue(
       makeRunResult({
         runId: 'r-1',
@@ -264,9 +269,9 @@ describe('RunStatsService', () => {
   it('invalidate(runId) drops only the targeted entry', async () => {
     cli.runList.mockResolvedValue({
       items: [
-        { id: 'r-keep', status: 'SUCCEEDED' },
-        { id: 'r-drop', status: 'SUCCEEDED' },
-      ],
+        { id: 'r-keep' },
+        { id: 'r-drop' },
+      ] as unknown as { id: string; status: 'SUCCEEDED' }[],
     });
     cli.runGet.mockImplementation(async (id: string) =>
       makeRunResult({
@@ -286,7 +291,9 @@ describe('RunStatsService', () => {
   });
 
   it('aggregates undated runs into undatedCount', async () => {
-    cli.runList.mockResolvedValue({ items: [{ id: 'r-1', status: 'SUCCEEDED' }] });
+    cli.runList.mockResolvedValue({
+      items: [{ id: 'r-1' }] as unknown as { id: string; status: 'SUCCEEDED' }[],
+    });
     cli.runGet.mockResolvedValue(
       makeRunResult({ runId: 'r-1', status: 'SUCCEEDED', raw: { foo: 'bar' } }),
     );
@@ -295,5 +302,65 @@ describe('RunStatsService', () => {
 
     expect(summary.undatedCount).toBe(1);
     expect(summary.totalRuns).toBe(0);
+  });
+
+  // -------------------------------------------------------------------------
+  // Bug-fix coverage: the dashboard previously hung 90s because runStats
+  // fanned-out one `runGet` per list item. The Warp CLI already exposes
+  // status (`state`) and `created_at` in the list payload, so we now use
+  // those directly and only fall back to runGet when essential fields are
+  // missing. These tests pin the new behaviour.
+  // -------------------------------------------------------------------------
+
+  it('uses status/createdAt from list items when available (no runGet fan-out)', async () => {
+    cli.runList.mockResolvedValue({
+      items: [
+        { run_id: 'r-1', state: 'SUCCEEDED', created_at: '2026-04-20T08:00:00Z' },
+        { run_id: 'r-2', state: 'FAILED', created_at: '2026-04-20T09:00:00Z' },
+        { id: 'r-3', status: 'INPROGRESS', createdAt: '2026-04-20T10:00:00Z' },
+      ] as unknown as { id: string; status: 'SUCCEEDED' }[],
+    });
+
+    const summary = await service.computeSummary(30);
+
+    expect(cli.runGet).not.toHaveBeenCalled();
+    expect(summary.totalRuns).toBe(3);
+  });
+
+  it('skips list entries without an id (envelope or malformed records)', async () => {
+    cli.runList.mockResolvedValue({
+      items: [
+        { page_info: { has_next_page: false } },
+        { run_id: 'r-1', state: 'SUCCEEDED', created_at: '2026-04-20T08:00:00Z' },
+      ] as unknown as { id: string; status: 'SUCCEEDED' }[],
+    });
+
+    const summary = await service.computeSummary(30);
+
+    expect(cli.runGet).not.toHaveBeenCalled();
+    expect(summary.totalRuns).toBe(1);
+  });
+
+  it('continues when a per-record runGet fails instead of aborting the dashboard', async () => {
+    cli.runList.mockResolvedValue({
+      items: [
+        { id: 'r-bad' },
+        { id: 'r-good' },
+      ] as unknown as { id: string; status: 'SUCCEEDED' }[],
+    });
+    cli.runGet.mockImplementation(async (id: string) => {
+      if (id === 'r-bad') {
+        throw new Error('produced no output for 90s');
+      }
+      return makeRunResult({
+        runId: id,
+        status: 'SUCCEEDED',
+        raw: { created_at: '2026-04-20T08:00:00Z' },
+      });
+    });
+
+    const summary = await service.computeSummary(30);
+
+    expect(summary.totalRuns).toBe(1);
   });
 });

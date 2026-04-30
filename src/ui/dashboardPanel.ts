@@ -212,6 +212,10 @@ export class DashboardPanel {
     );
     const instance = new DashboardPanel(panel, stats, windowDays);
     DashboardPanel.current = instance;
+    // Show a placeholder so the user gets immediate feedback instead of a
+    // blank panel while `computeSummary` is in flight.
+    const loadingNonce = generateNonce();
+    panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${panel.webview.cspSource} 'nonce-${loadingNonce}';" /><style nonce="${loadingNonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-foreground);padding:16px;opacity:0.85;}</style></head><body>Loading dashboard…</body></html>`;
     void instance.refresh();
     return instance;
   }
@@ -242,7 +246,15 @@ export class DashboardPanel {
       const message = err instanceof Error ? err.message : String(err);
       logError(`Dashboard refresh failed: ${message}`);
       const nonce = generateNonce();
-      this.panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'nonce-${nonce}'; img-src ${this.panel.webview.cspSource};" /><style nonce="${nonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-errorForeground);padding:16px;}</style></head><body>Failed to load dashboard: ${escapeHtml(message)}</body></html>`;
+      // Surface an actionable hint when the failure looks like an Oz CLI
+      // idle-timeout, so the user knows where to look (Output channel,
+      // Warp app, idle-timeout setting) instead of staring at a generic
+      // "Failed to load" line.
+      const isIdle = /produced no output|unresponsive|idle/i.test(message);
+      const hint = isIdle
+        ? '<p style="margin-top:12px;font-size:12px;opacity:0.85;">The Oz CLI did not respond in time. Check that the Warp desktop app is running, your network is reachable, and that no interactive prompt is waiting outside VS Code. You can also raise <code>OzBridge → Idle Timeout Ms</code> in Settings.</p>'
+        : '';
+      this.panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'nonce-${nonce}'; img-src ${this.panel.webview.cspSource};" /><style nonce="${nonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-errorForeground);padding:16px;} code{background:var(--vscode-textBlockQuote-background);padding:1px 4px;border-radius:3px;}</style></head><body><strong>Failed to load dashboard:</strong> ${escapeHtml(message)}${hint}</body></html>`;
     } finally {
       this.refreshing = false;
     }

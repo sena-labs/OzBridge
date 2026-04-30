@@ -2,7 +2,9 @@ import {
   IOzCliService,
   OzRunResult,
   OzRunStatus,
+  isValidOzRunStatus,
 } from '../types/index.js';
+import { logWarn } from './logger.js';
 
 /**
  * Normalised record produced by {@link RunStatsService} from a single
@@ -96,6 +98,48 @@ export function extractCreatedAt(raw: unknown): Date | null {
     }
   }
   return null;
+}
+
+/**
+ * Best-effort extraction of a run identifier from a list-item payload.
+ * Recognises `id`, `run_id`, `runId`. Returns `undefined` when nothing
+ * usable is present (envelope, malformed entry, ...).
+ */
+export function readId(raw: Record<string, unknown>): string | undefined {
+  for (const key of ['id', 'run_id', 'runId']) {
+    const value = raw[key];
+    if (typeof value === 'string' && value.length > 0) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Best-effort extraction of a run status. Recognises `status` and the
+ * Warp CLI's `state` field. Returns `undefined` when no field is
+ * present so the caller can decide whether to fall back to `runGet`.
+ */
+export function readStatus(raw: Record<string, unknown>): OzRunStatus | undefined {
+  for (const key of ['status', 'state']) {
+    const value = raw[key];
+    if (typeof value === 'string' && value.length > 0) {
+      const upper = value.toUpperCase();
+      return isValidOzRunStatus(upper) ? upper : 'UNKNOWN';
+    }
+  }
+  return undefined;
+}
+
+/** Best-effort extraction of a wall-clock duration in milliseconds. */
+export function readDurationMs(raw: Record<string, unknown>): number {
+  for (const key of ['durationMs', 'duration_ms']) {
+    const value = raw[key];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return 0;
 }
 
 /** Formats a `Date` as `YYYY-MM-DD` in **local** time (workspace TZ). */
@@ -206,14 +250,54 @@ export class RunStatsService implements IRunStatsService {
     const list = await this.cli.runList();
     const records: RunStatRecord[] = [];
 
+    // Bug-fix (dashboard 90s timeout): the dashboard previously fanned-out
+    // one `oz run get <id>` per list item to obtain status / createdAt /
+    // duration. On Windows that meant N additional CLI spawns through the
+    // GUI-subsystem `warp.exe` shim, any one of which could hang for the
+    // full per-call idle window (90s) and mask the entire dashboard.
+    //
+    // The CLI's `oz run list` payload already exposes the fields we need
+    // (`run_id` / `id`, `state` / `status`, `created_at`...). We extract
+    // them directly from each list item and only fall back to `runGet`
+    // when an essential field is missing. Per-record failures are now
+    // logged and skipped instead of aborting the whole summary.
     for (const item of list.items) {
-      const cached = this.cache.get(item.id);
+      const itemRecord = item as unknown as Record<string, unknown>;
+      const id = readId(itemRecord);
+      if (!id) {
+        // Not a real run record (e.g. envelope or malformed entry).
+        continue;
+      }
+
+      const cached = this.cache.get(id);
       if (cached) {
         records.push(cached);
         continue;
       }
-      const detail = await this.cli.runGet(item.id);
-      const record = this.normalize(item.id, detail);
+
+      let record: RunStatRecord | undefined;
+      const directStatus = readStatus(itemRecord);
+      const directCreatedAt = extractCreatedAt(itemRecord);
+      const directDuration = readDurationMs(itemRecord);
+
+      if (directStatus !== undefined) {
+        record = {
+          id,
+          status: directStatus,
+          durationMs: directDuration,
+          createdAt: directCreatedAt,
+        };
+      } else {
+        try {
+          const detail = await this.cli.runGet(id);
+          record = this.normalize(id, detail);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          logWarn(`runStats: skipping run ${id} — ${message}`);
+          continue;
+        }
+      }
+
       if (isTerminalStatus(record.status)) {
         this.cache.set(record.id, record);
       }
