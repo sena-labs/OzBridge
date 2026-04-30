@@ -7,11 +7,13 @@ import { Page, expect } from '@playwright/test';
 export async function listPaletteItems(win: Page, query: string): Promise<string[]> {
   const isMac = process.platform === 'darwin';
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
-  const input = win.locator('.quick-input-widget input.input');
+  const qiw = win.locator('.quick-input-widget');
+  await qiw.waitFor({ state: 'visible', timeout: 15_000 });
+  const input = qiw.locator('input.input');
   await input.waitFor({ state: 'visible', timeout: 15_000 });
   await input.fill(`>${query.replace(/…/g, '').trim()}`);
   await win.waitForTimeout(400);
-  const rows = win.locator('.quick-input-widget .monaco-list-row');
+  const rows = qiw.locator('.monaco-list-row');
   await expect(rows.first()).toBeVisible({ timeout: 15_000 });
   const count = await rows.count();
   const labels: string[] = [];
@@ -37,14 +39,23 @@ export async function closePalette(win: Page): Promise<void> {
 export async function runExactCommand(win: Page, exactTitle: string): Promise<void> {
   const isMac = process.platform === 'darwin';
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
-  const input = win.locator('.quick-input-widget input.input');
-  await input.waitFor({ state: 'visible', timeout: 15_000 });
+  const qiw = win.locator('.quick-input-widget');
+  await qiw.waitFor({ state: 'visible', timeout: 15_000 });
   // Il filtro fuzzy può non gestire bene il glifo ellissi U+2026;
   // togliamolo dal pattern di ricerca.
   const query = exactTitle.replace(/…/g, '').trim();
-  await input.fill(`>${query}`);
+
+  // Avoid relying on `.fill()` visibility heuristics (VS Code sometimes keeps
+  // a non-visible quick-input <input> in the DOM while still accepting keyboard
+  // input). Drive the palette via keyboard instead.
+  await win.keyboard.press(isMac ? 'Meta+A' : 'Control+A').catch(() => {});
+  await win.keyboard.press('Backspace').catch(() => {});
+  await win.keyboard.type(`>${query}`, { delay: 10 });
   await win.waitForTimeout(350);
-  // Conferma il primo risultato.
+
+  // Prefer keyboard confirmation: VS Code's quick input list can exist but be
+  // considered "hidden" by Playwright during transitions; pressing Enter is
+  // more resilient than trying to click a row.
   await win.keyboard.press('Enter');
   // Attendi che la palette chiuda (la nuova UI può aprirsi subito dopo).
   await win.locator('.quick-input-widget').waitFor({ state: 'hidden', timeout: 4_000 }).catch(() => {});
@@ -116,13 +127,15 @@ export async function waitForFreshNotification(
   previousText: string | null,
   timeoutMs = 10_000,
 ): Promise<string | null> {
+  const normPrev = (previousText ?? '').trim().replace(/\s+/g, ' ');
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const toasts = win.locator('.notifications-toasts .notification-list-item-message');
     const n = await toasts.count();
     for (let i = n - 1; i >= 0; i--) {
-      const t = (await toasts.nth(i).innerText().catch(() => '')).trim();
-      if (t && t !== (previousText ?? '')) return t;
+      const tRaw = (await toasts.nth(i).innerText().catch(() => '')).trim();
+      const t = tRaw.replace(/\s+/g, ' ');
+      if (t && t !== normPrev) return tRaw.trim();
     }
     await win.waitForTimeout(150);
   }
@@ -170,7 +183,9 @@ export async function dismissOverlays(win: Page): Promise<void> {
 async function runPaletteCommand(win: Page, title: string): Promise<void> {
   const isMac = process.platform === 'darwin';
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
-  const input = win.locator('.quick-input-widget input.input');
+  const qiw = win.locator('.quick-input-widget');
+  await qiw.waitFor({ state: 'visible', timeout: 5_000 });
+  const input = qiw.locator('input.input');
   await input.waitFor({ state: 'visible', timeout: 5_000 });
   await input.fill(`>${title}`);
   await win.waitForTimeout(200);

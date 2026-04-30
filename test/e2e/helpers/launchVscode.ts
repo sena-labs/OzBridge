@@ -1,6 +1,7 @@
 import { _electron, ElectronApplication, Page } from '@playwright/test';
 import { downloadAndUnzipVSCode, resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron';
 import * as fs from 'node:fs/promises';
+import { execFile } from 'node:child_process';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
@@ -31,6 +32,9 @@ export interface LaunchOptions {
  * lancia l'app con Playwright Electron + extensionDevelopmentPath.
  */
 export async function launchVSCode(opts: LaunchOptions): Promise<LaunchedVSCode> {
+  // Ensure `dist/extension.js` reflects the current sources before starting VS Code.
+  await ensureBuilt(opts.extensionPath);
+
   const vscodeExecutable = await downloadAndUnzipVSCode(opts.vscodeVersion ?? 'stable');
   const [cliArg] = resolveCliArgsFromVSCodeExecutablePath(vscodeExecutable);
 
@@ -121,14 +125,48 @@ async function getMainProcessPid(app: ElectronApplication): Promise<number | und
   }
 }
 
+async function ensureBuilt(extensionPath: string): Promise<void> {
+  const distEntry = path.join(extensionPath, 'dist', 'extension.js');
+  const srcEntry = path.join(extensionPath, 'src', 'extension.ts');
+  const promptExpanderEntry = path.join(extensionPath, 'src', 'participant', 'promptExpander.ts');
+
+  const shouldBuild = await (async () => {
+    try {
+      const [distSt, srcSt, peSt] = await Promise.all([
+        fs.stat(distEntry),
+        fs.stat(srcEntry),
+        fs.stat(promptExpanderEntry),
+      ]);
+      const newestSrc = Math.max(srcSt.mtimeMs, peSt.mtimeMs);
+      return distSt.mtimeMs < newestSrc;
+    } catch {
+      return true;
+    }
+  })();
+
+  if (!shouldBuild) return;
+
+  await new Promise<void>((resolve, reject) => {
+    execFile(process.execPath, ['esbuild.js', '--production'], { cwd: extensionPath }, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
 /** Apre la Command Palette ed esegue un comando esatto. */
 export async function runCommand(window: Page, commandTitle: string): Promise<void> {
   // Ctrl+Shift+P / Cmd+Shift+P
   const isMac = process.platform === 'darwin';
   await window.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
-  const input = window.locator('.quick-input-widget input.input');
-  await input.waitFor({ state: 'visible', timeout: 15_000 });
-  await input.fill(`>${commandTitle}`);
+  const qiw = window.locator('.quick-input-widget');
+  await qiw.waitFor({ state: 'visible', timeout: 15_000 });
+
+  // Avoid relying on `.fill()` visibility heuristics (VS Code sometimes keeps
+  // a non-visible quick-input <input> in the DOM while still accepting keyboard input).
+  await window.keyboard.press(isMac ? 'Meta+A' : 'Control+A').catch(() => {});
+  await window.keyboard.press('Backspace').catch(() => {});
+  await window.keyboard.type(`>${commandTitle}`, { delay: 10 });
   // Aspetta che la prima entry combaci.
   await window.waitForTimeout(250);
   await window.keyboard.press('Enter');
