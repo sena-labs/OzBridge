@@ -199,6 +199,7 @@ export const window = {
   showQuickPick: vi.fn((_items: unknown, _options?: unknown) => Promise.resolve(undefined as any)),
   showTextDocument: vi.fn((_doc: unknown) => Promise.resolve({ selection: undefined, edit: vi.fn() })),
   showOpenDialog: vi.fn((_options?: unknown) => Promise.resolve(undefined as unknown as Uri[] | undefined)),
+  showSaveDialog: vi.fn((_options?: unknown) => Promise.resolve(undefined as unknown as Uri | undefined)),
   createStatusBarItem: vi.fn((alignment?: StatusBarAlignment, priority?: number): MockStatusBarItem => {
     const item: MockStatusBarItem = {
       alignment: alignment ?? StatusBarAlignment.Right,
