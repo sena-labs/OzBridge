@@ -23,17 +23,24 @@ export interface PromptExpansionResult {
 /**
  * Recognised tokens (matched case-sensitively, bounded by non-word chars).
  *
- * - `#ozbridge.env` → `ozBridge.defaultEnvironment` (config value, empty = `(none)`).
- * - `#ozbridge.profile` → `ozBridge.defaultProfile`.
- * - `#ozbridge.model` → `ozBridge.defaultModel`.
+ * - `#ozbridge.env` (or legacy alias `#warp.env`) → `ozBridge.defaultEnvironment`
+ *   (config value, empty = `(none)`).
+ * - `#ozbridge.profile` (or legacy alias `#warp.profile`) → `ozBridge.defaultProfile`.
+ * - `#ozbridge.model` (or legacy alias `#warp.model`) → `ozBridge.defaultModel`.
  * - `#oz.history` → a Markdown table of the last 10 runs from `oz run list`.
  * - `#oz.run/<id>` → JSON payload returned by `oz run get <id>` (truncated).
+ *
+ * The `#warp.*` aliases are kept on purpose: they are the names documented
+ * in `README.md`, `CHANGELOG.md` and `docs/RELEASE-NOTES-v0.5.0.md`, and
+ * dropping them silently when the project rebranded `warp-bridge → ozbridge`
+ * was a regression — users following the docs would see their tokens left
+ * untouched in the final prompt.
  *
  * Any failure while resolving a dynamic token (network/CLI) is surfaced as an
  * inline `_error_` note inside the prompt rather than throwing, so the user's
  * intent isn't lost.
  */
-const TOKEN_REGEX = /#(ozbridge\.env|ozbridge\.profile|ozbridge\.model|oz\.history|oz\.run\/[A-Za-z0-9_\-]+)/g;
+const TOKEN_REGEX = /#(ozbridge\.env|ozbridge\.profile|ozbridge\.model|warp\.env|warp\.profile|warp\.model|oz\.history|oz\.run\/[A-Za-z0-9_\-]+)/g;
 
 const HISTORY_LIMIT = 10;
 const RUN_PAYLOAD_MAX_CHARS = 2_000;
@@ -81,14 +88,14 @@ export async function expandPromptVariables(
  * Resolves a single token. Exported for unit testing.
  */
 export async function resolveToken(token: string, ctx: PromptExpanderContext): Promise<string> {
-  if (token === '#ozbridge.env') {
+  if (token === '#ozbridge.env' || token === '#warp.env') {
     const env = ctx.cfgMgr.getConfig().defaultEnvironment;
     return env || '(no default environment)';
   }
-  if (token === '#ozbridge.profile') {
+  if (token === '#ozbridge.profile' || token === '#warp.profile') {
     return ctx.cfgMgr.getConfig().defaultProfile || '(no default profile)';
   }
-  if (token === '#ozbridge.model') {
+  if (token === '#ozbridge.model' || token === '#warp.model') {
     return ctx.cfgMgr.getConfig().defaultModel || '(no default model)';
   }
   if (token === '#oz.history') {
