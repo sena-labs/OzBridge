@@ -109,6 +109,29 @@ describe('expandPromptVariables', () => {
     const result = await expandPromptVariables('Keep #some.other intact', { cli, cfgMgr });
     expect(result.text).toBe('Keep #some.other intact');
   });
+
+  // README documents `#warp.env`, `#warp.profile`, `#warp.model` as the
+  // public token names (kept for backward-compat with the v0.5–v1.0
+  // examples that users have copied into their workflows). These
+  // aliases must continue to expand to the same values as the
+  // post-rebrand `#ozbridge.*` tokens.
+  it('expands the documented #warp.env alias to the configured default environment', async () => {
+    const result = await expandPromptVariables('deploy to #warp.env please', { cli, cfgMgr });
+    expect(result.text).toBe('deploy to prod-env please');
+    expect(result.replacements).toEqual([{ token: '#warp.env', value: 'prod-env' }]);
+  });
+
+  it('expands #warp.profile and #warp.model aliases', async () => {
+    const result = await expandPromptVariables(
+      'profile=#warp.profile model=#warp.model',
+      { cli, cfgMgr },
+    );
+    expect(result.text).toBe('profile=Default model=gpt-4o');
+    expect(result.replacements.map((r) => r.token).sort()).toEqual([
+      '#warp.model',
+      '#warp.profile',
+    ]);
+  });
 });
 
 describe('resolveToken (direct)', () => {
