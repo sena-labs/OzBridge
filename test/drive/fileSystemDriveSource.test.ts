@@ -11,7 +11,7 @@ let skillsDir: string;
 let source: FileSystemDriveSource;
 
 beforeEach(() => {
-  root = fs.mkdtempSync(path.join(os.tmpdir(), 'warp-vsc-drive-fs-'));
+  root = fs.mkdtempSync(path.join(os.tmpdir(), 'ozbridge-drive-fs-'));
   promptsDir = path.join(root, 'prompts');
   rulesDir = path.join(root, 'rules');
   skillsDir = path.join(root, 'skills');
