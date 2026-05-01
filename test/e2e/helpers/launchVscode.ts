@@ -125,20 +125,73 @@ async function getMainProcessPid(app: ElectronApplication): Promise<number | und
   }
 }
 
+const SKIP_SCAN_DIRS = new Set(['node_modules', 'dist', '.git']);
+
+/**
+ * Latest mtime among everything that can affect `dist/extension.js`:
+ * all `*.ts` / `*.tsx` under `src/` and each `packages/<pkg>/src/`, plus root `esbuild.js`.
+ */
+async function newestBundledInputMtime(extensionPath: string): Promise<number | null> {
+  const roots: string[] = [path.join(extensionPath, 'src')];
+  const packagesDir = path.join(extensionPath, 'packages');
+  try {
+    const ents = await fs.readdir(packagesDir, { withFileTypes: true });
+    for (const ent of ents) {
+      if (ent.isDirectory()) {
+        roots.push(path.join(packagesDir, ent.name, 'src'));
+      }
+    }
+  } catch {
+    /* no packages directory */
+  }
+
+  let max = 0;
+  let found = false;
+
+  async function walkTs(dir: string): Promise<void> {
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const ent of entries) {
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) {
+        if (SKIP_SCAN_DIRS.has(ent.name)) continue;
+        await walkTs(full);
+      } else if (ent.isFile() && /\.(ts|tsx)$/.test(ent.name)) {
+        const st = await fs.stat(full);
+        found = true;
+        max = Math.max(max, st.mtimeMs);
+      }
+    }
+  }
+
+  for (const root of roots) {
+    await walkTs(root);
+  }
+
+  const esbuildScript = path.join(extensionPath, 'esbuild.js');
+  try {
+    const st = await fs.stat(esbuildScript);
+    found = true;
+    max = Math.max(max, st.mtimeMs);
+  } catch {
+    /* optional */
+  }
+
+  return found ? max : null;
+}
+
 async function ensureBuilt(extensionPath: string): Promise<void> {
   const distEntry = path.join(extensionPath, 'dist', 'extension.js');
-  const srcEntry = path.join(extensionPath, 'src', 'extension.ts');
-  const promptExpanderEntry = path.join(extensionPath, 'src', 'participant', 'promptExpander.ts');
 
   const shouldBuild = await (async () => {
     try {
-      const [distSt, srcSt, peSt] = await Promise.all([
-        fs.stat(distEntry),
-        fs.stat(srcEntry),
-        fs.stat(promptExpanderEntry),
-      ]);
-      const newestSrc = Math.max(srcSt.mtimeMs, peSt.mtimeMs);
-      return distSt.mtimeMs < newestSrc;
+      const [distSt, newestInput] = await Promise.all([fs.stat(distEntry), newestBundledInputMtime(extensionPath)]);
+      if (newestInput === null) return true;
+      return distSt.mtimeMs < newestInput;
     } catch {
       return true;
     }

@@ -402,8 +402,10 @@ export function activate(context: vscode.ExtensionContext): void {
   }
   if (state.configManager.getConfig().mcpEnabled) {
     state.mcp.start().catch((err) => {
-      logError(`MCP start failed: ${getErrorMessage(err)}`);
+      const msg = getErrorMessage(err);
+      logError(`MCP start failed: ${msg}`);
       state.telemetry?.track('errorRaised', { kind: 'mcpStart' });
+      void vscode.window.showWarningMessage(vscode.l10n.t('OzBridge: MCP server failed to start. {0}', msg));
     });
   }
 
@@ -423,8 +425,10 @@ export function activate(context: vscode.ExtensionContext): void {
     if (state.mcp) {
       if (newConfig.mcpEnabled && !state.mcp.running) {
         state.mcp.start().catch((err) => {
-          logError(`MCP start failed: ${getErrorMessage(err)}`);
+          const msg = getErrorMessage(err);
+          logError(`MCP start failed: ${msg}`);
           state.telemetry?.track('errorRaised', { kind: 'mcpStart' });
+          void vscode.window.showWarningMessage(vscode.l10n.t('OzBridge: MCP server failed to start. {0}', msg));
         });
       } else if (!newConfig.mcpEnabled && state.mcp.running) {
         state.mcp.stop().catch((err) => {

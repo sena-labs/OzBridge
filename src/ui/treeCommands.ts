@@ -43,8 +43,12 @@ export function registerTreeCommands(deps: TreeCommandDeps): vscode.Disposable[]
 
   return [
     vscode.commands.registerCommand(TREE_COMMANDS.refresh, async () => {
-      provider.refresh();
-      await tracker.refresh();
+      try {
+        provider.refresh();
+        await tracker.refresh();
+      } catch (err) {
+        await vscode.window.showErrorMessage(vscode.l10n.t('OzBridge: refresh failed: {0}', errorMessage(err)));
+      }
     }),
 
     vscode.commands.registerCommand(TREE_COMMANDS.copyId, async (node?: WarpTreeNode) => {

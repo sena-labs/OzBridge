@@ -242,6 +242,8 @@ const EXPECTED_COMMAND_TITLES: string[] = [
   'OzBridge: Triage Failed Run…',
   'OzBridge: Export Run Dataset…',
   'Warp Drive: Refresh',
+  // ozBridge.skill.edit (%command.skill.edit.title% → package.nls.json)
+  'Warp Skill: Edit…',
   'Warp Skill: New…',
   'Warp Skill: Save current as global skill…',
   'Warp Skill: Save current as project skill…',
