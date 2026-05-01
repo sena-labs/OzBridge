@@ -38,8 +38,20 @@ export async function closePalette(win: Page): Promise<void> {
  */
 export async function runExactCommand(win: Page, exactTitle: string): Promise<void> {
   const isMac = process.platform === 'darwin';
-  await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
   const qiw = win.locator('.quick-input-widget');
+  // If a previous quick-input is still visible (e.g. left by dismissOverlays
+  // after runPaletteCommand), pressing Ctrl+Shift+P would toggle it closed
+  // rather than open a fresh one, causing a 15s timeout.
+  if (await qiw.isVisible().catch(() => false)) {
+    await win.keyboard.press('Escape');
+    await qiw.waitFor({ state: 'hidden', timeout: 3_000 }).catch(() => {});
+    await win.waitForTimeout(150);
+  }
+  // Restore keyboard focus to the VS Code window (may be lost after
+  // a prior overlay was dismissed or window focus changed).
+  await win.bringToFront();
+  await win.waitForTimeout(100);
+  await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
   await qiw.waitFor({ state: 'visible', timeout: 15_000 });
   // Il filtro fuzzy può non gestire bene il glifo ellissi U+2026;
   // togliamolo dal pattern di ricerca.
@@ -76,11 +88,14 @@ export type PostCommandSignal =
 export async function waitForAnySignal(win: Page, timeoutMs = 8_000): Promise<PostCommandSignal | null> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    // Notification toast
-    const toast = win.locator('.notifications-toasts .notification-list-item-message, .notifications-toasts .notification-toast');
+    // Notification toast — VS Code 1.118+ renders these with role="alert";
+    // keep legacy CSS selector as fallback for older builds.
+    const toast = win.locator(
+      '[role="alert"], .notifications-toasts .notification-list-item-message, .notifications-toasts .notification-toast',
+    ).filter({ hasText: /\S/ });
     if (await toast.first().isVisible().catch(() => false)) {
       const text = (await toast.first().innerText().catch(() => '')).trim();
-      return { kind: 'notification', text };
+      if (text) return { kind: 'notification', text };
     }
     // Modal dialog
     const dialog = win.locator('.monaco-dialog-box .dialog-message-text');
@@ -130,7 +145,9 @@ export async function waitForFreshNotification(
   const normPrev = (previousText ?? '').trim().replace(/\s+/g, ' ');
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const toasts = win.locator('.notifications-toasts .notification-list-item-message');
+    const toasts = win.locator(
+      '[role="alert"], .notifications-toasts .notification-list-item-message',
+    ).filter({ hasText: /\S/ });
     const n = await toasts.count();
     for (let i = n - 1; i >= 0; i--) {
       const tRaw = (await toasts.nth(i).innerText().catch(() => '')).trim();
@@ -144,7 +161,9 @@ export async function waitForFreshNotification(
 
 /** Restituisce il testo dell'ultimo toast visibile, oppure null. */
 export async function lastNotificationText(win: Page): Promise<string | null> {
-  const toasts = win.locator('.notifications-toasts .notification-list-item-message');
+  const toasts = win.locator(
+    '[role="alert"], .notifications-toasts .notification-list-item-message',
+  ).filter({ hasText: /\S/ });
   const n = await toasts.count();
   if (n === 0) return null;
   return ((await toasts.nth(n - 1).innerText().catch(() => '')) || '').trim() || null;
@@ -172,7 +191,10 @@ export async function dismissOverlays(win: Page): Promise<void> {
   }
   // Pulisci tutte le notification toasts via comando dedicato (più
   // affidabile del click sull'icona di close che può essere intercettato).
-  const hasToasts = await win.locator('.notifications-toasts .notification-list-item').first().isVisible().catch(() => false);
+  // Check for visible notifications via ARIA role (VS Code 1.118+) or legacy CSS selector.
+  const hasToasts = await win.locator(
+    '[role="alert"], .notifications-toasts .notification-list-item',
+  ).filter({ hasText: /\S/ }).first().isVisible().catch(() => false);
   if (hasToasts) {
     await runPaletteCommand(win, 'Notifications: Clear All Notifications').catch(() => {});
     await win.waitForTimeout(300);

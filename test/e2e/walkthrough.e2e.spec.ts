@@ -14,7 +14,7 @@ import { launchVSCode, runCommand, LaunchedVSCode } from './helpers/launchVscode
  */
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
-const ARTIFACTS_DIR = '/opt/cursor/artifacts';
+const ARTIFACTS_DIR = path.join(REPO_ROOT, 'test-results', 'e2e-artifacts');
 
 let vscode: LaunchedVSCode;
 
