@@ -8,7 +8,7 @@ Run **Warp Oz agents** directly from VS Code Copilot Chat — either via the
 `@oz` **Chat Participant** or through **Agent-Native Language Model Tools**
 that Copilot Agent mode can invoke autonomously.
 
-![OzBridge screenshot](http:/https://github.com/sena-labs/OzBridge/media/screenshot.png)
+![OzBridge screenshot](https://github.com/sena-labs/OzBridge/media/screenshot.png)
 
 ## Feature gallery
 
