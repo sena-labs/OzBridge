@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as fsp from 'fs/promises';
 import * as path from 'path';
 import { OzBridgeConfig } from '../types/index.js';
-import { logInfo, logWarn } from './logger.js';
+import { logError, logInfo, logWarn } from './logger.js';
 import { parseFlatYaml, YamlScalar } from './yamlParser.js';
 
 /**
@@ -170,10 +170,20 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
       false,
       false,
     );
+    // B2: a throwing subscriber to `onDidChange` would otherwise reject the
+    // promise here and disappear into `void`, leaving the user wondering
+    // why their YAML edits aren't applying. Surface the failure to the
+    // log so it's at least diagnosable.
+    const safeReload = (): void => {
+      this.reloadAndEmitAsync().catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        logError(`workspace config reload failed: ${msg}`);
+      });
+    };
     this.watcherDisposables.push(
-      watcher.onDidCreate(() => { void this.reloadAndEmitAsync(); }),
-      watcher.onDidChange(() => { void this.reloadAndEmitAsync(); }),
-      watcher.onDidDelete(() => { void this.reloadAndEmitAsync(); }),
+      watcher.onDidCreate(safeReload),
+      watcher.onDidChange(safeReload),
+      watcher.onDidDelete(safeReload),
       watcher,
     );
   }

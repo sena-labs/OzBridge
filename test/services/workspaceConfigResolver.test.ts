@@ -218,6 +218,33 @@ describe('WorkspaceConfigResolver — watcher integration', () => {
     resolver.dispose();
   });
 
+  it('a throwing subscriber does not crash subsequent watcher events (B2)', async () => {
+    // Mock EventEmitter does not isolate subscriber errors; a throwing
+    // subscriber would otherwise reject `reloadAndEmitAsync()` and the
+    // rejection would vanish into the `void` operator, leaving the user
+    // wondering why their YAML edits stopped applying. The B2 fix wraps
+    // each watcher callback with `.catch()` so the failure is surfaced
+    // to the log instead.
+    writeYaml('defaultProfile: first');
+    const resolver = new WorkspaceConfigResolver(workspaceRoot);
+    const watcher = lastWatcher();
+
+    resolver.onDidChange(() => { throw new Error('subscriber boom'); });
+
+    writeYaml('defaultProfile: second');
+    expect(() => watcher!._fireChange()).not.toThrow();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(resolver.getOverrides().defaultProfile).toBe('second');
+
+    // A second event after a throwing one must still be processed.
+    writeYaml('defaultProfile: third');
+    expect(() => watcher!._fireChange()).not.toThrow();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(resolver.getOverrides().defaultProfile).toBe('third');
+
+    resolver.dispose();
+  });
+
   it('stops dispatching events after dispose()', async () => {
     writeYaml('defaultProfile: first');
     const resolver = new WorkspaceConfigResolver(workspaceRoot);
