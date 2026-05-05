@@ -894,9 +894,31 @@ export class OzCliService implements IOzCliService {
         extensionCancelListener?.dispose();
       };
 
+      // Hard memory cap on the in-process accumulators. Renderers truncate
+      // at `maxOutputChars` (default 15 KB) but if a runaway CLI streams
+      // gigabytes of output we still need a guard before V8 OOMs the
+      // extension host. 10 MiB leaves three orders of magnitude of headroom
+      // over the default render limit while keeping memory bounded. Once
+      // the cap is hit we keep draining the pipe (so the child's writes
+      // don't block) but stop appending — the line callback for streaming
+      // consumers continues to receive lines as they arrive.
+      const STDIO_CAP = 10 * 1024 * 1024;
+      let stdoutTruncated = false;
+      let stderrTruncated = false;
+
       proc.stdout?.on('data', (chunk: Buffer) => {
         const text = chunk.toString();
-        stdout += text;
+        if (stdout.length + text.length > STDIO_CAP) {
+          if (!stdoutTruncated) {
+            stdoutTruncated = true;
+            const remaining = Math.max(0, STDIO_CAP - stdout.length);
+            stdout += text.substring(0, remaining);
+            stdout += `\n… (output capped at ${STDIO_CAP} bytes; further chunks dropped)\n`;
+            logWarn(`ozCliService stdout exceeded ${STDIO_CAP} bytes; further chunks dropped`);
+          }
+        } else {
+          stdout += text;
+        }
         if (onLine) {
           lineBuffer += text;
           // Drain complete lines, keep the trailing partial in the buffer.
@@ -908,12 +930,29 @@ export class OzCliService implements IOzCliService {
               try { onLine(line); } catch (cbErr) { logWarn('ozCliService onLine callback threw', getErrorMessage(cbErr)); }
             }
           }
+          // Also cap the line buffer to avoid unbounded growth when the
+          // CLI never emits a newline. Drop the head; preserve the tail
+          // so the next newline still flushes a usable line.
+          if (lineBuffer.length > STDIO_CAP) {
+            lineBuffer = lineBuffer.slice(lineBuffer.length - STDIO_CAP);
+          }
         }
         armIdleTimer();
       });
 
       proc.stderr?.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString();
+        const text = chunk.toString();
+        if (stderr.length + text.length > STDIO_CAP) {
+          if (!stderrTruncated) {
+            stderrTruncated = true;
+            const remaining = Math.max(0, STDIO_CAP - stderr.length);
+            stderr += text.substring(0, remaining);
+            stderr += `\n… (stderr capped at ${STDIO_CAP} bytes; further chunks dropped)\n`;
+            logWarn(`ozCliService stderr exceeded ${STDIO_CAP} bytes; further chunks dropped`);
+          }
+        } else {
+          stderr += text;
+        }
         armIdleTimer();
       });
 
