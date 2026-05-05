@@ -202,14 +202,9 @@ export class ActiveRunsTracker implements vscode.Disposable {
       const next = this.applyOverrides(cliRuns);
       const listChanged = !sameList(next, this.last);
       const recoveringFromError = this.errorState;
-      if (listChanged) {
-        this.last = next;
-      }
-      // Always update the cached snapshot, then emit `onDidChange` if
-      // the list changed *or* we are recovering from a previous error
-      // — the latter is needed so `StatusBarManager.renderError()`
-      // gets cleared on recovery even when the list content didn't
-      // actually change between polls.
+      // Emit `onDidChange` when the list changed *or* when recovering from a
+      // previous error — the latter ensures `StatusBarManager.renderError()`
+      // is cleared even when the list content didn't change between polls.
       if (listChanged || recoveringFromError) {
         this.last = next;
         this.errorState = false;

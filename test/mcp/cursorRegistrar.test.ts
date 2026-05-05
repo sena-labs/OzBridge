@@ -38,7 +38,9 @@ describe('CursorRegistrar', () => {
       bearerToken: 'abc',
     });
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // `type: "sse"` is included for Claude Code compatibility; Cursor ignores it.
     expect(parsed.mcpServers['oz-bridge']).toEqual({
+      type: 'sse',
       url: 'http://127.0.0.1:3847/sse',
       headers: { Authorization: 'Bearer abc' },
     });
@@ -57,6 +59,6 @@ describe('CursorRegistrar', () => {
     await registrar.unregister('oz-bridge');
 
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(parsed.mcpServers).toEqual({ other: { url: 'http://y' } });
+    expect(parsed.mcpServers).toEqual({ other: { type: 'sse', url: 'http://y' } });
   });
 });

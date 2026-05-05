@@ -1403,19 +1403,18 @@ export function hasExplicitInsufficientCreditsSignal(
 
 /**
  * Returns `true` when the CLI invocation should be classified as a
- * Warp `insufficient_credits` failure. Wraps
- * {@link hasExplicitInsufficientCreditsSignal} with the documented
- * HTTP status (403). Exit codes 402 and 429 are NOT mapped here on
- * purpose — see the function comment above.
+ * Warp `insufficient_credits` failure.
+ *
+ * The Oz CLI exits with code 1 and prints the error message to stderr
+ * regardless of the underlying HTTP 403 status, so the string signal is
+ * the practical discriminator. The `exitCode` parameter is retained for
+ * call-site documentation and future gating if the CLI behaviour changes.
  *
  * Exported for unit testing.
  */
 export function isInsufficientCreditsError(
   combinedLowercase: string,
-  exitCode: number,
+  exitCode: number, // eslint-disable-line @typescript-eslint/no-unused-vars
 ): boolean {
-  if (exitCode === 403 && hasExplicitInsufficientCreditsSignal(combinedLowercase)) {
-    return true;
-  }
   return hasExplicitInsufficientCreditsSignal(combinedLowercase);
 }
