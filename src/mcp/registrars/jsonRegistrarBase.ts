@@ -39,6 +39,7 @@ interface JsonConfig {
  * {
  *   "mcpServers": {
  *     "oz-bridge": {
+ *       "type": "sse",
  *       "url": "http://127.0.0.1:3847/sse",
  *       "headers": { "Authorization": "Bearer …" }
  *     }
@@ -116,7 +117,9 @@ async function pathExists(p: string): Promise<boolean> {
 }
 
 function buildServerEntry(endpoint: McpClientEndpoint): Record<string, unknown> {
-  const entry: Record<string, unknown> = { url: endpoint.url };
+  // `type: "sse"` is required by Claude Code to distinguish SSE transport
+  // from the default stdio transport. Cursor ignores this field but accepts it.
+  const entry: Record<string, unknown> = { type: 'sse', url: endpoint.url };
   if (endpoint.bearerToken) {
     entry.headers = { Authorization: `Bearer ${endpoint.bearerToken}` };
   }

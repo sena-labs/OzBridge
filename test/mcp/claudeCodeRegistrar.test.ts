@@ -30,6 +30,8 @@ describe('ClaudeCodeRegistrar', () => {
     expect(fs.existsSync(configPath)).toBe(true);
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(parsed.mcpServers['oz-bridge'].url).toBe('http://127.0.0.1:3847/sse');
+    // Claude Code requires `type: "sse"` to select the SSE transport
+    expect(parsed.mcpServers['oz-bridge'].type).toBe('sse');
   });
 
   it('embeds an Authorization header when a bearer token is supplied', async () => {
@@ -40,12 +42,14 @@ describe('ClaudeCodeRegistrar', () => {
     });
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(parsed.mcpServers['oz-bridge'].headers.Authorization).toBe('Bearer s3cr3t');
+    expect(parsed.mcpServers['oz-bridge'].type).toBe('sse');
   });
 
   it('omits headers entirely when no bearer token is supplied', async () => {
     await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/sse' });
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(parsed.mcpServers['oz-bridge'].headers).toBeUndefined();
+    expect(parsed.mcpServers['oz-bridge'].type).toBe('sse');
   });
 
   it('preserves unrelated top-level keys on register', async () => {
