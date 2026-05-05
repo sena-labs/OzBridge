@@ -39,6 +39,7 @@ interface JsonConfig {
  * {
  *   "mcpServers": {
  *     "oz-bridge": {
+ *       "type": "sse",
  *       "url": "http://127.0.0.1:3847/sse",
  *       "headers": { "Authorization": "Bearer …" }
  *     }
