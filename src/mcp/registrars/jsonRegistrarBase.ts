@@ -53,28 +53,34 @@ export abstract class JsonMcpRegistrar implements IMcpClientRegistrar {
   abstract readonly configPath: string;
 
   async register(endpoint: McpClientEndpoint): Promise<void> {
-    const current = await this.readConfig();
-    const mcpServers: McpServersMap = { ...(current.mcpServers ?? {}) };
-    mcpServers[endpoint.name] = buildServerEntry(endpoint);
-    const next: JsonConfig = { ...current, mcpServers };
-    await this.writeConfig(next);
+    return withConfigLock(this.configPath, async () => {
+      const current = await this.readConfig();
+      const mcpServers: McpServersMap = { ...(current.mcpServers ?? {}) };
+      mcpServers[endpoint.name] = buildServerEntry(endpoint);
+      const next: JsonConfig = { ...current, mcpServers };
+      await this.writeConfig(next);
+    });
   }
 
   async unregister(serverName: string): Promise<void> {
-    if (!(await pathExists(this.configPath))) { return; }
-    const current = await this.readConfig();
-    if (!current.mcpServers || !(serverName in current.mcpServers)) { return; }
-    const mcpServers: McpServersMap = { ...current.mcpServers };
-    delete mcpServers[serverName];
-    const next: JsonConfig = { ...current, mcpServers };
-    await this.writeConfig(next);
+    return withConfigLock(this.configPath, async () => {
+      if (!(await pathExists(this.configPath))) { return; }
+      const current = await this.readConfig();
+      if (!current.mcpServers || !(serverName in current.mcpServers)) { return; }
+      const mcpServers: McpServersMap = { ...current.mcpServers };
+      delete mcpServers[serverName];
+      const next: JsonConfig = { ...current, mcpServers };
+      await this.writeConfig(next);
+    });
   }
 
   async status(serverName: string): Promise<McpRegistrationStatus> {
-    if (!(await pathExists(this.configPath))) { return 'not-configured'; }
-    const current = await this.readConfig();
-    if (current.mcpServers && serverName in current.mcpServers) { return 'registered'; }
-    return 'missing';
+    return withConfigLock(this.configPath, async () => {
+      if (!(await pathExists(this.configPath))) { return 'not-configured'; }
+      const current = await this.readConfig();
+      if (current.mcpServers && serverName in current.mcpServers) { return 'registered'; }
+      return 'missing';
+    });
   }
 
   // ------------------------------------------------------------------
@@ -104,6 +110,43 @@ export abstract class JsonMcpRegistrar implements IMcpClientRegistrar {
   protected async writeConfig(next: JsonConfig): Promise<void> {
     await atomicWriteJson(this.configPath, next);
   }
+}
+
+/**
+ * Per-config-path serialization queue.
+ *
+ * `register()` / `unregister()` perform a read-modify-write over the IDE's
+ * JSON config (`~/.claude.json`, `~/.cursor/mcp.json`). `atomicWriteJson`
+ * makes the final `rename` atomic, but two concurrent invocations against
+ * the same file would still both observe the *same* `current` snapshot,
+ * each splice their own copy, and let the last `rename` win — silently
+ * dropping the first caller's change.
+ *
+ * The chain below serializes every read-modify-write against a given
+ * absolute path so the second invocation always observes the first's
+ * result. The map is keyed by `configPath`, so different IDE configs
+ * (Claude Code vs Cursor) progress in parallel.
+ *
+ * This is **per-process**: it does not protect against a second VS Code
+ * window racing on the same file. In practice each window picks a
+ * distinct `mcpPort`, so the cross-window scenario is benign — the worst
+ * case is identical writes overwriting each other to the same value.
+ */
+const configLocks = new Map<string, Promise<void>>();
+
+export async function withConfigLock<T>(configPath: string, work: () => Promise<T>): Promise<T> {
+  const previous = configLocks.get(configPath) ?? Promise.resolve();
+  const next = previous.then(work, work);
+  // Replace the chain with a sentinel that never rejects so a single
+  // failing caller never poisons subsequent ones; each caller still
+  // observes its own rejection through the returned `next`.
+  configLocks.set(configPath, next.then(() => undefined, () => undefined));
+  return next;
+}
+
+/** Test-only: clear the per-path lock map between tests. */
+export function __resetConfigLocksForTests(): void {
+  configLocks.clear();
 }
 
 /** True iff `p` exists; false on ENOENT. */
