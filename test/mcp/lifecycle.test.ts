@@ -81,6 +81,30 @@ describe('McpLifecycle', () => {
     expect(lifecycle.endpoint).toBeUndefined();
   });
 
+  it('serializes concurrent start/stop invocations (B1)', async () => {
+    // Reproduces the off→on→off race that fire-and-forget toggles in the
+    // `onConfigChanged` listener can trigger. Without serialization, the
+    // pending stop() and the fresh start() interleave: the new server
+    // attempts to bind while the old socket is still closing, falls back
+    // to an ephemeral port, and breaks every registered client.
+    const cfgMgr = createMockConfigManager({ mcpPort: 0 } as any);
+    lifecycle = new McpLifecycle(createMockCli(), cfgMgr, '0.6.0-dev');
+
+    // Fire all transitions in the same microtask before awaiting any.
+    const transitions = [
+      lifecycle.start(),
+      lifecycle.stop(),
+      lifecycle.start(),
+      lifecycle.stop(),
+      lifecycle.start(),
+    ];
+    await Promise.all(transitions);
+
+    // Final state matches the last enqueued transition (start).
+    expect(lifecycle.running).toBe(true);
+    expect(lifecycle.endpoint?.port).toBeGreaterThan(0);
+  });
+
   it('falls back to an ephemeral port when configured port is busy', async () => {
     const cfgMgr = createMockConfigManager({ mcpPort: 0 } as any);
     const first = new McpLifecycle(createMockCli(), cfgMgr, '0.6.0-dev');
