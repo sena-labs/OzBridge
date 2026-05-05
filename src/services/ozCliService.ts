@@ -1414,7 +1414,8 @@ export function hasExplicitInsufficientCreditsSignal(
  */
 export function isInsufficientCreditsError(
   combinedLowercase: string,
-  exitCode: number, // eslint-disable-line @typescript-eslint/no-unused-vars
+  exitCode: number,
 ): boolean {
+  void exitCode;
   return hasExplicitInsufficientCreditsSignal(combinedLowercase);
 }
