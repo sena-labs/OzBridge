@@ -140,12 +140,13 @@ export class McpServer {
       try { res.end(); } catch { /* ignore */ }
     }
     this.sessions.clear();
-    // Force-close any lingering keep-alive sockets so `server.close()`
-    // resolves promptly on extension deactivation. `closeAllConnections`
-    // was added in Node 18.2; the optional-chaining call is a no-op on
-    // older runtimes, which then rely on the `res.end()` calls above.
-    (server as http.Server & { closeAllConnections?: () => void }).closeAllConnections?.();
-    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+      // Force-close any lingering keep-alive sockets after the listener stops
+      // accepting new connections. `closeAllConnections` was added in Node
+      // 18.2; older runtimes rely on the `res.end()` calls above.
+      (server as http.Server & { closeAllConnections?: () => void }).closeAllConnections?.();
+    });
   }
 
   /**
