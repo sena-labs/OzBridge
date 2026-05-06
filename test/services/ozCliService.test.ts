@@ -912,6 +912,35 @@ describe('OzCliService', () => {
       });
       expect(result.exitCode).toBe(0);
     });
+
+    it('dovrebbe interrompere onProgress dopo il cap stdout (OZ-mem)', async () => {
+      const proc = Object.assign(new EventEmitter(), {
+        stdout: new EventEmitter(),
+        stderr: new EventEmitter(),
+        kill: vi.fn(),
+        pid: 9999,
+      });
+      mockSpawn.mockReturnValue(proc as any);
+
+      process.nextTick(() => {
+        proc.stdout.emit('data', Buffer.from('x'.repeat(10 * 1024 * 1024 - 1)));
+        proc.stdout.emit('data', Buffer.from('y\n{"type":"agent","text":"after-cap"}\n'));
+        proc.emit('close', 0);
+      });
+
+      let callbackCount = 0;
+      let sawDiscardedLine = false;
+      await cli.agentRun({
+        prompt: 'go',
+        onProgress: (line) => {
+          callbackCount += 1;
+          sawDiscardedLine ||= line.includes('after-cap');
+        },
+      });
+
+      expect(callbackCount).toBe(1);
+      expect(sawDiscardedLine).toBe(false);
+    });
   });
 
   // =========================================================================

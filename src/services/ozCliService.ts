@@ -900,27 +900,30 @@ export class OzCliService implements IOzCliService {
       // extension host. 10 MiB leaves three orders of magnitude of headroom
       // over the default render limit while keeping memory bounded. Once
       // the cap is hit we keep draining the pipe (so the child's writes
-      // don't block) but stop appending — the line callback for streaming
-      // consumers continues to receive lines as they arrive.
+      // don't block) but stop appending or forwarding progress lines from
+      // discarded chunks.
       const STDIO_CAP = 10 * 1024 * 1024;
       let stdoutTruncated = false;
       let stderrTruncated = false;
 
       proc.stdout?.on('data', (chunk: Buffer) => {
         const text = chunk.toString();
+        let acceptedText = '';
         if (stdout.length + text.length > STDIO_CAP) {
           if (!stdoutTruncated) {
             stdoutTruncated = true;
             const remaining = Math.max(0, STDIO_CAP - stdout.length);
-            stdout += text.substring(0, remaining);
+            acceptedText = text.substring(0, remaining);
+            stdout += acceptedText;
             stdout += `\n… (output capped at ${STDIO_CAP} bytes; further chunks dropped)\n`;
             logWarn(`ozCliService stdout exceeded ${STDIO_CAP} bytes; further chunks dropped`);
           }
         } else {
+          acceptedText = text;
           stdout += text;
         }
-        if (onLine) {
-          lineBuffer += text;
+        if (onLine && acceptedText.length > 0) {
+          lineBuffer += acceptedText;
           // Drain complete lines, keep the trailing partial in the buffer.
           let nl: number;
           while ((nl = lineBuffer.indexOf('\n')) !== -1) {
