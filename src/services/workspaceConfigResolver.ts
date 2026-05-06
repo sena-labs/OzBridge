@@ -4,6 +4,7 @@ import * as fsp from 'fs/promises';
 import * as path from 'path';
 import { OzBridgeConfig } from '../types/index.js';
 import { logError, logInfo, logWarn } from './logger.js';
+import { getErrorMessage } from '../utils/error.js';
 import { parseFlatYaml, YamlScalar } from './yamlParser.js';
 
 /**
@@ -176,8 +177,7 @@ export class WorkspaceConfigResolver implements vscode.Disposable {
     // log so it's at least diagnosable.
     const safeReload = (): void => {
       this.reloadAndEmitAsync().catch((err) => {
-        const msg = err instanceof Error ? err.message : String(err);
-        logError(`workspace config reload failed: ${msg}`);
+        logError(`workspace config reload failed: ${getErrorMessage(err)}`);
       });
     };
     this.watcherDisposables.push(
