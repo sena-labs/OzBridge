@@ -140,7 +140,13 @@ export async function withConfigLock<T>(configPath: string, work: () => Promise<
   // Replace the chain with a sentinel that never rejects so a single
   // failing caller never poisons subsequent ones; each caller still
   // observes its own rejection through the returned `next`.
-  configLocks.set(configPath, next.then(() => undefined, () => undefined));
+  const queued = next.then(() => undefined, () => undefined);
+  configLocks.set(configPath, queued);
+  queued.finally(() => {
+    if (configLocks.get(configPath) === queued) {
+      configLocks.delete(configPath);
+    }
+  });
   return next;
 }
 
