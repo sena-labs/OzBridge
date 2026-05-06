@@ -32,7 +32,14 @@ export function getCursorBinaryPath(opts: { cursorBinaryPath?: string }): string
   return candidate && candidate.trim().length > 0 ? candidate.trim() : undefined;
 }
 
-export async function launchCursor(opts: LaunchCursorOptions): Promise<LaunchedVSCode> {
+/** Cursor launcher result — extends `LaunchedVSCode` with the hermetic HOME path. */
+export interface LaunchedCursor extends LaunchedVSCode {
+  /** Tmp HOME directory the Cursor process was started with. The
+   *  registrars resolve `~/.cursor/mcp.json` (and friends) under here. */
+  homeDir: string;
+}
+
+export async function launchCursor(opts: LaunchCursorOptions): Promise<LaunchedCursor> {
   const cursorBinary = getCursorBinaryPath(opts);
   if (!cursorBinary) {
     throw new Error(
@@ -52,9 +59,15 @@ export async function launchCursor(opts: LaunchCursorOptions): Promise<LaunchedV
   const workspacePath = path.join(tmpRoot, 'workspace');
   const userDataDir = path.join(tmpRoot, 'user-data');
   const extensionsDir = path.join(tmpRoot, 'extensions');
+  // Hermetic HOME so the registrars (which write to `~/.cursor/mcp.json`,
+  // `~/.claude.json`, etc. derived from `os.homedir()`) cannot mutate the
+  // developer's real dotfiles. The cleanup in `dispose()` then wipes
+  // every file the suite touched along with `tmpRoot`.
+  const tmpHome = path.join(tmpRoot, 'home');
   await fs.mkdir(workspacePath, { recursive: true });
   await fs.mkdir(userDataDir, { recursive: true });
   await fs.mkdir(extensionsDir, { recursive: true });
+  await fs.mkdir(tmpHome, { recursive: true });
   await fs.writeFile(path.join(workspacePath, 'README.md'), '# OzBridge E2E workspace (Cursor)\n', 'utf8');
 
   const settingsDir = path.join(userDataDir, 'User');
@@ -94,6 +107,12 @@ export async function launchCursor(opts: LaunchCursorOptions): Promise<LaunchedV
     env: {
       ...process.env,
       OZBRIDGE_E2E: '1',
+      // Hermetic HOME — see comment where `tmpHome` is created. Both
+      // POSIX (`HOME`) and Windows (`USERPROFILE`) are set so
+      // `os.homedir()` resolves to the temp directory regardless of
+      // platform.
+      HOME: tmpHome,
+      USERPROFILE: tmpHome,
     },
   });
 
@@ -108,7 +127,7 @@ export async function launchCursor(opts: LaunchCursorOptions): Promise<LaunchedV
     try { await fs.rm(tmpRoot, { recursive: true, force: true }); } catch { /* ignore */ }
   };
 
-  return { app, window, pid, workspacePath, userDataDir, extensionsDir, dispose };
+  return { app, window, pid, workspacePath, userDataDir, extensionsDir, homeDir: tmpHome, dispose };
 }
 
 async function getMainProcessPid(app: ElectronApplication): Promise<number | undefined> {

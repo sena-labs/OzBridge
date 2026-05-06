@@ -127,6 +127,15 @@ export async function launchClaudeHarness(): Promise<LaunchedClaudeHarness> {
       + 'Point it at the `claude` binary (typically `which claude`).',
     );
   }
+  // Verify the binary is reachable up-front. Otherwise `child_process.spawn`
+  // either fails inside the timer (Linux/macOS, ENOENT on `'error'`) or
+  // surfaces a confusing exit code 9009 (Windows): both produce noisier
+  // failures than a clear `Error` thrown synchronously here.
+  try {
+    await fs.access(claudeBin);
+  } catch {
+    throw new Error(`launchClaudeHarness: claude binary not found at ${claudeBin}`);
+  }
 
   const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ozbridge-e2e-claude-'));
   const homeDir = path.join(tmpRoot, 'home');
