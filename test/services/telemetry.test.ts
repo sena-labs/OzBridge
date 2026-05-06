@@ -219,4 +219,32 @@ describe('HttpAppInsightsReporter', () => {
     await reporter.flush();
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
+
+  it('dispose() captures events queued during the in-flight flush (B4)', async () => {
+    // The first flush splices the buffer, then awaits fetch. While that
+    // fetch is pending, a track() call sneaks an event into the now-empty
+    // buffer. Without the second-flush pass added in B4, that event would
+    // sit in the buffer forever and be silently dropped on shutdown.
+    let trackedDuringFlush = false;
+    const fetchImpl = vi.fn(async () => {
+      if (!trackedDuringFlush) {
+        trackedDuringFlush = true;
+        // Simulate a concurrent track() during the in-flight fetch.
+        reporter.track('runStarted', { kind: 'cloud' });
+      }
+      return { ok: true } as unknown as Response;
+    });
+    const reporter: HttpAppInsightsReporter = new HttpAppInsightsReporter({
+      connectionString: 'InstrumentationKey=abc;IngestionEndpoint=https://example.invalid/',
+      version: '1.0.0',
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      maxBufferSize: 100,
+      flushIntervalMs: 0,
+    });
+    reporter.track('extensionActivated', { version: '1.0.0' });
+    await reporter.dispose();
+    // Two POSTs: the original event + the late arrival. Without B4 it
+    // would be only one.
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
 });

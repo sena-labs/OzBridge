@@ -6,6 +6,7 @@ import {
   McpClientEndpoint,
   McpRegistrationStatus,
 } from '../clientRegistration.js';
+import { withConfigLock } from './jsonRegistrarBase.js';
 
 /**
  * Registrar for OpenAI's Codex CLI.
@@ -43,26 +44,32 @@ export class CodexRegistrar implements IMcpClientRegistrar {
   }
 
   async register(endpoint: McpClientEndpoint): Promise<void> {
-    const original = (await readIfExists(this.configPath)) ?? '';
-    const withoutExisting = removeMcpServerBlock(original, endpoint.name);
-    const appended = appendMcpServerBlock(withoutExisting, endpoint);
-    await atomicWriteText(this.configPath, appended);
+    return withConfigLock(this.configPath, async () => {
+      const original = (await readIfExists(this.configPath)) ?? '';
+      const withoutExisting = removeMcpServerBlock(original, endpoint.name);
+      const appended = appendMcpServerBlock(withoutExisting, endpoint);
+      await atomicWriteText(this.configPath, appended);
+    });
   }
 
   async unregister(serverName: string): Promise<void> {
-    const original = await readIfExists(this.configPath);
-    if (original === undefined) { return; }
-    const next = removeMcpServerBlock(original, serverName);
-    if (next === original) { return; }
-    await atomicWriteText(this.configPath, next);
+    return withConfigLock(this.configPath, async () => {
+      const original = await readIfExists(this.configPath);
+      if (original === undefined) { return; }
+      const next = removeMcpServerBlock(original, serverName);
+      if (next === original) { return; }
+      await atomicWriteText(this.configPath, next);
+    });
   }
 
   async status(serverName: string): Promise<McpRegistrationStatus> {
-    const original = await readIfExists(this.configPath);
-    if (original === undefined) { return 'not-configured'; }
-    return findMcpServerBlock(original, serverName) !== undefined
-      ? 'registered'
-      : 'missing';
+    return withConfigLock(this.configPath, async () => {
+      const original = await readIfExists(this.configPath);
+      if (original === undefined) { return 'not-configured'; }
+      return findMcpServerBlock(original, serverName) !== undefined
+        ? 'registered'
+        : 'missing';
+    });
   }
 }
 

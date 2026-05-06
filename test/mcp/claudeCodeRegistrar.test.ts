@@ -123,4 +123,33 @@ describe('ClaudeCodeRegistrar', () => {
     const residual = fs.readdirSync(tmpdir).filter((f) => f.endsWith('.tmp'));
     expect(residual).toEqual([]);
   });
+
+  it('serializes concurrent register() calls so no entry is lost (B3)', async () => {
+    // Without per-path locking, a read-modify-write race lets the last
+    // rename win and silently drops every prior caller's entry.
+    const names = ['srv-a', 'srv-b', 'srv-c', 'srv-d', 'srv-e'];
+    await Promise.all(
+      names.map((name) => registrar.register({ name, url: `http://example/${name}` })),
+    );
+
+    const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    for (const name of names) {
+      expect(parsed.mcpServers[name]?.url).toBe(`http://example/${name}`);
+    }
+  });
+
+  it('serializes register() against unregister() on the same path (B3)', async () => {
+    await registrar.register({ name: 'oz-bridge', url: 'http://x' });
+    await Promise.all([
+      registrar.register({ name: 'sibling', url: 'http://y' }),
+      registrar.unregister('oz-bridge'),
+    ]);
+
+    const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    // The unregister could have run before or after the sibling register,
+    // but in *every* serialization order `sibling` must end up present and
+    // `oz-bridge` must end up absent.
+    expect(parsed.mcpServers.sibling?.url).toBe('http://y');
+    expect(parsed.mcpServers['oz-bridge']).toBeUndefined();
+  });
 });

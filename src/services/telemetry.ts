@@ -267,6 +267,13 @@ export class HttpAppInsightsReporter implements ITelemetryReporter {
     // Flush *before* flipping the disposed flag so the buffered batch
     // actually goes out (flush() short-circuits when `disposed === true`).
     await this.flush();
+    // B4: a `track()` call can race with `await this.flush()` above and
+    // queue a late event between the buffer splice and the line below.
+    // A second flush catches that straggler so it isn't silently dropped
+    // on shutdown. When the buffer is empty this is a cheap noop.
+    if (this.buffer.length > 0) {
+      await this.flush();
+    }
     this.disposed = true;
   }
 

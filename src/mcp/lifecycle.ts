@@ -57,6 +57,15 @@ export class McpLifecycle implements vscode.Disposable {
   private server: McpServer | undefined;
   private current: McpConfig | undefined;
   private disposed = false;
+  /**
+   * Promise chain that serializes external `start()` / `stop()` invocations.
+   * Without this serialization, fire-and-forget toggles (e.g. the
+   * `onConfigChanged` listener flipping `mcpEnabled` rapidly) can interleave
+   * a pending `stop()` with a fresh `start()`, leaving the OS port still
+   * held by the closing server when the next bind attempts — which silently
+   * falls back to an ephemeral port and breaks every registered client.
+   */
+  private transitionChain: Promise<void> = Promise.resolve();
 
   constructor(
     private readonly cli: IOzCliService,
@@ -83,13 +92,31 @@ export class McpLifecycle implements vscode.Disposable {
   }
 
   /**
+   * Enqueues `work` after any in-flight transition. The chain stores only
+   * resolved sentinels (`undefined`) so a single failure never poisons later
+   * transitions — every caller still observes its own rejection.
+   */
+  private enqueue<T>(work: () => Promise<T>): Promise<T> {
+    const next = this.transitionChain.then(work, work);
+    this.transitionChain = next.then(() => undefined, () => undefined);
+    return next;
+  }
+
+  /**
    * Starts (or restarts) the server with the latest settings. If the socket
    * fails to bind, logs the error and resolves without re-throwing so that
    * extension activation is never blocked.
+   *
+   * Concurrency: serialized through {@link transitionChain}; safe to invoke
+   * concurrently with `stop()` or other `start()` calls.
    */
   async start(): Promise<void> {
+    return this.enqueue(() => this.doStart());
+  }
+
+  private async doStart(): Promise<void> {
     if (this.disposed) { return; }
-    await this.stop();
+    await this.doStop();
     const cfg = readMcpConfig(this.cfgMgr.getConfig());
     this.current = { ...cfg };
 
@@ -153,8 +180,17 @@ export class McpLifecycle implements vscode.Disposable {
     }
   }
 
-  /** Stops the server if running. Idempotent. */
+  /**
+   * Stops the server if running. Idempotent.
+   *
+   * Concurrency: serialized through {@link transitionChain}; safe to invoke
+   * concurrently with `start()` or other `stop()` calls.
+   */
   async stop(): Promise<void> {
+    return this.enqueue(() => this.doStop());
+  }
+
+  private async doStop(): Promise<void> {
     if (!this.server) { return; }
     const server = this.server;
     this.server = undefined;
