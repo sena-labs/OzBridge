@@ -19,6 +19,7 @@ describe('readMcpConfig', () => {
       bindAddress: '127.0.0.1',
       bearerToken: '',
       maxSseSessions: 16,
+      sseMaxLifetimeMs: 1_800_000,
     });
   });
 
@@ -30,12 +31,35 @@ describe('readMcpConfig', () => {
     expect(cfg).toEqual({
       enabled: true, port: 9000, bindAddress: '0.0.0.0', bearerToken: 'tok',
       maxSseSessions: 32,
+      sseMaxLifetimeMs: 1_800_000,
     });
   });
 
   it('falls back on non-positive port', () => {
     const cfg = readMcpConfig({ mcpPort: -1 } as any);
     expect(cfg.port).toBe(3847);
+  });
+});
+
+describe('readMcpConfig — sseMaxLifetimeMs validation', () => {
+  it('uses provided mcpSseMaxLifetimeMs when within valid range [60_000, 86_400_000]', () => {
+    const cfg = readMcpConfig({ mcpSseMaxLifetimeMs: 300_000 } as any);
+    expect(cfg.sseMaxLifetimeMs).toBe(300_000);
+  });
+
+  it('falls back to default when mcpSseMaxLifetimeMs is below 60_000', () => {
+    const cfg = readMcpConfig({ mcpSseMaxLifetimeMs: 59_999 } as any);
+    expect(cfg.sseMaxLifetimeMs).toBe(1_800_000);
+  });
+
+  it('falls back to default when mcpSseMaxLifetimeMs exceeds 86_400_000', () => {
+    const cfg = readMcpConfig({ mcpSseMaxLifetimeMs: 86_400_001 } as any);
+    expect(cfg.sseMaxLifetimeMs).toBe(1_800_000);
+  });
+
+  it('falls back to default for non-integer mcpSseMaxLifetimeMs', () => {
+    const cfg = readMcpConfig({ mcpSseMaxLifetimeMs: 120_000.5 } as any);
+    expect(cfg.sseMaxLifetimeMs).toBe(1_800_000);
   });
 });
 

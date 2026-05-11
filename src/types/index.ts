@@ -85,12 +85,19 @@ export interface WarpBridgeConfig extends BridgeConfig {
    * requests are rejected with HTTP 503 once the cap is reached. Default 16.
    */
   mcpMaxSseSessions: number;
+  /**
+   * Maximum lifetime in milliseconds for a single MCP SSE session before the
+   * server forces a close. Prevents resource leaks from clients that never
+   * disconnect. Default 1 800 000 (30 minutes).
+   */
+  mcpSseMaxLifetimeMs: number;
 }
 
 /**
  * Rebrand alias: prefer `OzBridgeConfig` for new code. The original
  * `WarpBridgeConfig` name is retained for backward compatibility with
  * existing imports across the codebase.
+ * @deprecated Use `OzBridgeConfig` instead.
  */
 export type OzBridgeConfig = WarpBridgeConfig;
 
@@ -110,6 +117,7 @@ export const DEFAULT_CONFIG: WarpBridgeConfig = {
   mcpBindAddress: '127.0.0.1',
   mcpBearerToken: '',
   mcpMaxSseSessions: 16,
+  mcpSseMaxLifetimeMs: 1_800_000,
 };
 
 // ============================================================================

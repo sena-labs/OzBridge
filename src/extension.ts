@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as os from 'node:os';
+import * as path from 'node:path';
 import { ConfigManager } from './services/configManager.js';
 import {
   WorkspaceConfigResolver,
@@ -12,10 +13,12 @@ import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
 import { registerOzTools } from './tools/index.js';
 import { StatusBarManager } from './ui/statusBarItem.js';
-import { OzRunsTreeProvider } from './ui/runsTreeProvider.js';
+import { OzRunsTreeProvider, RunTreeDragAndDropController } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands } from './mcp/lifecycle.js';
+import { canRegisterCursorMcpServers, registerCursorMcpServer, unregisterCursorMcpServer } from './mcp/cursorIntegration.js';
+import { MCP_SERVER_NAME, buildLocalEndpoint } from './mcp/lifecycle.js';
 import { createOzBridgeDriveSource } from './drive/driveSourceFactory.js';
 import { IDriveSource } from './drive/warpDriveSource.js';
 import { OzDriveTreeProvider } from './ui/driveTreeProvider.js';
@@ -29,7 +32,9 @@ import { createVsCodeLanguageModelClient } from './services/languageModelClient.
 import { DatasetExportService, DatasetFormat } from './services/datasetExport.js';
 import { initLogger, logInfo, logError } from './services/logger.js';
 import { createTelemetryReporter, ITelemetryReporter } from './services/telemetry.js';
+import { StartupCoordinator, StartupGateResult } from './services/startupCoordinator.js';
 import { getErrorMessage } from './utils/error.js';
+import { detectHost } from './utils/host.js';
 
 /**
  * Entry point of the OzBridge extension.
@@ -56,6 +61,14 @@ const state: {
    * promptly instead of being left orphaned by the host shutdown.
    */
   extensionLifetimeCts?: vscode.CancellationTokenSource;
+  /** Cursor-only: whether we registered `vscode.cursor.mcp` entry. */
+  cursorMcpRegistered?: boolean;
+  /** Single-flight guard for Cursor MCP auto-registration. */
+  cursorMcpRegistrationFlight?: Promise<void> | null;
+  /** Startup orchestrator for deferred warmup tasks. */
+  startup?: StartupCoordinator;
+  /** Prevent duplicate warmup hint toasts. */
+  startupWarmupHintShown?: boolean;
 } = {};
 
 /** Extension version sourced from `package.json` at activation time. */
@@ -113,6 +126,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const outputChannel = vscode.window.createOutputChannel('OzBridge');
   context.subscriptions.push(outputChannel);
   initLogger(outputChannel, '[ozbridge]');
+  const host = detectHost();
 
   const extensionVersion = readExtensionVersion(context);
 
@@ -203,10 +217,39 @@ export function activate(context: vscode.ExtensionContext): void {
   // Start the ActiveRunsTracker — event-driven feed for Status Bar and sidebar.
   // Created here (before the chat participant) so it can be threaded into
   // the cloud command, enabling immediate sidebar updates on terminal status.
-  state.tracker = new ActiveRunsTracker(cli);
+  //
+  // OPT-3: supplement the fallback polling timer (60 s) with a reactive
+  // file-system watcher on ~/.warp/runs/**. The watcher triggers an immediate
+  // `oz run list` poll whenever the Oz CLI writes new run-state files, cutting
+  // observed latency from up to 10 s down to <1 s in the common case.
+  const warpRunsDir = vscode.Uri.file(path.join(os.homedir(), '.warp', 'runs'));
+  const warpRunsGlob = new vscode.RelativePattern(warpRunsDir, '**');
+  state.tracker = new ActiveRunsTracker(cli, 60_000, [warpRunsGlob]);
   context.subscriptions.push(state.tracker);
   const ensureRunsTrackerStarted = () => {
     state.tracker?.start();
+  };
+
+  // Startup coordinator: keeps activate() lightweight and runs fragile
+  // boot tasks in deferred, fail-open mode.
+  state.startup = new StartupCoordinator(1500);
+  context.subscriptions.push(state.startup);
+  state.startupWarmupHintShown = false;
+
+  const gateStartupReady = async (label: string): Promise<StartupGateResult> => {
+    const startup = state.startup;
+    if (!startup) {
+      return 'degraded';
+    }
+    const gate = await startup.ensureReady({ softTimeoutMs: 1500 });
+    if (gate === 'timeout' && !state.startupWarmupHintShown) {
+      state.startupWarmupHintShown = true;
+      void vscode.window.showInformationMessage(
+        vscode.l10n.t('OzBridge is still starting up. Retrying now may work.'),
+      );
+      logInfo(`[startup] gate timeout while running "${label}".`);
+    }
+    return gate;
   };
 
   // Register command to open conversations directly in Warp (bypassing the browser).
@@ -228,8 +271,8 @@ export function activate(context: vscode.ExtensionContext): void {
   registerChatParticipant(context, cli, ctx, state.configManager, state.runPoller, state.tracker);
 
   // Register Language Model Tools — Agent-Native integration.
-  // Questi tool permettono a Copilot Agent mode di invocare Oz senza @oz.
-  // Il runtime di VS Code < 1.96 (`vscode.lm` assente) è gestito con graceful fallback.
+  // These tools allow Copilot Agent mode to invoke Oz without @oz.
+  // VS Code < 1.96 runtimes (missing `vscode.lm`) are handled with a graceful fallback.
   if (typeof vscode.lm?.registerTool === 'function') {
     registerOzTools(context, cli, state.configManager, ctx, state.runPoller);
   } else {
@@ -243,12 +286,15 @@ export function activate(context: vscode.ExtensionContext): void {
   // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
   const treeProvider = new OzRunsTreeProvider(cli, state.tracker, context.globalState);
   context.subscriptions.push(treeProvider);
+  const dragAndDropController = new RunTreeDragAndDropController();
   const runsTreeView = vscode.window.createTreeView('ozBridge.runsView', {
     treeDataProvider: treeProvider,
     // LOW-6: be explicit about the (default) single-selection behaviour
     // so future readers / linters don't mistake the omission for a TODO.
     canSelectMany: false,
     showCollapseAll: true,
+    // OPT-5: allow dragging RunNode items to Copilot Chat.
+    dragAndDropController,
   });
   context.subscriptions.push(runsTreeView);
   // MED-8: persist category collapse preference across reloads.
@@ -319,6 +365,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const runStats = new RunStatsService(cli);
   context.subscriptions.push(
     vscode.commands.registerCommand('ozBridge.dashboard.open', async () => {
+      await gateStartupReady('ozBridge.dashboard.open');
       const panel = DashboardPanel.createOrShow(runStats);
       await panel.refresh();
     }),
@@ -328,6 +375,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const lmClient = createVsCodeLanguageModelClient();
   context.subscriptions.push(
     vscode.commands.registerCommand('ozBridge.triageFailure', async (runId?: string) => {
+      await gateStartupReady('ozBridge.triageFailure');
       if (!lmClient) {
         await vscode.window.showWarningMessage(vscode.l10n.t('Failure triage requires VS Code 1.96+ with a Copilot chat model installed.'));
         return;
@@ -369,6 +417,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const datasetExport = new DatasetExportService(cli);
   context.subscriptions.push(
     vscode.commands.registerCommand('ozBridge.exportDataset', async () => {
+      await gateStartupReady('ozBridge.exportDataset');
       const pick = await vscode.window.showQuickPick(
         [
           { label: 'JSON Lines', value: 'jsonl' as DatasetFormat },
@@ -400,14 +449,89 @@ export function activate(context: vscode.ExtensionContext): void {
   for (const disposable of registerMcpCommands(state.mcp, state.configManager)) {
     context.subscriptions.push(disposable);
   }
-  if (state.configManager.getConfig().mcpEnabled) {
-    state.mcp.start().catch((err) => {
+
+  // Cursor integration (official): register OzBridge MCP server via `vscode.cursor.mcp.registerServer`.
+  // This enables Cursor Agent to discover and call OzBridge tools through MCP (not via `@oz`).
+  if (host.kind === 'cursor' && canRegisterCursorMcpServers()) {
+    // Ensure we always unregister when the extension is deactivated/reloaded.
+    context.subscriptions.push({
+      dispose: () => {
+        if (state.cursorMcpRegistered) {
+          try {
+            unregisterCursorMcpServer(MCP_SERVER_NAME);
+          } finally {
+            state.cursorMcpRegistered = false;
+          }
+        }
+      },
+    });
+
+    const ensureRegistered = async () => {
+      if (state.cursorMcpRegistrationFlight) {
+        await state.cursorMcpRegistrationFlight;
+        return;
+      }
+
+      state.cursorMcpRegistrationFlight = (async () => {
+        const cfgMgr = state.configManager;
+        const mcp = state.mcp;
+        if (!cfgMgr || !mcp) {
+          return;
+        }
+        const cfg = cfgMgr.getConfig();
+
+        if (cfg.mcpEnabled !== true) {
+          const hintKey = 'ozBridge.cursor.mcpHintShown';
+          const already = context.globalState.get<boolean>(hintKey, false);
+          if (!already) {
+            Promise.resolve(context.globalState.update(hintKey, true)).catch((err: unknown) => logError('globalState.update failed', getErrorMessage(err)));
+            void vscode.window.showWarningMessage(
+              vscode.l10n.t('OzBridge: Cursor integration uses MCP tools. Enable "ozBridge.mcpEnabled" to expose OzBridge tools to Cursor Agent.'),
+            );
+          }
+          return;
+        }
+
+        // Ensure the local MCP server is running so we can provide a stable URL to Cursor.
+        await mcp.start();
+        const endpoint = buildLocalEndpoint(mcp, cfgMgr);
+        registerCursorMcpServer(endpoint);
+        state.cursorMcpRegistered = true;
+      })();
+
+      try {
+        await state.cursorMcpRegistrationFlight;
+      } finally {
+        state.cursorMcpRegistrationFlight = null;
+      }
+    };
+
+    // Run once after startup warmup and again when config changes.
+    state.startup.enqueue('cursor.mcp.autoRegister', async () => {
+      await ensureRegistered().catch((err) => logError(`Cursor MCP registration failed: ${getErrorMessage(err)}`));
+    });
+    state.configManager?.onConfigChanged(() => {
+      void ensureRegistered().catch((err) => logError(`Cursor MCP registration failed: ${getErrorMessage(err)}`));
+    });
+  }
+
+  // Deferred MCP auto-start (opt-in): keep activate() non-blocking.
+  state.startup.enqueue('mcp.autoStart', async () => {
+    const cfgMgr = state.configManager;
+    const mcp = state.mcp;
+    if (!cfgMgr || !mcp) {
+      return;
+    }
+    if (!cfgMgr.getConfig().mcpEnabled) {
+      return;
+    }
+    await mcp.start().catch((err) => {
       const msg = getErrorMessage(err);
       logError(`MCP start failed: ${msg}`);
       state.telemetry?.track('errorRaised', { kind: 'mcpStart' });
       void vscode.window.showWarningMessage(vscode.l10n.t('OzBridge: MCP server failed to start. {0}', msg));
     });
-  }
+  });
 
   // Auxiliary command: focus the sidebar — invoked from the Status Bar click.
   context.subscriptions.push(
@@ -442,30 +566,36 @@ export function activate(context: vscode.ExtensionContext): void {
   logInfo('Extension activated');
   logInfo(`Oz CLI path: ${redactHome(state.configManager.getConfig().ozPath)}`);
 
-  // Telemetry (v1.0 deliverable P) — strictly opt-in via VS Code's
-  // global `telemetry.telemetryLevel` *and* an explicit AppInsights
-  // connection string. Default `connectionString = ""` ⇒ noop transport.
-  // No PII ever transits: see `src/services/telemetry.ts` and PRIVACY.md.
-  const telemetryConnectionString = vscode.workspace
-    .getConfiguration('ozBridge')
-    .get<string>('telemetry.connectionString', '');
-  state.telemetry = createTelemetryReporter({
-    env: { isTelemetryEnabled: vscode.env.isTelemetryEnabled ?? false },
-    connectionString: telemetryConnectionString,
-    version: extensionVersion,
-  });
-  state.telemetry.track('extensionActivated', { version: extensionVersion });
+  // Telemetry is created in deferred startup; keep disposal wired now.
   context.subscriptions.push({
     dispose: () => {
       void state.telemetry?.dispose();
     },
   });
 
-  // First-activation Getting Started walkthrough (gated via globalState so
-  // it opens at most once per install; failure is non-fatal).
-  maybeOpenGettingStartedWalkthrough({ globalState: context.globalState }).catch((err) => {
-    logError(`Walkthrough failed: ${getErrorMessage(err)}`);
+  // Telemetry bootstrap (deferred, fail-open).
+  state.startup.enqueue('telemetry.bootstrap', async () => {
+    const telemetryConnectionString = vscode.workspace
+      .getConfiguration('ozBridge')
+      .get<string>('telemetry.connectionString', '');
+    state.telemetry = createTelemetryReporter({
+      env: { isTelemetryEnabled: vscode.env.isTelemetryEnabled ?? false },
+      connectionString: telemetryConnectionString,
+      version: extensionVersion,
+      sampleRate: context.extensionMode === vscode.ExtensionMode.Production ? 0.1 : 1.0,
+    });
+    state.telemetry.track('extensionActivated', { version: extensionVersion });
   });
+
+  // Walkthrough bootstrap (deferred, failure already non-fatal).
+  state.startup.enqueue('walkthrough.bootstrap', async () => {
+    await maybeOpenGettingStartedWalkthrough({ globalState: context.globalState }).catch((err) => {
+      logError(`Walkthrough failed: ${getErrorMessage(err)}`);
+    });
+  });
+
+  // Start deferred warmup asynchronously.
+  state.startup.start();
 
   // Do not probe Oz CLI availability during activation. Commands and views
   // surface CLI availability/authentication problems lazily when the user
