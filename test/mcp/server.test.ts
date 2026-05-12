@@ -249,10 +249,58 @@ describe('McpServer SSE — session caps and lifetime', () => {
           res.on('close', () => closedResolve());
           res.on('end',   () => closedResolve());
           let resolved = false;
+          let buffer = '';
+
+          const processBuffer = () => {
+            while (!resolved) {
+              const crlfIndex = buffer.indexOf('\r\n\r\n');
+              const lfIndex = buffer.indexOf('\n\n');
+              let frameEnd = -1;
+              let separatorLength = 0;
+
+              if (crlfIndex !== -1 && (lfIndex === -1 || crlfIndex < lfIndex)) {
+                frameEnd = crlfIndex;
+                separatorLength = 4;
+              } else if (lfIndex !== -1) {
+                frameEnd = lfIndex;
+                separatorLength = 2;
+              }
+
+              if (frameEnd === -1) {
+                return;
+              }
+
+              const frame = buffer.slice(0, frameEnd);
+              buffer = buffer.slice(frameEnd + separatorLength);
+
+              const eventName = frame
+                .split(/\r?\n/)
+                .find((line) => line.startsWith('event:'))
+                ?.slice('event:'.length)
+                .trim();
+
+              if (eventName === 'endpoint') {
+                resolved = true;
+                resolve({ close: () => req.destroy(), onClosed });
+              }
+            }
+          };
+
           res.on('data', (chunk: Buffer) => {
-            if (!resolved && chunk.toString('utf8').includes('event: endpoint')) {
-              resolved = true;
-              resolve({ close: () => req.destroy(), onClosed });
+            if (resolved) {
+              return;
+            }
+            buffer += chunk.toString('utf8');
+            processBuffer();
+          });
+          res.on('end', () => {
+            if (!resolved) {
+              reject(new Error('SSE stream ended before endpoint event was received'));
+            }
+          });
+          res.on('close', () => {
+            if (!resolved) {
+              reject(new Error('SSE stream closed before endpoint event was received'));
             }
           });
         },
