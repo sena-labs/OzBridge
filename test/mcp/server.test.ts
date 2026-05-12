@@ -97,17 +97,10 @@ describe('McpServer.dispatch', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HTTP + SSE integration
+// Shared HTTP helpers
 // ---------------------------------------------------------------------------
 
-describe('McpServer HTTP transport', () => {
-  let server: McpServer;
-
-  afterEach(async () => {
-    await server?.stop();
-  });
-
-  async function fetchJson(port: number, pathname: string, headers: Record<string, string> = {}) {
+async function fetchJson(port: number, pathname: string, headers: Record<string, string> = {}) {
     const response: string = await new Promise((resolve, reject) => {
       const req = http.request(
         { host: '127.0.0.1', port, path: pathname, method: 'GET', headers },
@@ -130,7 +123,18 @@ describe('McpServer HTTP transport', () => {
       status: parsed.status as number,
       body: parsed.body ? JSON.parse(parsed.body) : undefined,
     };
-  }
+}
+
+// ---------------------------------------------------------------------------
+// HTTP + SSE integration
+// ---------------------------------------------------------------------------
+
+describe('McpServer HTTP transport', () => {
+  let server: McpServer;
+
+  afterEach(async () => {
+    await server?.stop();
+  });
 
   it('GET /health returns server info and tool count', async () => {
     server = new McpServer(makeRegistry(), undefined, { port: 0 });
@@ -203,5 +207,199 @@ describe('McpServer HTTP transport', () => {
     await server.stop();
 
     expect(events).toEqual(['close', 'closeAllConnections']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SSE session caps and lifetime enforcement
+// ---------------------------------------------------------------------------
+
+describe('McpServer SSE — session caps and lifetime', () => {
+  let server: McpServer;
+
+  afterEach(async () => {
+    await server?.stop();
+  });
+
+  /**
+   * Opens a GET /sse connection and resolves once the `endpoint` event is
+   * received (session fully established server-side).
+   */
+  function openSseConnection(port: number, timeoutMs = 5_000): Promise<{
+    close: () => void;
+    onClosed: Promise<void>;
+  }> {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+
+      const rejectOnce = (err: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(connectTimer);
+        req.destroy();
+        reject(err);
+      };
+
+      const connectTimer = setTimeout(() => {
+        rejectOnce(
+          new Error(`openSseConnection: timed out after ${timeoutMs} ms waiting for endpoint event`),
+        );
+      }, timeoutMs);
+
+      const req = http.request(
+        {
+          host: '127.0.0.1',
+          port,
+          path: '/sse',
+          method: 'GET',
+          headers: { Accept: 'text/event-stream' },
+        },
+        (res) => {
+          if (res.statusCode !== 200) {
+            res.resume();
+            rejectOnce(new Error(`/sse → ${res.statusCode}`));
+            return;
+          }
+          let closedResolve!: () => void;
+          const onClosed = new Promise<void>((r) => { closedResolve = r; });
+          res.on('close', () => closedResolve());
+          res.on('end',   () => closedResolve());
+          let buffer = '';
+
+          const processBuffer = () => {
+            while (!settled) {
+              const crlfIndex = buffer.indexOf('\r\n\r\n');
+              const lfIndex = buffer.indexOf('\n\n');
+              let frameEnd = -1;
+              let separatorLength = 0;
+
+              if (crlfIndex !== -1 && (lfIndex === -1 || crlfIndex < lfIndex)) {
+                frameEnd = crlfIndex;
+                separatorLength = 4;
+              } else if (lfIndex !== -1) {
+                frameEnd = lfIndex;
+                separatorLength = 2;
+              }
+
+              if (frameEnd === -1) {
+                return;
+              }
+
+              const frame = buffer.slice(0, frameEnd);
+              buffer = buffer.slice(frameEnd + separatorLength);
+
+              const eventName = frame
+                .split(/\r?\n/)
+                .find((line) => line.startsWith('event:'))
+                ?.slice('event:'.length)
+                .trim();
+
+              if (eventName === 'endpoint') {
+                settled = true;
+                clearTimeout(connectTimer);
+                resolve({ close: () => req.destroy(), onClosed });
+              }
+            }
+          };
+
+          res.on('data', (chunk: Buffer) => {
+            if (settled) {
+              return;
+            }
+            buffer += chunk.toString('utf8');
+            processBuffer();
+          });
+          res.on('end', () => {
+            if (!settled) {
+              rejectOnce(new Error('SSE stream ended before endpoint event was received'));
+            }
+          });
+          res.on('close', () => {
+            if (!settled) {
+              rejectOnce(new Error('SSE stream closed before endpoint event was received'));
+            }
+          });
+        },
+      );
+      req.on('error', (err) => rejectOnce(err));
+      req.end();
+    });
+  }
+
+  it('rejects new SSE connections with 503 when maxSseSessions is reached', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, maxSseSessions: 2 });
+    await server.start();
+    const port = server.endpoint!.port;
+
+    const s1 = await openSseConnection(port);
+    const s2 = await openSseConnection(port);
+
+    // Third connection must be refused with 503
+    const result = await new Promise<{ status: number; body: Record<string, unknown> }>(
+      (resolve, reject) => {
+        const req = http.request(
+          { host: '127.0.0.1', port, path: '/sse', method: 'GET' },
+          (res) => {
+            const chunks: Buffer[] = [];
+            res.on('data', (c) => chunks.push(c));
+            res.on('end', () =>
+              resolve({
+                status: res.statusCode!,
+                body: JSON.parse(
+                  Buffer.concat(chunks).toString('utf8'),
+                ) as Record<string, unknown>,
+              }),
+            );
+          },
+        );
+        req.on('error', reject);
+        req.end();
+      },
+    );
+
+    expect(result.status).toBe(503);
+    expect(result.body['error']).toBe('too_many_sessions');
+    expect(result.body['max']).toBe(2);
+
+    s1.close();
+    s2.close();
+    await Promise.all([s1.onClosed, s2.onClosed]);
+  });
+
+  it('closes SSE connection server-side after sseMaxLifetimeMs elapses', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, sseMaxLifetimeMs: 80 });
+    await server.start();
+    const port = server.endpoint!.port;
+
+    const { onClosed } = await openSseConnection(port);
+
+    // Wait up to 600 ms for the server to close the session (80 ms timeout + buffer)
+    const outcome = await Promise.race([
+      onClosed.then(() => 'closed' as const),
+      new Promise<'timeout'>((r) => setTimeout(() => r('timeout'), 600)),
+    ]);
+    expect(outcome).toBe('closed');
+
+    // /health must report 0 active sessions once cleanup completes
+    const { body } = await fetchJson(port, '/health');
+    expect((body as Record<string, unknown>)['sessions']).toBe(0);
+  });
+
+  it('stop() closes active SSE streams and clears lifetime timers', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, sseMaxLifetimeMs: 5_000 });
+    await server.start();
+    const port = server.endpoint!.port;
+
+    const { onClosed } = await openSseConnection(port);
+
+    // Stop the server while the max-lifetime timer (5 s) is still armed
+    await server.stop();
+
+    // The stream must be closed by stop() without waiting for the 5 s timer
+    const outcome = await Promise.race([
+      onClosed.then(() => 'closed' as const),
+      new Promise<'timeout'>((r) => setTimeout(() => r('timeout'), 500)),
+    ]);
+    expect(outcome).toBe('closed');
   });
 });

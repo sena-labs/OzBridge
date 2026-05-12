@@ -509,3 +509,51 @@ function errorLabel(err: unknown, category: string = 'this list'): string {
   if (err instanceof Error) { return `Error loading ${category}: ${err.message}`; }
   return `Error loading ${category}: ${String(err)}`;
 }
+
+// ===========================================================================
+// OPT-5: Drag-and-drop controller — RunNode → Chat
+// ===========================================================================
+
+/** MIME type used for internal tree-to-tree transfers (RunNode items). */
+export const RUN_NODE_MIME_TYPE = 'application/vnd.code.tree.ozRunNode';
+
+/**
+ * Allows the user to drag a {@link RunNode} from the OzBridge sidebar tree
+ * and drop it into a Copilot Chat input, creating an @oz prompt pre-filled
+ * with the run id.
+ *
+ * - `dragMimeTypes` declares what this controller can *produce* when items
+ *   are dragged out.
+ * - `dropMimeTypes` is empty because the tree does not accept drops.
+ */
+export class RunTreeDragAndDropController
+  implements vscode.TreeDragAndDropController<OzTreeNode>
+{
+  readonly dragMimeTypes = [RUN_NODE_MIME_TYPE, 'text/plain'];
+  readonly dropMimeTypes: string[] = [];
+
+  handleDrag(
+    source: readonly OzTreeNode[],
+    dataTransfer: vscode.DataTransfer,
+    _token: vscode.CancellationToken,
+  ): void {
+    const runNodes = source.filter((n): n is RunNode => n.kind === 'run');
+    if (runNodes.length === 0) {
+      return;
+    }
+    // Internal MIME: serialised run-id array for potential future tree drops.
+    dataTransfer.set(
+      RUN_NODE_MIME_TYPE,
+      new vscode.DataTransferItem(JSON.stringify(runNodes.map((n) => n.runId))),
+    );
+    // text/plain: a human-readable prompt the user can drop into chat.
+    const label = runNodes
+      .map((n) => `@oz /status ${n.runId}`)
+      .join('\n');
+    dataTransfer.set('text/plain', new vscode.DataTransferItem(label));
+  }
+
+  handleDrop(): void {
+    // Drop is intentionally a no-op: the tree only produces, never consumes.
+  }
+}

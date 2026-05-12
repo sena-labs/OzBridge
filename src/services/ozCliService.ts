@@ -979,7 +979,7 @@ export class OzCliService implements IOzCliService {
       });
 
       proc.on('error', (err) => {
-        cleanup();
+        try { cleanup(); } catch { /* prevent cleanup errors from masking the process error */ }
         if (settled) { return; }
         settled = true;
 
@@ -994,7 +994,7 @@ export class OzCliService implements IOzCliService {
       });
 
       proc.on('close', (code) => {
-        cleanup();
+        try { cleanup(); } catch { /* prevent cleanup errors from blocking close handler */ }
         if (settled) { return; }
         settled = true;
 
@@ -1388,7 +1388,7 @@ export class OzCliService implements IOzCliService {
    * colons, and common cron characters (*, /, comma).
    */
   private validateCliArg(value: string, paramName: string): void {
-    if (!/^[a-zA-Z0-9_.\-\s/:,*]+$/.test(value)) {
+    if (!/^[a-zA-Z0-9_.\- /:,*]+$/.test(value)) {
       throw new OzCliError(
         OzCliErrorKind.CLI_ERROR,
         `Invalid ${paramName}: contains disallowed characters`,

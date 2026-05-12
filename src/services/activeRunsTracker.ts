@@ -45,6 +45,8 @@ export class ActiveRunsTracker implements vscode.Disposable {
   private disposed = false;
   private starting = false;  // Guard flag to prevent multiple start() calls from running concurrently
   private inFlight: Promise<void> | undefined;
+  /** Disposables for the `vscode.workspace.createFileSystemWatcher` instances (one per glob). */
+  private readonly watcherDisposables: vscode.Disposable[] = [];
   /** Last raw CLI snapshot (lower-cased ids). */
   private lastCli: TrackedRun[] = [];
   /** Merged view: CLI snapshot + sticky overrides (exposed via {@link latest}). */
@@ -68,6 +70,15 @@ export class ActiveRunsTracker implements vscode.Disposable {
   constructor(
     private readonly cli: IOzCliService,
     private readonly intervalMs: number = 10_000,
+    /**
+     * Optional glob patterns passed to `vscode.workspace.createFileSystemWatcher`.
+     * When provided, any file-system event matching a pattern immediately triggers
+     * a poll (subject to the existing `inFlight` de-duplication guard). The
+     * `intervalMs` fallback timer is still active so the view stays live even
+     * when the watch directory is on a remote or network filesystem that does
+     * not deliver events reliably.
+     */
+    private readonly watchGlobs: ReadonlyArray<vscode.GlobPattern> = [],
   ) {}
 
   /** Most recent merged snapshot (CLI + sticky overrides). */
@@ -134,6 +145,23 @@ export class ActiveRunsTracker implements vscode.Disposable {
             this.inFlight = undefined;
           });
         }, this.intervalMs);
+
+        // Set up reactive file-system watchers (OPT-3). Events trigger an
+        // immediate tick, de-duplicated by the `inFlight` promise guard.
+        for (const glob of this.watchGlobs) {
+          if (typeof vscode.workspace.createFileSystemWatcher !== 'function') { break; }
+          const watcher = vscode.workspace.createFileSystemWatcher(glob);
+          const handler = () => {
+            if (this.inFlight || this.disposed) { return; }
+            this.inFlight = this.tick().finally(() => { this.inFlight = undefined; });
+          };
+          this.watcherDisposables.push(
+            watcher.onDidCreate(handler),
+            watcher.onDidChange(handler),
+            watcher.onDidDelete(handler),
+            watcher,
+          );
+        }
       }
     }).catch(() => {
       // tick() already emits errors via onDidError, just prevent unhandled rejection
@@ -147,6 +175,10 @@ export class ActiveRunsTracker implements vscode.Disposable {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = undefined;
+    }
+    // Dispose all file-system watchers created in start().
+    for (const d of this.watcherDisposables.splice(0)) {
+      try { d.dispose(); } catch { /* ignore */ }
     }
     // Also clear starting flag in case stop() is called while start() is in progress
     this.starting = false;
@@ -177,6 +209,8 @@ export class ActiveRunsTracker implements vscode.Disposable {
     if (this.disposed) { return; }
     try {
       const result = await this.cli.runList();
+      // Guard: dispose() may have been called while runList() was in flight.
+      if (this.disposed) { return; }
       // Normalise all ids to lower-case so they match banner-extracted UUIDs.
       // Filter out any runs with invalid IDs
       const cliRuns: TrackedRun[] = result.items
@@ -206,11 +240,13 @@ export class ActiveRunsTracker implements vscode.Disposable {
       // previous error — the latter ensures `StatusBarManager.renderError()`
       // is cleared even when the list content didn't change between polls.
       if (listChanged || recoveringFromError) {
+        if (this.disposed) { return; }
         this.last = next;
         this.errorState = false;
         this._onDidChange.fire([...next]);
       }
     } catch (err) {
+      if (this.disposed) { return; }
       this.errorState = true;
       this._onDidError.fire(err);
     }
@@ -243,7 +279,7 @@ export class ActiveRunsTracker implements vscode.Disposable {
 function sameList(a: ReadonlyArray<TrackedRun>, b: ReadonlyArray<TrackedRun>): boolean {
   if (a.length !== b.length) { return false; }
   for (let i = 0; i < a.length; i++) {
-    if (a[i].id !== b[i].id || a[i].status !== b[i].status) { return false; }
+    if (a[i]!.id !== b[i]!.id || a[i]!.status !== b[i]!.status) { return false; }
   }
   return true;
 }

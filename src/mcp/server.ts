@@ -21,6 +21,12 @@ export interface McpServerOptions {
    * scenario while preventing trivial DoS via reconnection loops.
    */
   maxSseSessions?: number;
+  /**
+   * Maximum lifetime in milliseconds for a single SSE session. When reached
+   * the server closes the connection and frees associated resources. Defaults
+   * to 1 800 000 (30 minutes). Configurable via `ozBridge.mcpSseMaxLifetimeMs`.
+   */
+  sseMaxLifetimeMs?: number;
 }
 
 export interface McpServerInfo {
@@ -70,7 +76,7 @@ export class McpServer {
   // line to every active SSE response, instead of one `setInterval` per session.
   private readonly sessionTimers = new Map<string, { maxLifetime: NodeJS.Timeout }>();
   private globalKeepalive?: NodeJS.Timeout;
-  private readonly options: Required<Pick<McpServerOptions, 'port' | 'bindAddress' | 'maxSseSessions'>> & Pick<McpServerOptions, 'bearerToken'>;
+  private readonly options: Required<Pick<McpServerOptions, 'port' | 'bindAddress' | 'maxSseSessions' | 'sseMaxLifetimeMs'>> & Pick<McpServerOptions, 'bearerToken'>;
 
   constructor(
     private readonly tools: Map<string, McpToolEntry>,
@@ -82,6 +88,7 @@ export class McpServer {
       bindAddress: options.bindAddress ?? '127.0.0.1',
       bearerToken: options.bearerToken,
       maxSseSessions: Math.max(1, options.maxSseSessions ?? 16),
+      sseMaxLifetimeMs: options.sseMaxLifetimeMs ?? 1_800_000,
     };
   }
 
@@ -246,7 +253,7 @@ export class McpServer {
     if (!header || Array.isArray(header)) { return false; }
     const match = /^Bearer\s+(.+)$/i.exec(header);
     if (!match) { return false; }
-    return timingSafeEqual(match[1], this.options.bearerToken ?? '');
+    return timingSafeEqual(match[1]!, this.options.bearerToken ?? '');
   }
 
   private openSseStream(_req: http.IncomingMessage, res: http.ServerResponse): void {
@@ -279,12 +286,13 @@ export class McpServer {
       }, 15_000);
     }
 
-    // Add maximum lifetime timer to prevent indefinite keepalive (30 minutes)
-    // This prevents resource leaks if the client never properly closes the connection
+    // Add maximum lifetime timer to prevent indefinite keepalive
+    // (configured via sseMaxLifetimeMs, default 30 minutes).
+    // This prevents resource leaks if the client never properly closes the connection.
     const maxLifetime = setTimeout(() => {
       this.cleanupSession(sessionId);
       try { res.end(); } catch { /* ignore */ }
-    }, 1_800_000);
+    }, this.options.sseMaxLifetimeMs);
 
     this.sessionTimers.set(sessionId, { maxLifetime });
 
@@ -372,7 +380,7 @@ function pickProtocolVersion(requested: unknown): string {
   if (typeof requested === 'string' && SUPPORTED_PROTOCOL_VERSIONS.includes(requested)) {
     return requested;
   }
-  return SUPPORTED_PROTOCOL_VERSIONS[0];
+  return SUPPORTED_PROTOCOL_VERSIONS[0]!;
 }
 
 /**

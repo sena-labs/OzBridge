@@ -166,6 +166,10 @@ export class DashboardPanel {
   // the second one's HTML overwrites the first — wasted work and a brief
   // flicker. The flag is reset in `refresh()`'s `finally` block.
   private refreshing = false;
+  // When a refresh is requested while one is already in-flight, set this
+  // flag so the finally block fires another refresh with the latest state
+  // (e.g. after stats.invalidate() was called mid-flight).
+  private refreshQueued = false;
 
   private constructor(
     private readonly panel: vscode.WebviewPanel,
@@ -225,13 +229,15 @@ export class DashboardPanel {
     if (this.disposed) {
       return;
     }
-    // C-M1: skip when an earlier refresh is still in-flight. Subsequent
-    // refresh requests after the current one completes will pick up any
-    // newer state (the webview message handler invalidates stats first).
+    // C-M1: skip when an earlier refresh is still in-flight, but remember
+    // to re-run once the current one completes so that any stats
+    // invalidated mid-flight are reflected in the final render.
     if (this.refreshing) {
+      this.refreshQueued = true;
       return;
     }
     this.refreshing = true;
+    this.refreshQueued = false;
     try {
       const summary = await this.stats.computeSummary(this.windowDays);
       if (this.disposed) {
@@ -257,6 +263,10 @@ export class DashboardPanel {
       this.panel.webview.html = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${this.panel.webview.cspSource} 'nonce-${nonce}'; img-src ${this.panel.webview.cspSource};" /><style nonce="${nonce}">body{font-family:var(--vscode-font-family);color:var(--vscode-errorForeground);padding:16px;} code{background:var(--vscode-textBlockQuote-background);padding:1px 4px;border-radius:3px;}</style></head><body><strong>Failed to load dashboard:</strong> ${escapeHtml(message)}${hint}</body></html>`;
     } finally {
       this.refreshing = false;
+      if (this.refreshQueued && !this.disposed) {
+        this.refreshQueued = false;
+        void this.refresh();
+      }
     }
   }
 

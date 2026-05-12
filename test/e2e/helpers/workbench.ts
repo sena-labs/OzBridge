@@ -7,11 +7,13 @@ import { Page, expect } from '@playwright/test';
 export async function listPaletteItems(win: Page, query: string): Promise<string[]> {
   const isMac = process.platform === 'darwin';
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
-  const input = win.locator('.quick-input-widget input.input');
+  const qiw = win.locator('.quick-input-widget');
+  await qiw.waitFor({ state: 'visible', timeout: 15_000 });
+  const input = qiw.locator('input.input');
   await input.waitFor({ state: 'visible', timeout: 15_000 });
   await input.fill(`>${query.replace(/…/g, '').trim()}`);
   await win.waitForTimeout(400);
-  const rows = win.locator('.quick-input-widget .monaco-list-row');
+  const rows = qiw.locator('.monaco-list-row');
   await expect(rows.first()).toBeVisible({ timeout: 15_000 });
   const count = await rows.count();
   const labels: string[] = [];
@@ -36,15 +38,36 @@ export async function closePalette(win: Page): Promise<void> {
  */
 export async function runExactCommand(win: Page, exactTitle: string): Promise<void> {
   const isMac = process.platform === 'darwin';
+  const qiw = win.locator('.quick-input-widget');
+  // If a previous quick-input is still visible (e.g. left by dismissOverlays
+  // after runPaletteCommand), pressing Ctrl+Shift+P would toggle it closed
+  // rather than open a fresh one, causing a 15s timeout.
+  if (await qiw.isVisible().catch(() => false)) {
+    await win.keyboard.press('Escape');
+    await qiw.waitFor({ state: 'hidden', timeout: 3_000 }).catch(() => {});
+    await win.waitForTimeout(150);
+  }
+  // Restore keyboard focus to the VS Code window (may be lost after
+  // a prior overlay was dismissed or window focus changed).
+  await win.bringToFront();
+  await win.waitForTimeout(100);
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
-  const input = win.locator('.quick-input-widget input.input');
-  await input.waitFor({ state: 'visible', timeout: 15_000 });
+  await qiw.waitFor({ state: 'visible', timeout: 15_000 });
   // Il filtro fuzzy può non gestire bene il glifo ellissi U+2026;
   // togliamolo dal pattern di ricerca.
   const query = exactTitle.replace(/…/g, '').trim();
-  await input.fill(`>${query}`);
+
+  // Avoid relying on `.fill()` visibility heuristics (VS Code sometimes keeps
+  // a non-visible quick-input <input> in the DOM while still accepting keyboard
+  // input). Drive the palette via keyboard instead.
+  await win.keyboard.press(isMac ? 'Meta+A' : 'Control+A').catch(() => {});
+  await win.keyboard.press('Backspace').catch(() => {});
+  await win.keyboard.type(`>${query}`, { delay: 10 });
   await win.waitForTimeout(350);
-  // Conferma il primo risultato.
+
+  // Prefer keyboard confirmation: VS Code's quick input list can exist but be
+  // considered "hidden" by Playwright during transitions; pressing Enter is
+  // more resilient than trying to click a row.
   await win.keyboard.press('Enter');
   // Attendi che la palette chiuda (la nuova UI può aprirsi subito dopo).
   await win.locator('.quick-input-widget').waitFor({ state: 'hidden', timeout: 4_000 }).catch(() => {});
@@ -65,11 +88,14 @@ export type PostCommandSignal =
 export async function waitForAnySignal(win: Page, timeoutMs = 8_000): Promise<PostCommandSignal | null> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    // Notification toast
-    const toast = win.locator('.notifications-toasts .notification-list-item-message, .notifications-toasts .notification-toast');
+    // Notification toast — VS Code 1.118+ renders these with role="alert";
+    // keep legacy CSS selector as fallback for older builds.
+    const toast = win.locator(
+      '[role="alert"], .notifications-toasts .notification-list-item-message, .notifications-toasts .notification-toast',
+    ).filter({ hasText: /\S/ });
     if (await toast.first().isVisible().catch(() => false)) {
       const text = (await toast.first().innerText().catch(() => '')).trim();
-      return { kind: 'notification', text };
+      if (text) return { kind: 'notification', text };
     }
     // Modal dialog
     const dialog = win.locator('.monaco-dialog-box .dialog-message-text');
@@ -116,13 +142,17 @@ export async function waitForFreshNotification(
   previousText: string | null,
   timeoutMs = 10_000,
 ): Promise<string | null> {
+  const normPrev = (previousText ?? '').trim().replace(/\s+/g, ' ');
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const toasts = win.locator('.notifications-toasts .notification-list-item-message');
+    const toasts = win.locator(
+      '[role="alert"], .notifications-toasts .notification-list-item-message',
+    ).filter({ hasText: /\S/ });
     const n = await toasts.count();
     for (let i = n - 1; i >= 0; i--) {
-      const t = (await toasts.nth(i).innerText().catch(() => '')).trim();
-      if (t && t !== (previousText ?? '')) return t;
+      const tRaw = (await toasts.nth(i).innerText().catch(() => '')).trim();
+      const t = tRaw.replace(/\s+/g, ' ');
+      if (t && t !== normPrev) return tRaw.trim();
     }
     await win.waitForTimeout(150);
   }
@@ -131,7 +161,9 @@ export async function waitForFreshNotification(
 
 /** Restituisce il testo dell'ultimo toast visibile, oppure null. */
 export async function lastNotificationText(win: Page): Promise<string | null> {
-  const toasts = win.locator('.notifications-toasts .notification-list-item-message');
+  const toasts = win.locator(
+    '[role="alert"], .notifications-toasts .notification-list-item-message',
+  ).filter({ hasText: /\S/ });
   const n = await toasts.count();
   if (n === 0) return null;
   return ((await toasts.nth(n - 1).innerText().catch(() => '')) || '').trim() || null;
@@ -159,7 +191,10 @@ export async function dismissOverlays(win: Page): Promise<void> {
   }
   // Pulisci tutte le notification toasts via comando dedicato (più
   // affidabile del click sull'icona di close che può essere intercettato).
-  const hasToasts = await win.locator('.notifications-toasts .notification-list-item').first().isVisible().catch(() => false);
+  // Check for visible notifications via ARIA role (VS Code 1.118+) or legacy CSS selector.
+  const hasToasts = await win.locator(
+    '[role="alert"], .notifications-toasts .notification-list-item',
+  ).filter({ hasText: /\S/ }).first().isVisible().catch(() => false);
   if (hasToasts) {
     await runPaletteCommand(win, 'Notifications: Clear All Notifications').catch(() => {});
     await win.waitForTimeout(300);
@@ -170,7 +205,9 @@ export async function dismissOverlays(win: Page): Promise<void> {
 async function runPaletteCommand(win: Page, title: string): Promise<void> {
   const isMac = process.platform === 'darwin';
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
-  const input = win.locator('.quick-input-widget input.input');
+  const qiw = win.locator('.quick-input-widget');
+  await qiw.waitFor({ state: 'visible', timeout: 5_000 });
+  const input = qiw.locator('input.input');
   await input.waitFor({ state: 'visible', timeout: 5_000 });
   await input.fill(`>${title}`);
   await win.waitForTimeout(200);

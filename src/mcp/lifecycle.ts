@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
 import { IConfigManager, IOzCliService, WarpBridgeConfig } from '../types/index.js';
-import { McpServer } from './server.js';
-import { buildToolRegistry } from './tools.js';
+// OPT-4: Type-only import — McpServer is loaded lazily via import('./mcp-bundle.js')
+// inside start(). The actual code lives in dist/mcp-bundle.js (separate esbuild chunk).
+import type { McpServer } from './server.js';
 import { logError, logInfo, logWarn } from '../services/logger.js';
 import { IMcpClientRegistrar, McpClientEndpoint } from './clientRegistration.js';
 import { ClaudeCodeRegistrar } from './registrars/claudeCodeRegistrar.js';
@@ -15,6 +16,7 @@ export interface McpConfig {
   bindAddress: string;
   bearerToken: string;
   maxSseSessions: number;
+  sseMaxLifetimeMs: number;
 }
 
 /** Extracts the `ozBridge.mcp.*` slice from the full config snapshot. */
@@ -42,6 +44,13 @@ export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
     bindAddress: full.mcpBindAddress || '127.0.0.1',
     bearerToken: full.mcpBearerToken || '',
     maxSseSessions,
+    sseMaxLifetimeMs:
+      typeof full.mcpSseMaxLifetimeMs === 'number'
+      && Number.isInteger(full.mcpSseMaxLifetimeMs)
+      && full.mcpSseMaxLifetimeMs >= 60_000
+      && full.mcpSseMaxLifetimeMs <= 86_400_000
+        ? full.mcpSseMaxLifetimeMs
+        : 1_800_000,
   };
 }
 
@@ -133,6 +142,9 @@ export class McpLifecycle implements vscode.Disposable {
       return;
     }
 
+    // OPT-4: Lazy-load the MCP server bundle (not in the main activation payload).
+    const { McpServer, buildToolRegistry } = await import('./mcp-bundle.js');
+
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
     const serverInfo = { name: 'oz-bridge', version: this.extensionVersion };
 
@@ -142,6 +154,7 @@ export class McpLifecycle implements vscode.Disposable {
         bindAddress: cfg.bindAddress,
         bearerToken: cfg.bearerToken || undefined,
         maxSseSessions: cfg.maxSseSessions,
+        sseMaxLifetimeMs: cfg.sseMaxLifetimeMs,
       });
       await server.start();
       this.server = server;
@@ -157,6 +170,7 @@ export class McpLifecycle implements vscode.Disposable {
             bindAddress: cfg.bindAddress,
             bearerToken: cfg.bearerToken || undefined,
             maxSseSessions: cfg.maxSseSessions,
+            sseMaxLifetimeMs: cfg.sseMaxLifetimeMs,
           });
           await fallbackServer.start();
           this.server = fallbackServer;
@@ -333,6 +347,7 @@ async function runRegistrarCommand(
       : vscode.l10n.t('OzBridge · Unregister MCP client'),
     placeHolder: vscode.l10n.t('Choose the client whose config file should be updated'),
     canPickMany: false,
+    ignoreFocusOut: true,
   });
   if (!picked || Array.isArray(picked)) { return; }
   const target = (picked as { registrar: IMcpClientRegistrar }).registrar;
