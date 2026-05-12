@@ -51,7 +51,10 @@ test('walkthrough: utente reale apre VS Code, sidebar, palette, dashboard, setti
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
   const input = win.locator('.quick-input-widget input.input');
   await input.waitFor({ state: 'visible', timeout: 15_000 });
-  await input.fill('>OzBridge');
+  await input.click();
+  await win.keyboard.press(isMac ? 'Meta+A' : 'Control+A');
+  await win.keyboard.press('Backspace');
+  await win.keyboard.type('>OzBridge');
   await win.waitForTimeout(900);
   const items = win.locator('.quick-input-widget .monaco-list-row');
   await expect(items.first()).toBeVisible({ timeout: 15_000 });
