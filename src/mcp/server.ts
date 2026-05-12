@@ -286,8 +286,9 @@ export class McpServer {
       }, 15_000);
     }
 
-    // Add maximum lifetime timer to prevent indefinite keepalive (30 minutes)
-    // This prevents resource leaks if the client never properly closes the connection
+    // Add maximum lifetime timer to prevent indefinite keepalive
+    // (configured via sseMaxLifetimeMs, default 30 minutes).
+    // This prevents resource leaks if the client never properly closes the connection.
     const maxLifetime = setTimeout(() => {
       this.cleanupSession(sessionId);
       try { res.end(); } catch { /* ignore */ }
