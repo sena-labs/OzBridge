@@ -182,4 +182,26 @@ describe('McpServer HTTP transport', () => {
     await server.stop();
     await server.stop(); // second call must not throw
   });
+
+  it('chiama close prima di forzare la chiusura delle connessioni', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0 });
+    await server.start();
+    const nodeServer = (server as unknown as { http: http.Server }).http;
+    const events: string[] = [];
+    const originalClose = nodeServer.close.bind(nodeServer);
+    const originalCloseAllConnections = nodeServer.closeAllConnections?.bind(nodeServer);
+
+    nodeServer.close = ((callback?: (err?: Error) => void) => {
+      events.push('close');
+      return originalClose(callback);
+    }) as http.Server['close'];
+    nodeServer.closeAllConnections = () => {
+      events.push('closeAllConnections');
+      originalCloseAllConnections?.();
+    };
+
+    await server.stop();
+
+    expect(events).toEqual(['close', 'closeAllConnections']);
+  });
 });
