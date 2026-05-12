@@ -23,7 +23,7 @@ export default defineConfig({
       exclude: ['packages/**'],
       // C-M5: Lock in current coverage as a regression floor. Values are
       // intentionally a few points below the latest measured totals
-      // (statements 88.5 / branches 81.1 / functions 92.0 / lines 89.7) to
+      // (statements 85.96 / branches 78.38 / functions 89.44 / lines 87.42) to
       // absorb local fluctuation while still flagging real drops.
       thresholds: {
         statements: 85,

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { OzRunsTreeProvider, OzTreeNode } from '../../src/ui/runsTreeProvider.js';
+import { OzRunsTreeProvider, OzTreeNode, RunTreeDragAndDropController, RUN_NODE_MIME_TYPE } from '../../src/ui/runsTreeProvider.js';
 import type { ActiveRunsTracker, TrackedRun } from '../../src/services/activeRunsTracker.js';
 import { createMockCli, makeListResult } from '../helpers.js';
 import * as vscodeMock from '../mocks/vscode.js';
@@ -166,5 +166,66 @@ describe('OzRunsTreeProvider', () => {
     const [s1, s2] = await provider.getChildren(scheduleCategory);
     expect(provider.getTreeItem(s1).contextValue).toBe('warpSchedule:running');
     expect(provider.getTreeItem(s2).contextValue).toBe('warpSchedule:paused');
+  });
+});
+
+// =============================================================================
+// RunTreeDragAndDropController
+// =============================================================================
+
+describe('RunTreeDragAndDropController', () => {
+  const mockRunNode = {
+    kind: 'run' as const,
+    id: 'run:abc',
+    label: 'abc',
+    runId: 'abc',
+    status: 'SUCCEEDED' as const,
+    active: false,
+  };
+
+  const mockCategoryNode = {
+    kind: 'category' as const,
+    id: 'category:history',
+    label: 'History',
+    category: 'history' as const,
+  };
+
+  const mockToken = {
+    isCancellationRequested: false,
+    onCancellationRequested: vi.fn(),
+  };
+
+  it('dovrebbe esporre dragMimeTypes con RUN_NODE_MIME_TYPE e text/plain', () => {
+    const ctrl = new RunTreeDragAndDropController();
+    expect(ctrl.dragMimeTypes).toContain(RUN_NODE_MIME_TYPE);
+    expect(ctrl.dragMimeTypes).toContain('text/plain');
+  });
+
+  it('dovrebbe esporre dropMimeTypes come array vuoto', () => {
+    const ctrl = new RunTreeDragAndDropController();
+    expect(ctrl.dropMimeTypes).toEqual([]);
+  });
+
+  it('dovrebbe popolare DataTransfer con entrambi i MIME per RunNode items', () => {
+    const ctrl = new RunTreeDragAndDropController();
+    const dt = new vscodeMock.DataTransfer();
+    ctrl.handleDrag([mockRunNode], dt as unknown as Parameters<typeof ctrl.handleDrag>[1], mockToken as never);
+    expect(dt.get(RUN_NODE_MIME_TYPE)).toBeDefined();
+    expect(dt.get('text/plain')).toBeDefined();
+    // The internal MIME carries the JSON-serialised run-id array.
+    expect(dt.get(RUN_NODE_MIME_TYPE)!.value).toBe(JSON.stringify([mockRunNode.runId]));
+  });
+
+  it('dovrebbe lasciare DataTransfer vuoto per nodi non-RunNode', () => {
+    const ctrl = new RunTreeDragAndDropController();
+    const dt = new vscodeMock.DataTransfer();
+    ctrl.handleDrag([mockCategoryNode], dt as unknown as Parameters<typeof ctrl.handleDrag>[1], mockToken as never);
+    expect(dt.get(RUN_NODE_MIME_TYPE)).toBeUndefined();
+    expect(dt.get('text/plain')).toBeUndefined();
+  });
+
+  it('dovrebbe ignorare handleDrop senza lanciare (no-op)', () => {
+    const ctrl = new RunTreeDragAndDropController();
+    expect(() => ctrl.handleDrop()).not.toThrow();
   });
 });

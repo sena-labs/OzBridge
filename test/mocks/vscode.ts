@@ -431,3 +431,20 @@ export const l10n = {
   bundle: undefined as Record<string, string> | undefined,
   uri: undefined as Uri | undefined,
 };
+
+// ---------------------------------------------------------------------------
+// DataTransfer / DataTransferItem (per TreeDragAndDropController)
+// ---------------------------------------------------------------------------
+export class DataTransferItem {
+  constructor(public readonly value: unknown) {}
+}
+
+export class DataTransfer {
+  private readonly _items = new Map<string, DataTransferItem>();
+  set(mimeType: string, item: DataTransferItem): void {
+    this._items.set(mimeType, item);
+  }
+  get(mimeType: string): DataTransferItem | undefined {
+    return this._items.get(mimeType);
+  }
+}

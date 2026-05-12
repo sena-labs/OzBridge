@@ -31,13 +31,9 @@ import { DatasetExportService, DatasetFormat } from './services/datasetExport.js
 import { initLogger, logInfo, logError } from './services/logger.js';
 import { createTelemetryReporter, ITelemetryReporter } from './services/telemetry.js';
 import { getErrorMessage } from './utils/error.js';
-import { StartupCoordinator } from './services/startupCoordinator.js';
+import { StartupCoordinator, type StartupGateResult } from './services/startupCoordinator.js';
 
-type StartupGateResult = {
-  allowed?: boolean;
-  reason?: string;
-  [key: string]: unknown;
-};
+
 
 
 /**
@@ -52,6 +48,33 @@ function detectHost(): string {
     return 'vscode';
   }
   return 'unknown';
+}
+
+// ---------------------------------------------------------------------------
+// Cursor-specific MCP API stubs
+// Cursor AI editor exposes `vscode.cursor.mcp` for in-editor MCP registration.
+// These helpers are no-ops in regular VS Code where the API is absent.
+// ---------------------------------------------------------------------------
+
+interface CursorMcpApi {
+  registerServer?: (name: string, url: string) => void;
+  unregisterServer?: (name: string) => void;
+}
+
+function getCursorMcp(): CursorMcpApi | undefined {
+  return (vscode as unknown as { cursor?: { mcp?: CursorMcpApi } }).cursor?.mcp;
+}
+
+function canRegisterCursorMcpServers(): boolean {
+  return typeof getCursorMcp()?.registerServer === 'function';
+}
+
+function registerCursorMcpServer(endpoint: string): void {
+  getCursorMcp()?.registerServer?.(MCP_SERVER_NAME, endpoint);
+}
+
+function unregisterCursorMcpServer(name: string): void {
+  getCursorMcp()?.unregisterServer?.(name);
 }
 
 /**
@@ -470,7 +493,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Cursor integration (official): register OzBridge MCP server via `vscode.cursor.mcp.registerServer`.
   // This enables Cursor Agent to discover and call OzBridge tools through MCP (not via `@oz`).
-  if (host.kind === 'cursor' && canRegisterCursorMcpServers()) {
+  if (host === 'cursor' && canRegisterCursorMcpServers()) {
     // Ensure we always unregister when the extension is deactivated/reloaded.
     context.subscriptions.push({
       dispose: () => {
@@ -513,7 +536,7 @@ export function activate(context: vscode.ExtensionContext): void {
         // Ensure the local MCP server is running so we can provide a stable URL to Cursor.
         await mcp.start();
         const endpoint = buildLocalEndpoint(mcp, cfgMgr);
-        registerCursorMcpServer(endpoint);
+        registerCursorMcpServer(endpoint.url);
         state.cursorMcpRegistered = true;
       })();
 
@@ -600,7 +623,6 @@ export function activate(context: vscode.ExtensionContext): void {
       env: { isTelemetryEnabled: vscode.env.isTelemetryEnabled ?? false },
       connectionString: telemetryConnectionString,
       version: extensionVersion,
-      sampleRate: context.extensionMode === vscode.ExtensionMode.Production ? 0.1 : 1.0,
     });
     state.telemetry.track('extensionActivated', { version: extensionVersion });
   });
