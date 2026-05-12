@@ -225,11 +225,27 @@ describe('McpServer SSE — session caps and lifetime', () => {
    * Opens a GET /sse connection and resolves once the `endpoint` event is
    * received (session fully established server-side).
    */
-  function openSseConnection(port: number): Promise<{
+  function openSseConnection(port: number, timeoutMs = 5_000): Promise<{
     close: () => void;
     onClosed: Promise<void>;
   }> {
     return new Promise((resolve, reject) => {
+      let settled = false;
+
+      const rejectOnce = (err: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(connectTimer);
+        req.destroy();
+        reject(err);
+      };
+
+      const connectTimer = setTimeout(() => {
+        rejectOnce(
+          new Error(`openSseConnection: timed out after ${timeoutMs} ms waiting for endpoint event`),
+        );
+      }, timeoutMs);
+
       const req = http.request(
         {
           host: '127.0.0.1',
@@ -241,18 +257,17 @@ describe('McpServer SSE — session caps and lifetime', () => {
         (res) => {
           if (res.statusCode !== 200) {
             res.resume();
-            reject(new Error(`/sse → ${res.statusCode}`));
+            rejectOnce(new Error(`/sse → ${res.statusCode}`));
             return;
           }
           let closedResolve!: () => void;
           const onClosed = new Promise<void>((r) => { closedResolve = r; });
           res.on('close', () => closedResolve());
           res.on('end',   () => closedResolve());
-          let resolved = false;
           let buffer = '';
 
           const processBuffer = () => {
-            while (!resolved) {
+            while (!settled) {
               const crlfIndex = buffer.indexOf('\r\n\r\n');
               const lfIndex = buffer.indexOf('\n\n');
               let frameEnd = -1;
@@ -280,32 +295,33 @@ describe('McpServer SSE — session caps and lifetime', () => {
                 .trim();
 
               if (eventName === 'endpoint') {
-                resolved = true;
+                settled = true;
+                clearTimeout(connectTimer);
                 resolve({ close: () => req.destroy(), onClosed });
               }
             }
           };
 
           res.on('data', (chunk: Buffer) => {
-            if (resolved) {
+            if (settled) {
               return;
             }
             buffer += chunk.toString('utf8');
             processBuffer();
           });
           res.on('end', () => {
-            if (!resolved) {
-              reject(new Error('SSE stream ended before endpoint event was received'));
+            if (!settled) {
+              rejectOnce(new Error('SSE stream ended before endpoint event was received'));
             }
           });
           res.on('close', () => {
-            if (!resolved) {
-              reject(new Error('SSE stream closed before endpoint event was received'));
+            if (!settled) {
+              rejectOnce(new Error('SSE stream closed before endpoint event was received'));
             }
           });
         },
       );
-      req.on('error', reject);
+      req.on('error', (err) => rejectOnce(err));
       req.end();
     });
   }
