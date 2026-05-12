@@ -13,7 +13,7 @@ import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
 import { registerOzTools } from './tools/index.js';
 import { StatusBarManager } from './ui/statusBarItem.js';
-import { OzRunsTreeProvider } from './ui/runsTreeProvider.js';
+import { OzRunsTreeProvider, RunTreeDragAndDropController } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
 import { McpLifecycle, registerMcpCommands, MCP_SERVER_NAME, buildLocalEndpoint } from './mcp/lifecycle.js';
@@ -31,6 +31,7 @@ import { DatasetExportService, DatasetFormat } from './services/datasetExport.js
 import { initLogger, logInfo, logError } from './services/logger.js';
 import { createTelemetryReporter, ITelemetryReporter } from './services/telemetry.js';
 import { getErrorMessage } from './utils/error.js';
+import { StartupCoordinator } from './services/startupCoordinator.js';
 
 type StartupGateResult = {
   allowed?: boolean;
@@ -38,16 +39,6 @@ type StartupGateResult = {
   [key: string]: unknown;
 };
 
-/**
- * Local compatibility shim used when the dedicated startup coordinator module
- * is not present in the source tree. It preserves existing wiring points in
- * this file without introducing a missing-module build failure.
- */
-class StartupCoordinator {
-  [key: string]: unknown;
-
-  public constructor(..._args: unknown[]) {}
-}
 
 /**
  * Best-effort host detection fallback used when the dedicated host utility
