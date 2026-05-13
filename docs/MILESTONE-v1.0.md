@@ -4,7 +4,7 @@
 **Integration branch:** none (incremental PRs into `main`)
 **Release branch (after ship):** `release/v1.0.x`
 **Depends on:** `v0.9.0` (Reach — l10n, walkthrough, dual publish, CI matrix, contrib docs) on `main`.
-**Latest snapshot:** [`v0.9.0`](https://github.com/sena-labs/warp-vsc-bridge/releases/tag/v0.9.0)
+**Latest snapshot:** `v1.0 HEAD` (`main`)
 
 ## Strategic message
 
@@ -23,25 +23,19 @@ high-contrast support.
 
 | Id  | Deliverable                                              | Status         | Sub-branch                         | PR  |
 | --- | -------------------------------------------------------- | -------------- | ---------------------------------- | --- |
-| P   | Telemetry opt-in (`@vscode/extension-telemetry`)         | 🟡 **Planned** | `feat/v1.0-telemetry`              | —   |
-| Q   | Security gates (CodeQL + dependency scanning + PRIVACY)  | 🟡 **Planned** | `feat/v1.0-security`               | —   |
-| R   | Performance budgets enforced in CI                       | 🟡 **Planned** | `feat/v1.0-perf-budgets`           | —   |
-| S   | Accessibility pass (WCAG 2.1 AA) on every webview        | 🟡 **Planned** | `feat/v1.0-a11y`                   | —   |
-| T   | Kill-switch + LTS commitment + release ceremony          | 🟡 **Planned** | `feat/v1.0-killswitch-lts`         | —   |
+| P   | Telemetry opt-in (`@vscode/extension-telemetry`)         | ✅ **Done**    | `main`                             | —   |
+| Q   | Security gates (CodeQL + dependency scanning + PRIVACY)  | ✅ **Done**    | `main`                             | —   |
+| R   | Performance budgets enforced in CI                       | ✅ **Done**    | `main`                             | —   |
+| S   | Accessibility pass (WCAG 2.1 AA) on every webview        | ✅ **Done**    | `main`                             | —   |
+| T   | Kill-switch + LTS commitment + release ceremony          | ✅ **Done**    | `main`                             | —   |
 
-Current metrics at integration HEAD (`main` @ `v0.9.0`):
+Current metrics at integration HEAD (`main` @ v1.0):
 
 - `tsc --noEmit` strict: clean.
-- `vitest`: **1029 / 1029** deterministic.
-- `dist/extension.js`: **99.99 KB** (125 KB v0.9 budget — **80 % used**).
+- `vitest`: **1378 / 1378** deterministic.
+- `dist/extension.js`: budget **≤ 155 KB** (enforced by `bundle-budget.yml`; raised from 145 KB after dashboard webview redesign).
 - VSIX: ~149 KB.
-- Locales: en, it, es.
-
-> ⚠️ **Bundle pressure.** Telemetry SDK (`@vscode/extension-telemetry`)
-> adds ~6 KB minified, accessibility helpers ~2 KB, kill-switch reader
-> ~1 KB. Combined headroom against the 125 KB cap is ~16 KB —
-> sufficient but tight. Every PR continues to report bundle size in
-> the description.
+- Locales: en, it, es, de, fr, zh-cn.
 
 ## Deliverable P — Telemetry opt-in
 
@@ -118,7 +112,7 @@ regresses past the documented budgets:
 | Activation                | ≤ 200 ms |
 | Sidebar first-paint       | ≤ 300 ms |
 | Steady-state memory       | ≤ 50 MB  |
-| Bundle (`extension.js`)   | ≤ 125 KB |
+| Bundle (`extension.js`)   | ≤ 155 KB |
 
 ### Contract
 
@@ -127,8 +121,7 @@ regresses past the documented budgets:
   `ExtensionContext`.
 - `.github/workflows/perf-budget.yml` runs the suite and emits a job
   summary table. Failures hard-block the PR.
-- `dist/extension.js ≤ 125 KB` continues to be enforced by
-  `bundle-budget.yml` (already shipped in v0.9 deliverable N).
+- `dist/extension.js ≤ 155 KB` enforced by `bundle-budget.yml`.
 
 ### Implementation
 

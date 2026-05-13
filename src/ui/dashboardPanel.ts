@@ -44,9 +44,26 @@ export function renderSparkline(values: ReadonlyArray<number>, width = 280, heig
       return `${x},${y}`;
     })
     .join(' ');
+  // Area fill path: trace points then close back along the bottom
+  const areaPoints = values
+    .map((v, i) => {
+      const x = (i * stepX).toFixed(2);
+      const y = (height - (v / max) * height).toFixed(2);
+      return `${x},${y}`;
+    })
+    .join(' L ');
+  const firstX = '0.00';
+  const lastX = ((values.length - 1) * stepX).toFixed(2);
   return [
     `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" class="sparkline" aria-hidden="true">`,
-    `<polyline fill="none" stroke="var(--vscode-charts-blue)" stroke-width="2" points="${points}" />`,
+    `<defs>`,
+    `<linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">`,
+    `<stop offset="0%" stop-color="var(--vscode-charts-blue)" stop-opacity="0.35"/>`,
+    `<stop offset="100%" stop-color="var(--vscode-charts-blue)" stop-opacity="0"/>`,
+    `</linearGradient>`,
+    `</defs>`,
+    `<path fill="url(#sg)" d="M ${areaPoints} L ${lastX},${height} L ${firstX},${height} Z" />`,
+    `<polyline fill="none" stroke="var(--vscode-charts-blue)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" points="${points}" />`,
     '</svg>',
   ].join('');
 }
@@ -62,15 +79,18 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
   const sparkline = renderSparkline(totals);
   const generatedAt = new Date().toISOString();
 
+  const maxTotal = Math.max(1, ...summary.buckets.map((b) => b.total));
   const rows = summary.buckets
     .map((b) => {
+      const barPct = Math.round((b.total / maxTotal) * 100);
       return [
         '<tr>',
-        `<td>${escapeHtml(b.date)}</td>`,
+        `<td class="date">${escapeHtml(b.date)}</td>`,
         `<td class="num">${b.total}</td>`,
         `<td class="num ok">${b.succeeded}</td>`,
         `<td class="num err">${b.failed}</td>`,
         `<td class="num inf">${b.inFlight}</td>`,
+        `<td class="bar-cell"><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${barPct}%"></div></div></div></td>`,
         '</tr>',
       ].join('');
     })
@@ -83,39 +103,215 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'nonce-${nonce}'; script-src 'nonce-${nonce}'; img-src ${cspSource};" />
 <title>OzBridge — Dashboard</title>
 <style nonce="${nonce}">
-  body { font-family: var(--vscode-font-family); color: var(--vscode-foreground); background: var(--vscode-editor-background); margin: 0; padding: 16px; }
-  h1 { font-size: 1.2em; margin: 0 0 12px 0; }
-  .meta { color: var(--vscode-descriptionForeground); font-size: 0.85em; margin-bottom: 16px; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .card { background: var(--vscode-editorWidget-background); border: 1px solid var(--vscode-editorWidget-border); border-radius: 4px; padding: 12px; }
-  .card h2 { font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.05em; color: var(--vscode-descriptionForeground); margin: 0 0 6px 0; font-weight: normal; }
-  .card .v { font-size: 1.8em; font-weight: 600; }
-  .sparkline { width: 100%; height: 48px; display: block; margin-top: 8px; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-  th, td { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--vscode-editorWidget-border); }
-  th { color: var(--vscode-descriptionForeground); font-weight: normal; }
+  :root {
+    --bg: var(--vscode-editor-background);
+    --fg: var(--vscode-foreground);
+    --fg-muted: var(--vscode-descriptionForeground);
+    --widget-bg: var(--vscode-editorWidget-background);
+    --widget-border: var(--vscode-editorWidget-border, rgba(128,128,128,0.3));
+    --accent: var(--vscode-charts-blue);
+    --ok: var(--vscode-charts-green);
+    --err: var(--vscode-charts-red);
+    --warn: var(--vscode-charts-yellow);
+    --btn-bg: var(--vscode-button-background);
+    --btn-fg: var(--vscode-button-foreground);
+    --btn-hover: var(--vscode-button-hoverBackground);
+    --font: var(--vscode-font-family);
+    --font-mono: var(--vscode-editor-font-family, 'Cascadia Code', 'Fira Code', monospace);
+    --radius: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    font-size: 13px;
+    color: var(--fg);
+    background: var(--bg);
+    margin: 0;
+    padding: 20px 24px 32px;
+    line-height: 1.6;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header h1 {
+    font-size: 1.25em;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+  }
+  .header h1::before {
+    content: '';
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .meta {
+    color: var(--fg-muted);
+    font-size: 0.85em;
+    font-family: var(--font-mono);
+    margin-bottom: 18px;
+    opacity: 0.8;
+  }
+
+  /* ── Actions ─────────────────────────────────────────────────── */
+  .actions { margin-bottom: 16px; }
+  button {
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    border: none;
+    padding: 6px 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    letter-spacing: 0.03em;
+    transition: background 0.12s;
+  }
+  button:hover { background: var(--btn-hover); }
+  button:active { opacity: 0.8; }
+
+  /* ── KPI Cards ───────────────────────────────────────────────── */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: var(--widget-bg);
+    border: 1px solid var(--widget-border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.3s ease both;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: var(--card-accent, var(--accent));
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .card--ok { --card-accent: var(--ok); }
+  .card--err { --card-accent: var(--err); }
+  .card--inflight { --card-accent: var(--warn); }
+  .card--wide { grid-column: span 2; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .card h2 {
+    font-size: 0.77em;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--fg-muted);
+    margin: 0 0 8px 0;
+    font-weight: 600;
+  }
+  .card .v {
+    font-size: 2.2em;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .card .v-ok  { color: var(--ok); }
+  .card .v-err { color: var(--err); }
+
+  /* ── Sparkline ───────────────────────────────────────────────── */
+  .sparkline { width: 100%; height: 52px; display: block; margin-top: 6px; }
+
+  /* ── Table ───────────────────────────────────────────────────── */
+  .table-wrap {
+    border: 1px solid var(--widget-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    animation: fadeUp 0.3s ease 0.1s both;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92em;
+  }
+  thead { background: var(--widget-bg); }
+  th {
+    padding: 9px 14px;
+    text-align: left;
+    color: var(--fg-muted);
+    font-weight: 600;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--widget-border);
+    font-family: var(--font-mono);
+  }
+  th.num { text-align: right; }
+  tbody tr {
+    border-bottom: 1px solid var(--widget-border);
+    transition: background 0.1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--widget-bg); }
+  td {
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 0.95em;
+  }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  td.ok { color: var(--vscode-charts-green); }
-  td.err { color: var(--vscode-charts-red); }
-  td.inf { color: var(--vscode-charts-blue); }
-  button { background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: none; padding: 6px 14px; cursor: pointer; border-radius: 2px; font-family: inherit; }
-  button:hover { background: var(--vscode-button-hoverBackground); }
-  .actions { margin-bottom: 12px; }
+  td.ok  { color: var(--ok); }
+  td.err { color: var(--err); }
+  td.inf { color: var(--warn); }
+  td.date { font-family: var(--font-mono); color: var(--fg-muted); font-size: 0.9em; }
+
+  /* ── Bar sparkbars in table ──────────────────────────────────── */
+  .bar-cell { width: 90px; padding-right: 14px; }
+  .bar-wrap { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+  .bar-track { flex: 1; height: 4px; background: var(--widget-border); border-radius: 2px; overflow: hidden; min-width: 36px; }
+  .bar-fill  { height: 100%; border-radius: 2px; background: var(--accent); }
 </style>
 </head>
 <body>
-<h1>OzBridge — Dashboard</h1>
-<div class="meta">Window: ${summary.windowDays} days · Generated: ${escapeHtml(generatedAt)}${summary.undatedCount > 0 ? ` · Undated runs: ${summary.undatedCount}` : ''}</div>
-<div class="actions"><button id="refresh" type="button">Refresh</button></div>
+<div class="header">
+  <h1>OzBridge Dashboard</h1>
+</div>
+<div class="meta">window: ${summary.windowDays}d &nbsp;·&nbsp; ${escapeHtml(generatedAt)}${summary.undatedCount > 0 ? ` &nbsp;·&nbsp; undated: ${summary.undatedCount}` : ''}</div>
+<div class="actions"><button id="refresh" type="button">↺ Refresh</button></div>
 <div class="cards">
   <div class="card"><h2>Total runs</h2><div class="v">${summary.totalRuns}</div></div>
-  <div class="card"><h2>Success rate</h2><div class="v">${successPct}%</div></div>
-  <div class="card" style="grid-column: span 2;"><h2>Daily volume</h2>${sparkline || '<div class="meta">No data</div>'}</div>
+  <div class="card card--ok"><h2>Success rate</h2><div class="v v-ok">${successPct}%</div></div>
+  <div class="card card--err"><h2>Failed</h2><div class="v v-err">${summary.buckets.reduce((s, b) => s + b.failed, 0)}</div></div>
+  <div class="card card--inflight"><h2>In-flight</h2><div class="v">${summary.buckets.reduce((s, b) => s + b.inFlight, 0)}</div></div>
+  <div class="card card--wide"><h2>Daily volume</h2>${sparkline || '<div class="meta" style="padding-top:4px">no data</div>'}</div>
 </div>
+<div class="table-wrap">
 <table>
-  <thead><tr><th>Date</th><th class="num">Total</th><th class="num">OK</th><th class="num">Failed</th><th class="num">In-flight</th></tr></thead>
+  <thead><tr><th>Date</th><th class="num">Total</th><th class="num">OK</th><th class="num">Failed</th><th class="num">In-flight</th><th></th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
+</div>
 <script nonce="${nonce}">
   const vscode = acquireVsCodeApi();
   document.getElementById('refresh').addEventListener('click', () => {

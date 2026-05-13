@@ -101,15 +101,15 @@ describe('renderDashboardHtml', () => {
 
   it('mentions undated count when > 0', () => {
     const html = renderDashboardHtml(sampleSummary, 'N', 'csp');
-    expect(html).toContain('Undated runs: 1');
+    expect(html).toContain('undated: 1');
   });
 
   it('omits undated count when 0', () => {
     const html = renderDashboardHtml({ ...sampleSummary, undatedCount: 0 }, 'N', 'csp');
-    expect(html).not.toContain('Undated runs');
+    expect(html).not.toContain('undated:');
   });
 
-  it('shows "No data" placeholder when buckets are empty', () => {
+  it('shows "no data" placeholder when buckets are empty', () => {
     const empty: RunStatsSummary = {
       windowDays: 7,
       totalRuns: 0,
@@ -118,7 +118,7 @@ describe('renderDashboardHtml', () => {
       undatedCount: 0,
     };
     const html = renderDashboardHtml(empty, 'N', 'csp');
-    expect(html).toContain('No data');
+    expect(html).toContain('no data');
   });
 
   it('escapes injected text', () => {

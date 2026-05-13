@@ -21,8 +21,8 @@ describe('v1.0 milestone bootstrap', () => {
     expect(MILESTONE).toMatch(/v0\.9\.0/);
   });
 
-  it('records the 125 KB bundle budget carry-over', () => {
-    expect(MILESTONE).toMatch(/125\s*KB/);
+  it('records the bundle budget', () => {
+    expect(MILESTONE).toMatch(/1[45][05]\s*KB/);
   });
 
   it('documents the telemetry deny list invariant', () => {

@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   check-bundle-size:
-    name: Assert dist/extension.js ≤ 145 KB
+    name: Assert dist/extension.js ≤ 155 KB
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,21 +33,21 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
-      - name: Enforce 145 KB bundle budget
+      - name: Enforce 155 KB bundle budget
         run: |
-          BUDGET_BYTES=$((145 * 1024))
+          BUDGET_BYTES=$((155 * 1024))
           if [ ! -f dist/extension.js ]; then
             echo "::error::dist/extension.js was not produced"
             exit 1
           fi
           SIZE=$(wc -c < dist/extension.js)
           KB=$(awk "BEGIN { printf \"%.2f\", $SIZE/1024 }")
-          echo "Bundle size: ${SIZE} bytes (${KB} KB) · budget: 145.00 KB"
+          echo "Bundle size: ${SIZE} bytes (${KB} KB) · budget: 155.00 KB"
           echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
           echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
           echo "| Bundle size | ${KB} KB |" >> "$GITHUB_STEP_SUMMARY"
-          echo "| Budget | 145.00 KB |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Budget | 155.00 KB |" >> "$GITHUB_STEP_SUMMARY"
           if [ "$SIZE" -gt "$BUDGET_BYTES" ]; then
-            echo "::error::Bundle size ${KB} KB exceeds the 145 KB budget"
+            echo "::error::Bundle size ${KB} KB exceeds the 155 KB budget"
             exit 1
           fi

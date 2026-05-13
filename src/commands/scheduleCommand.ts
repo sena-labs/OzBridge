@@ -6,6 +6,10 @@ import {
 } from '../types/index.js';
 import { OutputFormatter } from '../parsers/outputFormatter.js';
 
+const MAX_SCHEDULE_NAME_LEN = 100;
+const MAX_CRON_LEN = 128;
+const MAX_PROMPT_LEN = 4_096;
+
 /**
  * Parses a single quoted argument starting at the beginning of `s`.
  *
@@ -56,7 +60,14 @@ function parseCreateArgs(
   const promptArg = parseQuotedArg(rest);
   if (!promptArg || promptArg.rest.trim() !== '') { return null; }
 
-  return { name: nameMatch[1], cron: cronArg.value, prompt: promptArg.value };
+  const parsedName = nameMatch[1];
+  const parsedCron = cronArg.value;
+  const parsedPrompt = promptArg.value;
+  if (parsedName.length > MAX_SCHEDULE_NAME_LEN || parsedCron.length > MAX_CRON_LEN || parsedPrompt.length > MAX_PROMPT_LEN) {
+    return null;
+  }
+
+  return { name: parsedName, cron: parsedCron, prompt: parsedPrompt };
 }
 
 /**
@@ -84,6 +95,13 @@ function parseUpdateArgs(
     if (flag === '--name') { result.name = arg.value; }
     else if (flag === '--cron') { result.cron = arg.value; }
     else if (flag === '--prompt') { result.prompt = arg.value; }
+  }
+  if (
+    (result.name !== undefined && result.name.length > MAX_SCHEDULE_NAME_LEN) ||
+    (result.cron !== undefined && result.cron.length > MAX_CRON_LEN) ||
+    (result.prompt !== undefined && result.prompt.length > MAX_PROMPT_LEN)
+  ) {
+    return null;
   }
   return result;
 }

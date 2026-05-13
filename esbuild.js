@@ -8,9 +8,10 @@ const watch = process.argv.includes('--watch');
 
 // HIGH-1 (AUDIT-ROADMAP-v1.2): hard cap on the production bundle so
 // CI fails before a regression ships to the Marketplace. The current
-// bundle is ~120 KB; we leave ~10 KB headroom. Override with
-// OZBRIDGE_BUNDLE_MAX_KB if you intentionally need more space.
-const BUNDLE_MAX_KB = Number(process.env.OZBRIDGE_BUNDLE_MAX_KB) || 145;
+// bundle is ~151 KB after dashboard webview redesign (v1.1); we leave
+// ~4 KB headroom. Override with OZBRIDGE_BUNDLE_MAX_KB if you intentionally
+// need more space.
+const BUNDLE_MAX_KB = Number(process.env.OZBRIDGE_BUNDLE_MAX_KB) || 155;
 
 /** @type {import('esbuild').BuildOptions} */
 const buildOptions = {
