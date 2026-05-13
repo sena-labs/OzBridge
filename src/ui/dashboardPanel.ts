@@ -125,7 +125,7 @@ export function renderDashboardHtml(summary: RunStatsSummary, nonce: string, csp
 
   body {
     font-family: var(--font);
-    font-size: 13px;
+    font-size: 15px;
     color: var(--fg);
     background: var(--bg);
     margin: 0;

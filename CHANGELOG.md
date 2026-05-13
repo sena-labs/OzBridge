@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-05-13
+
 ### Added
 - **Schedule editing.** New `cli.scheduleGet` / `cli.scheduleUpdate`
   service methods plus `/schedule get <id>` and
@@ -32,6 +34,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`ozBridge.tree.copySecretName`). On older Warp CLIs that do not
   expose the `secret` subcommand the category degrades to an
   informational message instead of breaking the tree.
+- **Empty-state guidance.** Both sidebar views (`ozBridge.runsView`
+  and `ozBridge.driveView`) now show a `viewsWelcome` message with a
+  direct link to `@oz /run` when they contain no items, instead of
+  rendering a blank tree.
+- **`getParent()` on tree providers.** Both `OzRunsTreeProvider` and
+  `DriveTreeProvider` now implement `getParent()`, enabling
+  `treeView.reveal()` to work correctly (required for future
+  "reveal run" deep-links from chat responses).
+- **Marketplace capabilities metadata.** Added
+  `capabilities.untrustedWorkspaces` and
+  `capabilities.virtualWorkspaces` to `package.json`, preventing
+  the "Limited Mode" badge on the Marketplace and ensuring correct
+  behavior in restricted workspaces.
+
+### Changed
+- **`oz agent run --continue` → `--conversation`.** The upstream Oz
+  CLI exposes the resume flag as `--conversation <ID>`, not
+  `--continue`. Calling `agentContinue()` now passes the correct
+  flag; the previous invocation always failed with an unrecognized
+  argument error. (`RunSteerer` fallback still activates for CLIs
+  that do not support the flag.)
+- **Tree category collapse state persisted.** Each sidebar category
+  (active runs, history, schedules, secrets, environments, MCP) now
+  remembers its expanded/collapsed state across window reloads via
+  `globalState`.
+- **Chat handler top-level error boundary.** Any uncaught exception
+  thrown by a sub-command handler now surfaces as a friendly
+  `❌ /command failed: …` markdown message in the chat stream instead
+  of VS Code's red error banner. `CancellationError` is re-thrown
+  unchanged so the host can react correctly.
+- **Status bar tooltip fully localised.** All strings in
+  `buildTooltip()` are now wrapped in `vscode.l10n.t()` and present
+  in all six locale bundles (en, de, es, fr, it, zh-cn).
+- **LM tools input validation.** `oz_list_runs` now rejects
+  non-integer or non-positive `limit` values with a user-friendly
+  message before calling the CLI.
+- **Environment variable blocklist extended.** Added
+  `GITLAB_TOKEN`, `JIRA_API_TOKEN`, `SLACK_TOKEN`, `STRIPE_SECRET_KEY`,
+  `STRIPE_PUBLISHABLE_KEY`, `TWILIO_AUTH_TOKEN`, `TWILIO_ACCOUNT_SID`
+  to the list of variables redacted before passing the environment
+  to child processes.
+- **Windows process-tree termination.** On Windows, when the CLI
+  subprocess was started with `shell: true`, SIGTERM does not
+  propagate to child processes. The termination path now invokes
+  `taskkill /T /F /PID` to reliably reap the entire process tree.
+- **Activation events trimmed.** Removed all redundant
+  `onCommand:*` activation events (auto-handled by VS Code 1.74+);
+  only participant, view, and LM-tool events are retained, reducing
+  the manifest and startup log noise.
 
 ### Security
 - Secret values are piped through **stdin only** when invoking
@@ -41,6 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   performs the write and immediately closes the stream; failures are
   swallowed with a warning so the spawn lifecycle remains
   deterministic.
+- Status bar tooltip no longer sets `MarkdownString.isTrusted = true`,
+  eliminating the risk of a crafted CLI run ID injecting trusted
+  command links into the tooltip.
 
 ### Fixed
 - `/schedule update <id> --name "…"` now correctly skips the schedule
