@@ -29,6 +29,11 @@ packages/**
 # Unreferenced placeholder hero asset (only emitted by scripts/generate_media.py)
 media/screenshot.svg
 
+# Runtime artefacts (never ship)
+test-results/**
+.claude/**
+.remember/**
+
 # Misc
 node_modules/**
 
@@ -50,6 +55,10 @@ scripts/**
 
 # PR body scratchpad (local-only, never ships to Marketplace)
 pr-body.md
+
+# Local databases and test scripts
+*.db
+test-*.ps1
 
 # Internal audit reports (developer-only, never ship to Marketplace)
 AUDIT_REPORT*.md

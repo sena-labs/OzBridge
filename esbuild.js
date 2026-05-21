@@ -13,11 +13,9 @@ const watch = process.argv.includes('--watch');
 // need more space.
 const BUNDLE_MAX_KB = Number(process.env.OZBRIDGE_BUNDLE_MAX_KB) || 155;
 
-/** @type {import('esbuild').BuildOptions} */
-const buildOptions = {
-  entryPoints: ['src/extension.ts'],
+/** Shared base options for both extension and mcp-bundle chunks. */
+const baseOptions = {
   bundle: true,
-  outfile: 'dist/extension.js',
   external: ['vscode'],
   format: 'cjs',
   platform: 'node',
@@ -27,16 +25,42 @@ const buildOptions = {
   treeShaking: true,
 };
 
+/** @type {import('esbuild').BuildOptions} */
+const extensionOptions = {
+  ...baseOptions,
+  entryPoints: ['src/extension.ts'],
+  outfile: 'dist/extension.js',
+};
+
+/**
+ * Lazy-loaded chunk: McpServer + tool registry.
+ * Loaded at runtime by lifecycle.ts via `await import('./mcp-bundle.js')`.
+ * Must be built as a separate chunk so the HTTP-server code stays out of
+ * the initial activation payload.
+ */
+/** @type {import('esbuild').BuildOptions} */
+const mcpBundleOptions = {
+  ...baseOptions,
+  entryPoints: ['src/mcp/mcp-bundle.ts'],
+  outfile: 'dist/mcp-bundle.js',
+};
+
 async function main() {
   if (watch) {
-    const ctx = await esbuild.context(buildOptions);
-    await ctx.watch();
+    const [ctxExt, ctxMcp] = await Promise.all([
+      esbuild.context(extensionOptions),
+      esbuild.context(mcpBundleOptions),
+    ]);
+    await Promise.all([ctxExt.watch(), ctxMcp.watch()]);
     console.log('[esbuild] watching for changes...');
   } else {
-    await esbuild.build(buildOptions);
+    await Promise.all([
+      esbuild.build(extensionOptions),
+      esbuild.build(mcpBundleOptions),
+    ]);
     console.log('[esbuild] build complete');
     if (production) {
-      const out = path.resolve(__dirname, buildOptions.outfile);
+      const out = path.resolve(__dirname, extensionOptions.outfile);
       const sizeKb = fs.statSync(out).size / 1024;
       const sizeStr = sizeKb.toFixed(1);
       if (sizeKb > BUNDLE_MAX_KB) {

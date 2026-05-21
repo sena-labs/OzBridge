@@ -59,8 +59,11 @@ export interface RunStatsSummary {
 
 /** Aggregates run history into a dashboard-ready summary. */
 export interface IRunStatsService {
-  /** Returns an aggregated summary for the last `windowDays` days. */
-  computeSummary(windowDays: number): Promise<RunStatsSummary>;
+  /**
+   * Returns an aggregated summary for the last `windowDays` days.
+   * `now` is injectable for deterministic testing; defaults to `new Date()`.
+   */
+  computeSummary(windowDays: number, now?: Date): Promise<RunStatsSummary>;
   /** Drops cached entries (all, or one by id). */
   invalidate(runId?: string): void;
 }
@@ -242,7 +245,7 @@ export class RunStatsService implements IRunStatsService {
 
   constructor(private readonly cli: IOzCliService) {}
 
-  async computeSummary(windowDays: number): Promise<RunStatsSummary> {
+  async computeSummary(windowDays: number, now?: Date): Promise<RunStatsSummary> {
     if (!Number.isFinite(windowDays) || windowDays <= 0) {
       throw new Error(`windowDays must be a positive number, got ${String(windowDays)}`);
     }
@@ -304,7 +307,7 @@ export class RunStatsService implements IRunStatsService {
       records.push(record);
     }
 
-    const { buckets, undatedCount } = bucketByDate(records, windowDays);
+    const { buckets, undatedCount } = bucketByDate(records, windowDays, now);
     const totalRuns = buckets.reduce((acc, b) => acc + b.total, 0);
 
     return {

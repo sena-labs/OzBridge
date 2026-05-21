@@ -48,6 +48,9 @@ jobs:
       - name: Build extension (production)
         run: npm run build
 
+      - name: Build standalone MCP server
+        run: npm run build:standalone:prod
+
   # ── Stage 1b: Coverage gate (single job, enforces vitest thresholds) ───
   coverage:
     name: Coverage gate (Node 22 · ubuntu)

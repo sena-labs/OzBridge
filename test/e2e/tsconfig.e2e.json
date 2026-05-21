@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "vscode": ["packages/oz-mcp-server/src/vscode-shim.ts"],
+      "copilot-chat-toolkit": ["packages/copilot-chat-toolkit/src/index.ts"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "../../src/**/*.ts",
+    "../../packages/**/*.ts"
+  ]
+}

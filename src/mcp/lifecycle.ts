@@ -142,7 +142,9 @@ export class McpLifecycle implements vscode.Disposable {
       return;
     }
 
-    // OPT-4: Lazy-load the MCP server bundle (not in the main activation payload).
+    // OPT-4: Lazy-load the MCP server bundle. esbuild inlines this as an __esm
+    // lazy chunk within extension.js (CJS format doesn't support true splitting),
+    // so the HTTP-server code is initialised only on first start() call.
     const { McpServer, buildToolRegistry } = await import('./mcp-bundle.js');
 
     const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });

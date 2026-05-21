@@ -740,7 +740,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run build",
+    "vscode:prepublish": "npm run clean && npm run build",
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "node esbuild.js --production",
     "watch": "node esbuild.js --watch",
@@ -752,7 +752,9 @@
     "test:e2e": "playwright test --config=test/e2e/playwright.config.ts",
     "test:e2e:headed": "playwright test --config=test/e2e/playwright.config.ts --headed",
     "screenshots:build": "node scripts/screenshots/capture.mjs",
-    "package": "vsce package --no-dependencies -o ozbridge.vsix"
+    "package": "vsce package --no-dependencies -o ozbridge.vsix",
+    "build:standalone": "node packages/oz-mcp-server/esbuild.mjs",
+    "build:standalone:prod": "node packages/oz-mcp-server/esbuild.mjs --production"
   },
   "dependencies": {
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"

@@ -1,0 +1,42 @@
+{
+  "name": "@sena-labs/oz-mcp-server",
+  "version": "1.2.0",
+  "description": "Standalone MCP server for Warp Oz agents — no VS Code required. Works with Claude Code, Cursor, and any MCP client.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sena-labs/OzBridge.git",
+    "directory": "packages/oz-mcp-server"
+  },
+  "main": "dist/server.js",
+  "bin": {
+    "oz-mcp-server": "dist/server.js"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "build:prod": "node esbuild.mjs --production",
+    "start": "node dist/server.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "warp",
+    "oz",
+    "agent",
+    "claude-code",
+    "cursor",
+    "AI"
+  ],
+  "files": [
+    "dist/server.js",
+    "README.md"
+  ],
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^6.0.3",
+    "@types/node": "^20.19.39"
+  }
+}

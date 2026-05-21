@@ -2,8 +2,10 @@ import { spawn, ChildProcess } from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { McpServer } from '../../../src/mcp/server.js';
-import { buildToolRegistry } from '../../../src/mcp/tools.js';
+// Import from the pre-compiled standalone lib (vscode shim already bundled)
+// so Playwright workers can require this without a VS Code extension host.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { McpServer, buildToolRegistry } = require('../../../packages/oz-mcp-server/dist/lib.js') as typeof import('../../../packages/oz-mcp-server/src/lib.js');
 import type {
   IOzCliService,
   IConfigManager,

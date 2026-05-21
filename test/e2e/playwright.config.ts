@@ -1,6 +1,11 @@
 import { defineConfig } from '@playwright/test';
 import * as path from 'node:path';
 
+// Resolve the vscode module to the standalone shim so E2E helpers can import
+// src/ code without the VS Code extension host. This mirrors the vitest alias
+// in vitest.config.ts but for the Playwright runner.
+process.env.TS_NODE_PROJECT = path.join(__dirname, 'tsconfig.e2e.json');
+
 /**
  * Playwright config for OzBridge end-to-end tests.
  *

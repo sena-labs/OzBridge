@@ -312,6 +312,11 @@ describe('RunStatsService', () => {
   // missing. These tests pin the new behaviour.
   // -------------------------------------------------------------------------
 
+  // Fixed `now` so these tests remain green regardless of when they run.
+  // The records use 2026-04-20; `now` is set to 2026-04-21 so all dates
+  // fall inside the 30-day window on any machine / any calendar day.
+  const FIXED_NOW = new Date('2026-04-21T12:00:00.000Z');
+
   it('uses status/createdAt from list items when available (no runGet fan-out)', async () => {
     cli.runList.mockResolvedValue({
       items: [
@@ -321,7 +326,7 @@ describe('RunStatsService', () => {
       ] as unknown as { id: string; status: 'SUCCEEDED' }[],
     });
 
-    const summary = await service.computeSummary(30);
+    const summary = await service.computeSummary(30, FIXED_NOW);
 
     expect(cli.runGet).not.toHaveBeenCalled();
     expect(summary.totalRuns).toBe(3);
@@ -335,7 +340,7 @@ describe('RunStatsService', () => {
       ] as unknown as { id: string; status: 'SUCCEEDED' }[],
     });
 
-    const summary = await service.computeSummary(30);
+    const summary = await service.computeSummary(30, FIXED_NOW);
 
     expect(cli.runGet).not.toHaveBeenCalled();
     expect(summary.totalRuns).toBe(1);
@@ -359,7 +364,7 @@ describe('RunStatsService', () => {
       });
     });
 
-    const summary = await service.computeSummary(30);
+    const summary = await service.computeSummary(30, FIXED_NOW);
 
     expect(summary.totalRuns).toBe(1);
   });
