@@ -137,3 +137,41 @@ describe('RunLocalTool.invoke', () => {
     expect(resultText(result)).toContain('boom');
   });
 });
+
+describe('RunLocalTool — branch coverage', () => {
+  it('prepareInvocation lists model, profile and skill when provided', async () => {
+    const prepared = await tool.prepareInvocation(
+      makePrepareOptions({ prompt: 'do it', model: 'gpt-4o', profile: 'Team', skill: '5-test-agent' }),
+      makeToken(),
+    );
+    const msg = (prepared.confirmationMessages?.message as unknown as { value: string }).value;
+    expect(msg).toContain('**Model**: `gpt-4o`');
+    expect(msg).toContain('**Profile**: `Team`');
+    expect(msg).toContain('**Skill**: `5-test-agent`');
+  });
+
+  it('falls back to non-default config model/profile when no override is supplied', async () => {
+    const cfgMgr = createMockConfigManager({ defaultModel: 'claude-x', defaultProfile: 'MyProfile' });
+    const toolWithDefaults = new RunLocalTool(cli, cfgMgr, createMockContextCollector());
+    cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
+    cli.agentRun.mockResolvedValue(makeRunResult());
+
+    await toolWithDefaults.invoke(makeInvokeOptions({ prompt: 'p' }), makeToken());
+
+    const args = cli.agentRun.mock.calls[0][0];
+    expect(args.model).toBe('claude-x');
+    expect(args.profile).toBe('MyProfile');
+  });
+
+  it('passes cwd=undefined when the gathered context has no workspace path', async () => {
+    const ctx = createMockContextCollector({ workspacePath: '' });
+    const toolNoWs = new RunLocalTool(cli, createMockConfigManager(), ctx);
+    cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
+    cli.agentRun.mockResolvedValue(makeRunResult());
+
+    await toolNoWs.invoke(makeInvokeOptions({ prompt: 'p' }), makeToken());
+
+    const args = cli.agentRun.mock.calls[0][0];
+    expect(args.cwd).toBeUndefined();
+  });
+});

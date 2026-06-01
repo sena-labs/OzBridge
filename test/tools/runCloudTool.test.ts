@@ -167,3 +167,44 @@ describe('RunCloudTool.invoke', () => {
     expect(resultText(result)).toContain('NOT_AUTHENTICATED');
   });
 });
+
+describe('RunCloudTool — branch coverage', () => {
+  it('rejects a whitespace-only environment before spawning the CLI', async () => {
+    const result = await tool.invoke(
+      makeInvokeOptions({ prompt: 'p', environment: '   ' }),
+      makeToken(),
+    );
+    expect(resultText(result)).toContain('non-empty string');
+    expect(cli.checkAvailability).not.toHaveBeenCalled();
+    expect(cli.agentRunCloud).not.toHaveBeenCalled();
+  });
+
+  it('rejects an environment containing shell metacharacters', async () => {
+    const result = await tool.invoke(
+      makeInvokeOptions({ prompt: 'p', environment: 'env;rm -rf /' }),
+      makeToken(),
+    );
+    expect(resultText(result)).toContain('forbidden characters');
+    expect(cli.agentRunCloud).not.toHaveBeenCalled();
+  });
+
+  it('sets noEnvironment=true when no env is configured and the list is empty', async () => {
+    cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
+    cli.environmentList.mockResolvedValue(makeListResult([]));
+    cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null, status: 'SUCCEEDED' }));
+
+    await tool.invoke(makeInvokeOptions({ prompt: 'p' }), makeToken());
+
+    const args = cli.agentRunCloud.mock.calls[0][0];
+    expect(args.environment).toBeUndefined();
+    expect(args.noEnvironment).toBe(true);
+  });
+
+  it('truncates an overly long prompt in the confirmation preview', async () => {
+    const longPrompt = 'a'.repeat(300);
+    const prepared = await tool.prepareInvocation(makePrepareOptions({ prompt: longPrompt }), makeToken());
+    const msg = (prepared.invocationMessage as unknown as { value: string }).value;
+    expect(msg).toContain('…');
+    expect(msg.length).toBeLessThan(longPrompt.length);
+  });
+});
