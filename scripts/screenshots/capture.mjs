@@ -196,7 +196,21 @@ async function main() {
         );
       }
       if (SHOTS.includes('mcp')) {
-        // Same sidebar; the MCP category is one of the 5 visible.
+        // Expand the "MCP Servers" category and scroll it into view so this
+        // screenshot actually showcases the MCP bridge surface. Without this
+        // it captured the same collapsed sidebar as `screenshot-runs.png`,
+        // producing a byte-identical duplicate (the README's MCP section then
+        // showed the runs view).
+        const mcpRow = page
+          .locator('.part.sidebar .monaco-list-row[aria-label^="MCP Servers"]')
+          .first();
+        if (await mcpRow.count()) {
+          await mcpRow.click();
+          // ArrowRight guarantees expansion (idempotent if already open).
+          await page.keyboard.press('ArrowRight');
+          await mcpRow.scrollIntoViewIfNeeded().catch(() => {});
+          await waitMs(page, 700);
+        }
         await snapshotElement(
           page,
           '.part.sidebar',
