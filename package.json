@@ -652,6 +652,14 @@
           "markdownDescription": "Maximum number of concurrent MCP SSE sessions. Additional `GET /sse` requests are rejected with **HTTP 503** once the cap is reached.",
           "scope": "machine-overridable"
         },
+        "ozBridge.mcpSseMaxLifetimeMs": {
+          "type": "integer",
+          "default": 1800000,
+          "minimum": 60000,
+          "maximum": 86400000,
+          "markdownDescription": "Maximum lifetime for a single MCP SSE session (in **milliseconds**). When reached the server closes the connection and frees its timers/socket, preventing resource leaks from clients that never disconnect. Clamped to `[60000, 86400000]` (1 minute – 24 hours); out-of-range values fall back to the default. Default `1800000` = 30 minutes.",
+          "scope": "machine-overridable"
+        },
         "ozBridge.mcpBindAddress": {
           "type": "string",
           "default": "127.0.0.1",

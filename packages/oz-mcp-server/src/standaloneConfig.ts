@@ -42,8 +42,15 @@ export class StandaloneConfigManager implements IConfigManager {
       const v = process.env[key];
       return v && v.length > 0 ? v : undefined;
     };
-    const envNum = (key: string, fallback: number) =>
-      Number(process.env[key]) || fallback;
+    // NOTE: coalesce on `Number.isFinite`, not `||`, so a valid `0` survives.
+    // `OZ_IDLE_TIMEOUT_MS=0` (documented "disable") and `OZ_MCP_PORT=0`
+    // (OS-assigned ephemeral port) must NOT be rewritten to the default.
+    const envNum = (key: string, fallback: number) => {
+      const raw = process.env[key];
+      if (raw === undefined || raw.trim() === '') { return fallback; }
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : fallback;
+    };
 
     return {
       ...DEFAULT_CONFIG,

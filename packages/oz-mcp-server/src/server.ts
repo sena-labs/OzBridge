@@ -50,7 +50,13 @@ async function main(): Promise<void> {
   const cfgMgr = new StandaloneConfigManager(cwd);
   const cfg = cfgMgr.getConfig();
 
-  const port    = Number(getArg(args, '--port'))  || cfg.mcpPort;
+  // Coalesce on a finite-integer check, not `||`, so `--port 0` (request an
+  // OS-assigned ephemeral port) is honoured instead of falling back to cfg.
+  const portArg = getArg(args, '--port');
+  const parsedPort = portArg !== undefined ? Number(portArg) : NaN;
+  const port    = Number.isInteger(parsedPort) && parsedPort >= 0 && parsedPort <= 65535
+    ? parsedPort
+    : cfg.mcpPort;
   const bind    = getArg(args, '--bind')           ?? cfg.mcpBindAddress;
   const token   = getArg(args, '--token')          ?? cfg.mcpBearerToken;
 
