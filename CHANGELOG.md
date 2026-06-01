@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.0] — 2026-05-13
+## [1.2.0] — 2026-06-01
 
 ### Added
 - **Schedule editing.** New `cli.scheduleGet` / `cli.scheduleUpdate`
@@ -83,6 +83,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `onCommand:*` activation events (auto-handled by VS Code 1.74+);
   only participant, view, and LM-tool events are retained, reducing
   the manifest and startup log noise.
+- **Messaging repositioned around MCP.** The Marketplace description and
+  README now lead with *"Bring Warp Oz to any IDE or agent via MCP"* — the
+  embedded MCP server (and the standalone `@sena-labs/oz-mcp-server`) is the
+  headline capability, with the `@oz` Copilot Chat experience presented as
+  the native VS Code surface. Repositioned across all six locale bundles.
 
 ### Security
 - Secret values are piped through **stdin only** when invoking
@@ -95,12 +100,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Status bar tooltip no longer sets `MarkdownString.isTrusted = true`,
   eliminating the risk of a crafted CLI run ID injecting trusted
   command links into the tooltip.
+- Bumped transitive dev dependencies `tmp` (→ 0.2.7) and `qs` (→ 6.15.2),
+  pulled in via `@vscode/vsce`, to clear two Dependabot advisories
+  (GHSA-ph9p-34f9-6g65 path traversal, GHSA-q8mj-m7cp-5q26 DoS). Neither
+  package ships in the VSIX; `npm audit` now reports 0 vulnerabilities.
 
 ### Fixed
 - `/schedule update <id> --name "…"` now correctly skips the schedule
   id when parsing flag arguments. The previous implementation passed
   the id into the flag parser and always fell through to the
   *Usage:* banner.
+- **`ozBridge.mcpSseMaxLifetimeMs` is now configurable.** The SSE session
+  lifetime was read and validated by the MCP lifecycle but never declared
+  in `contributes.configuration`, so it was undiscoverable in the Settings
+  UI and warned as an "Unknown Configuration Setting" when set manually.
+  Declared in the manifest with bounds `[60000, 86400000]`.
+- **Standalone MCP server honours `0` values.** `OZ_IDLE_TIMEOUT_MS=0`
+  (documented "disable") and `OZ_MCP_PORT=0` (OS-assigned ephemeral port)
+  were silently rewritten to their defaults by a `|| fallback` that treated
+  a valid `0` as missing. They are now preserved.
+- **`oz_run_list` tool description** corrected: the `completed` filter
+  returns `SUCCEEDED|FAILED` (matching the implementation), not the longer
+  set previously advertised.
+
+### Internal
+- Added branch-coverage tests for `runLocalTool` / `runCloudTool` so the CI
+  coverage gate stays comfortably above its 78% branch threshold.
 
 ## [1.1.0] — 2026-04-21
 
