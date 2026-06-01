@@ -1,6 +1,6 @@
 {
   "displayName": "OzBridge",
-  "description": "从 VS Code Copilot Chat 运行 Warp Oz 代理",
+  "description": "通过 MCP 将 Warp Oz 接入任意 IDE 或智能体，并在 VS Code Copilot Chat 中原生使用 @oz。",
   "category.warp": "OzBridge",
   "category.warpMcp": "OzBridge MCP",
   "category.warpDrive": "Warp Drive",

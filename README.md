@@ -1,12 +1,17 @@
-# OzBridge for VS Code
+# OzBridge — Warp Oz for any IDE or agent, via MCP
 
 [![Build](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Run **Warp Oz agents** directly from VS Code Copilot Chat — either via the
-`@oz` **Chat Participant** or through **Agent-Native Language Model Tools**
-that Copilot Agent mode can invoke autonomously.
+**OzBridge brings Warp Oz to any IDE or agent that speaks the
+[Model Context Protocol](https://modelcontextprotocol.io) (MCP).** Run it
+embedded in VS Code — where Oz shows up natively as the `@oz` **Chat
+Participant** and as **Agent-Native Language Model Tools** that Copilot Agent
+mode invokes autonomously — or expose the same Oz toolset over HTTP+SSE so
+**Claude Code, Cursor and Codex** drive Oz too. No editor at all? Ship the
+standalone [`@sena-labs/oz-mcp-server`](packages/oz-mcp-server) and point any
+MCP client at it.
 
 ![OzBridge screenshot](https://github.com/sena-labs/OzBridge/blob/main/media/screenshot.png)
 
@@ -51,11 +56,11 @@ that Copilot Agent mode can invoke autonomously.
 
 ## Features
 
+- **MCP bridge — Warp Oz for any client** — expose the Oz toolset as a Model Context Protocol server over HTTP+SSE so **Claude Code, Cursor and Codex** drive Oz through the same tools Copilot sees. Run it embedded in VS Code (opt-in) or fully standalone via [`@sena-labs/oz-mcp-server`](packages/oz-mcp-server). See [`docs/MCP.md`](docs/MCP.md).
 - **`@oz` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel.
 - **Agent-Native Language Model Tools** — Copilot Agent mode can invoke Warp Oz directly, without typing `@oz`.
 - **Warp sidebar + status bar** — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
 - **Context variables & Warp handoff** — inline `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
-- **MCP server export** (opt-in) — OzBridge can expose its Oz tools as a Model Context Protocol server over HTTP+SSE so Claude Code, Cursor and Codex can drive Oz too. See [`docs/MCP.md`](docs/MCP.md).
 - **Per-workspace config** — optional `.warp/warp-bridge.yaml` committed to the repo overrides `ozBridge.*` settings for everyone who opens the project. Precedence: YAML > VS Code settings > defaults. Secrets like `mcpBearerToken` and platform-specific `ozPath` are deliberately excluded.
 - **9 slash commands** covering the full agent workflow: `/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`.
 - **IDE context injection** — automatically includes workspace path, active file, selection and diagnostics in every prompt.

@@ -1,6 +1,6 @@
 {
   "displayName": "OzBridge",
-  "description": "Esegui agenti Warp Oz da VS Code Copilot Chat",
+  "description": "Porta Warp Oz in qualsiasi IDE o agente via MCP, con @oz nativo in VS Code Copilot Chat.",
   "category.warp": "OzBridge",
   "category.warpMcp": "OzBridge MCP",
   "category.warpDrive": "Warp Drive",
