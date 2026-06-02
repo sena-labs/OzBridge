@@ -940,6 +940,43 @@ export class OzCliService implements IOzCliService {
             lineBuffer = lineBuffer.slice(lineBuffer.length - STDIO_CAP);
           }
         }
+
+        // Workaround (Warp run-list hang): some Warp CLI builds print the full
+        // JSON result for read-only query commands (`run list`, `run get`, …)
+        // but the spawned process then never exits. Without this, exec() would
+        // wait for a `close` event that never fires until the idle timer
+        // mis-reports the call as STALLED ("OzBridge: unavailable", dashboard
+        // "no output for 90s"). As soon as the buffered stdout is a single
+        // complete JSON value we already hold the entire payload — resolve and
+        // reap the lingering child. Scoped to read-only queries: write
+        // commands (`agent run` / `run-cloud`) exit normally and may carry an
+        // authoritative run-id banner on stderr that must not be pre-empted.
+        // Streaming (ndjson/onLine) and raw-output (outputFormat: null) calls
+        // are exempt, and the cheap first/last-char guard avoids JSON.parse on
+        // every partial chunk.
+        if (readOnly && !settled && !onLine && outputFormat === 'json' && !stdoutTruncated) {
+          const trimmed = stdout.trim();
+          const first = trimmed[0];
+          const last = trimmed[trimmed.length - 1];
+          if ((first === '{' && last === '}') || (first === '[' && last === ']')) {
+            try {
+              JSON.parse(trimmed);
+              settled = true;
+              cleanup();
+              try { proc.kill('SIGTERM'); } catch { /* already exited */ }
+              if (process.platform === 'win32' && needsShell && proc.pid !== undefined) {
+                try {
+                  spawn('taskkill', ['/PID', String(proc.pid), '/T', '/F'], {
+                    windowsHide: true,
+                    stdio: 'ignore',
+                  });
+                } catch { /* best-effort */ }
+              }
+              resolve({ stdout, stderr, exitCode: 0, durationMs: Date.now() - startTime });
+              return;
+            } catch { /* not a complete JSON value yet — keep buffering */ }
+          }
+        }
         armIdleTimer();
       });
 

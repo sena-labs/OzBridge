@@ -1188,3 +1188,58 @@ describe('OzCliService', () => {
     });
   });
 });
+
+// ===========================================================================
+// Read-only JSON command that prints output but never exits (Warp run-list
+// hang). Repro: this Warp CLI version prints the full JSON for `run list` /
+// `run get` etc. but the spawned process never terminates, so exec() waited
+// for a `close` event that never fired until the 90s idle timer wrongly
+// reported STALLED ("OzBridge: unavailable", dashboard "no output for 90s").
+// exec() must resolve as soon as stdout is a complete JSON value and reap the
+// lingering child instead of waiting for an exit that never comes.
+// ===========================================================================
+describe('OzCliService — read-only JSON command that never exits', () => {
+  function createHangingProcess() {
+    const proc = Object.assign(new EventEmitter(), {
+      stdout: new EventEmitter(),
+      stderr: new EventEmitter(),
+      kill: vi.fn(),
+      pid: 4242,
+    });
+    mockSpawn.mockReturnValue(proc as unknown as ReturnType<typeof spawn>);
+    return proc;
+  }
+
+  it('runList resolves on complete JSON and reaps the process (no close event)', async () => {
+    const proc = createHangingProcess();
+    process.nextTick(() => {
+      // Full envelope arrives in one burst, then the process hangs forever.
+      proc.stdout.emit('data', Buffer.from('{"runs":[{"id":"run-1","status":"SUCCEEDED"}]}'));
+    });
+    const result = await cli.runList();
+    expect(result.items).toEqual([{ id: 'run-1', status: 'SUCCEEDED' }]);
+    expect(proc.kill).toHaveBeenCalled();
+  });
+
+  it('runGet resolves on a complete JSON object without a close event', async () => {
+    const proc = createHangingProcess();
+    process.nextTick(() => {
+      proc.stdout.emit('data', Buffer.from('{"id":"run-9","status":"FAILED","output":"boom"}'));
+    });
+    const result = await cli.runGet('run-9');
+    expect(result.status).toBe('FAILED');
+    expect(proc.kill).toHaveBeenCalled();
+  });
+
+  it('assembles chunked JSON across multiple data events before resolving', async () => {
+    const proc = createHangingProcess();
+    process.nextTick(() => {
+      proc.stdout.emit('data', Buffer.from('{"runs":[')); // incomplete — must not resolve yet
+      process.nextTick(() => {
+        proc.stdout.emit('data', Buffer.from('{"id":"run-2","status":"QUEUED"}]}'));
+      });
+    });
+    const result = await cli.runList();
+    expect(result.items).toEqual([{ id: 'run-2', status: 'QUEUED' }]);
+  });
+});
