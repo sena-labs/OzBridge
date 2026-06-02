@@ -8,10 +8,11 @@ const watch = process.argv.includes('--watch');
 
 // HIGH-1 (AUDIT-ROADMAP-v1.2): hard cap on the production bundle so
 // CI fails before a regression ships to the Marketplace. The current
-// bundle is ~151 KB after dashboard webview redesign (v1.1); we leave
-// ~4 KB headroom. Override with OZBRIDGE_BUNDLE_MAX_KB if you intentionally
-// need more space.
-const BUNDLE_MAX_KB = Number(process.env.OZBRIDGE_BUNDLE_MAX_KB) || 155;
+// bundle is ~157 KB after the cross-platform model-selection feature (v1.2);
+// we leave ~8 KB headroom. Keep in sync with
+// `.github/workflows/bundle-budget.yml`. Override with OZBRIDGE_BUNDLE_MAX_KB
+// if you intentionally need more space.
+const BUNDLE_MAX_KB = Number(process.env.OZBRIDGE_BUNDLE_MAX_KB) || 165;
 
 /** Shared base options for both extension and mcp-bundle chunks. */
 const baseOptions = {
