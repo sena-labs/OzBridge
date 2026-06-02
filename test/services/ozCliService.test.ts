@@ -873,8 +873,11 @@ describe('OzCliService', () => {
   // =========================================================================
   // agentRun() ndjson streaming via onProgress callback
   // =========================================================================
-  describe('agentRun() — onProgress streaming (ndjson)', () => {
-    it('dovrebbe usare WARP_OUTPUT_FORMAT=ndjson quando onProgress è fornito', async () => {
+  describe('agentRun() — onProgress streaming (json mode)', () => {
+    it('uses WARP_OUTPUT_FORMAT=json (NOT ndjson) even with onProgress, and still streams every line', async () => {
+      // Regression: ndjson mode makes warp.exe follow the run and never exit
+      // (hang). json mode emits the same incremental lines but exits cleanly,
+      // so we must request json and still forward each line to onProgress.
       createMockProcess({
         stdout:
           '{"type":"system","event_type":"conversation_started","conversation_id":"c-1"}\n' +
@@ -885,8 +888,8 @@ describe('OzCliService', () => {
       await cli.agentRun({ prompt: 'go', onProgress: (line) => events.push(line) });
 
       const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
-      expect(opts.env?.WARP_OUTPUT_FORMAT).toBe('ndjson');
-      // Tutte e 3 le linee NDJSON devono essere consegnate al callback
+      expect(opts.env?.WARP_OUTPUT_FORMAT).toBe('json');
+      // All 3 NDJSON lines must still reach the progress callback.
       expect(events).toHaveLength(3);
       expect(events[0]).toContain('"conversation_started"');
       expect(events[1]).toContain('"hello"');

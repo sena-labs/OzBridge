@@ -200,8 +200,14 @@ export class OzCliService implements IOzCliService {
       };
     }
 
+    // Always use 'json', never 'ndjson'. Warp's ndjson mode makes the CLI
+    // *follow* the run and never exit on piped (non-TTY) stdout, hanging the
+    // spawn until the idle timeout fires ("Starting local Oz agent…" then a
+    // 90s STALL). json mode emits the SAME newline-delimited events
+    // incrementally — so `onLine` still streams live progress to the chat —
+    // but the process exits cleanly once the run completes.
     const result = await this.exec(args, opts.cwd, opts.cancellation, {
-      outputFormat: onProgress ? 'ndjson' : 'json',
+      outputFormat: 'json',
       onLine,
     });
     return this.toRunResult(result);
