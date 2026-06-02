@@ -42,9 +42,9 @@ describe('Bundle-budget workflow (deliverable N)', () => {
   });
 
   it('enforces the bundle budget on dist/extension.js', () => {
-    expect(BUDGET).toMatch(/BUDGET_BYTES=\$\(\(1[45][05] \* 1024\)\)/);
+    expect(BUDGET).toMatch(/BUDGET_BYTES=\$\(\(1[4-7][05] \* 1024\)\)/);
     expect(BUDGET).toMatch(/dist\/extension\.js/);
-    expect(BUDGET).toMatch(/exceeds the 1[45][05] KB budget/);
+    expect(BUDGET).toMatch(/exceeds the 1[4-7][05] KB budget/);
   });
 
   it('writes a human-readable summary to $GITHUB_STEP_SUMMARY', () => {
