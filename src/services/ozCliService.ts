@@ -79,6 +79,16 @@ const SENSITIVE_ENV_PREFIXES = [
 ];
 
 /**
+ * Fatal, non-recoverable authentication errors. When one of these appears on
+ * the CLI's stderr, the Warp binary has already failed the request and will
+ * not produce a usable result — but it nonetheless keeps the process alive on
+ * piped stdout. {@link OzCliService.exec} matches this to fail fast with
+ * `NOT_AUTHENTICATED` instead of waiting out the 90s idle timeout.
+ */
+const FATAL_AUTH_STDERR =
+  /authentication failed|not logged in|unauthorized|please log ?in|must log ?in|failed to fetch user response data|fetching an id token/i;
+
+/**
  * Permissive validator for `--jq <FILTER>` values. Allows the characters
  * actually used by jq syntax (dots, brackets, parens, pipes, quotes,
  * commas, comparison operators, arithmetic) while blocking shell
@@ -999,6 +1009,25 @@ export class OzCliService implements IOzCliService {
         } else {
           stderr += text;
         }
+
+        // Fail fast on a fatal, non-recoverable auth error. Warp prints the
+        // message to stderr and then *hangs* the process on piped (non-TTY)
+        // stdout, so without this the call would wait the full idle timeout
+        // (90s) before reporting STALLED instead of a clear "not authenticated"
+        // in ~1s. The close-handler classification never runs because `close`
+        // never fires.
+        if (!settled && FATAL_AUTH_STDERR.test(stderr)) {
+          settled = true;
+          cleanup();
+          terminateProcess();
+          reject(new OzCliError(
+            OzCliErrorKind.NOT_AUTHENTICATED,
+            'Oz CLI: authentication failed — run `oz login` (or re-authenticate in the Warp app).',
+            undefined,
+            stderr,
+          ));
+          return;
+        }
         armIdleTimer();
       });
 
@@ -1149,7 +1178,10 @@ export class OzCliService implements IOzCliService {
         runId: typeof parsed['id'] === 'string' ? parsed['id']
              : typeof parsed['run_id'] === 'string' ? parsed['run_id']
              : null,
-        status: this.parseStatus(parsed['status']),
+        // `oz run get` / `run list` payloads carry the terminal status under
+        // `state` (e.g. "SUCCEEDED"); cloud-run payloads use `status`. Accept
+        // either so a completed run is not mis-reported as UNKNOWN.
+        status: this.parseStatus(parsed['status'] ?? parsed['state']),
         output: typeof parsed['output'] === 'string' ? parsed['output'] : rawText,
         exitCode: result.exitCode,
         durationMs: result.durationMs,

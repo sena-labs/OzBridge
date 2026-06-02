@@ -264,6 +264,15 @@ describe('OzCliService', () => {
       const result = await cli.runGet('run_abc-123');
       expect(result.runId).toBe('run_abc-123');
     });
+
+    it('derives status from the `state` field (run get / run list payloads)', async () => {
+      // Live regression: `oz run get` returns `{"run_id":...,"state":"SUCCEEDED"}`
+      // (no `status` key). Status must not be mis-reported as UNKNOWN.
+      createMockProcess({ stdout: '{"run_id":"r-1","state":"SUCCEEDED","title":"x"}' });
+      const result = await cli.runGet('r-1');
+      expect(result.runId).toBe('r-1');
+      expect(result.status).toBe('SUCCEEDED');
+    });
   });
 
   // =========================================================================
@@ -1244,5 +1253,15 @@ describe('OzCliService — read-only JSON command that never exits', () => {
     });
     const result = await cli.runList();
     expect(result.items).toEqual([{ id: 'run-2', status: 'QUEUED' }]);
+  });
+
+  it('fails fast with NOT_AUTHENTICATED on an auth error in stderr (process never closes)', async () => {
+    const proc = createHangingProcess();
+    process.nextTick(() => {
+      // Warp prints the auth error to stderr then hangs forever.
+      proc.stderr.emit('data', Buffer.from('Authentication failed: Failed to fetch user response data\n'));
+    });
+    await expect(cli.runList()).rejects.toMatchObject({ kind: OzCliErrorKind.NOT_AUTHENTICATED });
+    expect(proc.kill).toHaveBeenCalled();
   });
 });
