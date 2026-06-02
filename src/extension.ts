@@ -13,6 +13,7 @@ import { ActiveRunsTracker } from './services/activeRunsTracker.js';
 import { registerChatParticipant } from './participant/handler.js';
 import { registerOzTools } from './tools/index.js';
 import { StatusBarManager } from './ui/statusBarItem.js';
+import { registerModelSelectorCommands } from './ui/modelSelector.js';
 import { OzRunsTreeProvider, RunTreeDragAndDropController } from './ui/runsTreeProvider.js';
 import { registerTreeCommands } from './ui/treeCommands.js';
 import { registerHandoffCommands } from './ui/handoff.js';
@@ -323,6 +324,13 @@ export function activate(context: vscode.ExtensionContext): void {
   // Status Bar indicator $(cloud) OzBridge: N active
   const statusBar = new StatusBarManager(state.tracker);
   context.subscriptions.push(statusBar);
+
+  // Model selector — `OzBridge: Select Model` QuickPick + status-bar model
+  // indicator. Lets the user switch the default model from any platform
+  // without hand-typing an id into settings.
+  for (const disposable of registerModelSelectorCommands(cli, state.configManager)) {
+    context.subscriptions.push(disposable);
+  }
 
   // Sidebar TreeView: Active Runs / History / Schedules / Environments / MCP
   const treeProvider = new OzRunsTreeProvider(cli, state.tracker, context.globalState);

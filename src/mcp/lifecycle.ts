@@ -147,7 +147,11 @@ export class McpLifecycle implements vscode.Disposable {
     // so the HTTP-server code is initialised only on first start() call.
     const { McpServer, buildToolRegistry } = await import('./mcp-bundle.js');
 
-    const registry = buildToolRegistry({ cli: this.cli, cfgMgr: this.cfgMgr });
+    const registry = buildToolRegistry({
+      cli: this.cli,
+      cfgMgr: this.cfgMgr,
+      workspaceRoot: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+    });
     const serverInfo = { name: 'oz-bridge', version: this.extensionVersion };
 
     try {

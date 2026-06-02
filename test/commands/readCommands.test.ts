@@ -193,6 +193,26 @@ describe('/models command', () => {
 
     expect(mock.getFullOutput()).toContain('raw models error');
   });
+
+  it('sets the default model when given a valid id (`/models <id>`)', async () => {
+    cli.modelList.mockResolvedValue(makeListResult([{ id: 'gpt-4' }, { id: 'claude-3' }]));
+
+    await handler('claude-3', mock.stream as any, createMockToken() as any);
+
+    const out = mock.getFullOutput();
+    expect(out).toContain('claude-3');
+    expect(out.toLowerCase()).toContain('saved');
+  });
+
+  it('rejects an unknown model id without saving', async () => {
+    cli.modelList.mockResolvedValue(makeListResult([{ id: 'gpt-4' }]));
+
+    await handler('does-not-exist', mock.stream as any, createMockToken() as any);
+
+    const out = mock.getFullOutput();
+    expect(out).toContain('Unknown model');
+    expect(out).toContain('does-not-exist');
+  });
 });
 
 // ==========================================================================

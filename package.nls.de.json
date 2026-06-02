@@ -37,6 +37,7 @@
   "command.dashboard.open.title": "OzBridge: Dashboard öffnen",
   "command.triageFailure.title": "OzBridge: Fehlgeschlagenen Run analysieren…",
   "command.exportDataset.title": "OzBridge: Run-Dataset exportieren…",
+  "command.selectModel.title": "OzBridge: Modell auswählen",
   "walkthrough.gettingStarted.title": "Erste Schritte mit OzBridge",
   "walkthrough.gettingStarted.description": "Installieren Sie Warp, führen Sie Ihren ersten Oz-Agenten aus Copilot Chat aus, erkunden Sie die OzBridge-Ansichten und aktivieren Sie die MCP-Brücke.",
   "walkthrough.step.installCli.title": "Installieren Sie die Warp CLI",

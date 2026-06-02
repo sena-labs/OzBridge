@@ -5,6 +5,8 @@ import {
   OzCliErrorKind,
   OzRunStatus,
 } from '../types/index.js';
+import { fetchModelIds } from '../services/modelCatalog.js';
+import { setWorkspaceOverride } from '../services/workspaceConfigWriter.js';
 
 /**
  * Public shape of a tool entry as exposed by the MCP `tools/list` method.
@@ -63,6 +65,14 @@ export interface McpToolEntry {
 export interface McpToolDeps {
   cli: IOzCliService;
   cfgMgr: IConfigManager;
+  /**
+   * Absolute workspace root used by {@link buildToolRegistry} to persist the
+   * default model into `<workspaceRoot>/.warp/warp-bridge.yaml`. The extension
+   * passes the active VS Code workspace folder; the standalone server passes
+   * its `--cwd`. When absent, `oz_set_default_model` reports an error instead
+   * of writing to an unknown location.
+   */
+  workspaceRoot?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +136,34 @@ const DESCRIPTORS: Record<string, McpToolDescriptor> = {
           description: 'Filter. `active` = QUEUED|INPROGRESS, `completed` = SUCCEEDED|FAILED.',
         },
         limit: { type: 'number', description: 'Maximum number of rows returned.' },
+      },
+    },
+  },
+  oz_list_models: {
+    name: 'oz_list_models',
+    description:
+      'List the AI model ids available to the Warp Oz account (from `oz model list`). ' +
+      'Read-only. Pass one of these ids as `model` to oz_agent_run / oz_run_cloud, or to ' +
+      'oz_set_default_model. Also reports the current default.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  oz_set_default_model: {
+    name: 'oz_set_default_model',
+    description:
+      'Set the default Oz model for every OzBridge surface by writing `defaultModel` into the ' +
+      'workspace `.warp/warp-bridge.yaml` (the highest-precedence config source). The id is ' +
+      'validated against `oz model list` when reachable. Use `auto` to let Warp choose.',
+    inputSchema: {
+      type: 'object',
+      required: ['model'],
+      properties: {
+        model: {
+          type: 'string',
+          description: 'Model id (see oz_list_models), e.g. `claude-4-8-opus-max`, `gpt-5-5-high`, or `auto`.',
+        },
       },
     },
   },
@@ -207,6 +245,54 @@ export function buildToolRegistry(deps: McpToolDeps): Map<string, McpToolEntry> 
           count: capped.length,
           items: capped,
         }, null, 2));
+      } catch (err) {
+        return errorText(err);
+      }
+    },
+  });
+
+  registry.set('oz_list_models', {
+    descriptor: DESCRIPTORS.oz_list_models,
+    invoke: async () => {
+      try {
+        const models = await fetchModelIds(deps.cli);
+        const current = deps.cfgMgr.getConfig().defaultModel;
+        return okText(JSON.stringify({ count: models.length, current, models }, null, 2));
+      } catch (err) {
+        return errorText(err);
+      }
+    },
+  });
+
+  registry.set('oz_set_default_model', {
+    descriptor: DESCRIPTORS.oz_set_default_model,
+    invoke: async (input) => {
+      try {
+        const model = requireString(input, 'model').trim();
+        if (!model) {
+          return errorText(new Error('model is required'));
+        }
+        if (!deps.workspaceRoot) {
+          return errorText(new Error(
+            'Cannot persist the default model: the MCP server has no workspace root. '
+            + 'Start it from a workspace (extension) or pass --cwd (standalone).',
+          ));
+        }
+        // Best-effort validation: reject typos when the catalog is reachable;
+        // if `oz model list` fails, still honour the write rather than block.
+        try {
+          const models = await fetchModelIds(deps.cli);
+          if (models.length > 0 && !models.includes(model)) {
+            return errorText(new Error(
+              `Unknown model '${model}'. Call oz_list_models to see the ${models.length} available ids.`,
+            ));
+          }
+        } catch { /* catalog unreachable — proceed without validation */ }
+        const file = await setWorkspaceOverride(deps.workspaceRoot, 'defaultModel', model);
+        return okText(
+          `Default model set to '${model}' (written to ${file}). `
+          + 'New runs use it immediately; a running standalone server may need a restart.',
+        );
       } catch (err) {
         return errorText(err);
       }

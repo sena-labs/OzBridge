@@ -61,7 +61,7 @@ async function main(): Promise<void> {
   const token   = getArg(args, '--token')          ?? cfg.mcpBearerToken;
 
   const cli   = new OzCliService(cfgMgr);
-  const tools = buildToolRegistry({ cli, cfgMgr });
+  const tools = buildToolRegistry({ cli, cfgMgr, workspaceRoot: cwd });
 
   const server = new McpServer(
     tools,

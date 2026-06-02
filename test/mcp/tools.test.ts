@@ -18,12 +18,14 @@ beforeEach(() => {
 });
 
 describe('buildToolRegistry — descriptors', () => {
-  it('exposes exactly the 4 MCP tools', () => {
+  it('exposes exactly the 6 MCP tools', () => {
     expect([...registry.keys()].sort()).toEqual([
       'oz_agent_run',
       'oz_agent_run_cloud',
+      'oz_list_models',
       'oz_run_get',
       'oz_run_list',
+      'oz_set_default_model',
     ]);
   });
 

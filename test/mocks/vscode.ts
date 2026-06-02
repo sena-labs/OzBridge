@@ -92,6 +92,7 @@ export class RelativePattern {
 export const workspace = {
   getConfiguration: vi.fn((_section?: string) => ({
     get: vi.fn((_key: string, defaultValue?: unknown) => defaultValue),
+    update: vi.fn((_key: string, _value: unknown, _target?: unknown) => Promise.resolve()),
   })),
   openTextDocument: vi.fn((_arg: unknown) => Promise.resolve({ uri: Uri.file('/tmp/mock'), getText: vi.fn(() => '') })),
   onDidChangeConfiguration: vi.fn((_cb?: any) => ({ dispose: vi.fn() })),
@@ -185,6 +186,18 @@ const statusBarItems: MockStatusBarItem[] = [];
 // ---------------------------------------------------------------------------
 // window
 // ---------------------------------------------------------------------------
+export enum ProgressLocation {
+  SourceControl = 1,
+  Window = 10,
+  Notification = 15,
+}
+
+export enum ConfigurationTarget {
+  Global = 1,
+  Workspace = 2,
+  WorkspaceFolder = 3,
+}
+
 export const window = {
   activeTextEditor: undefined as any,
   createOutputChannel: vi.fn(() => ({
@@ -197,6 +210,8 @@ export const window = {
   showErrorMessage: vi.fn((..._args: unknown[]) => Promise.resolve(undefined)),
   showInputBox: vi.fn((_options?: unknown) => Promise.resolve(undefined as string | undefined)),
   showQuickPick: vi.fn((_items: unknown, _options?: unknown) => Promise.resolve(undefined as any)),
+  withProgress: vi.fn((_options: unknown, task: (progress: { report: (v: unknown) => void }, token: { isCancellationRequested: boolean }) => unknown) =>
+    Promise.resolve(task({ report: vi.fn() }, { isCancellationRequested: false }))),
   showTextDocument: vi.fn((_doc: unknown) => Promise.resolve({ selection: undefined, edit: vi.fn() })),
   showOpenDialog: vi.fn((_options?: unknown) => Promise.resolve(undefined as unknown as Uri[] | undefined)),
   showSaveDialog: vi.fn((_options?: unknown) => Promise.resolve(undefined as unknown as Uri | undefined)),

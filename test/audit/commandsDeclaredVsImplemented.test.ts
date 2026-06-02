@@ -5,6 +5,7 @@ import { TREE_COMMANDS } from '../../src/ui/treeCommands.js';
 import { DRIVE_COMMANDS } from '../../src/ui/driveCommands.js';
 import { HANDOFF_COMMANDS } from '../../src/ui/handoff.js';
 import { SKILL_EDITOR_COMMANDS } from '../../src/ui/skillEditor.js';
+import { SELECT_MODEL_COMMAND } from '../../src/ui/modelSelector.js';
 
 type Pkg = {
   contributes?: {
@@ -47,6 +48,7 @@ function collectConstantCommands(): Set<string> {
     ...Object.values(DRIVE_COMMANDS),
     ...Object.values(HANDOFF_COMMANDS),
     ...Object.values(SKILL_EDITOR_COMMANDS),
+    SELECT_MODEL_COMMAND,
   ];
   return new Set(fromObjects);
 }

@@ -488,6 +488,12 @@
         "title": "%command.exportDataset.title%",
         "category": "%category.warp%",
         "icon": "$(export)"
+      },
+      {
+        "command": "ozBridge.selectModel",
+        "title": "%command.selectModel.title%",
+        "category": "%category.warp%",
+        "icon": "$(sparkle)"
       }
     ],
     "menus": {

@@ -37,6 +37,7 @@
   "command.dashboard.open.title": "OzBridge：打开仪表板",
   "command.triageFailure.title": "OzBridge：分析失败的运行…",
   "command.exportDataset.title": "OzBridge：导出运行数据集…",
+  "command.selectModel.title": "OzBridge：选择模型",
   "walkthrough.gettingStarted.title": "开始使用 OzBridge",
   "walkthrough.gettingStarted.description": "安装 Warp，从 Copilot Chat 运行您的第一个 Oz 代理，探索 OzBridge 视图并启用 MCP 桥接。",
   "walkthrough.step.installCli.title": "安装 Warp CLI",
