@@ -70,6 +70,16 @@ describe('oz_set_default_model', () => {
     expect(textOf(res)).toContain('no workspace root');
   });
 
+  it('accepts `auto` even when the catalog snapshot does not list it', async () => {
+    const cli = createMockCli();
+    cli.modelList.mockResolvedValue(makeListResult([{ id: 'gpt-5-5-high' }])); // no 'auto'
+    const registry = buildToolRegistry({ cli, cfgMgr: createMockConfigManager(), workspaceRoot });
+
+    const res = await registry.get('oz_set_default_model')!.invoke({ model: 'auto' });
+    expect(res.isError).toBeUndefined();
+    expect(yamlModel()).toBe('auto');
+  });
+
   it('still writes when the catalog is unreachable (best-effort validation)', async () => {
     const cli = createMockCli();
     cli.modelList.mockRejectedValue(new Error('not logged in'));

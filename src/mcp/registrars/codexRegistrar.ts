@@ -175,8 +175,15 @@ async function atomicWriteText(file: string, content: string): Promise<void> {
   const dir = path.dirname(file);
   await fsp.mkdir(dir, { recursive: true });
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`;
-  await fsp.writeFile(tmp, content, 'utf8');
-  await fsp.rename(tmp, file);
+  try {
+    await fsp.writeFile(tmp, content, 'utf8');
+    await fsp.rename(tmp, file);
+  } catch (err) {
+    // The temp file may carry a bearer token; never leave it orphaned on a
+    // failed rename (mirrors atomicWriteJson in jsonRegistrarBase.ts).
+    try { await fsp.unlink(tmp); } catch { /* best-effort cleanup */ }
+    throw err;
+  }
 }
 
 /** Reads the file content, or undefined when it does not exist (ENOENT). */

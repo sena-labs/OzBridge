@@ -59,7 +59,8 @@ MCP client at it.
 - **MCP bridge — Warp Oz for any client** — expose the Oz toolset as a Model Context Protocol server over HTTP+SSE so **Claude Code, Cursor and Codex** drive Oz through the same tools Copilot sees. Run it embedded in VS Code (opt-in) or fully standalone via [`@sena-labs/oz-mcp-server`](packages/oz-mcp-server). See [`docs/MCP.md`](docs/MCP.md).
 - **`@oz` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel.
 - **Agent-Native Language Model Tools** — Copilot Agent mode can invoke Warp Oz directly, without typing `@oz`.
-- **Warp sidebar + status bar** — Activity Bar view with Active Runs, History, Schedules, Environments and MCP Servers, plus a `$(cloud) Warp: N active` status bar indicator.
+- **One-click model selection** — pick the Oz model from a QuickPick (`OzBridge: Select Model`), the `$(sparkle)` status-bar indicator, or `@oz /models <id>` — no hand-typing an id into settings. Agents switch it via the MCP tools `oz_list_models` / `oz_set_default_model`.
+- **Warp sidebar + status bar** — Activity Bar view with Active Runs, History, Schedules, Environments, MCP Servers and Secrets, plus a `$(cloud) Warp: N active` indicator and a `$(sparkle) <model>` model indicator (click to switch).
 - **Context variables & Warp handoff** — inline `#warp.env`, `#warp.profile`, `#warp.model`, `#oz.history` and `#oz.run/<id>` tokens expanded into any `/run` or `/cloud` prompt, plus a one-click handoff to an actual Warp terminal.
 - **Per-workspace config** — optional `.warp/warp-bridge.yaml` committed to the repo overrides `ozBridge.*` settings for everyone who opens the project. Precedence: YAML > VS Code settings > defaults. Secrets like `mcpBearerToken` and platform-specific `ozPath` are deliberately excluded.
 - **9 slash commands** covering the full agent workflow: `/run`, `/cloud`, `/status`, `/history`, `/schedule`, `/models`, `/mcp`, `/config`, `/init`.
@@ -68,7 +69,7 @@ MCP client at it.
 - **Cloud run polling** — exponential-backoff polling with real-time progress updates in the chat stream.
 - **Robust JSON parser** — 5-level fallback for mixed text/JSON CLI output.
 - **Configurable** — every setting is exposed via the VS Code Settings UI under `ozBridge.*`.
-- **Zero runtime dependencies** — only the `vscode` API at runtime (bundled < 90 KB).
+- **Minimal runtime footprint** — one bundled workspace package (`copilot-chat-toolkit`) plus the `vscode` API; no third-party network code. Production bundle ~160 KB.
 
 ## Requirements
 
@@ -163,7 +164,7 @@ stream back as markdown with action buttons (e.g. *Retry*, *Open run*).
 | `/status` | Show **active** runs (`QUEUED` / `INPROGRESS`) or detail by ID | `@oz /status` or `@oz /status <runId>` |
 | `/history` | Show **completed** runs (`SUCCEEDED` / `FAILED`) with optional filter | `@oz /history`, `@oz /history succeeded`, `@oz /history <runId>` |
 | `/schedule` | Create and manage scheduled runs | `@oz /schedule create daily "0 9 * * *" "Run linting"` |
-| `/models` | List available AI models | `@oz /models` |
+| `/models` | List available AI models, or set the default with `/models <id>` | `@oz /models` · `@oz /models claude-4-8-opus-max` |
 | `/mcp` | List configured MCP servers | `@oz /mcp` |
 | `/config` | Show current configuration | `@oz /config` |
 | `/init` | Scaffold Warp Skills and Rules files | `@oz /init` |
@@ -408,8 +409,8 @@ npm run package
 
 ### Test Suite
 
-- **1133 tests** across 80 files
-- **~2.3:1** test-to-code ratio
+- **1,400+ tests** across 100+ files
+- High test-to-code ratio
 - Framework: [Vitest](https://vitest.dev/) v4.0.18
 
 ## Contributing

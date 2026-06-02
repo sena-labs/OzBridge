@@ -13,7 +13,7 @@ Chat sees inside VS Code.
    - `ozBridge.mcpBearerToken` (default empty = no auth)
 4. Watch the OzBridge output channel for the log line:
    ```
-   MCP server listening on http://127.0.0.1:3847/sse (4 tools)
+   MCP server listening on http://127.0.0.1:3847/sse (6 tools)
    ```
 You can also start/stop the server on demand without touching settings:
 - `OzBridge: Start MCP server` (Command Palette)
@@ -31,7 +31,7 @@ which is `text/event-stream`.
 ## Protocol
 OzBridge implements the **Model Context Protocol 2025-03-26** (and
 gracefully negotiates down to 2024-11-05 on request). The supported
-method set in v0.6 is deliberately small:
+method set is deliberately small:
 - `initialize` — returns server capabilities + `serverInfo`.
 - `ping` — health probe, always returns `{}`.
 - `tools/list` — enumerates the registered tools.
@@ -46,6 +46,8 @@ advertised in this release.
 | `oz_agent_run_cloud` | Launch a cloud run. **Consumes Warp credits.** |
 | `oz_run_get` | Fetch a run's status and output by id. Read-only. |
 | `oz_run_list` | List recent runs; supports `all` / `active` / `completed` / raw status filters plus a numeric `limit`. |
+| `oz_list_models` | List the AI model ids available to the account (`oz model list`) and report the current default. Read-only. |
+| `oz_set_default_model` | Set the default Oz model for every OzBridge surface by writing `defaultModel` into the workspace `.warp/warp-bridge.yaml`. Validated against `oz model list`. |
 The JSON schemas for the `inputSchema` of each tool are emitted verbatim
 by `tools/list`, so clients can route arguments from their own prompts
 automatically.

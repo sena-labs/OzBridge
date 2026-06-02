@@ -41,7 +41,12 @@ export function readMcpConfig(full: WarpBridgeConfig): McpConfig {
   return {
     enabled: full.mcpEnabled === true,
     port,
-    bindAddress: full.mcpBindAddress || '127.0.0.1',
+    // Normalise `localhost` to the numeric loopback so the security gate
+    // below cannot be bypassed via a tampered hosts file that resolves
+    // `localhost` to a routable address.
+    bindAddress: full.mcpBindAddress && full.mcpBindAddress.trim().toLowerCase() !== 'localhost'
+      ? full.mcpBindAddress.trim()
+      : '127.0.0.1',
     bearerToken: full.mcpBearerToken || '',
     maxSseSessions,
     sseMaxLifetimeMs:
@@ -238,7 +243,10 @@ function isPortInUseError(err: unknown): boolean {
 /** Returns true for IPv4/IPv6 loopback bind addresses. */
 function isLoopbackAddress(address: string): boolean {
   const a = address.trim().toLowerCase();
-  return a === '127.0.0.1' || a === 'localhost' || a === '::1';
+  // `localhost` is intentionally NOT loopback-safe here: it is a DNS name that
+  // can resolve to a routable address. readMcpConfig() normalises it to
+  // 127.0.0.1 before this is reached; anything else requires a bearer token.
+  return a === '127.0.0.1' || a === '::1';
 }
 
 /**

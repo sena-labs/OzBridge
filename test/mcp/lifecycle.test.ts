@@ -39,6 +39,13 @@ describe('readMcpConfig', () => {
     const cfg = readMcpConfig({ mcpPort: -1 } as any);
     expect(cfg.port).toBe(3847);
   });
+
+  it('normalises bindAddress "localhost" to 127.0.0.1 (DNS-spoof guard)', () => {
+    expect(readMcpConfig({ mcpBindAddress: 'localhost' } as any).bindAddress).toBe('127.0.0.1');
+    expect(readMcpConfig({ mcpBindAddress: 'LocalHost' } as any).bindAddress).toBe('127.0.0.1');
+    // A genuine non-loopback bind is preserved (and gated on a token elsewhere).
+    expect(readMcpConfig({ mcpBindAddress: '0.0.0.0' } as any).bindAddress).toBe('0.0.0.0');
+  });
 });
 
 describe('readMcpConfig — sseMaxLifetimeMs validation', () => {

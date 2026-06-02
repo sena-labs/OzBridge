@@ -56,9 +56,13 @@ scripts/**
 # PR body scratchpad (local-only, never ships to Marketplace)
 pr-body.md
 
-# Local databases and test scripts
+# Local databases and dev/install scripts (install helper has hardcoded
+# local paths + dev-only comments — must never ship to the Marketplace)
 *.db
-test-*.ps1
+*.ps1
+
+# Internal dev/agent notes — developer-only, never ship
+AGENTS.md
 
 # Internal audit reports (developer-only, never ship to Marketplace)
 AUDIT_REPORT*.md

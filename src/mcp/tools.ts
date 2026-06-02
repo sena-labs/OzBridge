@@ -282,7 +282,9 @@ export function buildToolRegistry(deps: McpToolDeps): Map<string, McpToolEntry> 
         // if `oz model list` fails, still honour the write rather than block.
         try {
           const models = await fetchModelIds(deps.cli);
-          if (models.length > 0 && !models.includes(model)) {
+          // `auto` is always valid (lets Warp choose) even if the catalogue
+          // snapshot happens not to list it.
+          if (model !== 'auto' && models.length > 0 && !models.includes(model)) {
             return errorText(new Error(
               `Unknown model '${model}'. Call oz_list_models to see the ${models.length} available ids.`,
             ));

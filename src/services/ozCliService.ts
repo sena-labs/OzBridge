@@ -86,7 +86,7 @@ const SENSITIVE_ENV_PREFIXES = [
  * `NOT_AUTHENTICATED` instead of waiting out the 90s idle timeout.
  */
 const FATAL_AUTH_STDERR =
-  /authentication failed|not logged in|unauthorized|please log ?in|must log ?in|failed to fetch user response data|fetching an id token/i;
+  /authentication failed|not logged in|please log ?in|must log ?in|failed to fetch user response data/i;
 
 /**
  * Permissive validator for `--jq <FILTER>` values. Allows the characters
@@ -1081,7 +1081,7 @@ export class OzCliService implements IOzCliService {
         const exitCode = code ?? 1;
 
         if (killed) {
-          if (cancellation?.isCancellationRequested) {
+          if (cancellation?.isCancellationRequested || this.extensionToken?.isCancellationRequested) {
             reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
           } else if (stalled) {
             // IMPL: idle-timeout fail-fast. A stalled process must NOT be

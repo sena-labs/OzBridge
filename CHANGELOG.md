@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] — 2026-06-01
 
 ### Added
+- **One-click model selection across every surface.** Pick the Oz model
+  without hand-typing an id into settings: the `OzBridge: Select Model`
+  QuickPick (`ozBridge.selectModel`), a `$(sparkle)` status-bar model
+  indicator, and `@oz /models <id>` (the `/models` chat command now *sets*
+  the default in addition to listing it). Agents switch the model via two new
+  MCP tools, `oz_list_models` and `oz_set_default_model`; the setter persists
+  `defaultModel` into the workspace `.warp/warp-bridge.yaml`, so a model
+  chosen on any surface applies to every client (the embedded server and the
+  standalone `@sena-labs/oz-mcp-server`).
 - **Schedule editing.** New `cli.scheduleGet` / `cli.scheduleUpdate`
   service methods plus `/schedule get <id>` and
   `/schedule update <id> [--name "x"] [--cron "y"] [--prompt "z"]`
@@ -122,6 +131,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`oz_run_list` tool description** corrected: the `completed` filter
   returns `SUCCEEDED|FAILED` (matching the implementation), not the longer
   set previously advertised.
+- **Local `@oz` runs no longer hang / time out.** `agent run` requested
+  `WARP_OUTPUT_FORMAT=ndjson` when streaming progress; in ndjson mode the Warp
+  CLI *follows* the run and never exits on piped (non-TTY) stdout, so the call
+  waited out the 90s idle timeout ("Starting local Oz agent…" then STALLED).
+  It now uses `json` (same incremental events streamed via `onLine`, clean
+  process exit).
+- **Read-only queries no longer hang.** `run list` / `run get` (and the other
+  list commands) print their full JSON then keep the process alive on piped
+  stdout; the bridge now resolves as soon as a complete JSON value is received
+  and reaps the lingering child — fixing the dashboard "no output for 90s"
+  failure and the "OzBridge: unavailable" status bar.
+- **`run get` status + auth fail-fast.** Run detail derived `status` from a
+  `status` field only, but Warp payloads carry it under `state` — completed
+  runs were mis-reported as `UNKNOWN`; it now reads `status ?? state`. A fatal
+  authentication error on stderr now fails fast with a clear "authentication
+  failed — run `oz login`" in ~1s instead of waiting the full 90s idle timeout.
 
 ### Internal
 - Added branch-coverage tests for `runLocalTool` / `runCloudTool` so the CI

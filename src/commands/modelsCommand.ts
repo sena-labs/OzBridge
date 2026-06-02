@@ -32,7 +32,7 @@ export function createModelsCommand(
       stream.progress('Validating model…');
       try {
         const ids = await fetchModelIds(cli);
-        if (ids.length > 0 && !ids.includes(requested)) {
+        if (requested !== 'auto' && ids.length > 0 && !ids.includes(requested)) {
           stream.markdown(
             `⚠️ Unknown model \`${requested}\`. Run \`/models\` to see the ${ids.length} available ids.\n`,
           );
