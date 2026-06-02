@@ -64,9 +64,15 @@ pr-body.md
 # Internal dev/agent notes — developer-only, never ship
 AGENTS.md
 
-# Internal audit reports (developer-only, never ship to Marketplace)
+# Internal audit / planning reports (developer-only, never ship to Marketplace).
+# Pattern-based so newly-named audit docs cannot leak again. No shipped doc
+# is named `OzBridge*.md` or `*Audit*.md` (README/CHANGELOG/PRIVACY/SECURITY
+# /DISCLAIMER are all explicitly allow-listed names).
 AUDIT_REPORT*.md
 OzBridge_AUDIT_FINDINGS.md
+OzBridge*.md
+*Audit*.md
+*audit*.md
 
 test-out.txt
 *.txt

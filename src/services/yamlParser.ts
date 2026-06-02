@@ -100,8 +100,12 @@ function stripTrailingComment(input: string): string {
   let inDouble = false;
   for (let i = 0; i < input.length; i++) {
     const ch = input[i];
-    if (ch === '\\' && (inSingle || inDouble)) {
-      i += 1; // skip escaped char inside a string
+    // Only double-quoted YAML strings process backslash escapes. In a
+    // single-quoted string `\` is a literal character (only `''` escapes a
+    // quote), so honouring `\` there would skip the real closing quote and
+    // throw a spurious "unterminated quoted string".
+    if (ch === '\\' && inDouble) {
+      i += 1; // skip escaped char inside a double-quoted string
       continue;
     }
     if (ch === "'" && !inDouble) { inSingle = !inSingle; continue; }

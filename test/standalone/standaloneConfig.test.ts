@@ -69,4 +69,12 @@ describe('StandaloneConfigManager env numeric parsing', () => {
     const cfg = new StandaloneConfigManager(workspaceRoot).getConfig();
     expect(cfg.timeoutMs).toBe(120_000);
   });
+
+  it('preserves a bearer token from .warp/warp-bridge.yaml when OZ_MCP_TOKEN is unset', () => {
+    // Regression: line 66 previously did `env('OZ_MCP_TOKEN') ?? DEFAULT` and
+    // skipped the yaml rung, dropping a configured token → unauthenticated.
+    fs.writeFileSync(path.join(workspaceRoot, '.warp', 'warp-bridge.yaml'), 'mcpBearerToken: s3cret\n', 'utf8');
+    const cfg = new StandaloneConfigManager(workspaceRoot).getConfig();
+    expect(cfg.mcpBearerToken).toBe('s3cret');
+  });
 });

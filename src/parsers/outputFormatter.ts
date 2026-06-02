@@ -39,7 +39,11 @@ export class OutputFormatter {
     stream: vscode.ChatResponseStream,
     opts?: { autoOpened?: boolean; local?: boolean },
   ): void {
-    const statusIcon = result.status === 'SUCCEEDED' ? '✅' : '❌';
+    // 3-way: in-flight runs (`/status <id>` on a QUEUED/INPROGRESS run) must
+    // not show the ❌ failure glyph (mirrors renderRunResult in baseTool.ts).
+    const statusIcon = result.status === 'SUCCEEDED' ? '✅'
+      : result.status === 'FAILED' ? '❌'
+      : '⏳';
 
     stream.markdown(`${statusIcon} **Agent run** — status: \`${result.status}\`\n\n`);
 
@@ -107,8 +111,12 @@ export class OutputFormatter {
     // Header tabella
     const headerRow = '| ' + columns.join(' | ') + ' |';
     const separatorRow = '| ' + columns.map(() => '---').join(' | ') + ' |';
+    // Escape `|` and collapse newlines per cell so user-supplied values
+    // (schedule name/cron/prompt, server names) cannot break the table layout.
+    const cell = (v: unknown): string =>
+      String(v ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
     const dataRows = listResult.items.map(
-      (item) => '| ' + columns.map((col) => String((item as Record<string, unknown>)[col] ?? '')).join(' | ') + ' |'
+      (item) => '| ' + columns.map((col) => cell((item as Record<string, unknown>)[col])).join(' | ') + ' |'
     );
 
     stream.markdown([headerRow, separatorRow, ...dataRows].join('\n') + '\n');

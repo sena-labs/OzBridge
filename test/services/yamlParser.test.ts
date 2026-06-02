@@ -64,6 +64,14 @@ describe('parseFlatYaml — happy paths', () => {
     expect(result.data.defaultProfile).toBe('a # not a comment');
   });
 
+  it('parses a single-quoted value ending in a backslash (no escape processing)', () => {
+    // YAML single quotes treat `\` literally; the comment-stripper must not
+    // skip the real closing quote → previously threw "unterminated".
+    const result = parseFlatYaml("defaultProfile: 'C:\\Users\\me\\'\n");
+    expect(result.errors).toEqual([]);
+    expect(result.data.defaultProfile).toBe('C:\\Users\\me\\');
+  });
+
   it('parses negative integers and floats', () => {
     const src = 'a: -42\nb: 3.14';
     const result = parseFlatYaml(src);

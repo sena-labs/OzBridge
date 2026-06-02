@@ -145,7 +145,10 @@ export function parseConnectionString(raw: string): ParsedConnectionString | nul
     parts.set(k.trim().toLowerCase(), rest.join('=').trim());
   }
   const key = parts.get('instrumentationkey');
-  const endpoint = parts.get('ingestionendpoint') ?? 'https://dc.services.visualstudio.com/';
+  // `||` not `??`: a present-but-empty `IngestionEndpoint=` must fall back to
+  // the default, otherwise the flush would POST to a relative `/v2/track` URL
+  // that `fetch` rejects, silently disabling telemetry for the session.
+  const endpoint = parts.get('ingestionendpoint') || 'https://dc.services.visualstudio.com/';
   if (!key) {
     return null;
   }

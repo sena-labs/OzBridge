@@ -60,6 +60,20 @@ async function main(): Promise<void> {
   const bind    = getArg(args, '--bind')           ?? cfg.mcpBindAddress;
   const token   = getArg(args, '--token')          ?? cfg.mcpBearerToken;
 
+  // Security gate: the MCP tool surface can spawn the Oz CLI, so refuse to
+  // bind to a non-loopback address without a bearer token (mirrors the
+  // extension's McpLifecycle gate). `localhost` is normalised first so the
+  // gate cannot be bypassed via a tampered hosts file.
+  const normalizedBind = bind.trim().toLowerCase() === 'localhost' ? '127.0.0.1' : bind.trim();
+  const isLoopback = normalizedBind === '127.0.0.1' || normalizedBind === '::1';
+  if (!isLoopback && !token) {
+    console.error(
+      `[oz-mcp-server] Refusing to bind to non-loopback address "${bind}" without a bearer token. `
+      + 'Pass --token / set OZ_MCP_TOKEN, or bind to 127.0.0.1.',
+    );
+    process.exit(1);
+  }
+
   const cli   = new OzCliService(cfgMgr);
   const tools = buildToolRegistry({ cli, cfgMgr, workspaceRoot: cwd });
 
@@ -68,7 +82,7 @@ async function main(): Promise<void> {
     { name: 'oz-mcp-server', version: '1.2.0' },
     {
       port,
-      bindAddress: bind,
+      bindAddress: normalizedBind,
       bearerToken: token || undefined,
       maxSseSessions: cfg.mcpMaxSseSessions,
       sseMaxLifetimeMs: cfg.mcpSseMaxLifetimeMs,

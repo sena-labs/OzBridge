@@ -233,7 +233,7 @@ export function createScheduleCommand(
             stream.markdown('**Usage**: `/schedule update <id> [--name "<name>"] [--cron "<cron>"] [--prompt "<prompt>"]`\n');
             break;
           }
-          if (!updates.name && !updates.cron && !updates.prompt) {
+          if (updates.name === undefined && updates.cron === undefined && updates.prompt === undefined) {
             stream.markdown('_Nothing to update — pass at least one of `--name`, `--cron`, `--prompt`._\n');
             break;
           }

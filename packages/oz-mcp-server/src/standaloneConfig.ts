@@ -63,7 +63,7 @@ export class StandaloneConfigManager implements IConfigManager {
       mcpEnabled:         true,
       mcpPort:            envNum('OZ_MCP_PORT', yaml.mcpPort ?? DEFAULT_CONFIG.mcpPort),
       mcpBindAddress:     env('OZ_MCP_BIND')        ?? yaml.mcpBindAddress      ?? DEFAULT_CONFIG.mcpBindAddress,
-      mcpBearerToken:     env('OZ_MCP_TOKEN')       ?? DEFAULT_CONFIG.mcpBearerToken,
+      mcpBearerToken:     env('OZ_MCP_TOKEN')       ?? yaml.mcpBearerToken     ?? DEFAULT_CONFIG.mcpBearerToken,
       timeoutMs:          envNum('OZ_TIMEOUT_MS',      DEFAULT_CONFIG.timeoutMs),
       idleTimeoutMs:      envNum('OZ_IDLE_TIMEOUT_MS', DEFAULT_CONFIG.idleTimeoutMs),
     };

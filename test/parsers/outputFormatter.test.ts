@@ -28,6 +28,13 @@ describe('formatRunResult()', () => {
     expect(mock.getFullOutput()).toContain('FAILED');
   });
 
+  it('shows ⏳ (not ❌) for an in-flight run', () => {
+    formatter.formatRunResult(makeRunResult({ status: 'INPROGRESS' }), mock.stream as any);
+    const out = mock.getFullOutput();
+    expect(out).toContain('⏳');
+    expect(out).not.toContain('❌');
+  });
+
   it('dovrebbe mostrare Run ID se presente', () => {
     formatter.formatRunResult(makeRunResult({ runId: 'abc-123' }), mock.stream as any);
     expect(mock.getFullOutput()).toContain('abc-123');
@@ -144,6 +151,12 @@ describe('formatList()', () => {
     formatter.formatList(makeListResult(items), ['id', 'name' as any], mock.stream as any);
     const output = mock.getFullOutput();
     expect(output).toContain('| x |');
+  });
+
+  it('escapes `|` in cell values so the table layout is not broken', () => {
+    const items = [{ id: 'x', name: 'a|b' }];
+    formatter.formatList(makeListResult(items), ['id', 'name' as any], mock.stream as any);
+    expect(mock.getFullOutput()).toContain('a\\|b');
   });
 });
 

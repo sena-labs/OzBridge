@@ -166,6 +166,10 @@ function shellQuote(value: string): string {
     // - caret and control chars: caret-escaped
     // - double quotes: backslash-escaped to keep surrounding quotes intact
     const escaped = value
+      // Escape backslashes FIRST so a trailing `\` cannot neutralise the
+      // closing wrapper quote (`"a\"` would otherwise read as an escaped
+      // quote and leave the argument unterminated).
+      .replace(/\\/g, '\\\\')
       .replace(/\^/g, '^^')
       .replace(/%/g, '%%')
       .replace(/"/g, '\\"')

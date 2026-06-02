@@ -123,6 +123,11 @@ describe('parseConnectionString', () => {
     expect(parsed?.ingestionEndpoint).toBe('https://dc.services.visualstudio.com');
   });
 
+  it('defaults the endpoint when IngestionEndpoint is present but empty', () => {
+    const parsed = parseConnectionString('InstrumentationKey=abc;IngestionEndpoint=');
+    expect(parsed?.ingestionEndpoint).toBe('https://dc.services.visualstudio.com');
+  });
+
   it('returns null without an instrumentation key', () => {
     expect(parseConnectionString('IngestionEndpoint=https://x/')).toBeNull();
     expect(parseConnectionString('')).toBeNull();

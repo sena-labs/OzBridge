@@ -56,6 +56,16 @@ describe('buildHandoffCommand', () => {
       platformSpy.mockRestore();
     }
   });
+
+  it('on Windows doubles backslashes so a trailing `\\` cannot neutralise the closing quote', () => {
+    const platformSpy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+    try {
+      const cmd = buildHandoffCommand({ runId: 'C:\\repo\\' });
+      expect(cmd).toBe('oz run get "C:\\\\repo\\\\"');
+    } finally {
+      platformSpy.mockRestore();
+    }
+  });
 });
 
 /**

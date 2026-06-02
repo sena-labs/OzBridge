@@ -489,6 +489,19 @@ describe('OzCliService', () => {
       const options = mockSpawn.mock.calls[0][2] as any;
       expect(options.windowsHide).toBe(true);
     });
+
+    it('fails closed (no spawn) when a shell spawn would receive a newline on Windows', async () => {
+      // ozPath resolves to bare 'oz' (execFileSync mocked to throw) → on win32
+      // needsShell=true. A newline in the prompt would split the cmd.exe line.
+      const spy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+      try {
+        await expect(cli.agentRun({ prompt: 'do x\nthen calc.exe' }))
+          .rejects.toMatchObject({ kind: OzCliErrorKind.CLI_ERROR });
+        expect(mockSpawn).not.toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+      }
+    });
   });
 
   // =========================================================================
@@ -798,6 +811,13 @@ describe('OzCliService', () => {
 
     it('buildChildEnv con outputFormat=null non deve impostare WARP_OUTPUT_FORMAT', () => {
       const env = OzCliService.buildChildEnv(null, { PATH: '/usr/bin' } as NodeJS.ProcessEnv);
+      expect(env.WARP_OUTPUT_FORMAT).toBeUndefined();
+    });
+
+    it('buildChildEnv(null) strips an inherited WARP_OUTPUT_FORMAT (raw-output callers)', () => {
+      const env = OzCliService.buildChildEnv(null, {
+        PATH: '/usr/bin', WARP_OUTPUT_FORMAT: 'json',
+      } as NodeJS.ProcessEnv);
       expect(env.WARP_OUTPUT_FORMAT).toBeUndefined();
     });
 

@@ -781,6 +781,28 @@ export class OzCliService implements IOzCliService {
       // see it.
       const needsShell = process.platform === 'win32' && !/\.exe$/i.test(ozPath);
 
+      // Security (fail-closed): in `shell: true` mode Node does NOT quote argv
+      // — it joins them into a single cmd.exe command line. An embedded
+      // newline in an argument would split it into separate commands (the
+      // clearest injection/corruption vector, and one no legitimate single
+      // CLI argument — jq filters included — contains). We reject it loudly
+      // instead of silently mis-executing. The default install resolves to
+      // `warp.exe` (no shell), so this never triggers there. (Single-line `&`
+      // / `|` / `<` / `>` metacharacters in a free-text prompt remain a
+      // residual, low-likelihood risk on this rare `.cmd`/bare-name fallback —
+      // char-rejecting them would break legitimate jq filters and natural-
+      // language prompts; the robust fix is to pin `ozBridge.ozPath` to the
+      // `warp.exe` so no shell is used.)
+      if (needsShell && args.some((a) => /[\r\n]/.test(a))) {
+        reject(new OzCliError(
+          OzCliErrorKind.CLI_ERROR,
+          'Refusing to run the Oz CLI through a shell with a newline in the input — cmd.exe would '
+          + 'split it into separate commands. Set `ozBridge.ozPath` to the absolute path of '
+          + '`warp.exe` to run without a shell.',
+        ));
+        return;
+      }
+
       let proc: ChildProcess;
       try {
 
@@ -1433,6 +1455,11 @@ export class OzCliService implements IOzCliService {
     }
     if (outputFormat) {
       env.WARP_OUTPUT_FORMAT = outputFormat;
+    } else {
+      // Raw-output callers (e.g. `drive get` markdown, `--help`) must NOT
+      // inherit a `WARP_OUTPUT_FORMAT` exported in the user's shell, or the
+      // CLI would wrap/escape the body. Strip it explicitly.
+      delete env.WARP_OUTPUT_FORMAT;
     }
     return env;
   }
