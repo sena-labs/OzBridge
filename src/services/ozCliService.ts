@@ -348,7 +348,7 @@ export class OzCliService implements IOzCliService {
       args.push('-e', opts.environment);
     }
 
-    const result = await this.exec(args);
+    const result = await this.exec(args, undefined, undefined, { earlyJsonResolve: true });
     const parsed = parse<OzSchedule>(result.stdout);
     if (!parsed.parsed) {
       throw new OzCliError(OzCliErrorKind.PARSE_ERROR, 'Failed to parse schedule create output', result.exitCode, result.stderr);
@@ -433,7 +433,7 @@ export class OzCliService implements IOzCliService {
       args.push('--remove-environment');
     }
 
-    const result = await this.exec(args);
+    const result = await this.exec(args, undefined, undefined, { earlyJsonResolve: true });
     const parsed = parse<OzSchedule>(result.stdout);
     if (!parsed.parsed) {
       throw new OzCliError(OzCliErrorKind.PARSE_ERROR, 'Failed to parse schedule update output', result.exitCode, result.stderr);
@@ -760,6 +760,15 @@ export class OzCliService implements IOzCliService {
        * they never appear in `argv`.
        */
       stdin?: string;
+      /**
+       * Opt-in to the "complete-JSON early-resolve" workaround for a
+       * non-read-only command that returns a single JSON object and carries no
+       * authoritative data on stderr (e.g. `schedule create` / `update`). This
+       * guards against Warp emitting the result then failing to exit on piped
+       * stdout. Read-only commands get this implicitly. Commands whose run-id
+       * banner is on stderr (`agent run-cloud`) must NOT set this.
+       */
+      earlyJsonResolve?: boolean;
     },
   ): Promise<ExecResult> {
     // Read-only commands (list/get) cannot consume Warp credits per
@@ -771,6 +780,9 @@ export class OzCliService implements IOzCliService {
     const outputFormat = options?.outputFormat === undefined ? 'json' : options.outputFormat;
     const onLine = options?.onLine;
     const stdinPayload = options?.stdin;
+    // Read-only commands get complete-JSON early-resolve implicitly; other
+    // single-JSON commands opt in via `earlyJsonResolve`.
+    const earlyJsonResolve = readOnly || options?.earlyJsonResolve === true;
     return new Promise((resolve, reject) => {
       if (cancellation?.isCancellationRequested || this.extensionToken?.isCancellationRequested) {
         reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
@@ -1045,7 +1057,7 @@ export class OzCliService implements IOzCliService {
         // Streaming (ndjson/onLine) and raw-output (outputFormat: null) calls
         // are exempt, and the cheap first/last-char guard avoids JSON.parse on
         // every partial chunk.
-        if (readOnly && !settled && !onLine && outputFormat === 'json' && !stdoutTruncated) {
+        if (earlyJsonResolve && !settled && !onLine && outputFormat === 'json' && !stdoutTruncated) {
           const trimmed = stdout.trim();
           const first = trimmed[0];
           const last = trimmed[trimmed.length - 1];

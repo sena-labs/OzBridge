@@ -1285,6 +1285,18 @@ describe('OzCliService — read-only JSON command that never exits', () => {
     expect(proc.kill).toHaveBeenCalled();
   });
 
+  it('scheduleCreate resolves on complete JSON when warp emits it but never exits', async () => {
+    const proc = createHangingProcess();
+    process.nextTick(() => {
+      proc.stdout.emit('data', Buffer.from(
+        '{"id":"s-1","name":"daily","cron":"0 9 * * *","prompt":"lint","paused":false}',
+      ));
+    });
+    const r = await cli.scheduleCreate({ name: 'daily', cron: '0 9 * * *', prompt: 'lint' });
+    expect(r.id).toBe('s-1');
+    expect(proc.kill).toHaveBeenCalled();
+  });
+
   it('salvages a streaming agent run answer when warp emits the reply but never exits', async () => {
     vi.useFakeTimers();
     try {
