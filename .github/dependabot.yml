@@ -35,9 +35,18 @@ updates:
         patterns:
           - '@vscode/*'
     ignore:
-      # Pinned for compatibility with VS Code's stable runtime.
+      # @types/vscode and @types/node must track the engines.vscode floor
+      # (^1.96.0 → VS Code's bundled Node 20). Bumping the type stubs ahead
+      # of the lowest supported runtime would surface APIs that are not
+      # guaranteed to exist when the extension actually runs. @types/vscode
+      # advances by minor per VS Code release, so minor is ignored too.
       - dependency-name: '@types/vscode'
-        update-types: ['version-update:semver-major']
+        update-types:
+          - 'version-update:semver-major'
+          - 'version-update:semver-minor'
+      - dependency-name: '@types/node'
+        update-types:
+          - 'version-update:semver-major'
 
   # ── packages/copilot-chat-toolkit workspace ─────────────────────────
   - package-ecosystem: 'npm'
@@ -69,3 +78,11 @@ updates:
         patterns:
           - 'actions/*'
           - 'github/codeql-action'
+    ignore:
+      # security.yml is tuned for gitleaks-action v2's PR-diff scoping
+      # (GET /pulls/:n/commits + the pull-requests:read scope) and its
+      # GITLEAKS_ENABLE_* env contract. A major bump must be validated
+      # against that workflow by hand before adopting.
+      - dependency-name: 'gitleaks/gitleaks-action'
+        update-types:
+          - 'version-update:semver-major'

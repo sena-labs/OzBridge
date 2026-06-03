@@ -11,3 +11,12 @@ playwright-report/
 # Script locali (non committare)
 install-ozbridge.ps1
 test-ozbridge.ps1
+
+# Local agent / tooling state (never published)
+.claude/
+.remember/
+ruvector.db
+*.ruvector.db
+
+# Local audit / planning working docs (kept out of the published tree)
+/*[Aa]udit*.md
