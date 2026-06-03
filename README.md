@@ -4,6 +4,12 @@
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+> **Independent extension** — not affiliated with, endorsed by, or sponsored by Warp, Inc.
+> **Warp™** and **Oz™** are trademarks of Warp, Inc., used here nominatively only to
+> describe interoperability. OzBridge uses solely Warp's **documented public interfaces**
+> (the `oz` CLI, the Model Context Protocol, and the `WARP_OUTPUT_FORMAT` env var); it does
+> not modify, reverse-engineer, or compete with Warp. See [DISCLAIMER](DISCLAIMER.md).
+
 **OzBridge brings Warp Oz to any IDE or agent that speaks the
 [Model Context Protocol](https://modelcontextprotocol.io) (MCP).** Run it
 embedded in VS Code — where Oz shows up natively as the `@oz` **Chat
@@ -530,10 +536,13 @@ This project is licensed under the MIT License. See the [LICENSE](./LICENSE) fil
 
 ## Disclaimer
 
-OzBridge is an independent project developed by Ivan Sena under the Sena Labs name.
+OzBridge is an independent project developed by Ivan Sena under the Sena Labs name. It is
+**not affiliated with, endorsed by, sponsored by, or officially associated with** Warp, Inc.,
+Microsoft, GitHub, or Visual Studio Code.
 
-It is not affiliated with, endorsed by, or officially associated with Warp, Microsoft, GitHub, or Visual Studio Code.
-
-Warp, Oz, GitHub, Microsoft, Visual Studio Code, and related names may be trademarks of their respective owners.
+**Warp™** and **Oz™** are trademarks of Warp, Inc.; other names may be trademarks of their
+respective owners. They are used here **nominatively** only to describe interoperability.
+OzBridge uses solely Warp's **documented public interfaces** (the `oz` CLI, the Model Context
+Protocol, and `WARP_OUTPUT_FORMAT`); it does not modify, reverse-engineer, or compete with Warp.
 
 This extension is provided "as is", without warranty of any kind. Use it at your own risk. See [DISCLAIMER.md](./DISCLAIMER.md) for details.
