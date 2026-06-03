@@ -1284,4 +1284,28 @@ describe('OzCliService — read-only JSON command that never exits', () => {
     await expect(cli.runList()).rejects.toMatchObject({ kind: OzCliErrorKind.NOT_AUTHENTICATED });
     expect(proc.kill).toHaveBeenCalled();
   });
+
+  it('salvages a streaming agent run answer when warp emits the reply but never exits', async () => {
+    vi.useFakeTimers();
+    try {
+      const proc = createHangingProcess();
+      const events: string[] = [];
+      const p = cli.agentRun({ prompt: 'go', onProgress: (l) => events.push(l) });
+      await Promise.resolve(); // let exec() register its stdout listeners
+      // Warp streams run_started + the agent reply, then hangs (no `close`).
+      proc.stdout.emit('data', Buffer.from(
+        '{"type":"system","event_type":"run_started","run_id":"r1"}\n'
+        + '{"type":"agent","text":"DONE-ANSWER"}\n',
+      ));
+      // Advance past the completion grace (8s) — no idle/global timeout yet.
+      await vi.advanceTimersByTimeAsync(9_000);
+      const result = await p;
+      expect(result.status).toBe('SUCCEEDED');
+      expect(result.output).toContain('DONE-ANSWER');
+      expect(events).toHaveLength(2);
+      expect(proc.kill).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

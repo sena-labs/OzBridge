@@ -89,6 +89,15 @@ const FATAL_AUTH_STDERR =
   /authentication failed|not logged in|please log ?in|must log ?in|failed to fetch user response data/i;
 
 /**
+ * Grace period (ms) of stream silence after a streaming `agent run` has emitted
+ * the agent's reply before we treat the run as complete. Warp frequently prints
+ * the final response then fails to exit on piped (non-TTY) stdout; once the
+ * answer is in hand and the stream is quiet for this long, we resolve and reap
+ * rather than discard the result at the much longer idle timeout.
+ */
+const AGENT_RUN_COMPLETION_IDLE_MS = 8_000;
+
+/**
  * Permissive validator for `--jq <FILTER>` values. Allows the characters
  * actually used by jq syntax (dots, brackets, parens, pipes, quotes,
  * commas, comparison operators, arithmetic) while blocking shell
@@ -854,6 +863,11 @@ export class OzCliService implements IOzCliService {
       let settled = false;
       let forceKillHandle: NodeJS.Timeout | undefined;
       let idleHandle: NodeJS.Timeout | undefined;
+      let completionHandle: NodeJS.Timeout | undefined;
+      // `type` of the most recent NDJSON event parsed from a streaming
+      // `agent run`, so completion fires only when the agent's reply (not a
+      // pending tool call) was the last thing emitted.
+      let lastNdjsonType: string | undefined;
 
       // Pipe sensitive payloads (e.g. secret values) through stdin so
       // they never appear in argv or in process listings. We write
@@ -878,6 +892,34 @@ export class OzCliService implements IOzCliService {
           stalled = true;
           terminateProcess();
         }, idleMs);
+      };
+
+      // Completion detection for a streaming `agent run`: Warp often emits the
+      // agent's final reply then fails to exit on piped (non-TTY) stdout. Once
+      // the stream is quiet for AGENT_RUN_COMPLETION_IDLE_MS with the agent's
+      // reply as the last event, we already hold the full answer — resolve and
+      // reap instead of discarding it at the (longer) idle timeout. Armed only
+      // for streaming agent runs (onLine + json); read-only queries use the
+      // complete-JSON early-resolve in the stdout handler instead.
+      const armCompletionTimer = () => {
+        if (!onLine || outputFormat !== 'json') { return; }
+        if (completionHandle) { clearTimeout(completionHandle); }
+        completionHandle = setTimeout(() => {
+          if (settled || lastNdjsonType !== 'agent') { return; }
+          settled = true;
+          cleanup();
+          try { proc.kill('SIGTERM'); } catch { /* already exited */ }
+          if (process.platform === 'win32' && needsShell && proc.pid !== undefined) {
+            try {
+              spawn('taskkill', ['/PID', String(proc.pid), '/T', '/F'], {
+                windowsHide: true,
+                stdio: 'ignore',
+              });
+            } catch { /* best-effort */ }
+          }
+          resolve({ stdout, stderr, exitCode: 0, durationMs: Date.now() - startTime });
+        }, AGENT_RUN_COMPLETION_IDLE_MS);
+        completionHandle.unref?.();
       };
 
       const terminateProcess = () => {
@@ -928,6 +970,9 @@ export class OzCliService implements IOzCliService {
         if (idleHandle) {
           clearTimeout(idleHandle);
         }
+        if (completionHandle) {
+          clearTimeout(completionHandle);
+        }
         cancelListener?.dispose();
         extensionCancelListener?.dispose();
       };
@@ -969,6 +1014,14 @@ export class OzCliService implements IOzCliService {
             lineBuffer = lineBuffer.slice(nl + 1);
             if (line.length > 0) {
               try { onLine(line); } catch (cbErr) { logWarn('ozCliService onLine callback threw', getErrorMessage(cbErr)); }
+              // Track the NDJSON event type for streaming completion detection.
+              // Cheap `{`-prefix guard avoids JSON.parse on non-JSON lines.
+              if (outputFormat === 'json' && line.charCodeAt(0) === 123 /* '{' */) {
+                try {
+                  const ev = JSON.parse(line) as { type?: unknown };
+                  if (typeof ev.type === 'string') { lastNdjsonType = ev.type; }
+                } catch { /* partial / non-JSON event line */ }
+              }
             }
           }
           // Also cap the line buffer to avoid unbounded growth when the
@@ -1016,6 +1069,7 @@ export class OzCliService implements IOzCliService {
           }
         }
         armIdleTimer();
+        armCompletionTimer();
       });
 
       proc.stderr?.on('data', (chunk: Buffer) => {
@@ -1105,6 +1159,13 @@ export class OzCliService implements IOzCliService {
         if (killed) {
           if (cancellation?.isCancellationRequested || this.extensionToken?.isCancellationRequested) {
             reject(new OzCliError(OzCliErrorKind.CANCELLED, 'Operation cancelled by user'));
+          } else if (stalled && onLine && lastNdjsonType === 'agent') {
+            // Streaming `agent run` that already delivered the agent's reply
+            // before the idle timer fired (e.g. a very low idleTimeoutMs that
+            // beat the completion grace): salvage the buffered answer as a
+            // success instead of discarding it as STALLED. Warp not exiting on
+            // piped stdout must not lose a completed run's output.
+            resolve({ stdout, stderr, exitCode: 0, durationMs });
           } else if (stalled) {
             // IMPL: idle-timeout fail-fast. A stalled process must NOT be
             // reclassified as INSUFFICIENT_CREDITS unless stderr/stdout
