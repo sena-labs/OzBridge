@@ -29,6 +29,12 @@ packages/**
 # Unreferenced placeholder hero asset (only emitted by scripts/generate_media.py)
 media/screenshot.svg
 
+# Launch promo / marketing assets (not referenced by the listing README — never ship in the extension)
+media/launch/**
+
+# MCP registry manifest (repo-root metadata, not part of the extension)
+server.json
+
 # Runtime artefacts (never ship)
 test-results/**
 .claude/**
