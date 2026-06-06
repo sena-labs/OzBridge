@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] — 2026-06-06
+
+### Fixed
+- README hero image now renders on the Marketplace and Open VSX listings. It
+  used a non-rendering `/blob/` GitHub URL; switched to a repo-relative path
+  (like the feature-gallery images), which the packager rewrites to a raw URL.
+
 ## [1.2.1] — 2026-06-06
 
 ### Changed

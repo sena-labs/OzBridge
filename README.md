@@ -19,7 +19,7 @@ mode invokes autonomously — or expose the same Oz toolset over HTTP+SSE so
 standalone [`@sena-labs/oz-mcp-server`](packages/oz-mcp-server) and point any
 MCP client at it.
 
-![OzBridge screenshot](https://github.com/sena-labs/OzBridge/blob/main/media/screenshot.png)
+![OzBridge screenshot](media/screenshot.png)
 
 ## Feature gallery
 
