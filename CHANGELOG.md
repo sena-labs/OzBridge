@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] — 2026-06-06
+
+### Changed
+- Marketplace and Open VSX listing descriptions now carry the full
+  independence disclaimer — "not affiliated with, endorsed by, **or
+  sponsored by** Warp" — across all six locales (`package.nls.*.json`).
+
+### Added
+- Standalone `@sena-labs/oz-mcp-server` package gains a `README.md` and an
+  `mcpName` field for Model Context Protocol registry listing; repository
+  `server.json` registry manifest added.
+
 ## [1.2.0] — 2026-06-01
 
 ### Added
