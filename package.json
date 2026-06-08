@@ -775,7 +775,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "@types/node": "^20.19.41",
+    "@types/node": "^20.19.42",
     "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.7",
     "@vscode/test-electron": "^2.5.2",
