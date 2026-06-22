@@ -777,7 +777,7 @@
     "@playwright/test": "^1.60.0",
     "@types/node": "^20.19.43",
     "@types/vscode": "1.96.0",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.9",
     "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.1",
