@@ -46,7 +46,7 @@ It binds to `127.0.0.1:3847` and prints:
 ```
 
 Leave it running, then point your MCP client at the SSE endpoint
-(`http://127.0.0.1:3847/sse`) — see [MCP client setup](#mcp-client-setup).
+(`http://127.0.0.1:3847/sse`) — see [MCP client setup (HTTP + SSE)](#mcp-client-setup-http--sse).
 
 Pin a port and a bearer token instead of the defaults:
 
@@ -111,10 +111,42 @@ npx @sena-labs/oz-mcp-server
 
 ---
 
-## MCP client setup
+## Transports
 
-The server speaks MCP over HTTP + SSE, so clients connect by **URL**, not by
-spawning a command. Start the server (above), then add the endpoint to your
+The server speaks MCP over **two** transports:
+
+- **stdio** (`--stdio`) — the host spawns the server as a child process and
+  exchanges JSON-RPC over stdin/stdout. Use this for Claude Desktop, `mcp-proxy`,
+  and registry sandboxes (e.g. Glama). No port, no token.
+- **HTTP + SSE** (default) — the server listens on a port; clients connect by
+  **URL**. Use this for Claude Code, Cursor and Codex.
+
+```bash
+# stdio (spawned by the host)
+npx @sena-labs/oz-mcp-server --stdio
+
+# HTTP + SSE (default)
+npx @sena-labs/oz-mcp-server --port 3847
+```
+
+### Claude Desktop (stdio)
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "oz-bridge": {
+      "command": "npx",
+      "args": ["-y", "@sena-labs/oz-mcp-server", "--stdio"]
+    }
+  }
+}
+```
+
+## MCP client setup (HTTP + SSE)
+
+For URL-based clients, start the server (above), then add the endpoint to your
 client. These snippets mirror
 [`docs/MCP.md`](https://github.com/sena-labs/OzBridge/blob/main/docs/MCP.md);
 drop the `Authorization` header if you didn't set a token.

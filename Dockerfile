@@ -4,18 +4,21 @@
 # (`@sena-labs/oz-mcp-server`). Lets Glama and other registries build, run and
 # introspect the server reproducibly.
 #
-# The server speaks MCP over HTTP + SSE on port 3847. It binds to 127.0.0.1 by
-# default so the container always starts (the security gate refuses a
-# non-loopback bind without a token). To expose it to other hosts, run with:
+# Default transport is **stdio** (the host spawns the container and talks
+# JSON-RPC over stdin/stdout) — the form MCP hosts and registry sandboxes
+# expect:
 #
-#   docker run -p 3847:3847 \
-#     -e OZ_MCP_BIND=0.0.0.0 \
-#     -e OZ_MCP_TOKEN=<your-secret> \
-#     ghcr.io/sena-labs/oz-mcp-server
+#   docker run -i --rm ghcr.io/sena-labs/oz-mcp-server
+#
+# To run it as an HTTP + SSE server instead, override the command (the
+# ENTRYPOINT is `node server.js`, CMD supplies the args):
+#
+#   docker run -p 3847:3847 ghcr.io/sena-labs/oz-mcp-server \
+#     --port 3847 --bind 0.0.0.0 --token <your-secret>
 #
 # Note: actually launching Oz agents needs the `oz` CLI (Warp) reachable inside
 # the container — mount it in or extend this image. Tool introspection
-# (`tools/list`, `/health`) works without it.
+# (`initialize`, `tools/list`) works without it.
 
 # ---- builder ---------------------------------------------------------------
 FROM node:20-alpine AS builder
@@ -45,13 +48,12 @@ USER node
 # Single bundled entry point produced above.
 COPY --from=builder --chown=node:node /app/packages/oz-mcp-server/dist/server.js ./server.js
 
+# HTTP+SSE port, used only when the default stdio CMD is overridden.
 EXPOSE 3847
 
-# Liveness: the server answers /health on loopback (Node 20 has global fetch).
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD ["node", "-e", "fetch('http://127.0.0.1:3847/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-
+# Default: speak MCP over stdio. Override CMD for HTTP+SSE (see header).
 ENTRYPOINT ["node", "server.js"]
+CMD ["--stdio"]
 
 LABEL org.opencontainers.image.title="oz-mcp-server" \
       org.opencontainers.image.description="Standalone MCP server for Warp Oz agents — no VS Code required." \
