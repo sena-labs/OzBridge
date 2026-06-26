@@ -8,6 +8,9 @@
  *   npx @sena-labs/oz-mcp-server [options]
  *
  * Options:
+ *   --stdio        Speak MCP over stdin/stdout instead of HTTP+SSE.
+ *                  Use this when an MCP host (Claude Desktop, mcp-proxy, a
+ *                  registry sandbox) spawns the server as a child process.
  *   --port  <n>    Port to listen on     (default: OZ_MCP_PORT env or 3847)
  *   --bind  <addr> Bind address          (default: OZ_MCP_BIND env or 127.0.0.1)
  *   --token <s>    Bearer token          (default: OZ_MCP_TOKEN env or none)
@@ -15,14 +18,45 @@
  *                  (default: process.cwd())
  */
 
+import * as readline from 'node:readline';
 import { McpServer } from '../../../src/mcp/server.js';
-import { buildToolRegistry } from '../../../src/mcp/tools.js';
+import { buildToolRegistry, McpToolEntry } from '../../../src/mcp/tools.js';
 import { OzCliService } from '../../../src/services/ozCliService.js';
 import { StandaloneConfigManager } from './standaloneConfig.js';
 
 function getArg(args: string[], flag: string): string | undefined {
   const i = args.indexOf(flag);
   return i !== -1 && i + 1 < args.length ? args[i + 1] : undefined;
+}
+
+/**
+ * Run the server over the stdio transport: newline-delimited JSON-RPC 2.0 on
+ * stdin/stdout. stdout is reserved for the protocol stream, so every
+ * diagnostic goes to stderr. Reuses {@link McpServer.dispatch}, the same
+ * request handler the HTTP+SSE transport calls.
+ */
+async function runStdio(tools: Map<string, McpToolEntry>): Promise<void> {
+  const server = new McpServer(tools, { name: 'oz-mcp-server', version: '1.2.0' });
+  const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
+  console.error('[oz-mcp-server] stdio transport ready (JSON-RPC over stdin/stdout).');
+  for await (const line of rl) {
+    const trimmed = line.trim();
+    if (!trimmed) { continue; }
+    let message: unknown;
+    try {
+      message = JSON.parse(trimmed);
+    } catch {
+      process.stdout.write(
+        JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }) + '\n',
+      );
+      continue;
+    }
+    const response = await server.dispatch(message);
+    // `dispatch` returns null for notifications (no id) — nothing to emit.
+    if (response) {
+      process.stdout.write(JSON.stringify(response) + '\n');
+    }
+  }
 }
 
 async function main(): Promise<void> {
@@ -33,14 +67,15 @@ async function main(): Promise<void> {
       'oz-mcp-server — Standalone Warp Oz MCP server',
       '',
       'Options:',
+      '  --stdio        Speak MCP over stdin/stdout (for hosts that spawn it)',
       '  --port  <n>    Listening port              (default: 3847)',
       '  --bind  <addr> Bind address                (default: 127.0.0.1)',
       '  --token <s>    Bearer auth token           (default: none)',
       '  --cwd   <dir>  Workspace for YAML config   (default: .)',
       '',
-      'Env vars: OZ_PATH, OZ_MCP_PORT, OZ_MCP_BIND, OZ_MCP_TOKEN,',
-      '          OZ_DEFAULT_MODEL, OZ_DEFAULT_PROFILE, OZ_DEFAULT_ENV,',
-      '          OZ_TIMEOUT_MS, OZ_IDLE_TIMEOUT_MS',
+      'Env vars: OZ_PATH, OZ_MCP_TRANSPORT (stdio), OZ_MCP_PORT, OZ_MCP_BIND,',
+      '          OZ_MCP_TOKEN, OZ_DEFAULT_MODEL, OZ_DEFAULT_PROFILE,',
+      '          OZ_DEFAULT_ENV, OZ_TIMEOUT_MS, OZ_IDLE_TIMEOUT_MS',
     ].join('\n'));
     process.exit(0);
   }
@@ -49,6 +84,18 @@ async function main(): Promise<void> {
 
   const cfgMgr = new StandaloneConfigManager(cwd);
   const cfg = cfgMgr.getConfig();
+
+  // stdio transport: the host (Claude Desktop, mcp-proxy, a registry sandbox)
+  // spawns us and talks JSON-RPC over stdin/stdout. No socket, no auth gate.
+  const useStdio =
+    args.includes('--stdio') ||
+    (process.env.OZ_MCP_TRANSPORT ?? '').trim().toLowerCase() === 'stdio';
+  if (useStdio) {
+    const cli   = new OzCliService(cfgMgr);
+    const tools = buildToolRegistry({ cli, cfgMgr, workspaceRoot: cwd });
+    await runStdio(tools);
+    return;
+  }
 
   // Coalesce on a finite-integer check, not `||`, so `--port 0` (request an
   // OS-assigned ephemeral port) is honoured instead of falling back to cfg.
