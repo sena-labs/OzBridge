@@ -1,0 +1,19 @@
+# Keep the build context small + reproducible — only sources needed to bundle
+# the standalone MCP server are COPYed explicitly in the Dockerfile anyway.
+node_modules
+**/node_modules
+dist
+**/dist
+out
+coverage
+.vscode-test
+.venv
+.git
+.github
+media
+docs
+test
+scripts
+*.vsix
+*.log
+.DS_Store

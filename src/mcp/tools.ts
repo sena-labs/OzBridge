@@ -83,68 +83,122 @@ const DESCRIPTORS: Record<string, McpToolDescriptor> = {
   oz_agent_run: {
     name: 'oz_agent_run',
     description:
-      'Run a Warp Oz agent locally and return its output. Executes `oz agent run` ' +
-      'with the supplied prompt inside the host extension\'s workspace.',
+      'Run a Warp Oz AI agent locally in the host workspace and return its full output ' +
+      'synchronously. Runs `oz agent run` with your prompt and blocks until the agent finishes. ' +
+      'Use for local coding tasks — refactor, write/run tests, debug, explain code — that should ' +
+      'NOT consume cloud credits; for cloud execution call `oz_agent_run_cloud` instead. '+
+      'NOT read-only: the agent may create or modify files in the workspace. ' +
+      'Requires the `oz` CLI on PATH (install Warp).',
     inputSchema: {
       type: 'object',
       required: ['prompt'],
       properties: {
-        prompt: { type: 'string', description: 'Natural-language instruction for the agent.' },
-        model: { type: 'string', description: 'Optional model override.' },
-        profile: { type: 'string', description: 'Optional Oz agent profile name.' },
-        skill: { type: 'string', description: 'Optional agent skill id (e.g. `5-test-agent`).' },
+        prompt: {
+          type: 'string',
+          description: 'Natural-language instruction for the agent, e.g. "add unit tests for src/auth.ts".',
+        },
+        model: {
+          type: 'string',
+          description:
+            'AI model id to use, from `oz_list_models` (e.g. `claude-4-8-opus-max`). ' +
+            'Omit to use the configured default (`auto` lets Warp choose).',
+        },
+        profile: {
+          type: 'string',
+          description:
+            'Oz agent profile name (managed in the Warp app under Settings → AI → Profiles). ' +
+            'Omit to use the default profile.',
+        },
+        skill: {
+          type: 'string',
+          description:
+            'Agent skill id from the 7-stage pipeline (e.g. `5-test-agent`). ' +
+            'Omit to let the CLI choose one based on the prompt.',
+        },
       },
     },
   },
   oz_agent_run_cloud: {
     name: 'oz_agent_run_cloud',
     description:
-      'Launch a cloud Warp Oz agent. CONSUMES WARP CREDITS. Returns the run id ' +
-      'immediately; use `oz_run_get` to poll terminal status.',
+      "Launch a Warp Oz AI agent in Warp's cloud (not on the local machine). " +
+      '⚠️ CONSUMES WARP CREDITS — confirm with the user before calling. ' +
+      'Returns the run id immediately WITHOUT waiting for completion; poll the terminal status ' +
+      'and output with `oz_run_get`, or find the run later via `oz_run_list`. ' +
+      'Requires the `oz` CLI on PATH and a Warp account with cloud credits.',
     inputSchema: {
       type: 'object',
       required: ['prompt'],
       properties: {
-        prompt: { type: 'string', description: 'Natural-language instruction for the cloud agent.' },
-        model: { type: 'string', description: 'Optional model override.' },
-        environment: { type: 'string', description: 'Cloud environment id or name.' },
-        skill: { type: 'string', description: 'Optional agent skill id.' },
+        prompt: {
+          type: 'string',
+          description: 'Natural-language instruction for the cloud agent.',
+        },
+        model: {
+          type: 'string',
+          description:
+            'AI model id to use, from `oz_list_models`. Omit to use the configured default.',
+        },
+        environment: {
+          type: 'string',
+          description:
+            'Cloud environment id or name to run in. ' +
+            'Omit to use the configured default, or the first available environment.',
+        },
+        skill: {
+          type: 'string',
+          description: 'Agent skill id (e.g. `5-test-agent`). Omit to auto-select from the prompt.',
+        },
       },
     },
   },
   oz_run_get: {
     name: 'oz_run_get',
-    description: 'Fetch the status and output of a Warp Oz run by id. Read-only.',
+    description:
+      'Fetch the current status and output of a single Warp Oz run by its id. ' +
+      'Read-only and idempotent — safe to call repeatedly while polling a cloud run to ' +
+      'completion (SUCCEEDED / FAILED). Typically called after `oz_agent_run_cloud`, which ' +
+      'returns the run id; ids also come from `oz_run_list`.',
     inputSchema: {
       type: 'object',
       required: ['runId'],
       properties: {
-        runId: { type: 'string', description: 'Warp run identifier.' },
+        runId: {
+          type: 'string',
+          description: 'Run identifier as returned by `oz_agent_run_cloud` or `oz_run_list`.',
+        },
       },
     },
   },
   oz_run_list: {
     name: 'oz_run_list',
     description:
-      'List recent Warp Oz runs, optionally filtered by status. Read-only.',
+      'List recent Warp Oz runs (id, status, timing), newest first. Read-only. ' +
+      'Use to discover run ids to pass to `oz_run_get`, or to review recent agent activity.',
     inputSchema: {
       type: 'object',
       properties: {
         status: {
           type: 'string',
           enum: ['all', 'active', 'completed', 'QUEUED', 'INPROGRESS', 'SUCCEEDED', 'FAILED', 'CANCELLED', 'PAUSED', 'SKIPPED', 'UNKNOWN'],
-          description: 'Filter. `active` = QUEUED|INPROGRESS, `completed` = SUCCEEDED|FAILED.',
+          description:
+            'Filter by run status. `all` (default) = no filter; `active` = QUEUED|INPROGRESS; ' +
+            '`completed` = SUCCEEDED|FAILED; or pass one exact status value.',
         },
-        limit: { type: 'number', description: 'Maximum number of rows returned.' },
+        limit: {
+          type: 'number',
+          description: 'Maximum number of runs to return after filtering (positive integer). Omit for no cap.',
+        },
       },
     },
   },
   oz_list_models: {
     name: 'oz_list_models',
     description:
-      'List the AI model ids available to the Warp Oz account (from `oz model list`). ' +
-      'Read-only. Pass one of these ids as `model` to oz_agent_run / oz_run_cloud, or to ' +
-      'oz_set_default_model. Also reports the current default.',
+      'List the AI model ids available to the connected Warp Oz account (from `oz model list`) ' +
+      'and report the current default. Read-only; takes no arguments. ' +
+      'Call this first to discover valid ids before passing `model` to `oz_agent_run` / ' +
+      '`oz_agent_run_cloud`, or before `oz_set_default_model`.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -154,15 +208,19 @@ const DESCRIPTORS: Record<string, McpToolDescriptor> = {
     name: 'oz_set_default_model',
     description:
       'Set the default Oz model for every OzBridge surface by writing `defaultModel` into the ' +
-      'workspace `.warp/warp-bridge.yaml` (the highest-precedence config source). The id is ' +
-      'validated against `oz model list` when reachable. Use `auto` to let Warp choose.',
+      'workspace `.warp/warp-bridge.yaml` (the highest-precedence config source). ' +
+      'Persistent side effect: edits that file on disk. The id is validated against ' +
+      '`oz model list` when reachable. Requires a workspace root (an extension workspace, or ' +
+      '`--cwd` for the standalone server).',
     inputSchema: {
       type: 'object',
       required: ['model'],
       properties: {
         model: {
           type: 'string',
-          description: 'Model id (see oz_list_models), e.g. `claude-4-8-opus-max`, `gpt-5-5-high`, or `auto`.',
+          description:
+            'Model id to set as default — one of the ids from `oz_list_models` ' +
+            '(e.g. `claude-4-8-opus-max`, `gpt-5-5-high`), or `auto` to let Warp choose.',
         },
       },
     },
