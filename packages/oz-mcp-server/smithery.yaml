@@ -1,0 +1,82 @@
+# Smithery.ai MCP server manifest.
+# Listing URL (after publish): https://smithery.ai/server/oz-mcp-server
+# Submission: https://smithery.ai/new  (connect the GitHub repo sena-labs/OzBridge,
+#   set Base directory = packages/oz-mcp-server so Smithery finds this file)
+
+name: oz-mcp-server
+displayName: OzBridge
+description: |
+  Bring Warp Oz agents to any MCP client — Claude Desktop, the claude.ai web app,
+  Cursor, Cline, Claude Code, Codex, or your own host. No VS Code required.
+  Exposes the Oz tool surface (run local/cloud agents, list and inspect runs,
+  list models, set the default model) over MCP. The server only shells out to the
+  documented `oz` CLI — it does not embed, modify, or reverse-engineer Warp.
+
+  REQUIREMENT: the Warp Oz CLI must be installed and on PATH (verify with
+  `oz --version`). Download Warp from https://www.warp.dev/download.
+
+  Independent project — not affiliated with, endorsed by, or sponsored by Warp.
+  "Warp" and "Oz" are trademarks of Warp, Inc., used nominatively for interop.
+homepage: https://github.com/sena-labs/OzBridge
+license: MIT
+
+tags:
+  - agent
+  - warp
+  - oz
+  - mcp
+  - cursor
+  - claude-code
+  - ide
+  - ai
+
+# How to run the server. stdio is the right transport for registry sandboxes.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    # No required fields: the server drives the user's local `oz` CLI.
+    properties:
+      ozPath:
+        type: string
+        title: Oz CLI path
+        description: Path to the Oz CLI binary. Bare "oz" resolves from PATH.
+        default: oz
+      ozMcpToken:
+        type: string
+        title: Bearer token (optional)
+        description: >-
+          Optional bearer token required on every request. Leave empty to
+          disable auth (safe for local stdio use).
+        format: password
+        default: ""
+      ozDefaultModel:
+        type: string
+        title: Default model
+        description: Default AI model for runs.
+        default: auto
+      ozDefaultProfile:
+        type: string
+        title: Default Oz profile
+        description: Default Oz agent profile.
+        default: Default
+  commandFunction: |-
+    (config) => ({
+      command: 'npx',
+      args: ['-y', '@sena-labs/oz-mcp-server', '--stdio'],
+      env: {
+        OZ_PATH: config.ozPath || 'oz',
+        OZ_DEFAULT_MODEL: config.ozDefaultModel || 'auto',
+        OZ_DEFAULT_PROFILE: config.ozDefaultProfile || 'Default',
+        ...(config.ozMcpToken && { OZ_MCP_TOKEN: config.ozMcpToken }),
+      },
+    })
+
+# Keep in sync with the server's registered tools.
+tools:
+  - oz_agent_run
+  - oz_agent_run_cloud
+  - oz_run_get
+  - oz_run_list
+  - oz_list_models
+  - oz_set_default_model
