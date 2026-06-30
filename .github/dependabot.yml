@@ -60,6 +60,17 @@ updates:
     commit-message:
       prefix: 'chore(toolkit-deps)'
       include: 'scope'
+    ignore:
+      # Mirror the root config: the toolkit pins @types/vscode to the
+      # extension's engines.vscode floor (1.96.0) via both peerDependencies
+      # and devDependencies. Bumping the type stubs ahead of the lowest
+      # supported VS Code runtime would surface APIs that are not guaranteed
+      # to exist when the extension actually runs. @types/vscode advances by
+      # minor per VS Code release, so both minor and major bumps are ignored.
+      - dependency-name: '@types/vscode'
+        update-types:
+          - 'version-update:semver-major'
+          - 'version-update:semver-minor'
 
   # ── GitHub Actions ──────────────────────────────────────────────────
   - package-ecosystem: 'github-actions'
