@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { launchCursor, runCommand, getCursorBinaryPath } from './helpers/launchCursor';
-import type { LaunchedVSCode } from './helpers/launchVscode';
+import { launchCursor, runCommand, getCursorBinaryPath, LaunchedCursor } from './helpers/launchCursor';
 import {
   closePalette,
   dismissOverlays,
@@ -16,7 +15,7 @@ const ARTIFACTS_DIR = path.join(REPO_ROOT, 'test-results', 'e2e-artifacts');
 
 const cursorBinary = getCursorBinaryPath({});
 
-let cursor: LaunchedVSCode;
+let cursor: LaunchedCursor;
 
 /**
  * Cursor IDE E2E suite. Skipped by default — set
@@ -78,16 +77,12 @@ test.describe('OzBridge — Cursor IDE E2E', () => {
     expect(registeredToast!).toMatch(/Registered|Cursor/i);
     await dismissOverlays(win);
 
-    // 3) Verify the on-disk format. Cursor's config lives at
-    //    `~/.cursor/mcp.json`; we don't override that path inside the
-    //    registrar so this is the real user file. We assert against the
-    //    fields the spec promises rather than the entire file so we don't
-    //    clobber unrelated entries the user already had.
-    const cursorConfigPath = path.join(
-      process.env.HOME ?? process.env.USERPROFILE ?? '',
-      '.cursor',
-      'mcp.json',
-    );
+    // 3) Verify the on-disk format. The launcher started Cursor with
+    //    `HOME`/`USERPROFILE` pointed at a tmp directory (see
+    //    `launchCursor`), so the registrar — which resolves
+    //    `~/.cursor/mcp.json` via `os.homedir()` inside the extension
+    //    host — writes to the tmp file, not the developer's real one.
+    const cursorConfigPath = path.join(cursor.homeDir, '.cursor', 'mcp.json');
     const raw = await fs.readFile(cursorConfigPath, 'utf8');
     const parsed = JSON.parse(raw) as { mcpServers?: Record<string, Record<string, unknown>> };
     const entry = parsed.mcpServers?.['oz-bridge'];

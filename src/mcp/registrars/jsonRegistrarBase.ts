@@ -140,10 +140,15 @@ export async function withConfigLock<T>(configPath: string, work: () => Promise<
   // Replace the chain with a sentinel that never rejects so a single
   // failing caller never poisons subsequent ones; each caller still
   // observes its own rejection through the returned `next`.
-  const queued = next.then(() => undefined, () => undefined);
-  configLocks.set(configPath, queued);
-  queued.finally(() => {
-    if (configLocks.get(configPath) === queued) {
+  const settled: Promise<void> = next.then(() => undefined, () => undefined);
+  configLocks.set(configPath, settled);
+  // Drop the entry once it settles — but only if no later caller has
+  // already chained onto it. Without this cleanup the map would grow
+  // monotonically over a long-running session (each unique tmp path
+  // in tests, every distinct user config across the lifetime of the
+  // extension host) since chains are never collected on their own.
+  void settled.then(() => {
+    if (configLocks.get(configPath) === settled) {
       configLocks.delete(configPath);
     }
   });

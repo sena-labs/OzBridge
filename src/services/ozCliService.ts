@@ -990,28 +990,38 @@ export class OzCliService implements IOzCliService {
       };
 
       // Hard memory cap on the in-process accumulators. Renderers truncate
-      // at `maxOutputChars` (default 15 KB) but if a runaway CLI streams
-      // gigabytes of output we still need a guard before V8 OOMs the
-      // extension host. 10 MiB leaves three orders of magnitude of headroom
-      // over the default render limit while keeping memory bounded. Once
-      // the cap is hit we keep draining the pipe (so the child's writes
-      // don't block) but stop appending or forwarding progress lines from
-      // discarded chunks.
-      const STDIO_CAP = 10 * 1024 * 1024;
+      // at `maxOutputChars` (default 15 K characters) but if a runaway CLI
+      // streams huge amounts of output we still need a guard before V8 OOMs
+      // the extension host. The cap is in **UTF-16 code units** (i.e.
+      // `string.length`) — the unit V8 actually allocates internally — not
+      // in encoded UTF-8 bytes; for plain ASCII output the two coincide.
+      // 10 M code units ≈ up to 20 MiB of V8 string memory, three orders
+      // of magnitude above the default render limit while keeping memory
+      // bounded. Once the cap is hit we keep draining the pipe (so the
+      // child's writes don't block) but stop appending or forwarding
+      // progress lines from discarded chunks.
+      const STDIO_CAP_CHARS = 10 * 1024 * 1024;
+      // Characters reserved at the tail of the accumulator for the human-
+      // readable truncation marker. Subtracting this up-front guarantees
+      // the final stored string never grows beyond `STDIO_CAP_CHARS`,
+      // even after the marker is appended.
+      const TRUNC_MARKER_RESERVE = 96;
+      const truncationMarker = (stream: 'output' | 'stderr'): string =>
+        `\n… (${stream} capped at ${STDIO_CAP_CHARS} chars; further chunks dropped)\n`;
       let stdoutTruncated = false;
       let stderrTruncated = false;
 
       proc.stdout?.on('data', (chunk: Buffer) => {
         const text = chunk.toString();
         let acceptedText = '';
-        if (stdout.length + text.length > STDIO_CAP) {
+        if (stdout.length + text.length > STDIO_CAP_CHARS) {
           if (!stdoutTruncated) {
             stdoutTruncated = true;
-            const remaining = Math.max(0, STDIO_CAP - stdout.length);
-            acceptedText = text.substring(0, remaining);
+            const headroom = Math.max(0, STDIO_CAP_CHARS - TRUNC_MARKER_RESERVE - stdout.length);
+            acceptedText = text.substring(0, headroom);
             stdout += acceptedText;
-            stdout += `\n… (output capped at ${STDIO_CAP} bytes; further chunks dropped)\n`;
-            logWarn(`ozCliService stdout exceeded ${STDIO_CAP} bytes; further chunks dropped`);
+            stdout += truncationMarker('output');
+            logWarn(`ozCliService stdout exceeded ${STDIO_CAP_CHARS} chars; further chunks dropped`);
           }
         } else {
           acceptedText = text;
@@ -1039,8 +1049,8 @@ export class OzCliService implements IOzCliService {
           // Also cap the line buffer to avoid unbounded growth when the
           // CLI never emits a newline. Drop the head; preserve the tail
           // so the next newline still flushes a usable line.
-          if (lineBuffer.length > STDIO_CAP) {
-            lineBuffer = lineBuffer.slice(lineBuffer.length - STDIO_CAP);
+          if (lineBuffer.length > STDIO_CAP_CHARS) {
+            lineBuffer = lineBuffer.slice(lineBuffer.length - STDIO_CAP_CHARS);
           }
         }
 
@@ -1086,13 +1096,13 @@ export class OzCliService implements IOzCliService {
 
       proc.stderr?.on('data', (chunk: Buffer) => {
         const text = chunk.toString();
-        if (stderr.length + text.length > STDIO_CAP) {
+        if (stderr.length + text.length > STDIO_CAP_CHARS) {
           if (!stderrTruncated) {
             stderrTruncated = true;
-            const remaining = Math.max(0, STDIO_CAP - stderr.length);
-            stderr += text.substring(0, remaining);
-            stderr += `\n… (stderr capped at ${STDIO_CAP} bytes; further chunks dropped)\n`;
-            logWarn(`ozCliService stderr exceeded ${STDIO_CAP} bytes; further chunks dropped`);
+            const headroom = Math.max(0, STDIO_CAP_CHARS - TRUNC_MARKER_RESERVE - stderr.length);
+            stderr += text.substring(0, headroom);
+            stderr += truncationMarker('stderr');
+            logWarn(`ozCliService stderr exceeded ${STDIO_CAP_CHARS} chars; further chunks dropped`);
           }
         } else {
           stderr += text;
