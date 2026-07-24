@@ -1,0 +1,14 @@
+{
+  "_README": "Declares the exact strings that MUST be present, baked into the rendered pixels, for each asset that carries required text. Verified by scripts/verify_baked_text.py via OCR, fail-closed: if OCR cannot read the pixels the asset does NOT pass. Add an entry for any asset (especially AI-generated promo/social cards) whose brief bakes in the product name, a tagline, or the independence disclaimer. Set case_sensitive:true for tokens whose letterform matters (e.g. 'IDE' must not render as 'Ide'); leave it false (default) for prose so case differences in OCR output do not cause false failures.",
+  "_authoritativeDisclaimer": "Full verbatim disclaimer lives in DISCLAIMER.md: 'not affiliated with, endorsed by, sponsored by, or officially associated with Warp, Inc., ...'. The short marketplace form (package.nls.json) is: 'not affiliated with, endorsed by, or sponsored by Warp.'",
+  "assets": {
+    "ozbridge-social-og-card": {
+      "image": "media/launch/social-og-card.png",
+      "requiredStrings": [
+        { "text": "OzBridge", "case_sensitive": true },
+        { "text": "IDE", "case_sensitive": true },
+        { "text": "not affiliated with, endorsed by, or sponsored by Warp", "case_sensitive": false }
+      ]
+    }
+  }
+}
