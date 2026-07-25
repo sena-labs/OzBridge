@@ -88,7 +88,9 @@ jobs:
           VSIX: ${{ needs.build.outputs.vsix }}
         run: |
           set -euo pipefail
-          if [ -z "${VSCE_PAT}" ]; then
+          # `:-` matters here: this step runs under `set -u`, which the step
+          # did not use before the idempotency guard was added.
+          if [ -z "${VSCE_PAT:-}" ]; then
             echo "::warning::VSCE_PAT secret is not set — skipping Marketplace publish"
             exit 0
           fi
@@ -131,7 +133,9 @@ jobs:
           VSIX: ${{ needs.build.outputs.vsix }}
         run: |
           set -euo pipefail
-          if [ -z "${OVSX_PAT}" ]; then
+          # `:-` matters here: this step runs under `set -u`, which the step
+          # did not use before the idempotency guard was added.
+          if [ -z "${OVSX_PAT:-}" ]; then
             echo "::warning::OVSX_PAT secret is not set — skipping Open VSX publish"
             exit 0
           fi
