@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "OzBridge — Warp Oz agents in any IDE, via MCP"
+title: "Warp Oz agents in any IDE, via MCP"
 description: "Open-source MCP server and VS Code extension that runs Warp Oz cloud and local agents from GitHub Copilot Chat, Claude Code, Cursor and Codex CLI."
 ---
 

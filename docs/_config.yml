@@ -22,4 +22,8 @@ exclude:
   - CREATING-GIFS.md
   - PUBLISHING.md
   - VERIFICATION-v0.5.0.md
+  - MILESTONE-v0.7.md
+  - MILESTONE-v0.8.md
+  - MILESTONE-v0.9.md
+  - MILESTONE-v1.0.md
   - generate_gifs.py
