@@ -50,6 +50,7 @@ MCP client at it.
   - [Chat Participant (`@oz`)](#chat-participant-oz)
   - [Slash Commands](#slash-commands)
   - [Agent Mode — Language Model Tools](#agent-mode--language-model-tools)
+- [Tools](#tools)
 - [Configuration](#configuration)
 - [Architecture](#architecture)
 - [Development](#development)
@@ -289,6 +290,25 @@ Two commands open a real Warp terminal (Warp ≥ 0.2024.x) via the
 If the `warp://` URL handler is not registered on the current platform,
 the extension shows a modal with the exact command to copy into any
 shell as a fallback.
+
+## Tools
+
+Six MCP tools are exposed over the bridge. Copilot Agent mode invokes them
+natively in VS Code; Claude Code, Cursor and Codex reach the same set through
+the MCP server, embedded or standalone.
+
+| Tool | Purpose |
+| --- | --- |
+| `oz_agent_run` | Run `oz agent run` locally with a prompt. Returns the full run payload. |
+| `oz_agent_run_cloud` | Launch a cloud run. **Consumes Warp credits.** |
+| `oz_run_get` | Fetch a run's status and output by id. Read-only. |
+| `oz_run_list` | List recent runs; filter by `all` / `active` / `completed` / raw status, plus a numeric `limit`. |
+| `oz_list_models` | List the AI model ids available to the account and report the current default. Read-only. |
+| `oz_set_default_model` | Set the default Oz model by writing `defaultModel` into the workspace `.warp/warp-bridge.yaml`. |
+
+The full JSON `inputSchema` for each tool is emitted verbatim by `tools/list`.
+See [`docs/MCP.md`](docs/MCP.md) for protocol details, a raw-`curl` cheatsheet
+and the endpoint reference.
 
 ## Configuration
 
