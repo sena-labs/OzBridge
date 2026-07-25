@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { OzCliService } from '../../src/services/ozCliService.js';
-import { OzCliError, OzCliErrorKind, DEFAULT_CONFIG } from '../../src/types/index.js';
+import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import { createMockConfigManager } from '../helpers.js';
 
 // ---------------------------------------------------------------------------

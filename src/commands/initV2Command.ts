@@ -38,7 +38,7 @@ export function createInitV2Command(): SlashCommandHandler {
       return {};
     }
 
-    const result = await scaffoldSelected(root, picked, /* askBeforeOverwrite */ true);
+    const result = await scaffoldSelected(root, picked);
     reportInChat(stream, result);
     return {};
   };
@@ -70,16 +70,21 @@ async function scaffoldAll(root: string, templates: SkillTemplate[]): Promise<Sc
   return summary;
 }
 
+// Overwriting always prompts. This used to take an `askBeforeOverwrite`
+// parameter, but the single call site passed a hard-coded `true`, so the
+// condition below could never be false (CodeQL js/trivial-conditional) — the
+// flag advertised a choice the code did not actually offer. Behaviour is
+// unchanged; reintroduce the parameter only alongside a caller that passes
+// false.
 async function scaffoldSelected(
   root: string,
   templates: SkillTemplate[],
-  askBeforeOverwrite: boolean,
 ): Promise<ScaffoldSummary> {
   const summary = emptySummary();
   for (const t of templates) {
     const absolute = path.join(root, t.relativePath);
     const exists = await pathExists(absolute);
-    if (exists && askBeforeOverwrite) {
+    if (exists) {
       const choice = await vscode.window.showWarningMessage(
         vscode.l10n.t('{0} already exists. Overwrite?', t.relativePath),
         { modal: true },

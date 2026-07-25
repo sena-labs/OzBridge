@@ -11,6 +11,11 @@
     },
     "types": ["node"],
     "strict": true,
+    // Dead imports and locals accumulated in src/ until CodeQL surfaced 10 of
+    // them at once. `npm run lint` is this same tsc invocation and runs in CI,
+    // so failing the build is a tighter loop than a static-analysis note.
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

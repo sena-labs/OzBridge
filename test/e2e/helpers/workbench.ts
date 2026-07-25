@@ -214,6 +214,3 @@ async function runPaletteCommand(win: Page, title: string): Promise<void> {
   await win.keyboard.press('Enter');
 }
 
-function escapeRegExp(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}

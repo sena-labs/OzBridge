@@ -150,6 +150,10 @@ describe('CommandRouter', () => {
 
       // init without workspace → error, but routing works
       expect(mock.getFullOutput()).toContain('No workspace open');
+      // The comment above claims routing works, so assert it: the returned
+      // result was captured but never checked, unlike the sibling /config
+      // test. Without this the case only proved an error message is printed.
+      expect((result!.metadata as any).command).toBe('init');
     });
   });
 });

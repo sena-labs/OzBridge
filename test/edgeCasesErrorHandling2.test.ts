@@ -24,7 +24,7 @@
  *   - Files already exist → skip count incremented, no overwrite
  *   - fs.createDirectory/writeFile throws → error propagates
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { OzCliService } from '../src/services/ozCliService.js';
 import { OzCliError, OzCliErrorKind } from '../src/types/index.js';

@@ -4,8 +4,6 @@ import * as vscode from 'vscode';
 // Re-export generic types from copilot-chat-toolkit with Oz-specific aliases
 // ============================================================================
 import {
-  CliError,
-  CliErrorKind,
   type RunStatus,
   type RunResult,
   type ListResult,

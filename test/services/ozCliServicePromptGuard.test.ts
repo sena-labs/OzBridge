@@ -5,7 +5,6 @@
  * for empty, whitespace-only, and undefined-ish prompts — without spawning a process.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { EventEmitter } from 'node:events';
 import { OzCliService } from '../../src/services/ozCliService.js';
 import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import { createMockConfigManager } from '../helpers.js';

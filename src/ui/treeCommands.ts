@@ -4,7 +4,6 @@ import { ActiveRunsTracker } from '../services/activeRunsTracker.js';
 import { OzRunsTreeProvider, OzTreeNode } from './runsTreeProvider.js';
 
 // Rebrand aliases for in-file usage; original names retained for legacy refs.
-const WarpRunsTreeProvider = OzRunsTreeProvider;
 type WarpRunsTreeProvider = OzRunsTreeProvider;
 type WarpTreeNode = OzTreeNode;
 

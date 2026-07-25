@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { workspace, EventEmitter as VscEventEmitter } from '../../test/mocks/vscode.js';
+import { workspace } from '../../test/mocks/vscode.js';
 import { ConfigManager } from '../../src/services/configManager.js';
 import { DEFAULT_CONFIG } from '../../src/types/index.js';
 

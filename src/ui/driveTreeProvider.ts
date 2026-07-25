@@ -2,9 +2,6 @@ import * as vscode from 'vscode';
 import {
   DriveCategory,
   DriveEntry,
-  DrivePrompt,
-  DriveRule,
-  DriveSkill,
   IDriveSource,
 } from '../drive/warpDriveSource.js';
 import { logWarn } from '../services/logger.js';

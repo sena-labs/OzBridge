@@ -10,7 +10,6 @@ import {
   waitForAnySignal,
   waitForFreshNotification,
   lastNotificationText,
-  listEditorTabs,
   dismissOverlays,
 } from './helpers/workbench';
 
@@ -184,22 +183,6 @@ test.describe('OzBridge end-to-end user simulation', () => {
   });
 });
 
-/**
- * Cerca, fra tutti gli outer iframe `iframe.webview` del workbench, quello
- * il cui inner `#active-frame` contiene testo coerente col Dashboard
- * OzBridge. Restituisce true al primo match. Polling fino a `timeoutMs`.
- */
-async function waitForDashboardWebview(win: Page, timeoutMs = 60_000): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-  const pattern = /OzBridge|Dashboard|Runs|Success/i;
-  while (Date.now() < deadline) {
-    const text = await tryReadDashboardText(win).catch(() => '');
-    if (text && pattern.test(text)) return true;
-    await win.waitForTimeout(500);
-  }
-  return false;
-}
-
 /** Tenta di leggere il body del webview attraverso i vari livelli di iframe. */
 async function tryReadDashboardText(win: Page): Promise<string> {
   const outerLocators = [
@@ -366,8 +349,8 @@ test.describe('OzBridge — MCP lifecycle reale', () => {
     expect(copyText!).toMatch(/http:\/\/.*\/sse|MCP endpoint|copied/i);
     await dismissOverlays(win);
 
-    // 4) Stop
-    const prev3 = copyText; // dismissOverlays may clear toasts; keep the last known text.
+    // 4) Stop. No fresh-notification wait here: step 5 polls the status
+    // notification itself, filtering out the stale "copied" toast.
     await runExactCommand(win, 'OzBridge: Stop MCP server');
     await dismissOverlays(win);
 

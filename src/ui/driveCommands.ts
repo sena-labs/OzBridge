@@ -4,7 +4,6 @@ import { OzDriveTreeProvider, DriveTreeNode } from './driveTreeProvider.js';
 
 // Rebrand aliases for in-file usage; original names retained for legacy refs.
 type IWarpDriveSource = IDriveSource;
-const WarpDriveTreeProvider = OzDriveTreeProvider;
 type WarpDriveTreeProvider = OzDriveTreeProvider;
 
 /** Command IDs contributed by the Warp Drive sidebar surface. */

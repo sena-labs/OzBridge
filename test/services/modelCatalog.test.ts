@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { fetchModelIds } from '../../src/services/modelCatalog.js';
 import { createMockCli, makeListResult } from '../helpers.js';
 

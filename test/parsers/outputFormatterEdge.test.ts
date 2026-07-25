@@ -4,7 +4,7 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { OutputFormatter } from '../../src/parsers/outputFormatter.js';
-import { OzCliError, OzCliErrorKind, OzRunResult } from '../../src/types/index.js';
+import { OzCliError, OzCliErrorKind } from '../../src/types/index.js';
 import { createMockStream, createMockConfigManager, makeRunResult, makeListResult } from '../helpers.js';
 
 let formatter: OutputFormatter;
