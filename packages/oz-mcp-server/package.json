@@ -6,8 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sena-labs/OzBridge.git",
+    "url": "git+https://github.com/sena-labs/OzBridge.git",
     "directory": "packages/oz-mcp-server"
+  },
+  "homepage": "https://github.com/sena-labs/OzBridge/tree/main/packages/oz-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/sena-labs/OzBridge/issues"
   },
   "main": "dist/server.js",
   "bin": {
@@ -19,7 +23,8 @@
   "scripts": {
     "build": "node esbuild.mjs",
     "build:prod": "node esbuild.mjs --production",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "prepublishOnly": "node esbuild.mjs --production"
   },
   "keywords": [
     "mcp",

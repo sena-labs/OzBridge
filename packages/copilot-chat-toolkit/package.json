@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sena-labs/OzBridge.git",
+    "url": "git+https://github.com/sena-labs/OzBridge.git",
     "directory": "packages/copilot-chat-toolkit"
   },
   "bugs": {
@@ -14,7 +14,9 @@
   "homepage": "https://github.com/sena-labs/OzBridge/tree/main/packages/copilot-chat-toolkit#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "keywords": [
     "vscode",
     "copilot",
@@ -23,7 +25,12 @@
     "toolkit",
     "sdk"
   ],
-  "files": ["dist/**", "src/**/*.ts", "README.md", "LICENSE"],
+  "files": [
+    "dist/**",
+    "src/**/*.ts",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p .",
     "prepublishOnly": "npm run build",
@@ -33,7 +40,9 @@
     "@types/vscode": "1.96.0"
   },
   "peerDependenciesMeta": {
-    "@types/vscode": { "optional": true }
+    "@types/vscode": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/vscode": "1.96.0",

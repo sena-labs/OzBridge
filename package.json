@@ -11,7 +11,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sena-labs/OzBridge"
+    "url": "git+https://github.com/sena-labs/OzBridge.git"
   },
   "bugs": {
     "url": "https://github.com/sena-labs/OzBridge/issues"
