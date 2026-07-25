@@ -30,7 +30,7 @@ export function createRunCommand(
   return async (prompt, stream, token) => {
     const config = cfgMgr.getConfig();
 
-    // Verifica disponibilità Oz CLI
+    // Check Oz CLI availability
     const avail = await cli.checkAvailability();
     if (!avail.available) {
       formatter.formatError(
@@ -44,7 +44,7 @@ export function createRunCommand(
     const context = ctx.gather();
     const contextBlock = ctx.formatForPrompt(context);
 
-    // Espandi variabili di prompt (#warp.*, #oz.*) prima di iniettare il contesto
+    // Expand prompt variables (#warp.*, #oz.*) before injecting the context
     const expanded = await expandPromptVariables(prompt, { cli, cfgMgr });
     if (expanded.replacements.length > 0) {
       stream.markdown(`_Expanded ${expanded.replacements.length} prompt variable${expanded.replacements.length === 1 ? '' : 's'}._\n\n`);
@@ -54,7 +54,7 @@ export function createRunCommand(
     // Costruisci prompt con contesto iniettato (D5)
     const fullPrompt = `${contextBlock}\n\n${resolvedPrompt}`;
 
-    // Rileva se il prompt menziona un agent skill specifico
+    // Detect whether the prompt names a specific agent skill
     const skill = detectSkill(resolvedPrompt);
 
     stream.progress('Starting local Oz agent...');

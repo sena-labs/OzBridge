@@ -70,10 +70,9 @@ export class ProgressiveRunSteerer implements IRunSteerer {
     return { runId: raw.runId, strategy: 'inlined-fallback', raw };
   }
 
-  // IMPL: la probe è "soft" — qualunque errore dell'help (CLI assente,
-  // non autenticato, parse) viene tradotto in `nativeContinue: false`
-  // così il fallback resta utilizzabile senza richiedere una seconda
-  // chiamata espressa.
+  // IMPL: the probe is "soft" — any help failure (missing CLI, not
+  // authenticated, parse error) is translated into `nativeContinue: false`,
+  // so the fallback stays usable without requiring a second explicit call.
   private async probe(): Promise<SteerCapabilities> {
     try {
       const help = await this.cli.helpAgentRun();

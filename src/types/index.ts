@@ -211,7 +211,7 @@ export const AGENT_SKILL_MAP: Record<string, string> = {
 };
 
 // ============================================================================
-// Interfacce dei servizi (Oz-specific, extending toolkit interfaces)
+// Service interfaces (Oz-specific, extending toolkit interfaces)
 // ============================================================================
 
 /** Service interface for executing Oz CLI commands. */

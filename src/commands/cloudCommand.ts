@@ -46,7 +46,7 @@ export function createCloudCommand(
   return async (prompt, stream, token) => {
     const config = cfgMgr.getConfig();
 
-    // Verifica disponibilità
+    // Check availability
     const avail = await cli.checkAvailability();
     if (!avail.available) {
       formatter.formatError(
@@ -89,7 +89,7 @@ export function createCloudCommand(
     const context = ctx.gather();
     const contextBlock = ctx.formatForPrompt(context);
 
-    // Espandi variabili di prompt (#warp.*, #oz.*) prima di iniettare il contesto
+    // Expand prompt variables (#warp.*, #oz.*) before injecting the context
     const expanded = await expandPromptVariables(prompt, { cli, cfgMgr });
     if (expanded.replacements.length > 0) {
       stream.markdown(`_Expanded ${expanded.replacements.length} prompt variable${expanded.replacements.length === 1 ? '' : 's'}._\n\n`);
@@ -97,7 +97,7 @@ export function createCloudCommand(
     const resolvedPrompt = expanded.text;
     const fullPrompt = `${contextBlock}\n\n${resolvedPrompt}`;
 
-    // Rileva se il prompt menziona un agent skill specifico
+    // Detect whether the prompt names a specific agent skill
     const skill = detectSkill(resolvedPrompt);
 
     stream.progress('Launching cloud agent...');
@@ -160,7 +160,7 @@ export function createCloudCommand(
           }
         }
       } else {
-        // Se non c'è runId, mostra il risultato direttamente
+        // With no runId, show the result directly
         formatter.formatRunResult(result, stream, { autoOpened: false });
       }
     } catch (err) {

@@ -590,8 +590,8 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  // I servizi leggono la config dinamicamente tramite IConfigManager,
-  // quindi i cambi si applicano automaticamente alla prossima invocazione.
+  // Services read configuration dynamically through IConfigManager, so
+  // changes take effect on the next invocation without further wiring.
   state.configManager.onConfigChanged((newConfig) => {
     logInfo(`Configuration changed: model=${newConfig.defaultModel}, timeout=${newConfig.timeoutMs}`);
     // React to mcp-specific toggles without requiring an extension reload.

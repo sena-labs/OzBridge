@@ -791,7 +791,7 @@ export class OzCliService implements IOzCliService {
 
       const startTime = Date.now();
 
-      // Determina il path dell'eseguibile
+      // Resolve the executable path
       const ozPath = this.resolveOzPath();
       const spawnCwd = cwd || undefined;
 
@@ -1230,15 +1230,14 @@ export class OzCliService implements IOzCliService {
             reject(new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'Oz CLI: not authenticated', exitCode, stderr));
             return;
           }
-          // IMPL: riconosce esaurimento crediti / quota Warp.
+          // IMPL: detect exhausted Warp credits / quota.
           // Per https://docs.warp.dev/reference/api-and-sdk/troubleshooting/errors/insufficient-credits
-          // insufficient_credits è HTTP 403 emesso solo dagli endpoint
-          // di start agent (agent run / agent run-cloud / task). I
-          // comandi read-only (list/get) NON possono mai consumare
-          // crediti, quindi non vengono mai classificati come
-          // INSUFFICIENT_CREDITS — questo evita di indirizzare l'utente
-          // alla pagina di billing per un fallimento di rete o di auth
-          // su una list operation.
+          // insufficient_credits is an HTTP 403 emitted only by the start
+          // agent endpoints (agent run / agent run-cloud / task). Read-only
+          // commands (list/get) can NEVER consume credits, so they are never
+          // classified as INSUFFICIENT_CREDITS — that keeps a network or auth
+          // failure on a list operation from sending the user to the billing
+          // page.
           if (
             !readOnly &&
             isInsufficientCreditsError(combined, exitCode)
