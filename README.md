@@ -58,6 +58,11 @@ MCP client at it.
 - [FAQ](#faq)
 - [License](#license)
 
+> **New to Warp or to VS Code extensions?** [`docs/QUICK-START.html`](docs/QUICK-START.html)
+> is a step-by-step visual guide — prerequisites, per-OS install, first run,
+> every slash command, settings and troubleshooting — written for readers with
+> no prior setup. Open it in a browser.
+
 ---
 
 ## Features

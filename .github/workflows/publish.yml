@@ -84,12 +84,29 @@ jobs:
       - name: Publish to Marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          VERSION: ${{ needs.build.outputs.version }}
+          VSIX: ${{ needs.build.outputs.vsix }}
         run: |
-          if [ -z "$VSCE_PAT" ]; then
+          set -euo pipefail
+          if [ -z "${VSCE_PAT}" ]; then
             echo "::warning::VSCE_PAT secret is not set — skipping Marketplace publish"
             exit 0
           fi
-          npx @vscode/vsce publish --packagePath "${{ needs.build.outputs.vsix }}" -p "$VSCE_PAT"
+
+          # Publishing is not idempotent: vsce rejects a version that is
+          # already live with a hard error. Without this guard, re-running a
+          # release after a partial failure — or tagging a version that was
+          # published by hand — fails here and strands the Open VSX and
+          # GitHub Release jobs behind it. Query first, skip if already out.
+          # A failed/empty query falls through to the publish attempt, so the
+          # guard can never silently suppress a genuine first release.
+          if npx @vscode/vsce show sena-labs.ozbridge --json 2>/dev/null \
+             | jq -e --arg V "$VERSION" '.versions | map(.version) | index($V)' >/dev/null 2>&1; then
+            echo "::notice::Marketplace already serves ${VERSION} — nothing to publish"
+            exit 0
+          fi
+
+          npx @vscode/vsce publish --packagePath "$VSIX" -p "$VSCE_PAT"
 
   publish-openvsx:
     name: Publish to Open VSX
@@ -110,12 +127,27 @@ jobs:
       - name: Publish to Open VSX
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
+          VERSION: ${{ needs.build.outputs.version }}
+          VSIX: ${{ needs.build.outputs.vsix }}
         run: |
-          if [ -z "$OVSX_PAT" ]; then
+          set -euo pipefail
+          if [ -z "${OVSX_PAT}" ]; then
             echo "::warning::OVSX_PAT secret is not set — skipping Open VSX publish"
             exit 0
           fi
-          npx ovsx publish "${{ needs.build.outputs.vsix }}" -p "$OVSX_PAT"
+
+          # Same idempotency guard as the Marketplace job: ovsx also rejects a
+          # duplicate version. Open VSX answers 200 for a published version and
+          # 404 otherwise, so only an explicit 200 skips — any other status
+          # (including a network failure) falls through to the publish attempt.
+          STATUS=$(curl -sS -o /dev/null -w '%{http_code}' \
+            "https://open-vsx.org/api/sena-labs/ozbridge/${VERSION}" || echo 000)
+          if [ "$STATUS" = '200' ]; then
+            echo "::notice::Open VSX already serves ${VERSION} — nothing to publish"
+            exit 0
+          fi
+
+          npx ovsx publish "$VSIX" -p "$OVSX_PAT"
 
   github-release:
     name: Create GitHub Release

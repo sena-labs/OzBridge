@@ -1,5 +1,5 @@
 """
-Generate animated GIF illustrations for the GUIDA-RAPIDA.html guide.
+Generate animated GIF illustrations for the QUICK-START.html guide.
 Creates stylized terminal / chat simulations matching the Warp dark theme.
 """
 from __future__ import annotations
@@ -672,7 +672,7 @@ def gif_09_settings():
 # Main
 # ═══════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
-    print("Generating GIFs for GUIDA-RAPIDA...")
+    print("Generating GIFs for QUICK-START...")
     print()
     gif_01_download_warp()
     gif_02_verify_oz()

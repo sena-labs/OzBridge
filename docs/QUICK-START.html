@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Guida Rapida — OzBridge per VS Code</title>
+<title>Quick Start — OzBridge for VS Code</title>
 <style>
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -712,19 +712,19 @@ body {
 <aside class="sidebar">
   <div class="sidebar-logo">
     <div class="logo-icon">W</div>
-    <span>OzBridge<br><small style="font-weight:400;font-size:11px;color:#8b8b9e">Guida Rapida</small></span>
+    <span>OzBridge<br><small style="font-weight:400;font-size:11px;color:#8b8b9e">Quick Start</small></span>
   </div>
   <nav>
-    <a href="#prerequisiti"><span class="nav-num">1</span> Prerequisiti</a>
-    <a href="#installa-warp"><span class="nav-num">2</span> Installa Warp</a>
-    <a href="#installa-ext"><span class="nav-num">3</span> Installa estensione</a>
-    <a href="#primo-avvio"><span class="nav-num">4</span> Primo avvio</a>
-    <a href="#uso-base"><span class="nav-num">5</span> Utilizzo base</a>
-    <a href="#comandi"><span class="nav-num">6</span> Tutti i comandi</a>
-    <a href="#impostazioni"><span class="nav-num">7</span> Impostazioni</a>
-    <a href="#consigli"><span class="nav-num">8</span> Consigli pro</a>
-    <a href="#problemi"><span class="nav-num">9</span> Problemi comuni</a>
-    <a href="#glossario"><span class="nav-num">G</span> Glossario</a>
+    <a href="#prerequisites"><span class="nav-num">1</span> Prerequisites</a>
+    <a href="#install-warp"><span class="nav-num">2</span> Install Warp</a>
+    <a href="#install-extension"><span class="nav-num">3</span> Install the extension</a>
+    <a href="#first-run"><span class="nav-num">4</span> First run</a>
+    <a href="#basic-usage"><span class="nav-num">5</span> Basic usage</a>
+    <a href="#commands"><span class="nav-num">6</span> All commands</a>
+    <a href="#settings"><span class="nav-num">7</span> Settings</a>
+    <a href="#tips"><span class="nav-num">8</span> Pro tips</a>
+    <a href="#troubleshooting"><span class="nav-num">9</span> Troubleshooting</a>
+    <a href="#glossary"><span class="nav-num">G</span> Glossary</a>
   </nav>
 </aside>
 
@@ -733,68 +733,68 @@ body {
 
   <!-- HERO -->
   <header class="hero" id="top">
-    <div class="hero-badge">Guida per principianti</div>
-    <h1>Inizia con <span class="accent">OzBridge</span><br>in pochi minuti</h1>
-    <p class="subtitle">Usa gli agenti AI di Warp direttamente dalla chat di VS Code. Nessuna esperienza tecnica necessaria — segui i passaggi e sarai operativo subito.</p>
-    <a href="#prerequisiti" class="hero-cta">Iniziamo →</a>
+    <div class="hero-badge">Beginner's guide</div>
+    <h1>Get started with <span class="accent">OzBridge</span><br>in a few minutes</h1>
+    <p class="subtitle">Use Warp's AI agents straight from VS Code chat. No technical background needed — follow the steps and you'll be up and running.</p>
+    <a href="#prerequisites" class="hero-cta">Let's go →</a>
   </header>
 
-  <!-- COME FUNZIONA — FLOW ANIMATO -->
+  <!-- HOW IT WORKS — ANIMATED FLOW -->
   <div class="section" style="padding-top:40px;padding-bottom:40px;border-bottom:1px solid #1e1e28;">
-    <p style="text-align:center;font-size:13px;color:#8b8b9e;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">Come funziona</p>
+    <p style="text-align:center;font-size:13px;color:#8b8b9e;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;">How it works</p>
     <div class="flow-diagram">
-      <div class="flow-node">💬 Tu scrivi nella chat</div>
+      <div class="flow-node">💬 You type in chat</div>
       <div class="flow-arrow">→</div>
       <div class="flow-node">🔌 OzBridge</div>
       <div class="flow-arrow">→</div>
       <div class="flow-node">⚙️ Oz CLI</div>
       <div class="flow-arrow">→</div>
-      <div class="flow-node">🤖 Agente AI</div>
+      <div class="flow-node">🤖 AI agent</div>
       <div class="flow-arrow">→</div>
-      <div class="flow-node">✅ Risultato in chat</div>
+      <div class="flow-node">✅ Result in chat</div>
     </div>
   </div>
 
-  <!-- ===== 1. PREREQUISITI ===== -->
-  <section class="section" id="prerequisiti">
+  <!-- ===== 1. PREREQUISITES ===== -->
+  <section class="section" id="prerequisites">
     <div class="section-header">
       <div class="section-num">1</div>
-      <h2>Cosa ti serve prima di iniziare</h2>
+      <h2>What you need before you start</h2>
     </div>
 
     <div class="req-grid">
       <div class="req-card">
         <div class="req-icon" style="background:#3b82f615;">💻</div>
         <h3>VS Code</h3>
-        <p>L'editor di Microsoft — gratuito e multipiattaforma.</p>
+        <p>Microsoft's editor — free and cross-platform.</p>
         <span class="version">≥ 1.96.0</span>
       </div>
       <div class="req-card">
         <div class="req-icon" style="background:#8b5cf615;">🤖</div>
         <h3>GitHub Copilot Chat</h3>
-        <p>Estensione di chat AI per VS Code. Serve per il pannello <code>@oz</code>.</p>
-        <span class="version">qualsiasi versione</span>
+        <p>The AI chat extension for VS Code. Required for the <code>@oz</code> panel.</p>
+        <span class="version">any version</span>
       </div>
       <div class="req-card">
         <div class="req-icon" style="background:#01d68f15;">⚡</div>
         <h3>Warp Terminal</h3>
-        <p>Il terminale avanzato che include il CLI «Oz» per gli agenti.</p>
-        <span class="version">ultima stabile</span>
+        <p>The advanced terminal that ships the “Oz” agent CLI.</p>
+        <span class="version">latest stable</span>
       </div>
       <div class="req-card">
         <div class="req-icon" style="background:#f59e0b15;">🔑</div>
-        <h3>Account Warp</h3>
-        <p>Registrazione gratuita su <a href="https://app.warp.dev" style="color:#01d68f" target="_blank">app.warp.dev</a>.</p>
-        <span class="version">gratuito</span>
+        <h3>Warp account</h3>
+        <p>Free sign-up at <a href="https://app.warp.dev" style="color:#01d68f" target="_blank">app.warp.dev</a>.</p>
+        <span class="version">free</span>
       </div>
     </div>
   </section>
 
-  <!-- ===== 2. INSTALLA WARP ===== -->
-  <section class="section" id="installa-warp">
+  <!-- ===== 2. INSTALL WARP ===== -->
+  <section class="section" id="install-warp">
     <div class="section-header">
       <div class="section-num">2</div>
-      <h2>Installa Warp e il CLI Oz</h2>
+      <h2>Install Warp and the Oz CLI</h2>
     </div>
 
     <!-- OS TABS -->
@@ -810,14 +810,14 @@ body {
         <div class="step-card">
           <div class="step-top">
             <div class="step-badge">1</div>
-            <h3>Scarica Warp</h3>
+            <h3>Download Warp</h3>
           </div>
           <div class="step-body">
-            <p>Vai su <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a> e scarica l'installer per Windows. Esegui il file e segui la procedura guidata.</p>
+            <p>Go to <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a> and download the Windows installer. Run it and follow the wizard.</p>
             <div class="media-placeholder" data-media="gif-01-download-warp.gif">
-              <img src="media/gif-01-download-warp.gif" alt="Download e installazione di Warp su Windows">
+              <img src="media/gif-01-download-warp.gif" alt="Downloading and installing Warp on Windows">
               <div class="ph-icon">⬇️</div>
-              <div class="ph-label">GIF: Download e installazione di Warp su Windows</div>
+              <div class="ph-label">GIF: Downloading and installing Warp on Windows</div>
               <div class="ph-format">GIF · 16:9 · ~800×450px</div>
             </div>
           </div>
@@ -826,10 +826,10 @@ body {
         <div class="step-card">
           <div class="step-top">
             <div class="step-badge">2</div>
-            <h3>Verifica che Oz sia nel PATH</h3>
+            <h3>Check that Oz is on your PATH</h3>
           </div>
           <div class="step-body">
-            <p>Apri PowerShell e digita:</p>
+            <p>Open PowerShell and run:</p>
             <div class="terminal">
               <div class="terminal-bar">
                 <div class="terminal-dot r"></div>
@@ -839,13 +839,13 @@ body {
               </div>
               <div class="terminal-body">
                 <span class="prompt">PS C:\&gt;</span> <span class="cmd">where oz</span><br>
-                <span class="path">C:\Users\TuoNome\AppData\Local\Programs\Warp\oz.cmd</span>
+                <span class="path">C:\Users\YourName\AppData\Local\Programs\Warp\oz.cmd</span>
               </div>
             </div>
             <div class="media-placeholder" data-media="gif-02-verify-oz.gif">
-              <img src="media/gif-02-verify-oz.gif" alt="Verifica di Oz nel PATH da PowerShell">
+              <img src="media/gif-02-verify-oz.gif" alt="Checking Oz on the PATH from PowerShell">
               <div class="ph-icon">✅</div>
-              <div class="ph-label">GIF: Verifica di Oz nel PATH da PowerShell</div>
+              <div class="ph-label">GIF: Checking Oz on the PATH from PowerShell</div>
               <div class="ph-format">GIF · 16:9</div>
             </div>
           </div>
@@ -854,10 +854,10 @@ body {
         <div class="step-card">
           <div class="step-top">
             <div class="step-badge">3</div>
-            <h3>Primo login</h3>
+            <h3>First sign-in</h3>
           </div>
           <div class="step-body">
-            <p>Autenticati con il tuo account Warp:</p>
+            <p>Authenticate with your Warp account:</p>
             <div class="terminal">
               <div class="terminal-bar">
                 <div class="terminal-dot r"></div>
@@ -872,9 +872,9 @@ body {
               </div>
             </div>
             <div class="media-placeholder" data-media="gif-03-oz-login.gif">
-              <img src="media/gif-03-oz-login.gif" alt="Processo di login con Oz">
+              <img src="media/gif-03-oz-login.gif" alt="Signing in with Oz">
               <div class="ph-icon">🔑</div>
-              <div class="ph-label">GIF: Processo di login con Oz (apertura browser → callback)</div>
+              <div class="ph-label">GIF: Signing in with Oz (browser opens → callback)</div>
               <div class="ph-format">GIF · 16:9</div>
             </div>
           </div>
@@ -886,7 +886,7 @@ body {
     <div class="os-content" id="os-mac">
       <div class="steps">
         <div class="step-card">
-          <div class="step-top"><div class="step-badge">1</div><h3>Installa con Homebrew</h3></div>
+          <div class="step-top"><div class="step-badge">1</div><h3>Install with Homebrew</h3></div>
           <div class="step-body">
             <div class="terminal">
               <div class="terminal-bar">
@@ -901,7 +901,7 @@ body {
                 <span class="success">✓ Successfully logged in!</span>
               </div>
             </div>
-            <p>In alternativa scarica il .dmg da <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a>.</p>
+            <p>Alternatively, download the .dmg from <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a>.</p>
           </div>
         </div>
       </div>
@@ -911,9 +911,9 @@ body {
     <div class="os-content" id="os-linux">
       <div class="steps">
         <div class="step-card">
-          <div class="step-top"><div class="step-badge">1</div><h3>Installa dal sito</h3></div>
+          <div class="step-top"><div class="step-badge">1</div><h3>Install from the website</h3></div>
           <div class="step-body">
-            <p>Segui le istruzioni per la tua distribuzione su <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a>, poi verifica:</p>
+            <p>Follow the instructions for your distribution at <a href="https://www.warp.dev/" style="color:#01d68f" target="_blank">warp.dev</a>, then verify:</p>
             <div class="terminal">
               <div class="terminal-bar">
                 <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
@@ -932,20 +932,20 @@ body {
     </div>
   </section>
 
-  <!-- ===== 3. INSTALLA ESTENSIONE ===== -->
-  <section class="section" id="installa-ext">
+  <!-- ===== 3. INSTALL THE EXTENSION ===== -->
+  <section class="section" id="install-extension">
     <div class="section-header">
       <div class="section-num">3</div>
-      <h2>Installa l'estensione in VS Code</h2>
+      <h2>Install the extension in VS Code</h2>
     </div>
     <div class="steps">
       <div class="step-card">
         <div class="step-top">
           <div class="step-badge">1</div>
-          <h3>Installa il file VSIX</h3>
+          <h3>Install the VSIX file</h3>
         </div>
         <div class="step-body">
-          <p>Apri il terminale integrato di VS Code (<kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+`</kbd>) e digita:</p>
+          <p>Open VS Code's integrated terminal (<kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+`</kbd>) and run:</p>
           <div class="terminal">
             <div class="terminal-bar">
               <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
@@ -957,9 +957,9 @@ body {
             </div>
           </div>
           <div class="media-placeholder" data-media="gif-04-install-vsix.gif">
-            <img src="media/gif-04-install-vsix.gif" alt="Installazione del VSIX nel terminale di VS Code">
+            <img src="media/gif-04-install-vsix.gif" alt="Installing the VSIX from the VS Code terminal">
             <div class="ph-icon">📦</div>
-            <div class="ph-label">GIF: Installazione del VSIX nel terminale di VS Code</div>
+            <div class="ph-label">GIF: Installing the VSIX from the VS Code terminal</div>
             <div class="ph-format">GIF · 16:9</div>
           </div>
         </div>
@@ -968,14 +968,14 @@ body {
       <div class="step-card">
         <div class="step-top">
           <div class="step-badge">2</div>
-          <h3>Ricarica la finestra</h3>
+          <h3>Reload the window</h3>
         </div>
         <div class="step-body">
-          <p>Premi <kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+Shift+P</kbd>, digita <code>Reload Window</code> e premi Invio.</p>
+          <p>Press <kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+Shift+P</kbd>, type <code>Reload Window</code> and press Enter.</p>
           <div class="media-placeholder" data-media="gif-05-reload-window.gif">
-            <img src="media/gif-05-reload-window.gif" alt="Reload Window dal Command Palette">
+            <img src="media/gif-05-reload-window.gif" alt="Reload Window from the Command Palette">
             <div class="ph-icon">🔄</div>
-            <div class="ph-label">GIF: Reload Window dal Command Palette</div>
+            <div class="ph-label">GIF: Reload Window from the Command Palette</div>
             <div class="ph-format">GIF · 16:9</div>
           </div>
         </div>
@@ -983,19 +983,19 @@ body {
     </div>
 
     <div class="tip-box">
-      <div class="tip-label">💡 Metodo alternativo — da sorgente</div>
-      <p>Se sei uno sviluppatore puoi clonare il repository, eseguire <code>npm install && npm run build</code> e premere <strong>F5</strong> per lanciare l'Extension Development Host.</p>
+      <div class="tip-label">💡 Alternative — from source</div>
+      <p>If you are a developer, clone the repository, run <code>npm install &amp;&amp; npm run build</code> and press <strong>F5</strong> to launch the Extension Development Host.</p>
     </div>
   </section>
 
-  <!-- ===== 4. PRIMO AVVIO ===== -->
-  <section class="section" id="primo-avvio">
+  <!-- ===== 4. FIRST RUN ===== -->
+  <section class="section" id="first-run">
     <div class="section-header">
       <div class="section-num">4</div>
-      <h2>Primo avvio e verifica</h2>
+      <h2>First run and health check</h2>
     </div>
 
-    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Controlliamo che tutto funzioni con un solo comando:</p>
+    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Let's confirm everything works with a single command:</p>
 
     <div class="chat-sim">
       <div class="chat-sim-bar">
@@ -1003,75 +1003,75 @@ body {
         Copilot Chat — @oz
       </div>
       <div class="chat-msg">
-        <div class="chat-avatar user">Tu</div>
+        <div class="chat-avatar user">You</div>
         <div class="chat-bubble"><span class="mention">@oz</span> <span class="cmd-tag">/config</span></div>
       </div>
       <div class="chat-msg">
         <div class="chat-avatar warp">W</div>
         <div class="chat-bubble">
-          ⚙️ <strong>Configurazione OzBridge</strong><br>
+          ⚙️ <strong>OzBridge configuration</strong><br>
           ────────────────────────<br>
-          ✅ <strong>Disponibile</strong> — versione: unknown<br>
-          Modello: <code>auto</code><br>
-          Profilo: <code>Default</code><br>
+          ✅ <strong>Available</strong> — version: unknown<br>
+          Model: <code>auto</code><br>
+          Profile: <code>Default</code><br>
           Timeout: <code>300 s</code>
         </div>
       </div>
     </div>
 
     <div class="media-placeholder" data-media="gif-06-first-config.gif">
-      <img src="media/gif-06-first-config.gif" alt="Primo avvio — @oz /config nella chat">
+      <img src="media/gif-06-first-config.gif" alt="First run — @oz /config in chat">
       <div class="ph-icon">🎬</div>
-      <div class="ph-label">GIF: Primo avvio — digitare @oz /config nella chat e vedere la risposta</div>
+      <div class="ph-label">GIF: First run — typing @oz /config in chat and seeing the reply</div>
       <div class="ph-format">GIF · 16:9</div>
     </div>
 
     <div class="tip-box">
-      <div class="tip-label">✅ Tutto ok?</div>
-      <p>Se vedi <strong>«✅ Disponibile»</strong> sei pronto! Se vedi <strong>«❌ Non disponibile»</strong> vai alla sezione <a href="#problemi" style="color:#01d68f">Problemi comuni</a>.</p>
+      <div class="tip-label">✅ All good?</div>
+      <p>If you see <strong>“✅ Available”</strong> you're ready. If you see <strong>“❌ Not available”</strong> head to <a href="#troubleshooting" style="color:#01d68f">Troubleshooting</a>.</p>
     </div>
   </section>
 
-  <!-- ===== 5. UTILIZZO BASE ===== -->
-  <section class="section" id="uso-base">
+  <!-- ===== 5. BASIC USAGE ===== -->
+  <section class="section" id="basic-usage">
     <div class="section-header">
       <div class="section-num">5</div>
-      <h2>Utilizzo base</h2>
+      <h2>Basic usage</h2>
     </div>
 
-    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Tutte le interazioni avvengono nella <strong style="color:#fff">chat di Copilot</strong>. Scrivi sempre <code>@oz</code> all'inizio.</p>
+    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Everything happens in <strong style="color:#fff">Copilot Chat</strong>. Always start with <code>@oz</code>.</p>
 
-    <!-- RUN LOCALE -->
+    <!-- LOCAL RUN -->
     <div class="step-card" style="margin-bottom:24px;">
       <div class="step-top">
         <div class="step-badge">🚀</div>
-        <h3>Esecuzione locale — <code style="color:#01d68f">/run</code></h3>
+        <h3>Local run — <code style="color:#01d68f">/run</code></h3>
       </div>
       <div class="step-body">
         <div class="chat-sim">
           <div class="chat-sim-bar"><div class="cs-icon">W</div> Copilot Chat</div>
           <div class="chat-msg">
-            <div class="chat-avatar user">Tu</div>
-            <div class="chat-bubble"><span class="mention">@oz</span> <span class="cmd-tag">/run</span> correggi il bug nella funzione di login</div>
+            <div class="chat-avatar user">You</div>
+            <div class="chat-bubble"><span class="mention">@oz</span> <span class="cmd-tag">/run</span> fix the bug in the login function</div>
           </div>
           <div class="chat-msg">
             <div class="chat-avatar warp">W</div>
             <div class="chat-bubble">
-              🔄 Esecuzione agente in corso...<br><br>
-              ✅ <strong>Completato</strong><br>
-              Ho trovato e corretto il bug: la variabile <code>isAuthenticated</code> non veniva aggiornata dopo il refresh del token...
+              🔄 Agent running...<br><br>
+              ✅ <strong>Done</strong><br>
+              Found and fixed the bug: <code>isAuthenticated</code> was not being updated after the token refresh...
             </div>
           </div>
         </div>
         <div class="media-placeholder" data-media="gif-07-run-local.gif">
-          <img src="media/gif-07-run-local.gif" alt="Esecuzione /run — l'agente analizza e corregge il codice">
+          <img src="media/gif-07-run-local.gif" alt="Running /run — the agent analyses and fixes the code">
           <div class="ph-icon">🚀</div>
-          <div class="ph-label">GIF: Esecuzione /run — l'agente analizza e corregge il codice</div>
+          <div class="ph-label">GIF: Running /run — the agent analyses and fixes the code</div>
           <div class="ph-format">GIF · 16:9</div>
         </div>
         <div class="tip-box" style="margin-top:12px;">
-          <div class="tip-label">💡 Suggerimento</div>
-          <p><strong>Seleziona del codice</strong> nell'editor prima di inviare il comando: l'agente lo vedrà come contesto aggiuntivo e darà risultati migliori.</p>
+          <div class="tip-label">💡 Tip</div>
+          <p><strong>Select some code</strong> in the editor before sending the command: the agent picks it up as extra context and gives better results.</p>
         </div>
       </div>
     </div>
@@ -1080,27 +1080,27 @@ body {
     <div class="step-card" style="margin-bottom:24px;">
       <div class="step-top">
         <div class="step-badge">☁️</div>
-        <h3>Esecuzione cloud — <code style="color:#01d68f">/cloud</code></h3>
+        <h3>Cloud run — <code style="color:#01d68f">/cloud</code></h3>
       </div>
       <div class="step-body">
         <div class="chat-sim">
           <div class="chat-sim-bar"><div class="cs-icon">W</div> Copilot Chat</div>
           <div class="chat-msg">
-            <div class="chat-avatar user">Tu</div>
-            <div class="chat-bubble"><span class="mention">@oz</span> <span class="cmd-tag">/cloud</span> esegui i test e genera il report di copertura</div>
+            <div class="chat-avatar user">You</div>
+            <div class="chat-bubble"><span class="mention">@oz</span> <span class="cmd-tag">/cloud</span> run the tests and generate the coverage report</div>
           </div>
           <div class="chat-msg">
             <div class="chat-avatar warp">W</div>
             <div class="chat-bubble">
-              ☁️ Task inviato al cloud — ID: <code>run-a7f3</code><br>
-              ⏳ In coda... → 🔄 In esecuzione... → ✅ Completato!<br><br>
-              Copertura: <strong>98.15%</strong> statements, <strong>98.68%</strong> lines.
+              ☁️ Task sent to the cloud — ID: <code>run-a7f3</code><br>
+              ⏳ Queued... → 🔄 Running... → ✅ Done!<br><br>
+              Coverage: <strong>98.15%</strong> statements, <strong>98.68%</strong> lines.
             </div>
           </div>
         </div>
         <div class="tip-box warning" style="margin-top:12px;">
-          <div class="tip-label">⚠️ Attenzione — crediti</div>
-          <p>Le esecuzioni cloud consumano crediti del tuo account Warp. Le esecuzioni locali (<code>/run</code>) sono gratuite.</p>
+          <div class="tip-label">⚠️ Heads up — credits</div>
+          <p>Cloud runs consume credits from your Warp account. Local runs (<code>/run</code>) are free.</p>
         </div>
       </div>
     </div>
@@ -1109,21 +1109,21 @@ body {
     <div class="step-card" style="margin-bottom:24px;">
       <div class="step-top">
         <div class="step-badge">📊</div>
-        <h3>Stato esecuzioni — <code style="color:#01d68f">/status</code></h3>
+        <h3>Run status — <code style="color:#01d68f">/status</code></h3>
       </div>
       <div class="step-body">
         <div class="chat-sim">
           <div class="chat-sim-bar"><div class="cs-icon">W</div> Copilot Chat</div>
           <div class="chat-msg">
-            <div class="chat-avatar user">Tu</div>
+            <div class="chat-avatar user">You</div>
             <div class="chat-bubble"><span class="mention">@oz</span> <span class="cmd-tag">/status</span></div>
           </div>
           <div class="chat-msg">
             <div class="chat-avatar warp">W</div>
             <div class="chat-bubble">
-              📋 <strong>Esecuzioni recenti:</strong><br>
-              <code>run-a7f3</code> — ✅ SUCCEEDED — 2 min fa<br>
-              <code>run-b291</code> — 🔄 RUNNING — 30 sec fa
+              📋 <strong>Recent runs:</strong><br>
+              <code>run-a7f3</code> — ✅ SUCCEEDED — 2 min ago<br>
+              <code>run-b291</code> — 🔄 RUNNING — 30 sec ago
             </div>
           </div>
         </div>
@@ -1134,391 +1134,392 @@ body {
     <div class="step-card">
       <div class="step-top">
         <div class="step-badge">🏗️</div>
-        <h3>Inizializzare un progetto — <code style="color:#01d68f">/init</code></h3>
+        <h3>Initialise a project — <code style="color:#01d68f">/init</code></h3>
       </div>
       <div class="step-body">
-        <p>Se è la prima volta che usi Warp in un progetto, esegui <code>@oz /init</code> per creare automaticamente i file di configurazione:</p>
+        <p>The first time you use Warp in a project, run <code>@oz /init</code> to scaffold the configuration files automatically:</p>
         <div class="terminal">
           <div class="terminal-bar">
             <div class="terminal-dot r"></div><div class="terminal-dot y"></div><div class="terminal-dot g"></div>
-            <span>Risultato</span>
+            <span>Result</span>
           </div>
           <div class="terminal-body">
-            <span class="success">✓</span> <span class="output">Creata cartella .agents/skills/ con 7 file SKILL.md</span><br>
-            <span class="success">✓</span> <span class="output">Creato .warp/rules/PROJECT.md</span>
+            <span class="success">✓</span> <span class="output">Created .agents/skills/ with 7 SKILL.md files</span><br>
+            <span class="success">✓</span> <span class="output">Created .warp/rules/PROJECT.md</span>
           </div>
         </div>
         <div class="media-placeholder" data-media="gif-08-init.gif">
-          <img src="media/gif-08-init.gif" alt="Scaffolding del progetto con /init">
+          <img src="media/gif-08-init.gif" alt="Project scaffolding with /init">
           <div class="ph-icon">🏗️</div>
-          <div class="ph-label">GIF: Scaffolding del progetto con /init</div>
+          <div class="ph-label">GIF: Project scaffolding with /init</div>
           <div class="ph-format">GIF · 16:9</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ===== 6. TUTTI I COMANDI ===== -->
-  <section class="section" id="comandi">
+  <!-- ===== 6. ALL COMMANDS ===== -->
+  <section class="section" id="commands">
     <div class="section-header">
       <div class="section-num">6</div>
-      <h2>Tutti i comandi disponibili</h2>
+      <h2>Every available command</h2>
     </div>
 
     <div class="cmd-grid">
       <div class="cmd-card">
         <span class="cmd-name">/run</span>
-        <p class="cmd-desc">Esegui un agente AI localmente nel tuo workspace.</p>
-        <code class="cmd-example">@oz /run refactora questa funzione</code>
+        <p class="cmd-desc">Run an AI agent locally in your workspace.</p>
+        <code class="cmd-example">@oz /run refactor this function</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">/cloud</span>
-        <p class="cmd-desc">Esegui un agente nel cloud (consuma crediti).</p>
+        <p class="cmd-desc">Run an agent in the cloud (consumes credits).</p>
         <code class="cmd-example">@oz /cloud deploy to staging</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">/status</span>
-        <p class="cmd-desc">Controlla lo stato delle esecuzioni recenti.</p>
+        <p class="cmd-desc">Check the status of recent runs.</p>
         <code class="cmd-example">@oz /status run-a7f3</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">/schedule</span>
-        <p class="cmd-desc">Crea e gestisci esecuzioni pianificate (cron).</p>
+        <p class="cmd-desc">Create and manage scheduled runs (cron).</p>
         <code class="cmd-example">@oz /schedule list</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">/models</span>
-        <p class="cmd-desc">Elenca i modelli AI disponibili.</p>
+        <p class="cmd-desc">List the available AI models.</p>
         <code class="cmd-example">@oz /models</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">/mcp</span>
-        <p class="cmd-desc">Elenca i server MCP configurati.</p>
+        <p class="cmd-desc">List the configured MCP servers.</p>
         <code class="cmd-example">@oz /mcp</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">/config</span>
-        <p class="cmd-desc">Mostra la configurazione attuale e lo stato del CLI.</p>
+        <p class="cmd-desc">Show the current configuration and CLI status.</p>
         <code class="cmd-example">@oz /config</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">/init</span>
-        <p class="cmd-desc">Genera i file Skills e Rules nel workspace.</p>
+        <p class="cmd-desc">Generate the Skills and Rules files in the workspace.</p>
         <code class="cmd-example">@oz /init</code>
       </div>
     </div>
 
-    <!-- Sub-comandi schedule -->
-    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;">Sotto-comandi di <code style="color:#01d68f">/schedule</code></h3>
+    <!-- schedule sub-commands -->
+    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;"><code style="color:#01d68f">/schedule</code> sub-commands</h3>
     <div class="cmd-grid">
       <div class="cmd-card">
         <span class="cmd-name">list</span>
-        <p class="cmd-desc">Mostra tutte le pianificazioni.</p>
+        <p class="cmd-desc">Show every schedule.</p>
         <code class="cmd-example">@oz /schedule list</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">create</span>
-        <p class="cmd-desc">Crea una nuova pianificazione con cron.</p>
-        <code class="cmd-example">@oz /schedule create lint "0 9 * * *" "Esegui lint"</code>
+        <p class="cmd-desc">Create a new cron schedule.</p>
+        <code class="cmd-example">@oz /schedule create lint "0 9 * * *" "Run lint"</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">pause / unpause</span>
-        <p class="cmd-desc">Metti in pausa o riprendi una pianificazione.</p>
+        <p class="cmd-desc">Pause or resume a schedule.</p>
         <code class="cmd-example">@oz /schedule pause sched-123</code>
       </div>
       <div class="cmd-card">
         <span class="cmd-name">delete</span>
-        <p class="cmd-desc">Elimina una pianificazione.</p>
+        <p class="cmd-desc">Delete a schedule.</p>
         <code class="cmd-example">@oz /schedule delete sched-123</code>
       </div>
     </div>
   </section>
 
-  <!-- ===== 7. IMPOSTAZIONI ===== -->
-  <section class="section" id="impostazioni">
+  <!-- ===== 7. SETTINGS ===== -->
+  <section class="section" id="settings">
     <div class="section-header">
       <div class="section-num">7</div>
-      <h2>Personalizza le impostazioni</h2>
+      <h2>Customise the settings</h2>
     </div>
 
-    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Apri le impostazioni di VS Code (<kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+,</kbd>) e cerca <code>ozBridge</code>.</p>
+    <p style="color:#b0b0be;font-size:15px;margin-bottom:24px;">Open VS Code settings (<kbd style="background:#2a2a35;padding:2px 8px;border-radius:4px;font-size:12px;color:#e2e2e8;">Ctrl+,</kbd>) and search for <code>ozBridge</code>.</p>
 
     <div class="media-placeholder" data-media="gif-09-settings.gif">
-      <img src="media/gif-09-settings.gif" alt="Impostazioni di VS Code — parametri OzBridge">
+      <img src="media/gif-09-settings.gif" alt="VS Code settings — OzBridge options">
       <div class="ph-icon">⚙️</div>
-      <div class="ph-label">GIF: Apertura impostazioni di VS Code e modifica dei parametri OzBridge</div>
+      <div class="ph-label">GIF: Opening VS Code settings and changing OzBridge options</div>
       <div class="ph-format">GIF · 16:9</div>
     </div>
 
     <table class="settings-table">
       <thead>
         <tr>
-          <th>Impostazione</th>
+          <th>Setting</th>
           <th>Default</th>
-          <th>Descrizione</th>
+          <th>Description</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td class="setting-key">ozPath</td>
           <td class="setting-default">oz</td>
-          <td>Percorso del CLI Oz. Cambia solo se non è nel PATH.</td>
+          <td>Path to the Oz CLI. Change it only if Oz is not on your PATH.</td>
         </tr>
         <tr>
           <td class="setting-key">defaultModel</td>
           <td class="setting-default">auto</td>
-          <td>Modello AI predefinito. <code>auto</code> = Warp sceglie il migliore.</td>
+          <td>Default AI model. <code>auto</code> lets Warp pick the best one.</td>
         </tr>
         <tr>
           <td class="setting-key">defaultProfile</td>
           <td class="setting-default">Default</td>
-          <td>Profilo agente da usare.</td>
+          <td>Agent profile to use.</td>
         </tr>
         <tr>
           <td class="setting-key">defaultEnvironment</td>
-          <td class="setting-default"><em>(vuoto)</em></td>
-          <td>Ambiente cloud predefinito per <code>/cloud</code>.</td>
+          <td class="setting-default"><em>(empty)</em></td>
+          <td>Default cloud environment for <code>/cloud</code>.</td>
         </tr>
         <tr>
           <td class="setting-key">timeoutMs</td>
           <td class="setting-default">300000</td>
-          <td>Timeout per esecuzioni locali (5 minuti). Aumentalo per task lunghi.</td>
+          <td>Timeout for local runs (5 minutes). Raise it for long tasks.</td>
         </tr>
         <tr>
           <td class="setting-key">cloudPollingIntervalMs</td>
           <td class="setting-default">15000</td>
-          <td>Intervallo di polling per task cloud (ms).</td>
+          <td>Polling interval for cloud tasks (ms).</td>
         </tr>
         <tr>
           <td class="setting-key">cloudPollingTimeoutMs</td>
           <td class="setting-default">1800000</td>
-          <td>Timeout massimo di attesa per task cloud (30 min).</td>
+          <td>Maximum wait for a cloud task (30 min).</td>
         </tr>
         <tr>
           <td class="setting-key">maxOutputChars</td>
           <td class="setting-default">15000</td>
-          <td>Lunghezza massima dell'output in chat. Aumenta se risposte troncate.</td>
+          <td>Maximum output length in chat. Raise it if replies get truncated.</td>
         </tr>
       </tbody>
     </table>
 
-    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;">Scenari comuni</h3>
+    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;">Common scenarios</h3>
     <div class="steps">
       <div class="step-card">
-        <div class="step-top"><div class="step-badge">⏱️</div><h3>L'agente va in timeout</h3></div>
+        <div class="step-top"><div class="step-badge">⏱️</div><h3>The agent times out</h3></div>
         <div class="step-body">
-          <p>Imposta <code>ozBridge.timeoutMs</code> a <strong>600000</strong> (10 min) o più.</p>
+          <p>Set <code>ozBridge.timeoutMs</code> to <strong>600000</strong> (10 min) or higher.</p>
         </div>
       </div>
       <div class="step-card">
-        <div class="step-top"><div class="step-badge">🧠</div><h3>Vuoi usare un modello specifico</h3></div>
+        <div class="step-top"><div class="step-badge">🧠</div><h3>You want a specific model</h3></div>
         <div class="step-body">
-          <p>Imposta <code>ozBridge.defaultModel</code> a <strong>gpt-4o</strong>, <strong>claude-sonnet</strong>, ecc.</p>
+          <p>Set <code>ozBridge.defaultModel</code> to <strong>gpt-4o</strong>, <strong>claude-sonnet</strong>, and so on.</p>
         </div>
       </div>
       <div class="step-card">
-        <div class="step-top"><div class="step-badge">✂️</div><h3>La risposta viene troncata</h3></div>
+        <div class="step-top"><div class="step-badge">✂️</div><h3>The reply gets truncated</h3></div>
         <div class="step-body">
-          <p>Aumenta <code>ozBridge.maxOutputChars</code> a <strong>15000</strong> o <strong>20000</strong> se hai output molto lunghi.</p>
+          <p>Raise <code>ozBridge.maxOutputChars</code> to <strong>15000</strong> or <strong>20000</strong> if your output is very long.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ===== 8. CONSIGLI ===== -->
-  <section class="section" id="consigli">
+  <!-- ===== 8. TIPS ===== -->
+  <section class="section" id="tips">
     <div class="section-header">
       <div class="section-num">8</div>
-      <h2>Consigli per ottenere il massimo</h2>
+      <h2>Getting the most out of it</h2>
     </div>
 
-    <!-- CONTESTO AUTOMATICO -->
-    <h3 style="color:#fff;margin-bottom:16px;font-size:18px;">🎯 L'estensione invia automaticamente all'agente:</h3>
+    <!-- AUTOMATIC CONTEXT -->
+    <h3 style="color:#fff;margin-bottom:16px;font-size:18px;">🎯 The extension automatically sends the agent:</h3>
     <div class="req-grid" style="margin-bottom:32px;">
       <div class="req-card">
         <div class="req-icon" style="background:#3b82f615;">📄</div>
-        <h3>File aperto</h3>
-        <p>Il contenuto del file attivo nell'editor.</p>
+        <h3>Open file</h3>
+        <p>The contents of the active editor file.</p>
       </div>
       <div class="req-card">
         <div class="req-icon" style="background:#8b5cf615;">🔦</div>
-        <h3>Selezione attiva</h3>
-        <p>Il codice selezionato, se presente.</p>
+        <h3>Current selection</h3>
+        <p>The selected code, if any.</p>
       </div>
       <div class="req-card">
         <div class="req-icon" style="background:#f59e0b15;">⚠️</div>
-        <h3>Errori e warning</h3>
-        <p>I diagnostici visibili nel file corrente.</p>
+        <h3>Errors and warnings</h3>
+        <p>The diagnostics visible in the current file.</p>
       </div>
       <div class="req-card">
         <div class="req-icon" style="background:#01d68f15;">📁</div>
         <h3>Workspace</h3>
-        <p>Il percorso e la struttura del progetto.</p>
+        <p>The project path and structure.</p>
       </div>
     </div>
 
-    <!-- CONFRONTO PROMPT -->
-    <h3 style="color:#fff;margin-bottom:16px;font-size:18px;">✍️ Scrivi prompt chiari</h3>
+    <!-- PROMPT COMPARISON -->
+    <h3 style="color:#fff;margin-bottom:16px;font-size:18px;">✍️ Write clear prompts</h3>
     <div class="compare-grid">
       <div class="compare-card bad">
-        <div class="compare-label">❌ Troppo vago</div>
+        <div class="compare-label">❌ Too vague</div>
         <ul>
-          <li>"sistema il codice"</li>
-          <li>"fai i test"</li>
-          <li>"migliora tutto"</li>
-          <li>"deploy"</li>
+          <li>“fix the code”</li>
+          <li>“do the tests”</li>
+          <li>“improve everything”</li>
+          <li>“deploy”</li>
         </ul>
       </div>
       <div class="compare-card good">
-        <div class="compare-label">✅ Chiaro e specifico</div>
+        <div class="compare-label">✅ Clear and specific</div>
         <ul>
-          <li>"aggiungi gestione errori a fetchUser()"</li>
-          <li>"scrivi test unitari per auth.ts"</li>
-          <li>"refactora il componente Sidebar in sotto-componenti"</li>
-          <li>"crea un Dockerfile per il backend Node.js"</li>
+          <li>“add error handling to fetchUser()”</li>
+          <li>“write unit tests for auth.ts”</li>
+          <li>“split the Sidebar component into sub-components”</li>
+          <li>“create a Dockerfile for the Node.js backend”</li>
         </ul>
       </div>
     </div>
 
-    <!-- COMANDO GIUSTO -->
-    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;">🗺️ Usa il comando giusto</h3>
+    <!-- RIGHT COMMAND -->
+    <h3 style="color:#fff;margin:32px 0 16px;font-size:18px;">🗺️ Pick the right command</h3>
     <table class="settings-table">
-      <thead><tr><th>Situazione</th><th>Comando</th></tr></thead>
+      <thead><tr><th>Situation</th><th>Command</th></tr></thead>
       <tbody>
-        <tr><td>Modifica rapida al codice</td><td><code style="color:#01d68f">@oz /run ...</code></td></tr>
-        <tr><td>Operazione lunga o pesante</td><td><code style="color:#01d68f">@oz /cloud ...</code></td></tr>
-        <tr><td>Primo setup del progetto</td><td><code style="color:#01d68f">@oz /init</code></td></tr>
-        <tr><td>Verificare che tutto funzioni</td><td><code style="color:#01d68f">@oz /config</code></td></tr>
-        <tr><td>Automatizzare un controllo</td><td><code style="color:#01d68f">@oz /schedule create ...</code></td></tr>
+        <tr><td>Quick code change</td><td><code style="color:#01d68f">@oz /run ...</code></td></tr>
+        <tr><td>Long or heavy operation</td><td><code style="color:#01d68f">@oz /cloud ...</code></td></tr>
+        <tr><td>First project setup</td><td><code style="color:#01d68f">@oz /init</code></td></tr>
+        <tr><td>Check everything works</td><td><code style="color:#01d68f">@oz /config</code></td></tr>
+        <tr><td>Automate a recurring check</td><td><code style="color:#01d68f">@oz /schedule create ...</code></td></tr>
       </tbody>
     </table>
   </section>
 
-  <!-- ===== 9. PROBLEMI COMUNI ===== -->
-  <section class="section" id="problemi">
+  <!-- ===== 9. TROUBLESHOOTING ===== -->
+  <section class="section" id="troubleshooting">
     <div class="section-header">
       <div class="section-num">9</div>
-      <h2>Risoluzione dei problemi comuni</h2>
+      <h2>Troubleshooting common problems</h2>
     </div>
 
     <div class="faq-item open">
       <div class="faq-q" onclick="toggleFaq(this)">
-        <span>❌ Il CLI Oz non viene trovato</span>
+        <span>❌ The Oz CLI is not found</span>
         <span class="faq-arrow">▼</span>
       </div>
       <div class="faq-a">
-        <p><strong>Sintomo:</strong> <code>@oz /config</code> mostra «❌ Non disponibile».</p>
-        <p style="margin-top:10px"><strong>Soluzioni:</strong></p>
-        <p>1. Verifica che Warp sia installato — apri un terminale e digita <code>where oz</code> (Windows) o <code>which oz</code> (macOS/Linux).</p>
-        <p>2. Se il comando non viene trovato, vai in <strong>Impostazioni → ozBridge.ozPath</strong> e inserisci il percorso completo di Oz.</p>
-        <p>3. Dopo la modifica, ricarica VS Code: <strong>Ctrl+Shift+P</strong> → <code>Reload Window</code>.</p>
+        <p><strong>Symptom:</strong> <code>@oz /config</code> shows “❌ Not available”.</p>
+        <p style="margin-top:10px"><strong>Fixes:</strong></p>
+        <p>1. Check that Warp is installed — open a terminal and run <code>where oz</code> (Windows) or <code>which oz</code> (macOS/Linux).</p>
+        <p>2. If the command is not found, go to <strong>Settings → ozBridge.ozPath</strong> and enter the full path to Oz.</p>
+        <p>3. After changing it, reload VS Code: <strong>Ctrl+Shift+P</strong> → <code>Reload Window</code>.</p>
       </div>
     </div>
 
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">
-        <span>🔑 Errore di autenticazione</span>
+        <span>🔑 Authentication error</span>
         <span class="faq-arrow">▼</span>
       </div>
       <div class="faq-a">
-        <p>Apri un terminale ed esegui <code>oz auth login</code>. Si aprirà il browser per riautenticarti. Dopo il login, torna su VS Code e riprova.</p>
+        <p>Open a terminal and run <code>oz auth login</code>. A browser opens for you to re-authenticate. After signing in, go back to VS Code and try again.</p>
       </div>
     </div>
 
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">
-        <span>⏱️ L'agente va in timeout</span>
+        <span>⏱️ The agent times out</span>
         <span class="faq-arrow">▼</span>
       </div>
       <div class="faq-a">
-        <p>Aumenta il timeout nelle impostazioni:</p>
-        <p>• Esecuzioni locali: <code>ozBridge.timeoutMs</code> (default 300 000 ms = 5 min)</p>
-        <p>• Esecuzioni cloud: <code>ozBridge.cloudPollingTimeoutMs</code> (default 1 800 000 ms = 30 min)</p>
-        <p>• Per operazioni molto pesanti, usa <code>/cloud</code> al posto di <code>/run</code>.</p>
+        <p>Raise the timeout in settings:</p>
+        <p>• Local runs: <code>ozBridge.timeoutMs</code> (default 300,000 ms = 5 min)</p>
+        <p>• Cloud runs: <code>ozBridge.cloudPollingTimeoutMs</code> (default 1,800,000 ms = 30 min)</p>
+        <p>• For very heavy work, use <code>/cloud</code> instead of <code>/run</code>.</p>
       </div>
     </div>
 
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">
-        <span>💬 La chat non mostra @oz</span>
+        <span>💬 Chat does not show @oz</span>
         <span class="faq-arrow">▼</span>
       </div>
       <div class="faq-a">
-        <p>1. Verifica che <strong>GitHub Copilot Chat</strong> sia installato e attivo.</p>
-        <p>2. VS Code deve essere versione <strong>≥ 1.96.0</strong>.</p>
-        <p>3. Ricarica la finestra: <strong>Ctrl+Shift+P</strong> → <code>Reload Window</code>.</p>
-        <p>4. Controlla che l'estensione OzBridge sia abilitata: <strong>Ctrl+Shift+X</strong> → cerca "OzBridge".</p>
+        <p>1. Check that <strong>GitHub Copilot Chat</strong> is installed and enabled.</p>
+        <p>2. VS Code must be version <strong>≥ 1.96.0</strong>.</p>
+        <p>3. Reload the window: <strong>Ctrl+Shift+P</strong> → <code>Reload Window</code>.</p>
+        <p>4. Check the OzBridge extension is enabled: <strong>Ctrl+Shift+X</strong> → search “OzBridge”.</p>
       </div>
     </div>
 
     <div class="faq-item">
       <div class="faq-q" onclick="toggleFaq(this)">
-        <span>✂️ L'output nella chat è troncato</span>
+        <span>✂️ Chat output is truncated</span>
         <span class="faq-arrow">▼</span>
       </div>
       <div class="faq-a">
-        <p>Aumenta <code>ozBridge.maxOutputChars</code> nelle impostazioni (default: 15000). Prova con <strong>20000</strong> o più solo se hai davvero bisogno di transcript più lunghi.</p>
+        <p>Raise <code>ozBridge.maxOutputChars</code> in settings (default: 15000). Try <strong>20000</strong> or more only if you genuinely need longer transcripts.</p>
       </div>
     </div>
   </section>
 
-  <!-- ===== GLOSSARIO ===== -->
-  <section class="section" id="glossario">
+  <!-- ===== GLOSSARY ===== -->
+  <section class="section" id="glossary">
     <div class="section-header">
       <div class="section-num">G</div>
-      <h2>Glossario</h2>
+      <h2>Glossary</h2>
     </div>
 
     <div class="glossary-grid">
       <div class="glossary-item">
-        <dl><dt>Agente</dt><dd>Un programma AI che esegue compiti sul tuo codice (analisi, scrittura, review, test…).</dd></dl>
+        <dl><dt>Agent</dt><dd>An AI program that performs tasks on your code (analysis, writing, review, tests…).</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>CLI</dt><dd><em>Command Line Interface</em> — un programma che si usa da terminale. Oz è il CLI di Warp.</dd></dl>
+        <dl><dt>CLI</dt><dd><em>Command Line Interface</em> — a program you drive from a terminal. Oz is Warp's CLI.</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>Chat Participant</dt><dd>Un'estensione VS Code che risponde nella chat di Copilot con un nome come <code>@oz</code>.</dd></dl>
+        <dl><dt>Chat Participant</dt><dd>A VS Code extension that answers in Copilot Chat under a handle such as <code>@oz</code>.</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>Cloud run</dt><dd>Un'esecuzione dell'agente sui server di Warp (consuma crediti).</dd></dl>
+        <dl><dt>Cloud run</dt><dd>An agent run on Warp's servers (consumes credits).</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>Local run</dt><dd>Un'esecuzione dell'agente sul tuo computer (gratuita).</dd></dl>
+        <dl><dt>Local run</dt><dd>An agent run on your own machine (free).</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>MCP</dt><dd><em>Model Context Protocol</em> — standard per collegare server di contesto ai modelli AI.</dd></dl>
+        <dl><dt>MCP</dt><dd><em>Model Context Protocol</em> — the standard for connecting context servers to AI models.</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>Oz</dt><dd>Il CLI incluso in Warp per controllare agenti, modelli, schedules e integrazioni.</dd></dl>
+        <dl><dt>Oz</dt><dd>The CLI bundled with Warp for driving agents, models, schedules and integrations.</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>Prompt</dt><dd>Il testo che scrivi nella chat per dire all'agente cosa fare.</dd></dl>
+        <dl><dt>Prompt</dt><dd>The text you type in chat to tell the agent what to do.</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>Skills</dt><dd>File <code>.md</code> che descrivono le competenze di ogni agente nella pipeline a 7 fasi.</dd></dl>
+        <dl><dt>Skills</dt><dd><code>.md</code> files describing what each agent in the 7-stage pipeline is good at.</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>Slash command</dt><dd>Un comando preceduto da <code>/</code> nella chat (es. <code>/run</code>, <code>/cloud</code>).</dd></dl>
+        <dl><dt>Slash command</dt><dd>A command prefixed with <code>/</code> in chat (e.g. <code>/run</code>, <code>/cloud</code>).</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>VSIX</dt><dd>Il formato di pacchetto delle estensioni VS Code (come un file <code>.zip</code> speciale).</dd></dl>
+        <dl><dt>VSIX</dt><dd>The VS Code extension package format (a special kind of <code>.zip</code>).</dd></dl>
       </div>
       <div class="glossary-item">
-        <dl><dt>Workspace</dt><dd>La cartella del progetto attualmente aperta in VS Code.</dd></dl>
+        <dl><dt>Workspace</dt><dd>The project folder currently open in VS Code.</dd></dl>
       </div>
     </div>
   </section>
 
   <!-- FOOTER -->
   <footer class="footer">
-    <p>OzBridge per VS Code — v1.1.0 — <a href="https://github.com/sena-labs/OzBridge" target="_blank">Repository</a> · <a href="../LICENSE">Licenza MIT</a></p>
-    <p style="margin-top:8px;">Hai bisogno di aiuto? <a href="https://github.com/sena-labs/OzBridge/issues" target="_blank">Apri un issue</a> oppure digita <code style="color:#01d68f">@oz /config</code> per un check rapido.</p>
+    <p>OzBridge for VS Code — <a href="https://github.com/sena-labs/OzBridge" target="_blank">Repository</a> · <a href="../CHANGELOG.md">Changelog</a> · <a href="../LICENSE">MIT License</a></p>
+    <p style="margin-top:8px;">Need help? <a href="https://github.com/sena-labs/OzBridge/issues" target="_blank">Open an issue</a>, or type <code style="color:#01d68f">@oz /config</code> for a quick health check.</p>
+    <p style="margin-top:8px;font-size:12px;color:#8b8b9e;">OzBridge is an independent project and is not affiliated with, endorsed by, or sponsored by Warp.</p>
   </footer>
 
 </div><!-- /.main -->
 
 <!-- BACK TO TOP -->
-<button class="back-to-top" onclick="window.scrollTo({top:0})" aria-label="Torna su">↑</button>
+<button class="back-to-top" onclick="window.scrollTo({top:0})" aria-label="Back to top">↑</button>
 
 <script>
 /* ===== OS TABS ===== */

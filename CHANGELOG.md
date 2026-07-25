@@ -7,6 +7,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Stdio transport for the standalone MCP server.** `@sena-labs/oz-mcp-server`
+  can now be spawned directly by a host (Claude Code, Cursor, Codex) and speak
+  MCP over stdin/stdout, in addition to the existing loopback SSE endpoint.
+- Container image (`Dockerfile`), `glama.json` metadata and a Smithery manifest
+  for `oz-mcp-server`, plus longer MCP tool descriptions for registry listings.
+- OCR baked-text compliance gate (`scripts/verify_baked_text.py`,
+  `scripts/asset-compliance.json`) that fails closed when a promo asset does
+  not carry the independence disclaimer in its rendered pixels.
+
+### Changed
+- Release workflow is idempotent: the Marketplace and Open VSX jobs check
+  whether the version is already served and skip instead of failing, so a
+  re-run after a partial failure completes the remaining jobs.
+- `.vscode/tasks.json` declares the compile/build/watch/test tasks explicitly
+  rather than relying on npm task auto-detection, which a contributor can have
+  disabled. The file was previously empty, and therefore invalid JSON.
+- `CODEOWNERS` assigns every path to the actual maintainer; it previously named
+  a non-existent account and requested review from nobody.
+- The beginner guide and its GIF production notes are now in English, matching
+  the rest of the repository: `docs/GUIDA-RAPIDA.html` → `docs/QUICK-START.html`
+  and `docs/COME-CREARE-GIF.md` → `docs/CREATING-GIFS.md`. The guide had been
+  present since the first commit without a single inbound link; the README now
+  points to it.
+- Security contact in `SECURITY.md` is the project address, matching
+  `PRIVACY.md`.
+
+### Fixed
+- Stdout/stderr memory cap now counts UTF-16 code units consistently, so the
+  cap is enforced at the intended size for non-ASCII output.
+- CodeQL never analysed anything: the availability probe treated the HTTP 404
+  "no analysis found" bootstrap state as "code scanning disabled" and skipped
+  the scan on every run, reporting success. It now scans on every push and PR.
+- `AGENTS.md` documented a 155 KB bundle budget; the enforced budget is 165 KB.
+
+### Security
+- Overrode `js-yaml` to `^4.3.0` to patch the ReDoS advisory
+  GHSA-52cp-r559-cp3m.
+- Removed a polynomial-ReDoS backtracking path from the MCP server's
+  `Authorization` header parsing, which ran before authentication on a
+  fully attacker-controlled header.
+- The MCP server no longer echoes internal error messages to unauthenticated
+  callers; the HTTP 500 body is now opaque and detail goes to stderr.
+- Markdown table cells escape backslashes before pipes, so a crafted schedule
+  or server name can no longer break out of its cell.
+
+### Removed
+- Internal working documents (launch playbooks, competitive positioning,
+  per-release PR checklists) are no longer part of the published tree.
+
+### Dependencies
+- Routine Dependabot updates across the vitest, typescript-toolchain,
+  vscode-platform and gh-actions-core groups, plus `esbuild`, `undici`,
+  `markdown-it`, `form-data`, `linkify-it`, `fast-uri`, `brace-expansion`
+  and `@playwright/test`.
+
 ## [1.2.2] — 2026-06-06
 
 ### Fixed
