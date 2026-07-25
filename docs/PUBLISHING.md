@@ -6,6 +6,44 @@ Tutti i passaggi sono **one-time setup**; dopo la prima release, il publish dive
 
 ---
 
+## ⚠️ Deadline: 1 December 2026 — `VSCE_PAT` stops working
+
+**Azure DevOps retires global Personal Access Tokens on 2026-12-01.** The Azure
+DevOps UI states it directly on the token page:
+
+> Beginning December 1, 2026, Global Personal Access Tokens (PATs) scoped to all
+> accessible organizations will no longer be supported.
+
+`VSCE_PAT` is created with **Organization: All accessible organizations**, because
+the Marketplace is a service separate from any Azure DevOps organization and an
+org-scoped token cannot authenticate against it. That is exactly the option being
+retired — so this is not a token expiry that can be fixed by minting another one
+the same way. The mechanism goes away.
+
+**Impact if nothing is done:** after 2026-12-01 the `publish-marketplace` job
+fails to authenticate. Because the job skips with a warning when `VSCE_PAT` is
+absent but *fails* when the token is rejected, the release stops there.
+
+**Migration:** move Marketplace publishing to Microsoft Entra ID authentication
+with workload identity federation, as recommended in the
+[vsce publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension).
+Plan it for **October–November 2026**, so a broken pipeline is discovered on a
+scheduled change rather than on a release.
+
+**Not affected:**
+
+| Channel | Auth | Action needed |
+| --- | --- | --- |
+| npm (`@sena-labs/oz-mcp-server`) | GitHub OIDC (trusted publishing) | none |
+| MCP Registry | GitHub OIDC | none |
+| Open VSX (`OVSX_PAT`) | Open VSX access token | none |
+| VS Code Marketplace (`VSCE_PAT`) | Azure DevOps global PAT | **migrate before 2026-12-01** |
+
+Only the Marketplace still depends on a long-lived credential. The other three
+channels were moved to OIDC in 1.4.0 and hold no persistent secret.
+
+---
+
 ## 1. Pre-requisiti
 
 - Account Microsoft + accesso ad [Azure DevOps](https://dev.azure.com).
@@ -83,10 +121,10 @@ Nel repository `sena-labs/OzBridge`:
    - `VSCE_PAT` → il token Azure DevOps (step 2.2)
    - `OVSX_PAT` → il token Open VSX (step 3.3)
 
-> I nomi devono combaciare esattamente con quelli letti da
-> `.github/workflows/publish.yml`. Se un secret manca, il job corrispondente
-> **salta con un warning e il workflow chiude comunque in verde**: la release
-> risulta riuscita ma l'estensione non viene pubblicata.
+> Names must match exactly what `.github/workflows/publish.yml` reads. When a
+> secret is missing the corresponding job **skips with a warning and the run
+> still closes green** — the release looks successful while the extension was
+> never published.
 
 ---
 
