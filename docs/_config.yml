@@ -1,0 +1,25 @@
+# GitHub Pages configuration for the OzBridge documentation site.
+# Served from the `docs/` folder of the `main` branch.
+
+title: OzBridge
+tagline: Warp Oz agents in any IDE, via MCP
+description: >-
+  OzBridge is an open-source Model Context Protocol (MCP) server and VS Code
+  extension that runs Warp Oz cloud and local agents from any MCP-compatible
+  client — GitHub Copilot Chat, Claude Code, Cursor and Codex CLI.
+
+url: https://sena-labs.github.io
+baseurl: /OzBridge
+
+theme: jekyll-theme-cayman
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Internal process documents: kept in the repository, not published as pages.
+exclude:
+  - CREATING-GIFS.md
+  - PUBLISHING.md
+  - VERIFICATION-v0.5.0.md
+  - generate_gifs.py

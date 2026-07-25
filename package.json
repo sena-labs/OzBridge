@@ -41,16 +41,19 @@
     "Chat"
   ],
   "keywords": [
-    "chat",
+    "warp",
+    "oz",
+    "mcp",
+    "model-context-protocol",
     "copilot",
+    "mcp-server",
+    "cursor",
+    "claude-code",
+    "codex",
     "agent",
     "AI",
     "LLM",
-    "Warp",
-    "Oz",
-    "MCP",
-    "model-context-protocol",
-    "prompt"
+    "chat"
   ],
   "extensionKind": [
     "workspace"

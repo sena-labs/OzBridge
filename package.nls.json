@@ -1,5 +1,5 @@
 {
-  "displayName": "OzBridge",
+  "displayName": "OzBridge — Warp Oz agents via MCP",
   "description": "Bring Warp™ Oz™ to any IDE or agent via MCP — plus native @oz in VS Code Copilot Chat. Independent project, not affiliated with, endorsed by, or sponsored by Warp.",
   "category.warp": "OzBridge",
   "category.warpMcp": "OzBridge MCP",
