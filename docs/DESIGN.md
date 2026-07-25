@@ -1,36 +1,40 @@
-# OzBridge — Documento di Design Architetturale v1.0
+# OzBridge — Architectural Design Document v1.0
 
-**Data**: 24 febbraio 2026  
-**Fase**: Design Agent (fase 2 della pipeline a 7 agenti)  
-**Input**: Spec v2.0 (validata con Oz CLI reale e VS Code Chat Participant API)
+**Date**: 24 February 2026  
+**Phase**: Design Agent (phase 2 of the 7-agent pipeline)  
+**Input**: Spec v2.0 (validated against the real Oz CLI and the VS Code Chat Participant API)
+
+> Historical record. This document captures the design as of February 2026 and is
+> deliberately not updated to track the implementation; see the source tree and
+> `CHANGELOG.md` for the current state.
 
 ---
 
 ## 1. Overview
 
-### 1.1 Diagramma di sistema
+### 1.1 System diagram
 
 ```mermaid
 graph TB
     subgraph VSCode["VS Code"]
-        User["Utente (Copilot Chat)"]
+        User["User (Copilot Chat)"]
         CP["Chat Participant<br/>@oz"]
         CH["CommandHandler<br/>(route /run, /cloud, /status...)"]
-        CTX["ContextCollector<br/>(file aperto, errori, selezione)"]
+        CTX["ContextCollector<br/>(open file, diagnostics, selection)"]
         CFG["ConfigManager<br/>(VS Code settings)"]
         OUT["OutputFormatter<br/>(Markdown, progress, buttons)"]
     end
 
     subgraph Bridge["Bridge Layer"]
         CLI["OzCliService<br/>(child_process, JSON parse)"]
-        POLL["RunPoller<br/>(polling status task cloud)"]
+        POLL["RunPoller<br/>(cloud task status polling)"]
     end
 
     subgraph Warp["Warp / Oz"]
-        OZ_LOCAL["oz agent run<br/>(locale, CWD)"]
+        OZ_LOCAL["oz agent run<br/>(local, CWD)"]
         OZ_CLOUD["oz agent run-cloud<br/>(cloud, environment)"]
         OZ_SCHED["oz schedule<br/>(cron jobs)"]
-        OZ_RUN["oz run list/get<br/>(stato task)"]
+        OZ_RUN["oz run list/get<br/>(task status)"]
         OZ_CFG["oz mcp/profile/model/<br/>environment/integration"]
     end
 
@@ -58,62 +62,62 @@ graph TB
     OZ_CLOUD -->|"reads skills"| SKILLS
 ```
 
-### 1.2 Componenti e responsabilità
+### 1.2 Components and responsibilities
 
-| Livello | Componente | Responsabilità singola |
+| Layer | Component | Single responsibility |
 | --- | --- | --- |
-| **VS Code** | `ChatParticipant` (`@oz`) | Registrazione come chat participant, ricezione prompt, dispatch del comando |
-| **VS Code** | `CommandHandler` | Routing degli 8 slash commands al service appropriato |
-| **VS Code** | `ContextCollector` | Raccolta contesto IDE (file aperto, selezione, diagnostics, workspace path) |
-| **VS Code** | `ConfigManager` | Lettura/validazione `vscode.workspace.getConfiguration('ozBridge')` |
-| **VS Code** | `OutputFormatter` | Trasformazione `OzRunResult` → `ChatResponseStream` (markdown, progress, button, reference) |
-| **Bridge** | `OzCliService` | Esecuzione Oz CLI via `child_process.spawn`, parsing JSON, gestione errori |
-| **Bridge** | `RunPoller` | Polling periodico `oz run get` per task cloud asincroni, con timeout e backoff |
-| **Workspace** | `.agents/skills/` | 7 file SKILL.md che mappano i 7 agenti custom a Warp Skills |
-| **Workspace** | `.warp/rules/` | Regole di progetto per Oz (PROJECT.md) |
+| **VS Code** | `ChatParticipant` (`@oz`) | Registration as a chat participant, prompt intake, command dispatch |
+| **VS Code** | `CommandHandler` | Routing the 8 slash commands to the appropriate service |
+| **VS Code** | `ContextCollector` | Gathering IDE context (open file, selection, diagnostics, workspace path) |
+| **VS Code** | `ConfigManager` | Reading and validating `vscode.workspace.getConfiguration('ozBridge')` |
+| **VS Code** | `OutputFormatter` | Turning `OzRunResult` into `ChatResponseStream` (markdown, progress, button, reference) |
+| **Bridge** | `OzCliService` | Running the Oz CLI via `child_process.spawn`, JSON parsing, error handling |
+| **Bridge** | `RunPoller` | Periodic `oz run get` polling for asynchronous cloud tasks, with timeout and backoff |
+| **Workspace** | `.agents/skills/` | 7 SKILL.md files mapping the 7 custom agents onto Warp Skills |
+| **Workspace** | `.warp/rules/` | Project rules for Oz (PROJECT.md) |
 
-### 1.3 Struttura cartelle
+### 1.3 Folder structure
 
 ```
 src/
-├── extension.ts              # activate()/deactivate(), registra Chat Participant
+├── extension.ts              # activate()/deactivate(), registers the Chat Participant
 ├── participant/
-│   ├── handler.ts            # ChatRequestHandler principale
+│   ├── handler.ts            # Main ChatRequestHandler
 │   └── followups.ts          # ChatFollowupProvider
 ├── commands/
-│   ├── router.ts             # Dispatch slash command → handler specifico
-│   ├── runCommand.ts         # /run   — agent locale
-│   ├── cloudCommand.ts       # /cloud — agent cloud
-│   ├── statusCommand.ts      # /status — stato task
+│   ├── router.ts             # Dispatch slash command → specific handler
+│   ├── runCommand.ts         # /run   — local agent
+│   ├── cloudCommand.ts       # /cloud — cloud agent
+│   ├── statusCommand.ts      # /status — task status
 │   ├── scheduleCommand.ts    # /schedule — cron jobs
-│   ├── modelsCommand.ts      # /models — lista modelli
-│   ├── mcpCommand.ts         # /mcp — server MCP
-│   ├── configCommand.ts      # /config — configurazione attiva
-│   └── initCommand.ts        # /init  — scaffolding SKILL.md + rules
+│   ├── modelsCommand.ts      # /models — model list
+│   ├── mcpCommand.ts         # /mcp — MCP servers
+│   ├── configCommand.ts      # /config — active configuration
+│   └── initCommand.ts        # /init  — SKILL.md + rules scaffolding
 ├── services/
-│   ├── ozCliService.ts       # Interfaccia + Impl spawn CLI
-│   ├── runPoller.ts          # Polling asincrono run cloud
-│   ├── contextCollector.ts   # Raccolta contesto VS Code
-│   └── configManager.ts      # Wrapper settings VS Code
+│   ├── ozCliService.ts       # Interface + spawn-based implementation
+│   ├── runPoller.ts          # Asynchronous cloud run polling
+│   ├── contextCollector.ts   # VS Code context gathering
+│   └── configManager.ts      # VS Code settings wrapper
 ├── parsers/
-│   ├── jsonParser.ts         # Parse robusto output JSON (gestisce testo puro)
-│   └── outputFormatter.ts    # Formattazione → ChatResponseStream
+│   ├── jsonParser.ts         # Robust JSON output parsing (handles plain text)
+│   └── outputFormatter.ts    # Formatting → ChatResponseStream
 ├── types/
-│   └── index.ts              # Tutti i tipi/interfacce condivisi
+│   └── index.ts              # All shared types and interfaces
 └── test/
-    ├── unit/                 # Test unitari con mock OzCliService
-    └── integration/          # Test con Oz CLI reale (opzionali)
+    ├── unit/                 # Unit tests with a mocked OzCliService
+    └── integration/          # Tests against the real Oz CLI (optional)
 ```
 
 ---
 
-## 2. Data Flow
+## 2. Data flow
 
-### 2.1 Flusso principale — `/run` (agent locale)
+### 2.1 Main flow — `/run` (local agent)
 
 ```mermaid
 sequenceDiagram
-    actor U as Utente
+    actor U as User
     participant CP as @oz ChatParticipant
     participant CH as CommandHandler
     participant CTX as ContextCollector
@@ -128,7 +132,7 @@ sequenceDiagram
     CTX-->>CH: contextPayload
     CH->>CFG: getConfig()
     CFG-->>CH: {model, profile, timeout}
-    CH->>OUT: stream.progress("Avvio agente locale...")
+    CH->>OUT: stream.progress("Starting local agent...")
     CH->>CLI: agentRun({prompt, context, model, profile, cwd})
     CLI->>OZ: spawn("oz", ["agent","run","-p","...","--output-format","json"])
     OZ-->>CLI: stdout JSON chunks + exit code
@@ -136,33 +140,33 @@ sequenceDiagram
 
     alt status === "SUCCEEDED"
         CH->>OUT: stream.markdown(formattedOutput)
-        CH->>OUT: stream.button("Apri in Warp", openUrl)
+        CH->>OUT: stream.button("Open in Warp", openUrl)
     else status === "FAILED"
-        CH->>OUT: stream.markdown("❌ Errore: ...")
+        CH->>OUT: stream.markdown("❌ Error: ...")
     end
 
-    OUT-->>U: Risposta renderizzata in chat
+    OUT-->>U: Response rendered in chat
 ```
 
-**Passi chiave**:
+**Key steps**:
 
-1. **Input**: l'utente digita `@oz /run "fix linting errors"` in Copilot Chat
+1. **Input**: the user types `@oz /run "fix linting errors"` in Copilot Chat
 2. **Route**: `ChatParticipant` → `CommandHandler.route("/run", prompt)`
-3. **Context**: `ContextCollector.gather()` produce `ContextPayload` con:
-   - `activeFilePath`: path file corrente
-   - `selection`: testo selezionato (se presente)
-   - `diagnostics`: errori/warning del file corrente
-   - `workspacePath`: root del workspace
+3. **Context**: `ContextCollector.gather()` produces a `ContextPayload` holding:
+   - `activeFilePath`: path of the current file
+   - `selection`: selected text, if any
+   - `diagnostics`: errors and warnings for the current file
+   - `workspacePath`: workspace root
 4. **Config**: `ConfigManager.getConfig()` → `{ model, profile, timeout, cwd }`
-5. **Exec**: `OzCliService.agentRun()` → `child_process.spawn("oz", [...])` con `--output-format json`
+5. **Exec**: `OzCliService.agentRun()` → `child_process.spawn("oz", [...])` with `--output-format json`
 6. **Parse**: `JsonParser.parse(stdout)` → `OzRunResult`
 7. **Output**: `OutputFormatter.format(result, stream)` → `stream.markdown()` / `stream.button()`
 
-### 2.2 Flusso cloud — `/cloud` (agent cloud + polling)
+### 2.2 Cloud flow — `/cloud` (cloud agent + polling)
 
 ```mermaid
 sequenceDiagram
-    actor U as Utente
+    actor U as User
     participant CP as @oz ChatParticipant
     participant CH as CommandHandler
     participant CLI as OzCliService
@@ -172,98 +176,98 @@ sequenceDiagram
 
     U->>CP: @oz /cloud "run full test suite"
     CP->>CH: route(command="/cloud", prompt)
-    CH->>OUT: stream.progress("Lancio agente cloud...")
-    
-    Note over CH: Conferma esplicita richiesta (D-Q2)
-    CH->>OUT: stream.markdown("⚠️ Confermi lancio cloud? Consuma crediti Warp.")
-    
+    CH->>OUT: stream.progress("Launching cloud agent...")
+
+    Note over CH: Explicit confirmation required (D-Q2)
+    CH->>OUT: stream.markdown("⚠️ Confirm cloud launch? This consumes Warp credits.")
+
     CH->>CLI: agentRunCloud({prompt, env, model, skill})
     CLI->>OZ: spawn("oz", ["agent","run-cloud","-p","...","--output-format","json"])
     OZ-->>CLI: {runId, status:"QUEUED"}
     CLI-->>CH: OzRunResult
-    CH->>OUT: stream.markdown("🚀 Run avviata: {runId}")
+    CH->>OUT: stream.markdown("🚀 Run started: {runId}")
     CH->>POLL: startPolling(runId, interval=5s)
 
-    loop Ogni 5s (backoff → 30s, max 30 min)
+    loop Every 5s (backoff → 30s, max 30 min)
         POLL->>CLI: runGet(runId)
         CLI->>OZ: spawn("oz", ["run","get","--id",runId,"--output-format","json"])
         OZ-->>CLI: {status, output}
         alt status === "INPROGRESS"
-            POLL->>POLL: continua polling
+            POLL->>POLL: keep polling
         else status === "SUCCEEDED" | "FAILED"
-            POLL->>OUT: notifica risultato finale
-            OUT-->>U: Notifica VS Code + risultato
+            POLL->>OUT: report the final result
+            OUT-->>U: VS Code notification + result
         end
     end
 ```
 
-**Differenze dal flusso locale**:
-- `oz agent run-cloud` ritorna immediatamente con `{ runId, status: "QUEUED" }`
-- `RunPoller` avvia polling ogni 5s con backoff esponenziale (×1.5) fino a max 30s
-- Timeout massimo: 30 minuti (configurabile)
-- Notifica finale via `vscode.window.showInformationMessage()` + aggiornamento chat
-- **Conferma esplicita** richiesta prima del lancio (decisione Q2)
+**Differences from the local flow**:
+- `oz agent run-cloud` returns immediately with `{ runId, status: "QUEUED" }`
+- `RunPoller` polls every 5s with exponential backoff (×1.5) up to a 30s ceiling
+- Maximum timeout: 30 minutes (configurable)
+- Final notification through `vscode.window.showInformationMessage()` plus a chat update
+- **Explicit confirmation** required before launching (decision Q2)
 
-### 2.3 Flussi secondari
+### 2.3 Secondary flows
 
-| Flusso | Percorso |
+| Flow | Path |
 | --- | --- |
-| **Errore: Oz CLI non trovato** | `OzCliService.checkAvailability()` → `which oz` fallisce → `OutputFormatter` mostra messaggio con link installazione. L'estensione si degrada gracefully. |
-| **Errore: autenticazione** | `oz` ritorna exit code != 0 con `"not logged in"` → `OutputFormatter` mostra `stream.button("Login Warp", URI("https://app.warp.dev"))` |
-| **Errore: JSON parse** | `oz run list` ritorna `"No runs found."` (testo puro) → `JsonParser` intercetta, ritorna `{ items: [], rawText: "..." }` |
-| **Errore: timeout** | `child_process` eccede `timeout` config → kill processo, risposta con message di timeout |
-| **Config reload** | `vscode.workspace.onDidChangeConfiguration` → `ConfigManager` invalida cache |
-| **CancellationToken** | Utente cancella prompt → `token.isCancellationRequested` → kill child process via `proc.kill()` |
+| **Error: Oz CLI not found** | `OzCliService.checkAvailability()` → `which oz` fails → `OutputFormatter` shows a message with an install link. The extension degrades gracefully. |
+| **Error: authentication** | `oz` exits non-zero with `"not logged in"` → `OutputFormatter` shows `stream.button("Login Warp", URI("https://app.warp.dev"))` |
+| **Error: JSON parse** | `oz run list` returns `"No runs found."` as plain text → `JsonParser` intercepts it and returns `{ items: [], rawText: "..." }` |
+| **Error: timeout** | `child_process` exceeds the configured `timeout` → kill the process, respond with a timeout message |
+| **Config reload** | `vscode.workspace.onDidChangeConfiguration` → `ConfigManager` invalidates its cache |
+| **CancellationToken** | User cancels the prompt → `token.isCancellationRequested` → kill the child process via `proc.kill()` |
 
 ---
 
-## 3. Interfacce dei moduli
+## 3. Module interfaces
 
-### 3.1 Tipi condivisi — `types/index.ts`
+### 3.1 Shared types — `types/index.ts`
 
 ```typescript
-// === Configurazione ===
+// === Configuration ===
 interface WarpBridgeConfig {
-  ozPath: string;                    // default: "oz" (ricerca in PATH)
+  ozPath: string;                    // default: "oz" (resolved from PATH)
   defaultModel: string;             // default: "auto"
   defaultProfile: string;           // default: "Default"
-  defaultEnvironment: string;       // default: "" (nessuno)
+  defaultEnvironment: string;       // default: "" (none)
   cloudPollingIntervalMs: number;   // default: 5000
   cloudPollingTimeoutMs: number;    // default: 1_800_000 (30 min)
-  timeoutMs: number;                // default: 300_000 (5 min per locale)
-  maxOutputChars: number;           // default: 5000 (decisione Q3)
+  timeoutMs: number;                // default: 300_000 (5 min for local runs)
+  maxOutputChars: number;           // default: 5000 (decision Q3)
 }
 
-// === Risultati Oz CLI ===
+// === Oz CLI results ===
 type OzRunStatus = 'QUEUED' | 'INPROGRESS' | 'SUCCEEDED' | 'FAILED' | 'UNKNOWN';
 
 interface OzRunResult {
-  runId: string | null;             // null per comandi che non producono runId
+  runId: string | null;             // null for commands that produce no runId
   status: OzRunStatus;
-  output: string;                   // output testuale dell'agente
+  output: string;                   // the agent's textual output
   exitCode: number;
   durationMs: number;
-  raw: unknown;                     // JSON grezzo parsato (per debug)
+  raw: unknown;                     // parsed raw JSON, for debugging
 }
 
 interface OzListResult<T> {
   items: T[];
-  rawText?: string;                 // presente se output non era JSON valido
+  rawText?: string;                 // present when the output was not valid JSON
 }
 
-// === Modelli Oz CLI (verificati con output reale) ===
+// === Oz CLI models (verified against real output) ===
 interface OzModel {
-  id: string;                       // es. "claude-4-6-opus-high", "gpt-5", "auto"
+  id: string;                       // e.g. "claude-4-6-opus-high", "gpt-5", "auto"
 }
 
 interface OzMcpServer {
   uuid: string;
-  name: string;                     // es. "GitHub", "Notion"
+  name: string;                     // e.g. "GitHub", "Notion"
 }
 
 interface OzProfile {
-  id: string;                       // es. "Unsynced" (NB: non sempre UUID)
-  name: string;                     // es. "Default"
+  id: string;                       // e.g. "Unsynced" (note: not always a UUID)
+  name: string;                     // e.g. "Default"
 }
 
 interface OzEnvironment {
@@ -279,7 +283,7 @@ interface OzEnvironment {
 
 interface OzIntegration {
   provider: string;                 // "Linear" | "Slack"
-  status: string;                   // testo umano, es. "This integration is not connected."
+  status: string;                   // human-readable text, e.g. "This integration is not connected."
 }
 
 interface OzSchedule {
@@ -290,7 +294,7 @@ interface OzSchedule {
   paused: boolean;
 }
 
-// === Contesto IDE ===
+// === IDE context ===
 interface ContextPayload {
   workspacePath: string;
   activeFilePath: string | null;
@@ -303,12 +307,12 @@ interface ContextPayload {
   }>;
 }
 
-// === Errori ===
+// === Errors ===
 enum OzCliErrorKind {
   NOT_FOUND             = 'NOT_FOUND',
   NOT_AUTHENTICATED     = 'NOT_AUTHENTICATED',
-  INSUFFICIENT_CREDITS  = 'INSUFFICIENT_CREDITS', // v1.0.1: rilevato da stderr / HTTP 402-429
-  STALLED               = 'STALLED',              // v1.0.1: nessun output per `idleTimeoutMs`
+  INSUFFICIENT_CREDITS  = 'INSUFFICIENT_CREDITS', // v1.0.1: detected from stderr / HTTP 402-429
+  STALLED               = 'STALLED',              // v1.0.1: no output for `idleTimeoutMs`
   TIMEOUT               = 'TIMEOUT',
   PARSE_ERROR           = 'PARSE_ERROR',
   CLI_ERROR             = 'CLI_ERROR',
@@ -327,7 +331,7 @@ class OzCliError extends Error {
   }
 }
 
-// === Mappa Agenti → Skill ===
+// === Agent → Skill map ===
 const AGENT_SKILL_MAP: Record<string, string> = {
   'spec':        '1-spec-agent',
   'design':      '2-design-agent',
@@ -394,26 +398,26 @@ interface IOzCliService {
 }
 ```
 
-**Contratto di implementazione**:
-- Ogni metodo invoca `spawn(this.ozPath, args, { cwd, timeout })`
-- Appende sempre `--output-format json` agli args
-- Gestisce `exit code !== 0` come eccezione tipizzata `OzCliError`
-- Delega parsing a `JsonParser.parse()`
-- Supporta `CancellationToken` per kill del child process
+**Implementation contract**:
+- Every method calls `spawn(this.ozPath, args, { cwd, timeout })`
+- `--output-format json` is always appended to the arguments
+- A non-zero exit code becomes a typed `OzCliError`
+- Parsing is delegated to `JsonParser.parse()`
+- `CancellationToken` is supported and kills the child process
 
 ### 3.3 `IJsonParser` — `parsers/jsonParser.ts`
 
 ```typescript
 interface IJsonParser {
   /**
-   * Tenta di parsare stdout come JSON.
-   * Se fallisce (es. "No runs found."), ritorna { parsed: null, rawText: stdout }.
-   * Gestisce anche output multi-riga dove solo una riga è JSON.
+   * Attempts to parse stdout as JSON.
+   * On failure (e.g. "No runs found."), returns { parsed: null, rawText: stdout }.
+   * Also handles multi-line output where only one line is JSON.
    */
   parse<T>(stdout: string): { parsed: T | null; rawText: string };
 
   /**
-   * Versione tipizzata che lancia se il parse fallisce.
+   * Typed variant that throws when parsing fails.
    */
   parseOrThrow<T>(stdout: string, context: string): T;
 }
@@ -424,14 +428,14 @@ interface IJsonParser {
 ```typescript
 interface IContextCollector {
   /**
-   * Raccoglie contesto dall'IDE corrente.
-   * Non fallisce mai: ritorna campi null se non disponibili.
+   * Gathers context from the current IDE state.
+   * Never fails: unavailable fields come back as null.
    */
   gather(): ContextPayload;
 
   /**
-   * Formatta il contesto come blocco testuale da iniettare nel prompt.
-   * Formato:
+   * Formats the context as a text block to inject into the prompt.
+   * Format:
    *   [CONTEXT]
    *   Workspace: /path/to/workspace
    *   File: src/main.ts (typescript)
@@ -458,12 +462,12 @@ interface IConfigManager {
 ```typescript
 interface IRunPoller {
   /**
-   * Avvia polling per un runId cloud.
-   * Risolve quando lo stato diventa terminale (SUCCEEDED|FAILED) o timeout.
-   * Supporta cancellazione.
+   * Starts polling a cloud runId.
+   * Resolves when the status becomes terminal (SUCCEEDED|FAILED) or on timeout.
+   * Supports cancellation.
    *
-   * Policy: intervallo iniziale 5s, backoff ×1.5 fino a max 30s,
-   *         timeout totale 30 min (configurabile).
+   * Policy: 5s initial interval, ×1.5 backoff up to a 30s ceiling,
+   *         30 min total timeout (configurable).
    */
   poll(
     runId: string,
@@ -472,7 +476,7 @@ interface IRunPoller {
   ): Promise<OzRunResult>;
 
   /**
-   * Annulla tutti i polling attivi (chiamato in deactivate).
+   * Cancels every active poll (called from deactivate).
    */
   disposeAll(): void;
 }
@@ -483,13 +487,13 @@ interface IRunPoller {
 ```typescript
 interface ICommandRouter {
   /**
-   * Crea un ChatRequestHandler che route i comandi.
+   * Builds a ChatRequestHandler that routes commands.
    */
   createHandler(): vscode.ChatRequestHandler;
 }
 ```
 
-**Tabella routing**:
+**Routing table**:
 
 | `request.command` | Handler file | Oz CLI command |
 | --- | --- | --- |
@@ -499,22 +503,22 @@ interface ICommandRouter {
 | `schedule` | `scheduleCommand.ts` | `oz schedule *` |
 | `models` | `modelsCommand.ts` | `oz model list` |
 | `mcp` | `mcpCommand.ts` | `oz mcp list` |
-| `config` | `configCommand.ts` | Lettura config locale |
-| `init` | `initCommand.ts` | Scaffolding SKILL.md + rules |
-| *(nessuno)* | `runCommand.ts` | Default: esegue come `/run` |
+| `config` | `configCommand.ts` | Reads local configuration |
+| `init` | `initCommand.ts` | SKILL.md + rules scaffolding |
+| *(none)* | `runCommand.ts` | Default: behaves as `/run` |
 
 ### 3.8 `IOutputFormatter` — `parsers/outputFormatter.ts`
 
 ```typescript
 interface IOutputFormatter {
   /**
-   * Formatta un OzRunResult nel ChatResponseStream.
-   * Tronca output a maxOutputChars (default 5000) con link "Mostra tutto".
+   * Formats an OzRunResult into the ChatResponseStream.
+   * Truncates output at maxOutputChars (default 5000) with a "Show all" link.
    */
   formatRunResult(result: OzRunResult, stream: vscode.ChatResponseStream): void;
 
   /**
-   * Formatta una lista generica come tabella markdown.
+   * Formats a generic list as a markdown table.
    */
   formatList<T>(
     items: OzListResult<T>,
@@ -523,13 +527,13 @@ interface IOutputFormatter {
   ): void;
 
   /**
-   * Mostra errore con azione suggerita (button login, link installazione, etc.).
+   * Shows an error with a suggested action (login button, install link, etc.).
    */
   formatError(error: OzCliError, stream: vscode.ChatResponseStream): void;
 }
 ```
 
-### 3.9 Chat Participant — registrazione `package.json`
+### 3.9 Chat Participant — `package.json` registration
 
 ```jsonc
 {
@@ -555,7 +559,7 @@ interface IOutputFormatter {
 }
 ```
 
-### 3.10 VS Code Settings — `configuration` in `package.json`
+### 3.10 VS Code settings — `configuration` in `package.json`
 
 ```jsonc
 {
@@ -611,40 +615,40 @@ interface IOutputFormatter {
 
 ---
 
-## 4. Decisioni di design
+## 4. Design decisions
 
-### D1 — `child_process.spawn` vs TypeScript SDK (`oz-sdk-typescript`)
+### D1 — `child_process.spawn` vs the TypeScript SDK (`oz-sdk-typescript`)
 
-| Criterio | `child_process` | SDK TypeScript |
+| Criterion | `child_process` | TypeScript SDK |
 | --- | --- | --- |
-| Dipendenze | Zero (Node.js built-in) | Package npm esterno |
-| Aggiornamenti | Automatici con Warp updates | Richiede npm update |
-| Feature parity | 100% — interfaccia primaria Warp | Potenzialmente in ritardo |
-| Debugging | `--output-format json` visibile | Oggetti typed |
-| Streaming | Basato su stdout readline | Promise-based |
+| Dependencies | None (Node.js built-in) | External npm package |
+| Updates | Automatic, with Warp updates | Requires an npm update |
+| Feature parity | 100% — Warp's primary interface | Potentially lagging |
+| Debugging | `--output-format json` is visible | Typed objects |
+| Streaming | stdout readline based | Promise based |
 
-**Decisione**: `child_process.spawn` con `--output-format json`.  
-**Motivazione**: zero dipendenze runtime (NFR-06), feature parity garantita, l'utente ha già Oz CLI installata.
+**Decision**: `child_process.spawn` with `--output-format json`.  
+**Rationale**: zero runtime dependencies (NFR-06), guaranteed feature parity, and the user already has the Oz CLI installed.
 
-### D2 — Parsing robusto vs strict JSON
+### D2 — Robust parsing vs strict JSON
 
-**Decisione**: parser a 2 livelli (`JsonParser`).  
-**Motivazione**: validato empiricamente che `oz run list` ritorna `"No runs found."` come testo puro quando vuoto. Il parser tenta `JSON.parse()`, se fallisce preserva il testo grezzo.
+**Decision**: a two-level parser (`JsonParser`).  
+**Rationale**: empirically confirmed that `oz run list` returns `"No runs found."` as plain text when empty. The parser attempts `JSON.parse()` and preserves the raw text on failure.
 
-### D3 — Polling vs WebSocket per task cloud
+### D3 — Polling vs WebSocket for cloud tasks
 
-**Decisione**: polling con backoff esponenziale (5s → 30s, max 30 min).  
-**Motivazione**: Oz CLI non espone WebSocket/SSE. `oz run get` è l'unico meccanismo.
+**Decision**: polling with exponential backoff (5s → 30s, 30 min cap).  
+**Rationale**: the Oz CLI exposes no WebSocket or SSE. `oz run get` is the only mechanism available.
 
-### D4 — Un Chat Participant vs più participant
+### D4 — One Chat Participant vs several
 
-**Decisione**: singolo participant `@oz` con 8 slash commands.  
-**Motivazione**: VS Code raccomanda "one participant per extension".
+**Decision**: a single `@oz` participant with 8 slash commands.  
+**Rationale**: VS Code recommends "one participant per extension".
 
-### D5 — Context injection: path + selezione + diagnostics (decisione Q1)
+### D5 — Context injection: path + selection + diagnostics (decision Q1)
 
-**Decisione**: contesto automatico con path, selezione e diagnostics. NO file intero.  
-**Formato**:
+**Decision**: automatic context carrying path, selection and diagnostics. No whole-file content.  
+**Format**:
 ```
 [CONTEXT]
 Workspace: /path/to/workspace
@@ -656,96 +660,96 @@ Diagnostics: 2 errors, 1 warning
 - Warning L18: Unused variable 'bar'
 [/CONTEXT]
 
-<prompt utente>
+<user prompt>
 ```
 
-### D6 — Conferma esplicita per `/cloud` (decisione Q2)
+### D6 — Explicit confirmation for `/cloud` (decision Q2)
 
-**Decisione**: sempre conferma prima di lanciare un agent cloud.  
-**UX**: follow-up button "Conferma lancio cloud" dopo il messaggio di warning.
+**Decision**: always confirm before launching a cloud agent.  
+**UX**: a "Confirm cloud launch" follow-up button after the warning message.
 
-### D7 — Troncamento output (decisione Q3)
+### D7 — Output truncation (decision Q3)
 
-**Decisione**: troncare a 5000 caratteri con link "Mostra tutto" (copia negli appunti o apre in editor).
+**Decision**: truncate at 5000 characters with a "Show all" link (copies to the clipboard or opens in an editor).
 
-### D8 — Scaffolding via `/init` (decisione Q4)
+### D8 — Scaffolding through `/init` (decision Q4)
 
-**Decisione**: comando `@oz /init` crea:
-- `.agents/skills/{1-spec-agent,...,7-maintenance-agent}/SKILL.md` — 7 file
-- `.warp/rules/PROJECT.md` — regole di progetto base
-- Non sovrascrive file esistenti
+**Decision**: the `@oz /init` command creates:
+- `.agents/skills/{1-spec-agent,...,7-maintenance-agent}/SKILL.md` — 7 files
+- `.warp/rules/PROJECT.md` — baseline project rules
+- Never overwrites existing files
 
-### D9 — Skill mapping: dichiarativo
+### D9 — Skill mapping: declarative
 
-**Decisione**: mappa statica `AGENT_SKILL_MAP` in codice + 7 SKILL.md.  
-**Motivazione**: i 7 agenti sono stabili. Se `--skill` è esplicito, il mapping viene bypassato.
+**Decision**: a static `AGENT_SKILL_MAP` in code plus 7 SKILL.md files.  
+**Rationale**: the 7 agents are stable. An explicit `--skill` bypasses the mapping.
 
-### D10 — Error categorization
+### D10 — Error categorisation
 
-**Decisione**: errori tipizzati con `OzCliErrorKind` enum (6 categorie).  
-**Motivazione**: ogni tipo richiede UX diversa (button login, link installazione, retry).
+**Decision**: typed errors through the `OzCliErrorKind` enum (6 categories).  
+**Rationale**: each kind calls for different UX (login button, install link, retry).
 
-### D11 — Nessun state globale
+### D11 — No global state
 
-**Decisione**: nessun database locale, nessun file di stato.  
-**Motivazione**: persistenza delegata a Warp. Estensione stateless. Settings in VS Code nativo.
+**Decision**: no local database, no state file.  
+**Rationale**: persistence is delegated to Warp. The extension is stateless. Settings live in native VS Code configuration.
 
 ---
 
-## 5. Rischi e domande aperte
+## 5. Risks and open questions
 
-### 5.1 Rischi identificati
+### 5.1 Identified risks
 
-| ID | Rischio | Impatto | Probabilità | Mitigazione |
+| ID | Risk | Impact | Likelihood | Mitigation |
 | --- | --- | --- | --- | --- |
-| **R1** | `oz run list` ritorna testo puro quando vuoto | Parse failure → crash | Alta (verificato) | `JsonParser` con fallback (D2) |
-| **R2** | ID profilo `"Unsynced"` non è UUID | Type mismatch se si assume UUID | Media | Tipo `string` generico |
-| **R3** | Cloud agent consuma crediti (BYOK non supportato) | Run costose involontarie | Media | Conferma esplicita (D6) |
-| **R4** | Output agent molto lungo | Timeout/freeze chat VS Code | Media | Troncamento a 15000 char (D7) |
-| **R5** | Evoluzione rapida Oz CLI (nuovi comandi, cambi JSON) | Rottura parser | Bassa | `--output-format json` è stabile. Test di regressione. |
-| **R6** | Cancellazione task cloud impossibile via CLI | Run continua dopo cancel | Alta (design Warp) | Documentare: cancel ferma solo polling |
-| **R7** | `oz agent run` sincrono e bloccante | No progresso granulare locale | Media | Streaming stdout con `readline` |
+| **R1** | `oz run list` returns plain text when empty | Parse failure → crash | High (verified) | `JsonParser` with fallback (D2) |
+| **R2** | The `"Unsynced"` profile id is not a UUID | Type mismatch if a UUID is assumed | Medium | Plain `string` type |
+| **R3** | Cloud agents consume credits (BYOK unsupported) | Unintended expensive runs | Medium | Explicit confirmation (D6) |
+| **R4** | Very long agent output | VS Code chat timeout or freeze | Medium | Truncation at 15000 chars (D7) |
+| **R5** | Fast Oz CLI evolution (new commands, JSON changes) | Parser breakage | Low | `--output-format json` is stable. Regression tests. |
+| **R6** | Cloud tasks cannot be cancelled through the CLI | The run continues after cancel | High (Warp design) | Document it: cancel only stops polling |
+| **R7** | `oz agent run` is synchronous and blocking | No granular local progress | Medium | Stream stdout with `readline` |
 
-### 5.2 Decisioni confermate (ex domande aperte)
+### 5.2 Settled decisions (formerly open questions)
 
-| ID | Domanda | Decisione |
+| ID | Question | Decision |
 | --- | --- | --- |
-| **Q1** | Contesto iniettato | Path + selezione + diagnostics (no file intero) |
-| **Q2** | Conferma per `/cloud` | Sempre conferma |
-| **Q3** | Troncamento output | 5000 caratteri con "Mostra tutto" |
-| **Q4** | Scaffolding skills/rules | Comando `@oz /init` (8° slash command) |
+| **Q1** | What context to inject | Path + selection + diagnostics (no whole file) |
+| **Q2** | Confirmation for `/cloud` | Always confirm |
+| **Q3** | Output truncation | 5000 characters with "Show all" |
+| **Q4** | Skills/rules scaffolding | The `@oz /init` command (8th slash command) |
 
 ---
 
-## 6. Dipendenze
+## 6. Dependencies
 
-### Build-time (devDependencies)
+### Build time (devDependencies)
 
-| Package | Scopo |
+| Package | Purpose |
 | --- | --- |
-| `@types/vscode` | Tipi VS Code API |
-| `typescript` | Compilazione |
-| `esbuild` | Bundling estensione |
-| `@vscode/test-electron` | Test integration (opzionale) |
+| `@types/vscode` | VS Code API types |
+| `typescript` | Compilation |
+| `esbuild` | Extension bundling |
+| `@vscode/test-electron` | Integration tests (optional) |
 
 ### Runtime
 
-**Nessuna dipendenza runtime** oltre a Node.js built-in (`child_process`, `readline`, `path`, `os`).
+**No runtime dependencies** beyond Node.js built-ins (`child_process`, `readline`, `path`, `os`).
 
-### Esterne
+### External
 
-| Dipendenza | Tipo | Obbligatoria |
+| Dependency | Kind | Required |
 | --- | --- | --- |
-| Oz CLI (`oz` / `oz.cmd`) | Binario in PATH | Sì (graceful degradation se assente) |
-| Account Warp autenticato | Servizio cloud | Solo per `/cloud`, `/schedule` |
-| Crediti Warp (≥20) | Billing | Solo per `/cloud` |
+| Oz CLI (`oz` / `oz.cmd`) | Binary on PATH | Yes (graceful degradation when absent) |
+| An authenticated Warp account | Cloud service | Only for `/cloud`, `/schedule` |
+| Warp credits (≥20) | Billing | Only for `/cloud` |
 
 ---
 
-## 7. Prossimi passi
+## 7. Next steps
 
-1. **Implement Agent** (fase 3): genera il codice TypeScript seguendo le interfacce definite sopra
-2. **Review Agent** (fase 4): verifica aderenza al design
-3. **Test Agent** (fase 5): scrive test unitari con mock `IOzCliService`
-4. **Deploy Agent** (fase 6): configura packaging `.vsix` e pubblicazione
-5. **Maintenance Agent** (fase 7): monitora evoluzione Oz CLI e aggiorna parser
+1. **Implement Agent** (phase 3): generate the TypeScript code against the interfaces defined above
+2. **Review Agent** (phase 4): check adherence to the design
+3. **Test Agent** (phase 5): write unit tests with a mocked `IOzCliService`
+4. **Deploy Agent** (phase 6): configure `.vsix` packaging and publishing
+5. **Maintenance Agent** (phase 7): track Oz CLI evolution and update the parser
