@@ -171,6 +171,47 @@ describe('McpServer HTTP transport', () => {
     expect(body.ok).toBe(true);
   });
 
+  // The Authorization parser was rewritten off `/^Bearer\s+(.+)$/i`, whose
+  // `\s+`/`.+` overlap backtracked in O(n²) on a padded header supplied by
+  // an unauthenticated caller. ReDoS is now prevented by construction — no
+  // ambiguous regex is left to backtrack — so these tests pin the accepted
+  // and rejected shapes instead of asserting a wall-clock bound, which
+  // would be flaky in CI and would not have failed on the old code anyway.
+  it('accepts a bearer token separated by extra whitespace', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, bearerToken: 'secret123' });
+    await server.start();
+    const port = server.endpoint!.port;
+    const { status } = await fetchJson(port, '/health', { Authorization: 'Bearer \t  secret123' });
+    expect(status).toBe(200);
+  });
+
+  it('matches the bearer scheme case-insensitively', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, bearerToken: 'secret123' });
+    await server.start();
+    const port = server.endpoint!.port;
+    const { status } = await fetchJson(port, '/health', { Authorization: 'bEaReR secret123' });
+    expect(status).toBe(200);
+  });
+
+  it('rejects a bearer header with no credential, however padded', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, bearerToken: 'secret123' });
+    await server.start();
+    const port = server.endpoint!.port;
+    for (const header of ['Bearer', 'Bearer ', `Bearer${' '.repeat(4096)}`]) {
+      const { status, body } = await fetchJson(port, '/health', { Authorization: header });
+      expect(status).toBe(401);
+      expect(body.error).toBe('unauthorized');
+    }
+  });
+
+  it('rejects a bearer header with no separator before the credential', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, bearerToken: 'secret123' });
+    await server.start();
+    const port = server.endpoint!.port;
+    const { status } = await fetchJson(port, '/health', { Authorization: 'Bearersecret123' });
+    expect(status).toBe(401);
+  });
+
   it('404s for unknown routes', async () => {
     server = new McpServer(makeRegistry(), undefined, { port: 0 });
     await server.start();

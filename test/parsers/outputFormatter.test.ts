@@ -158,6 +158,22 @@ describe('formatList()', () => {
     formatter.formatList(makeListResult(items), ['id', 'name' as any], mock.stream as any);
     expect(mock.getFullOutput()).toContain('a\\|b');
   });
+
+  it('escapes backslashes before pipes so an escape cannot be neutralised', () => {
+    // Value is the four characters a \ | b. Escaping `|` alone emitted
+    // a \ \ | b, where the value's own backslash escaped the backslash we
+    // had just added and left the pipe live as a column separator.
+    // Escaping `\` first yields a \ \ \ | b: literal backslash, escaped pipe.
+    const items = [{ id: 'x', name: 'a\\|b' }];
+    formatter.formatList(makeListResult(items), ['id', 'name' as any], mock.stream as any);
+    expect(mock.getFullOutput()).toContain('a\\\\\\|b');
+  });
+
+  it('escapes a lone trailing backslash so it cannot escape the row separator', () => {
+    const items = [{ id: 'x', name: 'end\\' }];
+    formatter.formatList(makeListResult(items), ['id', 'name' as any], mock.stream as any);
+    expect(mock.getFullOutput()).toContain('end\\\\');
+  });
 });
 
 // ==========================================================================

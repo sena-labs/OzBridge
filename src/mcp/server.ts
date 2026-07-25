@@ -243,17 +243,41 @@ export class McpServer {
 
       sendJson(res, 404, { error: 'not_found' });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      try { sendJson(res, 500, { error: 'internal', message: msg }); } catch { /* ignore */ }
+      // The detail stays server-side. Echoing `err.message` back leaked
+      // internals to an unauthenticated caller — absolute module paths,
+      // dependency names and Node error codes all surface in thrown
+      // messages (CodeQL js/stack-trace-exposure). stderr is the safe
+      // channel: the standalone package speaks MCP over stdout, so
+      // console.log there would corrupt the protocol frame.
+      console.error('[oz-mcp] unhandled request error:', err);
+      try { sendJson(res, 500, { error: 'internal' }); } catch { /* ignore */ }
     }
   }
 
   private checkBearer(req: http.IncomingMessage): boolean {
     const header = req.headers['authorization'];
     if (!header || Array.isArray(header)) { return false; }
-    const match = /^Bearer\s+(.+)$/i.exec(header);
-    if (!match) { return false; }
-    return timingSafeEqual(match[1]!, this.options.bearerToken ?? '');
+
+    // Parsed without a regex on purpose. `/^Bearer\s+(.+)$/i` is ambiguous —
+    // `\s+` and `.+` can both consume a space — so an `Authorization` header
+    // of "Bearer" followed by N spaces makes the engine try every split point
+    // and backtrack in O(N²) (CodeQL js/polynomial-redos). That runs *before*
+    // authentication, on a header an unauthenticated caller fully controls,
+    // and this file is also the core of the standalone MCP server package.
+    // Scheme comparison + trimStart is linear and accepts exactly the same
+    // inputs.
+    const SCHEME = 'bearer';
+    if (header.length <= SCHEME.length) { return false; }
+    if (header.slice(0, SCHEME.length).toLowerCase() !== SCHEME) { return false; }
+
+    const rest = header.slice(SCHEME.length);
+    const token = rest.trimStart();
+    // RFC 7235 requires at least one space between scheme and credentials
+    // (`token === rest` means there was none), and an empty credential is
+    // never valid.
+    if (token === rest || token.length === 0) { return false; }
+
+    return timingSafeEqual(token, this.options.bearerToken ?? '');
   }
 
   private openSseStream(_req: http.IncomingMessage, res: http.ServerResponse): void {

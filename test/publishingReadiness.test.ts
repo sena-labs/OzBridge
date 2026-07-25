@@ -72,9 +72,16 @@ describe('Publishing readiness (deliverable M)', () => {
 
   it('README install section documents both registries', () => {
     const readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8');
-    expect(readme).toMatch(/marketplace\.visualstudio\.com/i);
-    expect(readme).toMatch(/open-vsx\.org/i);
-    expect(readme).toMatch(/sena-labs\.ozbridge/);
+    // Plain substring containment, not pattern matching: the assertion is
+    // "the README mentions this registry somewhere". Expressing it as an
+    // unanchored regex made CodeQL read it as URL validation and flag it
+    // as js/regex/missing-regexp-anchor — a host-confusion rule that does
+    // not apply to grepping a local file. toContain says what we mean and
+    // cannot be misread; lowercasing preserves the previous /i semantics.
+    const readmeLower = readme.toLowerCase();
+    expect(readmeLower).toContain('marketplace.visualstudio.com');
+    expect(readmeLower).toContain('open-vsx.org');
+    expect(readme).toContain('sena-labs.ozbridge');
   });
 
   it('.vscodeignore excludes esbuild source maps from the VSIX (audit B-L2)', () => {

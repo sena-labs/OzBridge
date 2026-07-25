@@ -113,8 +113,16 @@ export class OutputFormatter {
     const separatorRow = '| ' + columns.map(() => '---').join(' | ') + ' |';
     // Escape `|` and collapse newlines per cell so user-supplied values
     // (schedule name/cron/prompt, server names) cannot break the table layout.
+    // Backslash must be escaped FIRST: escaping only `|` left a value ending
+    // in `\` able to escape the escape we just added, so `a\|b` produced
+    // `a\\|b` — a literal backslash followed by a live column separator
+    // (CodeQL js/incomplete-sanitization). Doing `\` before `|` keeps every
+    // introduced escape intact.
     const cell = (v: unknown): string =>
-      String(v ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+      String(v ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/\|/g, '\\|')
+        .replace(/\r?\n/g, ' ');
     const dataRows = listResult.items.map(
       (item) => '| ' + columns.map((col) => cell((item as Record<string, unknown>)[col])).join(' | ') + ' |'
     );
