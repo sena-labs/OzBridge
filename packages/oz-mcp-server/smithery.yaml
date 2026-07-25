@@ -1,7 +1,20 @@
 # Smithery.ai MCP server manifest.
-# Listing URL (after publish): https://smithery.ai/server/oz-mcp-server
-# Submission: https://smithery.ai/new  (connect the GitHub repo sena-labs/OzBridge,
-#   set Base directory = packages/oz-mcp-server so Smithery finds this file)
+#
+# NOTE: this file is NOT how the server reached Smithery. Smithery's URL flow
+# requires Streamable HTTP, which a `npx`-spawned stdio server does not offer,
+# so the listing is published as an MCPB bundle instead:
+#
+#   npm run build:mcpb
+#   SMITHERY_API_KEY=... npx @smithery/cli mcp publish \
+#     dist-mcpb/oz-mcp-server.mcpb -n ozbridge/oz-mcp-server
+#
+# Live listing: https://smithery.ai/servers/ozbridge/oz-mcp-server
+# The namespace is `ozbridge`, not `sena-labs` — publishing to a namespace the
+# API key does not own returns 403.
+#
+# The file is kept because it documents the intended stdio start command and
+# config surface, and would be the manifest if the GitHub-connect deploy flow
+# is ever used. scripts/build-mcpb.mjs is the source of truth for the bundle.
 
 name: oz-mcp-server
 displayName: OzBridge

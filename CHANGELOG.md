@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Smithery listing.** `@sena-labs/oz-mcp-server` is published to the Smithery
+  registry as [`ozbridge/oz-mcp-server`](https://smithery.ai/servers/ozbridge/oz-mcp-server).
+  `npm run build:mcpb` (`scripts/build-mcpb.mjs`) produces the MCPB bundle;
+  Smithery's URL flow needs Streamable HTTP, which a stdio server spawned by
+  `npx` does not provide, so a bundle is the supported route. The manifest is
+  generated from `packages/oz-mcp-server/package.json` and the tool surface is
+  read out of the built server at build time, so neither can drift.
+
 ## [1.3.1] — 2026-07-25
 
 ### Added

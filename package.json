@@ -768,7 +768,8 @@
     "screenshots:build": "node scripts/screenshots/capture.mjs",
     "package": "vsce package --no-dependencies -o ozbridge.vsix",
     "build:standalone": "node packages/oz-mcp-server/esbuild.mjs",
-    "build:standalone:prod": "node packages/oz-mcp-server/esbuild.mjs --production"
+    "build:standalone:prod": "node packages/oz-mcp-server/esbuild.mjs --production",
+    "build:mcpb": "node scripts/build-mcpb.mjs"
   },
   "dependencies": {
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
