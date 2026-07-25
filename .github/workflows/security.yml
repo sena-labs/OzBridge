@@ -3,9 +3,16 @@
 # v1.0 deliverable Q. Two parallel jobs:
 #   * `audit`     — fails the PR on any high/critical CVE in the
 #                   production dependency closure.
-#   * `secret-scan` — runs gitleaks against the working tree to catch
-#                   accidentally committed credentials before they reach
-#                   main.
+#   * `secret-scan` — runs gitleaks to catch accidentally committed
+#                   credentials before they reach main.
+#
+# Scan scope depends on the event, and the difference matters:
+# gitleaks-action scans only the commits carried by a `push`/`pull_request`
+# event, but scans the FULL repository history on `schedule` and
+# `workflow_dispatch`. `fetch-depth: 0` alone does not widen the per-push
+# scope — it only makes the history available to the events that use it.
+# So the weekly cron and the manual trigger are what actually audit the
+# whole history; keep both.
 #
 # Both jobs are quick (< 60 s) so they run on every PR and every push.
 name: Security gates
@@ -16,8 +23,12 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Weekly Monday 07:00 UTC — picks up new advisories.
+    # Weekly Monday 07:00 UTC — picks up new advisories and re-scans the
+    # full history for secrets.
     - cron: '0 7 * * 1'
+  # Manual trigger for an on-demand full-history secret scan (e.g. before
+  # a release, or after importing commits from another branch).
+  workflow_dispatch:
 
 permissions:
   contents: read

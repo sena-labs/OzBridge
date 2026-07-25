@@ -51,13 +51,30 @@ jobs:
             -H 'Accept: application/vnd.github+json' \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/code-scanning/alerts?per_page=1")
 
-          if [ "${http_code}" = "200" ]; then
+          # The probe distinguishes three states:
+          #
+          #   200 — code scanning enabled, at least one analysis uploaded.
+          #   404 "no analysis found" — enabled, but nothing uploaded yet.
+          #         This is the bootstrap state of every repository. Reading
+          #         it as "disabled" makes the guard self-blocking: skip the
+          #         upload -> no analysis is ever created -> 404 forever, so
+          #         CodeQL reports success without having scanned anything.
+          #   403 — code scanning genuinely unavailable for this repository.
+          #
+          # Only 403 (and other hard failures) may skip the analysis.
+          if [ "${http_code}" = '200' ]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${http_code}" = '404' ] && grep -q 'no analysis found' /tmp/code-scanning-response.json; then
+            echo 'Code scanning is enabled with no analysis yet — running the bootstrap scan.'
             echo 'enabled=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           echo 'enabled=false' >> "$GITHUB_OUTPUT"
-          echo "::warning::Code Scanning API unavailable for ${GITHUB_REPOSITORY} (HTTP ${http_code}). Skipping CodeQL analyze/upload to avoid a false failing check."
+          echo "::warning::Code Scanning unavailable for ${GITHUB_REPOSITORY} (HTTP ${http_code}). Skipping CodeQL analyze/upload to avoid a false failing check."
           cat /tmp/code-scanning-response.json || true
 
       - name: Setup Node.js 22
