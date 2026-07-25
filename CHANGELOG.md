@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] — 2026-07-25
+
 ### Added
 - **Stdio transport for the standalone MCP server.** `@sena-labs/oz-mcp-server`
   can now be spawned directly by a host (Claude Code, Cursor, Codex) and speak
@@ -35,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PRIVACY.md`.
 
 ### Fixed
+- Dead imports and locals removed across `src/`, `test/` and the standalone
+  package; `noUnusedLocals`/`noUnusedParameters` now fail the build so they
+  cannot accumulate again. `scaffoldSelected` dropped an `askBeforeOverwrite`
+  flag whose only caller always passed `true`.
 - Stdout/stderr memory cap now counts UTF-16 code units consistently, so the
   cap is enforced at the intended size for non-ASCII output.
 - CodeQL never analysed anything: the availability probe treated the HTTP 404
