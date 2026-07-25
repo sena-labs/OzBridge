@@ -9,7 +9,16 @@ const production = process.argv.includes('--production');
 const vscodeShim = path.resolve(__dirname, 'src/vscode-shim.ts');
 const toolkitSrc = path.resolve(__dirname, '../copilot-chat-toolkit/src/index.ts');
 
+// The version the server reports in the MCP `initialize` handshake. It used to
+// be a string literal in server.ts and had drifted two releases behind
+// package.json, so every client was told the wrong version. Injecting it here
+// makes package.json the only place it is written.
+const { version } = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf8'),
+);
+
 const sharedOptions = {
+  define: { __OZ_MCP_VERSION__: JSON.stringify(version) },
   bundle: true,
   platform: 'node',
   target: 'node20',

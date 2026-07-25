@@ -9,7 +9,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
+    // No baseUrl: TypeScript 7 removed it (error TS5102). The entries below are
+    // already tsconfig-relative, which is how `paths` resolves without it.
     "paths": {
       "vscode": ["./src/vscode-shim.ts"],
       "copilot-chat-toolkit": ["../copilot-chat-toolkit/src/index.ts"]

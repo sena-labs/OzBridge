@@ -30,13 +30,20 @@ function getArg(args: string[], flag: string): string | undefined {
 }
 
 /**
+ * Replaced at build time by esbuild `define` with the version from
+ * package.json (see esbuild.mjs). Declared, never assigned: a literal here
+ * is what drifted two releases behind in the first place.
+ */
+declare const __OZ_MCP_VERSION__: string;
+
+/**
  * Run the server over the stdio transport: newline-delimited JSON-RPC 2.0 on
  * stdin/stdout. stdout is reserved for the protocol stream, so every
  * diagnostic goes to stderr. Reuses {@link McpServer.dispatch}, the same
  * request handler the HTTP+SSE transport calls.
  */
 async function runStdio(tools: Map<string, McpToolEntry>): Promise<void> {
-  const server = new McpServer(tools, { name: 'oz-mcp-server', version: '1.2.0' });
+  const server = new McpServer(tools, { name: 'oz-mcp-server', version: __OZ_MCP_VERSION__ });
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
   console.error('[oz-mcp-server] stdio transport ready (JSON-RPC over stdin/stdout).');
   for await (const line of rl) {
@@ -126,7 +133,7 @@ async function main(): Promise<void> {
 
   const server = new McpServer(
     tools,
-    { name: 'oz-mcp-server', version: '1.2.0' },
+    { name: 'oz-mcp-server', version: __OZ_MCP_VERSION__ },
     {
       port,
       bindAddress: normalizedBind,
