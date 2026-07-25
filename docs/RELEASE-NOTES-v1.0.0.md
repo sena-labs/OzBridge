@@ -179,9 +179,8 @@ Maintenance branch: `release/v1.0.x` (created at the v1.0.0 tag).
 
 ## Outlook (post-1.0)
 
-The roadmap document
-[`docs/warp-vsc-bridge — Roadmap competitiva v0.3 → v1.0.md`](./warp-vsc-bridge%20%E2%80%94%20Roadmap%20competitiva%20v0.3%20%E2%86%92%20v1.0.md)
-is now fully shipped. Post-1.0 work continues in `main` toward the
+The v0.3 → v1.0 roadmap is now fully shipped; every milestone brief lives
+in [`docs/`](./). Post-1.0 work continues in `main` toward the
 v1.x line; breaking changes (if any) defer to v2.0.
 
 ## Acknowledgements

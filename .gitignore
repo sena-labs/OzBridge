@@ -21,6 +21,16 @@ ruvector.db
 # Local audit / planning working docs (kept out of the published tree)
 /*[Aa]udit*.md
 
+# Internal go-to-market playbooks. These reference the private Warp trademark
+# permission and per-channel posting strategy — the permission stays private,
+# so the documents that discuss it must never be published.
+docs/launch/
+
+# Internal working docs: competitive positioning (names rival extensions) and
+# the per-release PR execution playbooks. Developer-only, not user-facing.
+docs/*Roadmap competitiva*.md
+docs/NEXT-STEPS-v*.md
+
 # Python (media + asset-compliance tooling under scripts/)
 __pycache__/
 *.py[cod]
@@ -41,7 +51,7 @@ scripts/start-mcp-server.ps1
 
 # Working intermediates for the launch OG-card (regenerated during asset build)
 media/launch/_ogcard_*.png
-# Unverified hi-res OG-card variants — the OG card is an open launch blocker
-# (compliancePass:false per docs/launch/LAUNCH-KIT.md, must be regenerated and
-# OCR-verified before use). Keep unverified variants out of the tree.
+# Unverified hi-res OG-card variants — must be regenerated and OCR-verified
+# against scripts/asset-compliance.json (via scripts/verify_baked_text.py)
+# before use. Keep unverified variants out of the tree.
 media/launch/social-og-card-1280.*

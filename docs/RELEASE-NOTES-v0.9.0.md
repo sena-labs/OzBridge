@@ -132,5 +132,4 @@ unchanged.
   first-paint ≤ 300 ms, memory ≤ 50 MB).
 - Accessibility compliance pass (WCAG 2.1 AA) on every webview.
 
-See [`docs/warp-vsc-bridge — Roadmap competitiva v0.3 → v1.0.md`](./warp-vsc-bridge%20%E2%80%94%20Roadmap%20competitiva%20v0.3%20%E2%86%92%20v1.0.md)
-for the full v1.0 plan.
+See [`docs/MILESTONE-v1.0.md`](./MILESTONE-v1.0.md) for the full v1.0 plan.

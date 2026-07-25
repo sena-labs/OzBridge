@@ -109,6 +109,5 @@ Download from the v0.7.0 GitHub release, then either `Ctrl+Shift+P` → **Extens
 - **Repository:** [github.com/sena-labs/warp-vsc-bridge](https://github.com/sena-labs/warp-vsc-bridge)
 - **Changelog:** [`CHANGELOG.md`](../CHANGELOG.md)
 - **Milestone brief:** [`docs/MILESTONE-v0.7.md`](./MILESTONE-v0.7.md)
-- **Execution plan:** [`docs/NEXT-STEPS-v0.7.md`](./NEXT-STEPS-v0.7.md)
 - **MCP integration guide:** [`docs/MCP.md`](./MCP.md)
 - **Previous release:** [`RELEASE-NOTES-v0.6.0.md`](./RELEASE-NOTES-v0.6.0.md)
