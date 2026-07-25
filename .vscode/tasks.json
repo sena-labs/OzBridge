@@ -1,0 +1,46 @@
+{
+  // `launch.json` runs `npm: compile` as its preLaunchTask. That label only
+  // resolves through VS Code's npm auto-detection, which a contributor can
+  // have switched off (`npm.autoDetect`). Declaring the tasks explicitly
+  // makes F5 work regardless of that setting.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: compile",
+      "type": "npm",
+      "script": "compile",
+      "detail": "tsc --noEmit — type-check without emitting",
+      "problemMatcher": "$tsc",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "npm: build",
+      "type": "npm",
+      "script": "build",
+      "detail": "esbuild production bundle into dist/",
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: watch",
+      "type": "npm",
+      "script": "watch",
+      "detail": "esbuild watch mode",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: test",
+      "type": "npm",
+      "script": "test",
+      "detail": "vitest run — full unit suite",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    }
+  ]
+}
