@@ -22,7 +22,7 @@ We take the security of OzBridge for VS Code seriously. If you discover a securi
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, please send an email to **<isena86@gmail.com>** with:
+Instead, please send an email to **<security@sena-labs.dev>** with:
 
 1. **Description** of the vulnerability
 2. **Steps to reproduce** the issue

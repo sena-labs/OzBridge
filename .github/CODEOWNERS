@@ -1,18 +1,12 @@
 # Learn about CODEOWNERS:
 # https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Default owner for all files
-* @user
-
-# Extension core
-src/extension.ts @user
-src/types/ @user
-
-# Services
-src/services/ @user
-
-# Commands
-src/commands/ @user
-
-# Tests
-test/ @user
+# OzBridge is maintained by a single person, so one catch-all rule is the
+# whole truth: every path has the same owner. Per-directory rules would
+# only imply a team split that does not exist — add them here if and when
+# the project gains maintainers.
+#
+# The practical effect is on external contributions: any PR from someone
+# other than the owner auto-requests their review. GitHub never requests
+# review from a PR's own author, so this stays quiet for the maintainer.
+* @sena-labs
