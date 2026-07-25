@@ -98,4 +98,32 @@ describe('Publishing readiness (deliverable M)', () => {
     );
     expect(excludesMaps, '.vscodeignore must exclude *.map (none found)').toBe(true);
   });
+
+  it('.vscodeignore excludes local AI-tooling state and repo-only metadata', () => {
+    // vsce ignores .gitignore entirely once a .vscodeignore exists, so the two
+    // files drift silently: #111 gitignored the AI-tooling directories without
+    // adding them here, and the next `npm run package` swept a 3.4 MB codebase
+    // knowledge graph (graphify-out/) plus a personal .mcp.json into the VSIX.
+    // Anything gitignored as local-only must be repeated here.
+    const lines = fs
+      .readFileSync(path.join(ROOT, '.vscodeignore'), 'utf8')
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && !l.startsWith('#'));
+
+    const required = [
+      'graphify-out/**',
+      '.graphifyignore',
+      '.claude-flow/**',
+      '.claude/**',
+      '.remember/**',
+      'CLAUDE.md',
+      '.mcp.json',
+      '.venv/**',
+      'Dockerfile',
+      'glama.json',
+    ];
+    const missing = required.filter((entry) => !lines.includes(entry));
+    expect(missing, `.vscodeignore is missing: ${missing.join(', ')}`).toEqual([]);
+  });
 });

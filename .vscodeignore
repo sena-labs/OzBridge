@@ -40,6 +40,27 @@ test-results/**
 .claude/**
 .remember/**
 
+# Local AI-tooling state and config. These are gitignored, but vsce ignores
+# .gitignore entirely once a .vscodeignore exists — so every entry has to be
+# repeated here or it ships. They were added to .gitignore in #111 without a
+# matching entry here, which put a 3.4 MB codebase knowledge graph and a
+# personal MCP config inside the packaged extension.
+# test/publishingReadiness.test.ts asserts these stay listed.
+graphify-out/**
+.graphifyignore
+.claude-flow/**
+CLAUDE.md
+.mcp.json
+.venv/**
+__pycache__/**
+**/__pycache__/**
+
+# Repository-level metadata: real project files, but nothing the installed
+# extension can use. Container build, MCP-registry and directory manifests.
+Dockerfile
+.dockerignore
+glama.json
+
 # Misc
 node_modules/**
 
