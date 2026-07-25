@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Idempotency guard for the MCP Registry job.** The registry answers a
+  re-publish with `cannot publish duplicate version`, so the job failed on any
+  re-run — which is precisely how a partially completed release is finished.
+  It now queries the registry first and skips when the version is already
+  served, matching the contract the Marketplace, Open VSX and npm jobs already
+  had: only an explicit match skips, and a failed or empty query falls through
+  to the publish attempt so a genuine first release is never suppressed.
+
 ## [1.4.0] — 2026-07-25
 
 ### Added

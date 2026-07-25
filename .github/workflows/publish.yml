@@ -274,16 +274,43 @@ jobs:
             exit 1
           fi
 
+      # The registry rejects a re-publish with `cannot publish duplicate
+      # version`, so without this the job fails whenever a release is re-run —
+      # which is the normal way to finish a partial release. Same contract as
+      # the Marketplace, Open VSX and npm guards: only an explicit match skips,
+      # and a failed or empty query falls through to the publish attempt so a
+      # genuine first release is never suppressed.
+      - name: Check whether the registry already serves this version
+        id: registry
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          SRV_NAME=$(node -p "require('./server.json').name")
+          if curl -sS -G 'https://registry.modelcontextprotocol.io/v0/servers' \
+               --data-urlencode "search=${SRV_NAME}" --data-urlencode 'limit=100' \
+             | jq -e --arg N "$SRV_NAME" --arg V "$VERSION" \
+                 '[.servers[] | select(.server.name == $N and .server.version == $V)] | length > 0' \
+               >/dev/null 2>&1; then
+            echo "::notice::MCP Registry already serves ${SRV_NAME} ${VERSION} — nothing to publish"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install mcp-publisher
+        if: steps.registry.outputs.skip != 'true'
         run: |
           set -euo pipefail
           curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
             | tar xz mcp-publisher
 
       - name: Authenticate to MCP Registry
+        if: steps.registry.outputs.skip != 'true'
         run: ./mcp-publisher login github-oidc
 
       - name: Publish server.json
+        if: steps.registry.outputs.skip != 'true'
         run: ./mcp-publisher publish
 
   github-release:
