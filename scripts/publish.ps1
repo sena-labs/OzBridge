@@ -1,7 +1,7 @@
 # Manual publish script for Windows / PowerShell
 # Usage:
 #   $env:VSCE_PAT = "<azure-devops-pat>"
-#   $env:OVSX_TOKEN = "<open-vsx-token>"
+#   $env:OVSX_PAT = "<open-vsx-token>"
 #   .\scripts\publish.ps1 [-DryRun]
 #
 # See docs/PUBLISHING.md for the full publisher setup procedure.
@@ -22,8 +22,8 @@ if (-not $DryRun -and -not $env:VSCE_PAT) {
     exit 1
 }
 
-if (-not $DryRun -and -not $env:OVSX_TOKEN) {
-    Write-Warning "OVSX_TOKEN is not set. Skipping Open VSX publish."
+if (-not $DryRun -and -not $env:OVSX_PAT) {
+    Write-Warning "OVSX_PAT is not set. Skipping Open VSX publish."
 }
 
 # --- Detect version ----------------------------------------------------------
@@ -79,9 +79,9 @@ Write-Host "`n>>> VS Code Marketplace" -ForegroundColor Cyan
 npx @vscode/vsce publish --packagePath $VsixOutput -p $env:VSCE_PAT
 if ($LASTEXITCODE -ne 0) { throw "vsce publish failed" }
 
-if ($env:OVSX_TOKEN) {
+if ($env:OVSX_PAT) {
     Write-Host "`n>>> Open VSX" -ForegroundColor Cyan
-    npx ovsx publish $VsixOutput -p $env:OVSX_TOKEN
+    npx ovsx publish $VsixOutput -p $env:OVSX_PAT
     if ($LASTEXITCODE -ne 0) { throw "ovsx publish failed" }
 }
 

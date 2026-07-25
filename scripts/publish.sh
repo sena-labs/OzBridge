@@ -2,7 +2,7 @@
 # Manual publish script for macOS/Linux
 # Usage:
 #   export VSCE_PAT="<azure-devops-pat>"
-#   export OVSX_TOKEN="<open-vsx-token>"
+#   export OVSX_PAT="<open-vsx-token>"
 #   ./scripts/publish.sh [--dry-run] [--skip-tests]
 #
 # See docs/PUBLISHING.md for the full publisher setup procedure.
@@ -25,8 +25,8 @@ if [[ $DRY_RUN -eq 0 && -z "${VSCE_PAT:-}" ]]; then
     exit 1
 fi
 
-if [[ $DRY_RUN -eq 0 && -z "${OVSX_TOKEN:-}" ]]; then
-    echo "WARNING: OVSX_TOKEN is not set. Skipping Open VSX publish."
+if [[ $DRY_RUN -eq 0 && -z "${OVSX_PAT:-}" ]]; then
+    echo "WARNING: OVSX_PAT is not set. Skipping Open VSX publish."
 fi
 
 VERSION=$(node -p "require('./package.json').version")
@@ -75,10 +75,10 @@ echo ""
 echo ">>> VS Code Marketplace"
 npx @vscode/vsce publish --packagePath "$VSIX_OUTPUT" -p "$VSCE_PAT"
 
-if [[ -n "${OVSX_TOKEN:-}" ]]; then
+if [[ -n "${OVSX_PAT:-}" ]]; then
     echo ""
     echo ">>> Open VSX"
-    npx ovsx publish "$VSIX_OUTPUT" -p "$OVSX_TOKEN"
+    npx ovsx publish "$VSIX_OUTPUT" -p "$OVSX_PAT"
 fi
 
 echo ""

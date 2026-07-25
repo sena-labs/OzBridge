@@ -81,7 +81,12 @@ Nel repository `sena-labs/OzBridge`:
 1. **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
 2. Aggiungi:
    - `VSCE_PAT` → il token Azure DevOps (step 2.2)
-   - `OVSX_TOKEN` → il token Open VSX (step 3.3)
+   - `OVSX_PAT` → il token Open VSX (step 3.3)
+
+> I nomi devono combaciare esattamente con quelli letti da
+> `.github/workflows/publish.yml`. Se un secret manca, il job corrispondente
+> **salta con un warning e il workflow chiude comunque in verde**: la release
+> risulta riuscita ma l'estensione non viene pubblicata.
 
 ---
 
@@ -104,7 +109,7 @@ npm run package  # produce ozbridge.vsix
 npx @vscode/vsce publish --packagePath ozbridge.vsix -p $env:VSCE_PAT
 
 # Publish su Open VSX
-npx ovsx publish ozbridge.vsix -p $env:OVSX_TOKEN
+npx ovsx publish ozbridge.vsix -p $env:OVSX_PAT
 ```
 
 Dopo la pubblicazione:
@@ -131,7 +136,7 @@ Il workflow:
 1. Esegue `npm ci`, `npm run compile`, `npm test`, `npm run build`.
 2. Confeziona il VSIX.
 3. Pubblica su VS Code Marketplace (usando `VSCE_PAT`).
-4. Pubblica su Open VSX (usando `OVSX_TOKEN`).
+4. Pubblica su Open VSX (usando `OVSX_PAT`).
 5. Crea una GitHub Release con il VSIX come artifact.
 
 ---
