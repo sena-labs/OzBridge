@@ -7,7 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-07-25
+
 ### Added
+- **Automated npm and MCP Registry publishing.** `publish.yml` gained a
+  `publish-npm` job for `@sena-labs/oz-mcp-server` (scoped, so `--access public`
+  is explicit) and a `publish-mcp-registry` job that pushes `server.json`. Both
+  steps were manual before, which is why the registry served 1.2.1 while npm was
+  on 1.3.1.
+
+  Both authenticate with GitHub OIDC, so the release pipeline holds no
+  long-lived credential. On the npm side this is [trusted
+  publishing](https://docs.npmjs.com/trusted-publishers): the publisher is bound
+  to this repository and workflow filename on npmjs.com, and npm generates
+  provenance attestations automatically. The job pins Node 22 and upgrades npm
+  to `^11.5.1`, the two version floors trusted publishing requires.
+- **npm ownership pre-check** before the registry publish. The registry fetches
+  the published npm package and matches its `mcpName` against the server name, so
+  a rename that has not yet shipped to npm is rejected with an opaque ownership
+  error. The job now fails with the actual mismatch, and the constraint it
+  encodes: a renamed server needs a version bump so npm ships the new `mcpName`.
+- **Version-consistency gate** in the release build. The extension manifest,
+  `packages/oz-mcp-server/package.json` and both version fields in `server.json`
+  must agree, and `mcpName` must match the `server.json` name (the registry
+  verifies npm ownership through it). Version skew now fails the release
+  instead of stranding the registry manifest.
+- `AI` category on the VS Code Marketplace listing, alongside `Chat`.
+
+### Fixed
+- `dist-mcpb/` no longer ships inside the VSIX. The MCPB bundle is a
+  distribution artefact for Smithery that the extension never loads; with no
+  `.vscodeignore` rule covering it, `npm run build:mcpb` output was adding
+  ~69 KB of dead weight to every package.
+
+### Changed
+- **MCP Registry server renamed** to `io.github.sena-labs/warp-ozbridge` (was
+  `io.github.sena-labs/oz-mcp-server`). Registry search matches substrings of the
+  server *name* only — it does not index the description or the keyword list —
+  and the old name contained neither `warp` nor `ozbridge`, so the server was
+  reachable only by querying `sena-labs` or `oz-mcp`. The new name covers `warp`,
+  `warp-oz`, `ozbridge`, `oz` and `bridge`, all of which had no competing entry.
+  `mcpName` in `packages/oz-mcp-server/package.json` moves with it, since the
+  registry verifies npm ownership through that field.
+
+  The npm package keeps its published name, `@sena-labs/oz-mcp-server`: the
+  registry's `identifier` and `name` are independent, so no existing client
+  configuration breaks. The old registry entry stays live until it is marked
+  deprecated with `mcp-publisher status`.
+- MCP Registry description rewritten to lead with `OzBridge`, and keywords
+  extended with `ozbridge`, `warp-terminal` and `vscode`. Cosmetic for registry
+  search — neither field is indexed — but both are shown to readers browsing the
+  registry and are picked up by aggregators such as Smithery and Glama. The
+  independence disclaimer is unaffected: it lives in `_meta` and in
+  [DISCLAIMER.md](DISCLAIMER.md).
+
 - **Smithery listing.** `@sena-labs/oz-mcp-server` is published to the Smithery
   registry as [`ozbridge/oz-mcp-server`](https://smithery.ai/servers/ozbridge/oz-mcp-server).
   `npm run build:mcpb` (`scripts/build-mcpb.mjs`) produces the MCPB bundle;

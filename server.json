@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.sena-labs/oz-mcp-server",
-  "description": "Bring Warp™ Oz™ agents into any IDE or MCP client — Claude Code, Cursor, Codex.",
-  "version": "1.3.1",
+  "name": "io.github.sena-labs/warp-ozbridge",
+  "description": "OzBridge: run Warp Oz agents from any MCP client — Claude Code, Cursor, Codex, VS Code.",
+  "version": "1.4.0",
   "repository": {
     "url": "https://github.com/sena-labs/OzBridge",
     "source": "github",
@@ -12,7 +12,7 @@
     {
       "registryType": "npm",
       "identifier": "@sena-labs/oz-mcp-server",
-      "version": "1.3.1",
+      "version": "1.4.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "sse",
@@ -26,11 +26,14 @@
       "keywords": [
         "mcp",
         "warp",
+        "warp-terminal",
         "oz",
+        "ozbridge",
         "agent",
         "claude-code",
         "cursor",
-        "codex"
+        "codex",
+        "vscode"
       ],
       "prerequisites": "Requires Warp installed with the oz CLI on PATH and a Warp account (a free account is sufficient for local runs).",
       "tools": [

@@ -35,6 +35,10 @@ media/launch/**
 # MCP registry manifest (repo-root metadata, not part of the extension)
 server.json
 
+# MCPB bundle staging + output (`npm run build:mcpb`). Distribution artefact for
+# Smithery; the extension never loads it, so it only inflated the VSIX by ~69 KB.
+dist-mcpb/**
+
 # Runtime artefacts (never ship)
 test-results/**
 .claude/**

@@ -38,6 +38,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The extension, the standalone MCP server and the MCP registry manifest
+      # carry three independent version fields. When they drift, the npm package
+      # ships while `mcp-publisher` silently keeps serving the older manifest —
+      # which is exactly how the registry ended up stranded on 1.2.1. Fail the
+      # release here instead of discovering the skew in the registry weeks later.
+      - name: Check version consistency
+        run: |
+          set -euo pipefail
+          EXT=$(node -p "require('./package.json').version")
+          SRV=$(node -p "require('./packages/oz-mcp-server/package.json').version")
+          MANIFEST=$(node -p "require('./server.json').version")
+          PKG_VERSION=$(node -p "require('./server.json').packages[0].version")
+          MCP_NAME=$(node -p "require('./packages/oz-mcp-server/package.json').mcpName")
+          SRV_NAME=$(node -p "require('./server.json').name")
+
+          echo "extension=$EXT mcp-server=$SRV server.json=$MANIFEST server.json/packages[0]=$PKG_VERSION"
+          if [ "$EXT" != "$SRV" ] || [ "$EXT" != "$MANIFEST" ] || [ "$EXT" != "$PKG_VERSION" ]; then
+            echo "::error::Version skew — align package.json, packages/oz-mcp-server/package.json and server.json"
+            exit 1
+          fi
+
+          # The registry verifies npm ownership by matching `mcpName` against the
+          # server name; a mismatch is rejected at publish time.
+          if [ "$MCP_NAME" != "$SRV_NAME" ]; then
+            echo "::error::mcpName ($MCP_NAME) does not match server.json name ($SRV_NAME)"
+            exit 1
+          fi
+
       - name: Type-check
         run: npm run compile
 
@@ -152,6 +180,111 @@ jobs:
           fi
 
           npx ovsx publish "$VSIX" -p "$OVSX_PAT"
+
+  publish-npm:
+    name: Publish MCP server to npm
+    needs: build
+    if: ${{ inputs.dry_run != true }}
+    runs-on: ubuntu-latest
+    permissions:
+      # npm trusted publishing: the CLI mints a short-lived OIDC token instead of
+      # reading NODE_AUTH_TOKEN. The publisher is bound to sena-labs/OzBridge +
+      # this workflow filename on npmjs.com, so no long-lived secret exists to
+      # leak or rotate, and provenance attestations are generated automatically.
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing has two independent floors — Node >= 22.14 and npm
+      # >= 11.5.1 — and the npm bundled with a given Node line can sit below the
+      # npm floor. Upgrading explicitly keeps this job correct no matter which
+      # npm that Node image happens to ship.
+      - name: Ensure npm supports trusted publishing
+        run: |
+          set -euo pipefail
+          npm install -g npm@^11.5.1
+          npm --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish @sena-labs/oz-mcp-server
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          # Same idempotency contract as the Marketplace and Open VSX jobs: npm
+          # rejects a duplicate version outright, which would strand the MCP
+          # registry job behind it on a re-run. An empty/failed query falls
+          # through to the publish attempt so a genuine first release is never
+          # suppressed.
+          if npm view "@sena-labs/oz-mcp-server@${VERSION}" version >/dev/null 2>&1; then
+            echo "::notice::npm already serves ${VERSION} — nothing to publish"
+            exit 0
+          fi
+
+          # The package is scoped, so npm defaults to a restricted (paid) publish
+          # unless access is set explicitly.
+          npm publish --workspace @sena-labs/oz-mcp-server --access public
+
+  publish-mcp-registry:
+    name: Publish to MCP Registry
+    needs: [build, publish-npm]
+    if: ${{ inputs.dry_run != true }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # OIDC login to the registry under io.github.sena-labs/*
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+
+      # The registry proves npm ownership by fetching the published package and
+      # matching its `mcpName` against the server name. A local-only rename —
+      # server.json and packages/oz-mcp-server/package.json updated, but the
+      # version already live on npm still carrying the old mcpName — is rejected
+      # with an opaque ownership error. Fail here with the actual mismatch.
+      - name: Verify npm ownership metadata
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          SRV_NAME=$(node -p "require('./server.json').name")
+          PUBLISHED=$(npm view "@sena-labs/oz-mcp-server@${VERSION}" mcpName 2>/dev/null || true)
+          if [ -z "$PUBLISHED" ]; then
+            echo "::error::@sena-labs/oz-mcp-server@${VERSION} is not on npm, or carries no mcpName"
+            exit 1
+          fi
+          if [ "$PUBLISHED" != "$SRV_NAME" ]; then
+            echo "::error::npm mcpName ($PUBLISHED) != server.json name ($SRV_NAME) — a renamed server needs a version bump so npm ships the new mcpName"
+            exit 1
+          fi
+
+      - name: Install mcp-publisher
+        run: |
+          set -euo pipefail
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" \
+            | tar xz mcp-publisher
+
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server.json
+        run: ./mcp-publisher publish
 
   github-release:
     name: Create GitHub Release
