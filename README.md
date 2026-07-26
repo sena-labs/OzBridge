@@ -1,4 +1,7 @@
-# OzBridge — Warp Oz for any IDE or agent, via MCP [![Build](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml)[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+# OzBridge — Warp Oz for any IDE or agent, via MCP
+[![Build](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml)
+[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![OzBridge screenshot](media/screenshot.png)
 ## What is OzBridge?
 
