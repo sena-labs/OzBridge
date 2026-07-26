@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0e0e12">
+{% seo %}
+{% unless page.image %}<meta property="og:image" content="{{ '/assets/img/social-card.jpg' | absolute_url }}">{% endunless %}
+<link rel="icon" type="image/svg+xml" href="{{ '/assets/img/ozbridge-icon.svg' | relative_url }}">
+<link rel="apple-touch-icon" href="{{ '/assets/img/ozbridge-mark.webp' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/ozbridge.css' | relative_url }}">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="{{ '/' | relative_url }}">
+      <img src="{{ '/assets/img/ozbridge-mark.webp' | relative_url }}" alt="" width="30" height="30">
+      <span>OzBridge<small>Warp Oz agents, any IDE</small></span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="{{ '/QUICK-START.html' | relative_url }}">Quick Start</a>
+      <a href="{{ '/MCP.html' | relative_url }}">MCP reference</a>
+      <a class="hide-sm" href="{{ '/DESIGN.html' | relative_url }}">Architecture</a>
+      <a class="hide-sm" href="https://github.com/sena-labs/OzBridge">GitHub</a>
+      <a class="nav-cta" href="https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge">Install</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+{{ content }}
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="footer-about">
+        <a class="brand" href="{{ '/' | relative_url }}">
+          <img src="{{ '/assets/img/ozbridge-mark.webp' | relative_url }}" alt="" width="30" height="30">
+          <span>OzBridge</span>
+        </a>
+        <p>Open-source MCP server and VS Code extension that runs Warp Oz cloud and local agents from any MCP client. MIT licensed, built by Sena Labs.</p>
+      </div>
+      <div>
+        <h4>Docs</h4>
+        <ul>
+          <li><a href="{{ '/QUICK-START.html' | relative_url }}">Quick Start</a></li>
+          <li><a href="{{ '/MCP.html' | relative_url }}">MCP reference</a></li>
+          <li><a href="{{ '/DESIGN.html' | relative_url }}">Architecture</a></li>
+          <li><a href="https://github.com/sena-labs/OzBridge/blob/main/CHANGELOG.md">Changelog</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Install</h4>
+        <ul>
+          <li><a href="https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge">VS Code Marketplace</a></li>
+          <li><a href="https://open-vsx.org/extension/sena-labs/ozbridge">Open VSX</a></li>
+          <li><a href="https://github.com/sena-labs/OzBridge/tree/main/packages/oz-mcp-server">Standalone server</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Project</h4>
+        <ul>
+          <li><a href="https://github.com/sena-labs/OzBridge">Source</a></li>
+          <li><a href="https://github.com/sena-labs/OzBridge/issues">Issues</a></li>
+          <li><a href="https://github.com/sena-labs/OzBridge/blob/main/SECURITY.md">Security</a></li>
+          <li><a href="https://github.com/sena-labs/OzBridge/blob/main/PRIVACY.md">Privacy</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legal">
+      <strong>OzBridge is an independent project and is not affiliated with, endorsed by, or sponsored by Warp.</strong><br>
+      Warp™ and Oz™ are trademarks of Warp, Inc., used here nominatively only to describe interoperability.
+      OzBridge uses solely Warp's documented public interfaces — the <code>oz</code> CLI, the Model Context Protocol
+      and the <code>WARP_OUTPUT_FORMAT</code> environment variable — and does not modify, reverse-engineer or compete with Warp.
+      Visual Studio Code and GitHub Copilot are trademarks of Microsoft Corporation. Other names may be trademarks of their respective owners.<br>
+      © {{ 'now' | date: "%Y" }} Sena Labs · Released under the MIT Licence.
+    </p>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('pre').forEach(function (pre) {
+  var btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.type = 'button';
+  btn.textContent = 'Copy';
+  btn.setAttribute('aria-label', 'Copy code to clipboard');
+  btn.addEventListener('click', function () {
+    navigator.clipboard.writeText(pre.querySelector('code') ? pre.querySelector('code').innerText : pre.innerText)
+      .then(function () {
+        btn.textContent = 'Copied';
+        setTimeout(function () { btn.textContent = 'Copy'; }, 1600);
+      })
+      .catch(function () { btn.textContent = 'Failed'; });
+  });
+  pre.appendChild(btn);
+});
+</script>
+</body>
+</html>

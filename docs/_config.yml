@@ -10,12 +10,26 @@ description: >-
 
 url: https://sena-labs.github.io
 baseurl: /OzBridge
+lang: en
 
-theme: jekyll-theme-cayman
+author:
+  name: Sena Labs
+
+twitter:
+  card: summary_large_image
 
 plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
+
+# Every markdown document renders inside the site shell, including the
+# reference pages that carry no front matter of their own.
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+      image: /assets/img/social-card.jpg
 
 # Internal process documents: kept in the repository, not published as pages.
 exclude:
@@ -27,3 +41,4 @@ exclude:
   - MILESTONE-v0.9.md
   - MILESTONE-v1.0.md
   - generate_gifs.py
+  - launch/

@@ -1,0 +1,487 @@
+---
+layout: home
+title: "Warp Oz agents in any IDE, via MCP"
+description: "OzBridge is an open-source Model Context Protocol server and VS Code extension that runs Warp Oz cloud and local agents from GitHub Copilot Chat, Claude Code, Cursor and Codex CLI."
+image: /assets/img/social-card.jpg
+---
+
+<section class="hero">
+  <div class="hero-bg" role="presentation"></div>
+  <div class="wrap">
+    <span class="badge">v1.4.0 · MIT · Model Context Protocol</span>
+    <h1>Run Warp Oz agents from <span class="grad">the editor you already use</span></h1>
+    <p class="hero-sub">
+      OzBridge exposes the Warp™ Oz™ agent toolset over the Model Context Protocol, so
+      <strong>GitHub Copilot Chat, Claude Code, Cursor and Codex CLI</strong> can launch, poll and read
+      Oz runs — locally in your workspace or in the Warp cloud — without leaving the tool you work in.
+    </p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge">Install for VS Code</a>
+      <a class="btn btn-ghost" href="{{ '/QUICK-START.html' | relative_url }}">Read the Quick Start</a>
+      <a class="btn btn-ghost" href="#connect">Connect your MCP client</a>
+    </div>
+    <div class="stat-row">
+      <div class="stat"><b>6</b><span>MCP tools</span></div>
+      <div class="stat"><b>4+</b><span>Supported clients</span></div>
+      <div class="stat"><b>1,400+</b><span>Tests</span></div>
+      <div class="stat"><b>~160 KB</b><span>Production bundle</span></div>
+      <div class="stat"><b>0</b><span>Third-party network code</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="what">
+  <div class="wrap">
+    <span class="eyebrow">What it is</span>
+    <h2>What is OzBridge?</h2>
+    <div class="definition">
+      <strong>OzBridge is an open-source <a href="https://modelcontextprotocol.io">Model Context Protocol</a> (MCP)
+      server and VS Code extension that runs Warp Oz cloud and local agents from any MCP-compatible client —
+      GitHub Copilot Chat, Claude Code, Cursor and Codex CLI.</strong>
+    </div>
+    <p class="lede">
+      Warp Oz orchestrates autonomous coding agents in the cloud, and it is driven from the Warp terminal.
+      OzBridge puts the same agent toolset behind a standard MCP surface, so the editor or agent you already
+      use can start a run, watch it to completion and read its output in place. Inside VS Code it goes further:
+      Oz appears as the <code>@oz</code> chat participant and as Language Model Tools that Copilot Agent mode
+      invokes on its own initiative.
+    </p>
+    <div class="callout">
+      <b>Independent project.</b> OzBridge is an independent project and is not affiliated with, endorsed by, or
+      sponsored by Warp. Warp™ and Oz™ are trademarks of Warp, Inc., used here nominatively only to describe
+      interoperability. OzBridge uses solely Warp's documented public interfaces.
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="how">
+  <div class="wrap">
+    <span class="eyebrow">How it works</span>
+    <h2>One bridge, every client</h2>
+    <p class="lede">
+      OzBridge speaks MCP over HTTP + SSE on one side and spawns the <code>oz</code> CLI on the other.
+      Every client sees the identical tool set, so a workflow written for Copilot behaves the same in Claude Code.
+    </p>
+
+    <div class="flow">
+      <div class="flow-col">
+        <div class="flow-node"><b>Claude Code</b><small>~/.claude.json</small></div>
+        <div class="flow-node"><b>Cursor</b><small>~/.cursor/mcp.json</small></div>
+        <div class="flow-node"><b>Codex CLI</b><small>~/.codex/config.toml</small></div>
+        <div class="flow-node"><b>VS Code</b><small>@oz + LM Tools</small></div>
+      </div>
+      <div class="flow-link"><span>MCP</span></div>
+      <div class="flow-col">
+        <div class="flow-node hub"><b>OzBridge</b><small>6 tools · HTTP + SSE · 127.0.0.1</small></div>
+      </div>
+      <div class="flow-link"><span>spawn</span></div>
+      <div class="flow-col">
+        <div class="flow-node"><b>Local run</b><small>oz CLI in your workspace</small></div>
+        <div class="flow-node warm"><b>Cloud run</b><small>Warp Oz cloud · credits</small></div>
+      </div>
+    </div>
+
+    <div class="grid grid-3">
+      <div class="card">
+        <span class="ico" aria-hidden="true">1</span>
+        <h3>Start the bridge</h3>
+        <p>Flip <code>ozBridge.mcpEnabled</code> on in VS Code, or run the standalone server with a single
+          <code>npx</code> command. No editor required for the standalone path.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">2</span>
+        <h3>Point your client at it</h3>
+        <p>One JSON or TOML block per client. The endpoint is <code>http://127.0.0.1:3847/sse</code> by default,
+          with an optional bearer token.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">3</span>
+        <h3>Drive Oz from anywhere</h3>
+        <p>Your agent calls the tools directly — run, poll, inspect, switch model — and gets structured output
+          back in its own context.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="features">
+  <div class="wrap">
+    <span class="eyebrow">Capabilities</span>
+    <h2>What you get</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <span class="ico" aria-hidden="true">⇄</span>
+        <h3>MCP bridge for any client</h3>
+        <p>The Oz toolset as a standard MCP server over HTTP + SSE — embedded in VS Code or fully standalone
+          via <code>@sena-labs/oz-mcp-server</code>.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">@</span>
+        <h3><code>@oz</code> chat participant</h3>
+        <p>Nine slash commands covering the whole workflow: <code>/run</code>, <code>/cloud</code>,
+          <code>/status</code>, <code>/history</code>, <code>/schedule</code>, <code>/models</code>,
+          <code>/mcp</code>, <code>/config</code>, <code>/init</code>.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">◆</span>
+        <h3>Agent-native LM Tools</h3>
+        <p>Copilot Agent mode invokes Warp Oz autonomously, with strict JSON input schemas and a confirmation
+          dialog before any run that spends credits.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">▤</span>
+        <h3>Sidebar and status bar</h3>
+        <p>Active runs, history, schedules, environments, MCP servers and secrets in one Activity Bar view, plus
+          live indicators for active runs and the selected model.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">✧</span>
+        <h3>One-click model selection</h3>
+        <p>Pick the Oz model from a QuickPick, the status bar, or <code>@oz /models &lt;id&gt;</code>. Agents switch
+          it themselves through <code>oz_list_models</code> and <code>oz_set_default_model</code>.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">⌘</span>
+        <h3>IDE context injection</h3>
+        <p>Workspace path, active file, selection and diagnostics are prefixed to every prompt automatically —
+          opt out per call with <code>includeIdeContext: false</code>.</p>
+      </div>
+      <div class="card amber">
+        <span class="ico" aria-hidden="true">⧉</span>
+        <h3>Warp Drive browser</h3>
+        <p>Browse prompts, rules and skills from Warp Drive, then insert them into chat, copy them, or open them
+          in the editor.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">⚙</span>
+        <h3>Per-workspace config</h3>
+        <p>Commit <code>.warp/warp-bridge.yaml</code> and the whole team inherits the same defaults. Secrets and
+          platform-specific paths are deliberately excluded.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">↺</span>
+        <h3>Resilient polling</h3>
+        <p>Exponential-backoff cloud polling with live progress, an idle-timeout guard on the CLI subprocess and a
+          five-level JSON parser for mixed CLI output.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="tools">
+  <div class="wrap">
+    <span class="eyebrow">Tool surface</span>
+    <h2>Six MCP tools</h2>
+    <p class="lede">
+      Every MCP client sees this exact set, with the full JSON <code>inputSchema</code> emitted verbatim by
+      <code>tools/list</code>. In VS Code, Copilot Agent mode additionally sees the native Language Model Tools
+      <code>oz_run_local</code>, <code>oz_run_cloud</code>, <code>oz_get_run</code> and <code>oz_list_runs</code>.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Tool</th><th>Purpose</th><th>Cost</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>oz_agent_run</code></td><td>Run an Oz agent locally with a prompt and return the full run payload.</td><td>Free</td></tr>
+          <tr><td><code>oz_agent_run_cloud</code></td><td>Launch a cloud run on Warp's infrastructure.</td><td>Warp credits</td></tr>
+          <tr><td><code>oz_run_get</code></td><td>Fetch a run's status and output by id. Read-only.</td><td>Free</td></tr>
+          <tr><td><code>oz_run_list</code></td><td>List recent runs, filtered by <code>all</code>, <code>active</code>, <code>completed</code> or a raw status, with a numeric limit.</td><td>Free</td></tr>
+          <tr><td><code>oz_list_models</code></td><td>List the model ids available to the account and report the current default. Read-only.</td><td>Free</td></tr>
+          <tr><td><code>oz_set_default_model</code></td><td>Set the default Oz model by writing <code>defaultModel</code> into the workspace config.</td><td>Free</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="connect">
+  <div class="wrap">
+    <span class="eyebrow">Setup</span>
+    <h2>Connect your MCP client</h2>
+    <p class="lede">
+      Start the bridge first — either enable the embedded server in VS Code
+      (<code>"ozBridge.mcpEnabled": true</code>, then <em>OzBridge MCP: Start</em>) or run the standalone package:
+    </p>
+
+<pre><code>npx -y @sena-labs/oz-mcp-server</code></pre>
+
+    <p class="lede">
+      Both listen on <code>http://127.0.0.1:3847/sse</code>. Set <code>ozBridge.mcpBearerToken</code> to require an
+      <code>Authorization: Bearer &lt;token&gt;</code> header on every request; drop the <code>headers</code> block below
+      when authentication is disabled.
+    </p>
+
+    <div class="grid grid-2">
+      <div class="card client-card">
+        <div class="client-head"><h3>How do I use Warp Oz in Claude Code?</h3><span>~/.claude.json</span></div>
+<pre><code>{
+  <span class="tok-key">"mcpServers"</span>: {
+    <span class="tok-key">"oz-bridge"</span>: {
+      <span class="tok-key">"type"</span>: <span class="tok-str">"sse"</span>,
+      <span class="tok-key">"url"</span>: <span class="tok-str">"http://127.0.0.1:3847/sse"</span>,
+      <span class="tok-key">"headers"</span>: {
+        <span class="tok-key">"Authorization"</span>: <span class="tok-str">"Bearer my-secret"</span>
+      }
+    }
+  }
+}</code></pre>
+      </div>
+
+      <div class="card client-card">
+        <div class="client-head"><h3>How do I use Warp Oz in Cursor?</h3><span>~/.cursor/mcp.json</span></div>
+<pre><code>{
+  <span class="tok-key">"mcpServers"</span>: {
+    <span class="tok-key">"oz-bridge"</span>: {
+      <span class="tok-key">"url"</span>: <span class="tok-str">"http://127.0.0.1:3847/sse"</span>,
+      <span class="tok-key">"headers"</span>: {
+        <span class="tok-key">"Authorization"</span>: <span class="tok-str">"Bearer my-secret"</span>
+      }
+    }
+  }
+}</code></pre>
+      </div>
+
+      <div class="card client-card">
+        <div class="client-head"><h3>How do I use Warp Oz in Codex CLI?</h3><span>~/.codex/config.toml</span></div>
+<pre><code><span class="tok-cmt">[[mcp.servers]]</span>
+name = <span class="tok-str">"oz-bridge"</span>
+url = <span class="tok-str">"http://127.0.0.1:3847/sse"</span>
+authorization = <span class="tok-str">"Bearer my-secret"</span></code></pre>
+      </div>
+
+      <div class="card client-card">
+        <div class="client-head"><h3>How do I use Warp Oz in VS Code?</h3><span>no MCP wiring needed</span></div>
+<pre><code><span class="tok-cmt"># Install the extension …</span>
+code --install-extension sena-labs.ozbridge
+
+<span class="tok-cmt"># … then, in the Copilot Chat panel:</span>
+@oz /run fix the failing test in src/auth/login.ts</code></pre>
+      </div>
+    </div>
+
+    <p class="lede" style="margin-top:26px">
+      Endpoint reference, protocol details and a raw-<code>curl</code> cheatsheet are in the
+      <a href="{{ '/MCP.html' | relative_url }}">MCP reference</a>.
+    </p>
+  </div>
+</section>
+
+<section class="section section-alt" id="local-vs-cloud">
+  <div class="wrap">
+    <span class="eyebrow">Execution modes</span>
+    <h2>Local runs and cloud runs</h2>
+    <p class="lede">
+      Both modes are reachable from every client. The difference is where the agent executes and who pays for it.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>&nbsp;</th><th>Local run</th><th>Cloud run</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>Executes on</b></td><td>Your machine, via the <code>oz</code> CLI</td><td>Warp's infrastructure</td></tr>
+          <tr><td><b>Warp credits</b></td><td>None</td><td>Consumed per run</td></tr>
+          <tr><td><b>Workspace access</b></td><td>Full — reads and edits your files</td><td>The configured cloud environment</td></tr>
+          <tr><td><b>Detached</b></td><td>No — tied to the CLI process</td><td>Yes — survives closing the editor</td></tr>
+          <tr><td><b>Default timeout</b></td><td>5 minutes (<code>timeoutMs</code>), 90 s idle guard</td><td>30 minutes of polling (<code>cloudPollingTimeoutMs</code>)</td></tr>
+          <tr><td><b>Confirmation</b></td><td>Runs immediately</td><td>Always confirms before spending credits</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="security">
+  <div class="wrap">
+    <span class="eyebrow">Security posture</span>
+    <h2>Built to stay on your machine</h2>
+    <p class="lede">
+      The MCP tool surface can spawn a CLI that edits your code, so the defaults are deliberately conservative.
+    </p>
+    <div class="grid grid-3">
+      <div class="card">
+        <span class="ico" aria-hidden="true">◉</span>
+        <h3>Loopback by default</h3>
+        <p>The server binds to <code>127.0.0.1</code>. The standalone server refuses to bind to a non-loopback
+          address unless a bearer token is configured.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">⚿</span>
+        <h3>Constant-time auth</h3>
+        <p>When a bearer token is set, every request is checked with <code>crypto.timingSafeEqual</code>;
+          mismatches get <code>401</code>.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">⏻</span>
+        <h3>Session limits</h3>
+        <p>Concurrent SSE sessions are capped — extra connections get <code>503</code> — and each session has a
+          maximum lifetime so abandoned clients cannot leak resources.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">⌁</span>
+        <h3>Kill switch</h3>
+        <p><code>ozBridge.killSwitch.enabled</code> makes activation register nothing at all — an operator escape
+          hatch for a regression or a supply-chain incident.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">☐</span>
+        <h3>Minimal footprint</h3>
+        <p>One bundled workspace package plus the VS Code API. No third-party network code, and telemetry stays
+          off unless you supply a connection string.</p>
+      </div>
+      <div class="card">
+        <span class="ico" aria-hidden="true">⚑</span>
+        <h3>Untrusted workspaces</h3>
+        <p>In a restricted workspace the committed <code>.warp/warp-bridge.yaml</code> is ignored and only
+          user-level configuration is honoured.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="screenshots">
+  <div class="wrap">
+    <span class="eyebrow">In the editor</span>
+    <h2>What it looks like</h2>
+    <div class="shots">
+      <figure class="shot">
+        <img src="{{ '/assets/img/screenshot-runs.png' | relative_url }}" alt="OzBridge sidebar showing active runs, history and schedules inside VS Code" loading="lazy" width="1200" height="750">
+        <figcaption><b>Runs &amp; Resources</b>Active runs, history, schedules, environments, MCP servers and secrets.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="{{ '/assets/img/screenshot-mcp.png' | relative_url }}" alt="Embedded MCP bridge status panel listing registered clients" loading="lazy" width="1200" height="750">
+        <figcaption><b>MCP bridge</b>Server status and the clients currently registered against it.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="{{ '/assets/img/screenshot-drive.png' | relative_url }}" alt="Warp Drive prompts, rules and skills previewed inside VS Code" loading="lazy" width="1200" height="750">
+        <figcaption><b>Warp Drive</b>Prompts, rules and skills, ready to insert into chat.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img src="{{ '/assets/img/screenshot-dashboard.png' | relative_url }}" alt="OzBridge dashboard with run analytics and failure triage" loading="lazy" width="1200" height="750">
+        <figcaption><b>Dashboard</b>Run analytics and failure triage in one panel.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="install">
+  <div class="wrap">
+    <span class="eyebrow">Get started</span>
+    <h2>Install</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <h3>VS Code · Cursor</h3>
+        <p>Microsoft Marketplace.</p>
+<pre><code>code --install-extension sena-labs.ozbridge</code></pre>
+      </div>
+      <div class="card">
+        <h3>VSCodium · Gitpod · Theia</h3>
+        <p>Open VSX registry.</p>
+<pre><code>codium --install-extension sena-labs.ozbridge</code></pre>
+      </div>
+      <div class="card amber">
+        <h3>No editor</h3>
+        <p>Standalone MCP server.</p>
+<pre><code>npx -y @sena-labs/oz-mcp-server</code></pre>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:26px">
+      <b>Requirements:</b> <a href="https://www.warp.dev/">Warp</a> installed with the <code>oz</code> CLI on
+      <code>PATH</code>, a Warp account (a free account is enough for local runs), and — for the VS Code paths —
+      VS Code 1.96 or newer with GitHub Copilot Chat. macOS, Linux and Windows are all supported.
+      New to all of this? The <a href="{{ '/QUICK-START.html' | relative_url }}">Quick Start guide</a> walks through
+      every step with screenshots.
+    </p>
+  </div>
+</section>
+
+<section class="section section-alt" id="faq">
+  <div class="wrap">
+    <span class="eyebrow">FAQ</span>
+    <h2>Frequently asked questions</h2>
+    <div class="faq">
+      <details>
+        <summary>Is OzBridge affiliated with Warp?</summary>
+        <div class="answer"><p>No. OzBridge is an independent project and is not affiliated with, endorsed by, or sponsored by Warp. It uses only Warp's documented public interfaces — the <code>oz</code> CLI, the Model Context Protocol and the <code>WARP_OUTPUT_FORMAT</code> environment variable.</p></div>
+      </details>
+      <details>
+        <summary>Does OzBridge work with Cursor, Claude Code and Codex?</summary>
+        <div class="answer"><p>Yes. All three are MCP clients: point them at the bridge endpoint and they get the same six Oz tools that Copilot sees. Copy-paste configuration for each is in the <a href="#connect">setup section</a>.</p></div>
+      </details>
+      <details>
+        <summary>Do I need VS Code?</summary>
+        <div class="answer"><p>No. The standalone <code>@sena-labs/oz-mcp-server</code> package runs through <code>npx</code> with no editor involved. VS Code is only required for the <code>@oz</code> chat participant, the sidebar and the Copilot Agent mode tools.</p></div>
+      </details>
+      <details>
+        <summary>What is the difference between a local run and a cloud run?</summary>
+        <div class="answer"><p>A local run spawns the <code>oz</code> CLI in your workspace, reads and edits your files, and consumes no Warp credits. A cloud run executes on Warp's infrastructure, consumes credits and keeps running after you close the editor. See the <a href="#local-vs-cloud">comparison</a>.</p></div>
+      </details>
+      <details>
+        <summary>Does OzBridge need a paid Warp plan?</summary>
+        <div class="answer"><p>A free Warp account is enough for local agent runs. Cloud runs consume Warp credits and may require a paid plan depending on usage.</p></div>
+      </details>
+      <details>
+        <summary>Is the MCP server exposed to my network?</summary>
+        <div class="answer"><p>Not by default. It binds to <code>127.0.0.1</code>, and the standalone server refuses to bind to a non-loopback address unless you configure a bearer token. When a token is set it is verified in constant time on every request.</p></div>
+      </details>
+      <details>
+        <summary>Which operating systems are supported?</summary>
+        <div class="answer"><p>macOS, Linux and Windows. On Windows the extension handles the <code>.cmd</code> wrapper around the Oz CLI automatically.</p></div>
+      </details>
+      <details>
+        <summary>What licence is OzBridge released under?</summary>
+        <div class="answer"><p>MIT. The source, issue tracker and security policy live on <a href="https://github.com/sena-labs/OzBridge">GitHub</a>.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="start">
+  <div class="wrap" style="text-align:center">
+    <span class="eyebrow">Ready when you are</span>
+    <h2 style="margin-inline:auto">Bring Oz into your editor</h2>
+    <p class="lede" style="margin-inline:auto">Install the extension, or wire the standalone server into the MCP client you already run.</p>
+    <div class="cta-row" style="justify-content:center">
+      <a class="btn btn-primary" href="https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge">Install for VS Code</a>
+      <a class="btn btn-ghost" href="https://open-vsx.org/extension/sena-labs/ozbridge">Get it on Open VSX</a>
+      <a class="btn btn-ghost" href="https://github.com/sena-labs/OzBridge">Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "OzBridge",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "macOS, Linux, Windows",
+  "softwareVersion": "1.4.0",
+  "url": "https://sena-labs.github.io/OzBridge/",
+  "downloadUrl": "https://marketplace.visualstudio.com/items?itemName=sena-labs.ozbridge",
+  "codeRepository": "https://github.com/sena-labs/OzBridge",
+  "license": "https://opensource.org/licenses/MIT",
+  "programmingLanguage": "TypeScript",
+  "author": { "@type": "Organization", "name": "Sena Labs" },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "description": "Open-source Model Context Protocol server and VS Code extension that runs Warp Oz cloud and local agents from GitHub Copilot Chat, Claude Code, Cursor and Codex CLI.",
+  "disambiguatingDescription": "OzBridge is an independent project and is not affiliated with, endorsed by, or sponsored by Warp."
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "Is OzBridge affiliated with Warp?", "acceptedAnswer": { "@type": "Answer", "text": "No. OzBridge is an independent project and is not affiliated with, endorsed by, or sponsored by Warp. It uses only Warp's documented public interfaces: the oz CLI, the Model Context Protocol and the WARP_OUTPUT_FORMAT environment variable." } },
+    { "@type": "Question", "name": "Does OzBridge work with Cursor, Claude Code and Codex?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. All three are MCP clients: point them at the bridge endpoint and they get the same six Oz tools that Copilot sees. Copy-paste configuration for each client is provided in the setup section." } },
+    { "@type": "Question", "name": "Do I need VS Code to use OzBridge?", "acceptedAnswer": { "@type": "Answer", "text": "No. The standalone @sena-labs/oz-mcp-server package runs through npx with no editor involved. VS Code is only required for the @oz chat participant, the sidebar and the Copilot Agent mode tools." } },
+    { "@type": "Question", "name": "What is the difference between a local run and a cloud run?", "acceptedAnswer": { "@type": "Answer", "text": "A local run spawns the oz CLI in your workspace, reads and edits your files, and consumes no Warp credits. A cloud run executes on Warp's infrastructure, consumes credits and keeps running after you close the editor." } },
+    { "@type": "Question", "name": "Does OzBridge need a paid Warp plan?", "acceptedAnswer": { "@type": "Answer", "text": "A free Warp account is enough for local agent runs. Cloud runs consume Warp credits and may require a paid plan depending on usage." } },
+    { "@type": "Question", "name": "Is the OzBridge MCP server exposed to my network?", "acceptedAnswer": { "@type": "Answer", "text": "Not by default. It binds to 127.0.0.1, and the standalone server refuses to bind to a non-loopback address unless a bearer token is configured. When a token is set it is verified in constant time on every request." } },
+    { "@type": "Question", "name": "Which operating systems does OzBridge support?", "acceptedAnswer": { "@type": "Answer", "text": "macOS, Linux and Windows. On Windows the extension handles the .cmd wrapper around the Oz CLI automatically." } },
+    { "@type": "Question", "name": "What licence is OzBridge released under?", "acceptedAnswer": { "@type": "Answer", "text": "MIT." } }
+  ]
+}
+</script>
