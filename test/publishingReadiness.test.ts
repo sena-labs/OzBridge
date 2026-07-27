@@ -22,7 +22,14 @@ describe('Publishing readiness (deliverable M)', () => {
     expect(PKG.repository.type).toBe('git');
     expect(PKG.repository.url).toMatch(/sena-labs\/OzBridge/);
     expect(PKG.bugs?.url).toMatch(/sena-labs\/OzBridge\/issues/);
-    expect(PKG.homepage).toMatch(/sena-labs\/OzBridge/);
+    // The Marketplace homepage points at the documentation site rather than
+    // the repository, so `sena-labs.github.io/OzBridge` is as valid here as
+    // `github.com/sena-labs/OzBridge`. Anchored so this stays an ownership
+    // check on the host and not a substring match some other host could
+    // satisfy (same reasoning as the README registry assertions below).
+    expect(PKG.homepage).toMatch(
+      /^https:\/\/(github\.com\/sena-labs\/OzBridge|sena-labs\.github\.io\/OzBridge)/,
+    );
   });
 
   it('ships the packaged icon referenced in package.json', () => {
