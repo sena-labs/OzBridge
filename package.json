@@ -779,7 +779,7 @@
     "copilot-chat-toolkit": "file:./packages/copilot-chat-toolkit"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.0",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^20.19.43",
     "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.10",
