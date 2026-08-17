@@ -41,7 +41,7 @@
     "README.md"
   ],
   "devDependencies": {
-    "esbuild": "^0.28.1",
+    "esbuild": "^0.28.2",
     "typescript": "^7.0.2",
     "@types/node": "^20.19.43"
   }
