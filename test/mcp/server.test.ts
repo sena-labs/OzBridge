@@ -809,3 +809,53 @@ describe('McpServer Streamable HTTP — -32601 status mapping', () => {
     expect(body.error.message).toContain('Unknown tool');
   });
 });
+
+describe('McpServer Streamable HTTP — Mcp-Name decoding is linear', () => {
+  let server: McpServer;
+  let port: number;
+
+  beforeEach(async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0 });
+    await server.start();
+    port = server.endpoint!.port;
+  });
+
+  afterEach(async () => {
+    await server?.stop();
+  });
+
+  const call = {
+    jsonrpc: '2.0', id: 1, method: 'tools/call',
+    params: { name: 'echo_tool', arguments: { prompt: 'x' } },
+  };
+
+  // The padding strip was rewritten off `/=+$/`, whose `=+`/anchor overlap
+  // backtracked in O(n²) on a header an unauthenticated caller controls.
+  // Quadratic blow-up is prevented by construction, so this pins the accepted
+  // and rejected shapes rather than asserting a wall-clock bound (which would
+  // be flaky in CI and would not have failed on the old code anyway).
+  it('rejects a padding-heavy sentinel instead of chewing on it', async () => {
+    const pathological = `=?base64?${'='.repeat(8000)}x?=`;
+    const { status, body } = await rpc(port, call, { 'Mcp-Name': pathological });
+    expect(status).toBe(400);
+    expect(body.error.code).toBe(-32020);
+  });
+
+  it('still decodes a sentinel that carries real = padding', async () => {
+    // "echo_tool" is 9 bytes, a clean multiple of 3, so its base64 has no
+    // padding at all. A 4-byte name does, so use one to exercise the strip:
+    // the header then matches the body, validation passes, and the request
+    // reaches dispatch — which reports the tool as unknown with HTTP 200.
+    // A decoding failure would instead surface as 400 + -32020.
+    const encoded = Buffer.from('nope', 'utf8').toString('base64');
+    expect(encoded.endsWith('=')).toBe(true);
+    const { status, body } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'nope', arguments: {} } },
+      { 'Mcp-Method': 'tools/call', 'Mcp-Name': `=?base64?${encoded}?=` },
+    );
+    expect(status).toBe(200);
+    expect(body.error.code).toBe(-32601);
+    expect(body.error.message).toContain('Unknown tool');
+  });
+});
