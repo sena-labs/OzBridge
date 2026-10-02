@@ -478,22 +478,35 @@ export class McpServer {
       return;
     }
 
-    const version = resolveRequestVersion(req, body);
-    if (!SUPPORTED_PROTOCOL_VERSIONS.includes(version)) {
+    const requested = resolveRequestVersion(req, body);
+    const isSupported = SUPPORTED_PROTOCOL_VERSIONS.includes(requested);
+    // `server/discover` is the version-negotiation probe, so it has to answer
+    // whatever version the caller claims. Rejecting it here would leave it
+    // reachable only to clients that omit or misstate their version — the
+    // exact opposite of why it exists.
+    if (!isSupported && body.method !== 'server/discover') {
       // Spec-mandated shape: 400 plus the list the client should pick from,
       // so a newer client can negotiate down rather than guess.
       sendJson(res, 400, jsonRpcError(
         id,
         ERR_UNSUPPORTED_PROTOCOL_VERSION,
-        `Unsupported protocol version: ${version}`,
-        { requested: version, supported: [...SUPPORTED_PROTOCOL_VERSIONS] },
+        `Unsupported protocol version: ${requested}`,
+        { requested, supported: [...SUPPORTED_PROTOCOL_VERSIONS] },
       ));
       return;
     }
+    // Never echo back a version we do not speak: a `server/discover` caller on
+    // an unsupported version is told our preferred one, and the result's
+    // `supportedVersions` carries the full list.
+    const version = isSupported ? requested : SUPPORTED_PROTOCOL_VERSIONS[0]!;
 
+    // JSON-RPC calls a request with no `id` a notification, and the transport
+    // requires a bare 202 for one — even when the method is implemented and
+    // `dispatch()` produced a result, which must not be sent back
+    // unsolicited. `dispatch()` still runs, so the notification is processed.
+    const isNotification = body.id === undefined;
     const response = await this.dispatch(body);
-    if (!response) {
-      // A notification is acknowledged with 202 and an empty body.
+    if (isNotification || !response) {
       res.writeHead(202, { 'MCP-Protocol-Version': version }).end();
       return;
     }
@@ -789,15 +802,32 @@ function extractMetaProtocolVersion(params: unknown): string | undefined {
  * single JSON object is the cheaper fit for this server's
  * one-request-one-response shape, so JSON wins whenever the client accepts
  * it — including the wildcard and missing-header cases.
+ *
+ * Per RFC 9110 a `q=0` parameter marks a media type *not* acceptable, so an
+ * entry carrying one is a refusal and never counts as an offer.
  */
 function prefersEventStream(req: http.IncomingMessage): boolean {
   const accept = singleHeader(req, 'accept');
   if (!accept) { return false; }
-  const types = accept.split(',').map((t) => t.split(';')[0]!.trim().toLowerCase());
-  if (types.some((t) => t === 'application/json' || t === 'application/*' || t === '*/*')) {
-    return false;
+  let jsonOk = false;
+  let sseOk = false;
+  for (const entry of accept.split(',')) {
+    const parts = entry.split(';');
+    const type = parts[0]!.trim().toLowerCase();
+    if (parts.slice(1).some(isZeroQuality)) { continue; }
+    if (type === 'application/json' || type === 'application/*' || type === '*/*') { jsonOk = true; }
+    if (type === 'text/event-stream' || type === 'text/*' || type === '*/*') { sseOk = true; }
   }
-  return types.includes('text/event-stream');
+  return sseOk && !jsonOk;
+}
+
+/** `true` when an `Accept` media-type parameter is `q=0` (not acceptable). */
+function isZeroQuality(param: string): boolean {
+  const eq = param.indexOf('=');
+  if (eq === -1) { return false; }
+  if (param.slice(0, eq).trim().toLowerCase() !== 'q') { return false; }
+  const q = Number(param.slice(eq + 1).trim());
+  return Number.isFinite(q) && q <= 0;
 }
 
 function sendJson(res: http.ServerResponse, status: number, payload: unknown): void {
