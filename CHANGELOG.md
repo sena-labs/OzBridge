@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Streamable HTTP transport (`POST /mcp`).** The MCP specification has
+  called HTTP+SSE (`GET /sse` + `POST /messages?sessionId=`) a deprecated
+  transport since `2025-03-26` and formally reclassified it as Deprecated in
+  `2026-07-28`; new clients increasingly ship Streamable HTTP only. `/mcp`
+  takes one JSON-RPC request per POST and answers it in the same HTTP
+  response — no session to register first, no SSE stream to correlate
+  against. It reuses the existing transport-agnostic `dispatch()`, so the two
+  transports cannot drift apart. Verified end to end against the official MCP
+  SDK's `StreamableHTTPClientTransport`, which connects, negotiates
+  `2025-03-26`, lists tools and calls one with no SSE fallback configured.
+
+  Because `dispatch()` keeps no per-connection state, a client may POST
+  `tools/list` or `tools/call` straight away without an `initialize`
+  handshake, which is what `2026-07-28`'s stateless core expects.
+
+  The reply is `application/json` whenever the client accepts it, and an
+  SSE-framed body only when the client asked for `text/event-stream` without
+  also offering JSON. A notification is acknowledged with `202 Accepted` and
+  an empty body; an unimplemented RPC method returns HTTP `404` carrying a
+  JSON-RPC `-32601`, which is how the spec lets a client tell "modern
+  endpoint, no such method" from "legacy server with no `/mcp` at all". A
+  `-32601` raised *inside* an implemented method — `tools/call` for an
+  unregistered tool — stays a `200`.
+
+  `GET /sse` and `POST /messages` are untouched, and their end-to-end tests
+  pass unchanged.
+- **Request-metadata header validation on `/mcp`.** `MCP-Protocol-Version`,
+  `Mcp-Method` and `Mcp-Name` are the headers MCP mirrors from the JSON-RPC
+  body so intermediaries can route without parsing it. Any that is present is
+  now validated against the body and a disagreement is rejected with `400` +
+  `-32020` (`HeaderMismatch`), including decoding the `=?base64?…?=` sentinel
+  used for values that are not plain ASCII. Omitting them is accepted: they
+  are only REQUIRED of `2026-07-28` clients and this endpoint also serves the
+  older revisions that never sent them.
+- **`server/discover`.** The RPC `2026-07-28` uses in place of the
+  `initialize` handshake, answered on every transport so a newer client can
+  probe for compatibility and negotiate down instead of failing blind. It
+  reports `supportedVersions`, `capabilities` and `serverInfo`, and the
+  version list names only the revisions `dispatch()` really honours — it never
+  claims conformance OzBridge does not have. Requesting a revision the server
+  does not implement now returns `400` + `-32022`
+  (`UnsupportedProtocolVersion`) with the list to choose from, instead of
+  silently answering as an older version.
+- **`Origin` validation on `/mcp`** (`allowedOrigins` option). The spec
+  requires a Streamable HTTP server to check `Origin`, because a web page the
+  user visits cannot read a loopback response but *can* fire a cross-origin
+  POST at one. The endpoint accepts a missing `Origin` (native MCP clients are
+  not browsers and send none) plus any loopback origin, and answers everything
+  else with `403`.
+- `server.json` advertises the `streamable-http` transport alongside `sse`, so
+  registry clients can pick the modern endpoint. Validated against the
+  `2025-12-11` registry schema the file declares.
+
+### Changed
+- The release version-consistency gate now collapses the version of **every**
+  `server.json` `packages[]` entry instead of reading `packages[0]` alone, so
+  the second (streamable-http) entry cannot silently drift out of step with
+  the extension manifest.
+
 ### Fixed
 - **Idempotency guard for the MCP Registry job.** The registry answers a
   re-publish with `cannot publish duplicate version`, so the job failed on any
