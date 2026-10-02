@@ -739,11 +739,27 @@ function decodeHeaderValue(value: string): string | undefined {
   const decoded = Buffer.from(encoded, 'base64');
   // Node's base64 decoder silently drops junk, so round-trip to reject it.
   // Padding is normalized away before comparing.
-  const strip = (v: string): string => v.replace(/=+$/, '');
-  if (strip(decoded.toString('base64')) !== strip(encoded)) {
+  if (stripBase64Padding(decoded.toString('base64')) !== stripBase64Padding(encoded)) {
     return undefined;
   }
   return decoded.toString('utf8');
+}
+
+/**
+ * Drops trailing `=` padding. Written as a loop rather than
+ * `value.replace(/=+$/, '')` on purpose: `=+$` lets `=+` and the anchor
+ * overlap, so a value of N `=` followed by one non-`=` makes the engine retry
+ * and backtrack from every start position — O(N²) (CodeQL
+ * js/polynomial-redos). This runs on the `Mcp-Name` header of an
+ * as-yet-unauthenticated caller, and Node admits headers up to ~16 KB, so the
+ * quadratic case is reachable. Scanning backwards is linear and accepts
+ * exactly the same inputs.
+ */
+function stripBase64Padding(value: string): string {
+  const EQUALS = 0x3d;
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === EQUALS) { end--; }
+  return value.slice(0, end);
 }
 
 /**
