@@ -49,11 +49,14 @@ jobs:
           EXT=$(node -p "require('./package.json').version")
           SRV=$(node -p "require('./packages/oz-mcp-server/package.json').version")
           MANIFEST=$(node -p "require('./server.json').version")
-          PKG_VERSION=$(node -p "require('./server.json').packages[0].version")
+          # Every packages[] entry carries its own version (one per advertised
+          # transport), so collapse them: a single shared value passes the
+          # comparison below, any skew between entries fails it.
+          PKG_VERSION=$(node -p "const v=[...new Set(require('./server.json').packages.map(p=>p.version))]; v.length===1?v[0]:'skew('+v.join(',')+')'")
           MCP_NAME=$(node -p "require('./packages/oz-mcp-server/package.json').mcpName")
           SRV_NAME=$(node -p "require('./server.json').name")
 
-          echo "extension=$EXT mcp-server=$SRV server.json=$MANIFEST server.json/packages[0]=$PKG_VERSION"
+          echo "extension=$EXT mcp-server=$SRV server.json=$MANIFEST server.json/packages[*]=$PKG_VERSION"
           if [ "$EXT" != "$SRV" ] || [ "$EXT" != "$MANIFEST" ] || [ "$EXT" != "$PKG_VERSION" ]; then
             echo "::error::Version skew — align package.json, packages/oz-mcp-server/package.json and server.json"
             exit 1
