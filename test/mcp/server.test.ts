@@ -859,3 +859,127 @@ describe('McpServer Streamable HTTP — Mcp-Name decoding is linear', () => {
     expect(body.error.message).toContain('Unknown tool');
   });
 });
+
+describe('McpServer Streamable HTTP — review follow-ups', () => {
+  let server: McpServer;
+  let port: number;
+
+  beforeEach(async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0 });
+    await server.start();
+    port = server.endpoint!.port;
+  });
+
+  afterEach(async () => {
+    await server?.stop();
+  });
+
+  // server/discover is the version-negotiation probe. Rejecting it on an
+  // unsupported version would leave it reachable only to clients that omit or
+  // misstate their version — the opposite of why it exists.
+  it('answers server/discover even when the caller claims an unsupported version', async () => {
+    const { status, body, headers } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: 1, method: 'server/discover', params: {} },
+      { 'MCP-Protocol-Version': '2026-07-28' },
+    );
+    expect(status).toBe(200);
+    expect(body.result.supportedVersions).toEqual(['2025-03-26', '2024-11-05']);
+    // Never echo a version we do not speak.
+    expect(headers['mcp-protocol-version']).toBe('2025-03-26');
+  });
+
+  it('answers server/discover when the version arrives via params._meta', async () => {
+    const { status, body } = await rpc(port, {
+      jsonrpc: '2.0', id: 2, method: 'server/discover',
+      params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } },
+    });
+    expect(status).toBe(200);
+    expect(body.result.supportedVersions).toContain('2025-03-26');
+  });
+
+  it('still rejects an unsupported version on every other method', async () => {
+    const { status, body } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: 3, method: 'tools/list' },
+      { 'MCP-Protocol-Version': '2026-07-28' },
+    );
+    expect(status).toBe(400);
+    expect(body.error.code).toBe(-32022);
+  });
+
+  // A request with no `id` is a notification: it must draw a bare 202, even
+  // when the method is implemented and dispatch() produced a result.
+  it('acknowledges a notification on an implemented method with a bare 202', async () => {
+    for (const method of ['ping', 'tools/list']) {
+      const res = await postMcp(port, JSON.stringify({ jsonrpc: '2.0', method }));
+      expect(res.status, method).toBe(202);
+      expect(res.raw, method).toBe('');
+    }
+  });
+
+  it('still answers the same method normally when an id is present', async () => {
+    const { status, body } = await rpc(port, { jsonrpc: '2.0', id: 4, method: 'ping' });
+    expect(status).toBe(200);
+    expect(body.result).toEqual({});
+  });
+
+  it('runs a notification\'s side effect even though nothing is returned', async () => {
+    let called = 0;
+    const registry = makeRegistry();
+    registry.set('counter', {
+      descriptor: { name: 'counter', description: 'counts', inputSchema: { type: 'object' } },
+      invoke: async () => { called += 1; return { content: [{ type: 'text', text: 'ok' }] }; },
+    });
+    await server.stop();
+    server = new McpServer(registry, undefined, { port: 0 });
+    await server.start();
+    port = server.endpoint!.port;
+
+    const res = await postMcp(port, JSON.stringify({
+      jsonrpc: '2.0', method: 'tools/call', params: { name: 'counter', arguments: {} },
+    }));
+    expect(res.status).toBe(202);
+    expect(res.raw).toBe('');
+    expect(called).toBe(1);
+  });
+
+  // RFC 9110: `q=0` marks a media type as NOT acceptable.
+  it('treats application/json;q=0 as a refusal and frames the answer as SSE', async () => {
+    const res = await postMcp(
+      port,
+      JSON.stringify({ jsonrpc: '2.0', id: 5, method: 'tools/list' }),
+      { Accept: 'application/json;q=0, text/event-stream' },
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('text/event-stream');
+  });
+
+  it('treats text/event-stream;q=0 as a refusal and answers in JSON', async () => {
+    const { status, headers } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: 6, method: 'tools/list' },
+      { Accept: 'text/event-stream;q=0, application/json' },
+    );
+    expect(status).toBe(200);
+    expect(headers['content-type']).toContain('application/json');
+  });
+
+  it('keeps a non-zero q on text/event-stream as a genuine offer', async () => {
+    const res = await postMcp(
+      port,
+      JSON.stringify({ jsonrpc: '2.0', id: 7, method: 'tools/list' }),
+      { Accept: 'text/event-stream;q=0.9' },
+    );
+    expect(res.headers['content-type']).toContain('text/event-stream');
+  });
+
+  it('honours a text/* offer as event-stream when JSON is not on the list', async () => {
+    const res = await postMcp(
+      port,
+      JSON.stringify({ jsonrpc: '2.0', id: 8, method: 'tools/list' }),
+      { Accept: 'text/*' },
+    );
+    expect(res.headers['content-type']).toContain('text/event-stream');
+  });
+});
