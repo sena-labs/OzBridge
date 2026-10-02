@@ -15,6 +15,16 @@
       "version": "1.4.0",
       "runtimeHint": "npx",
       "transport": {
+        "type": "streamable-http",
+        "url": "http://127.0.0.1:3847/mcp"
+      }
+    },
+    {
+      "registryType": "npm",
+      "identifier": "@sena-labs/oz-mcp-server",
+      "version": "1.4.0",
+      "runtimeHint": "npx",
+      "transport": {
         "type": "sse",
         "url": "http://127.0.0.1:3847/sse"
       }
