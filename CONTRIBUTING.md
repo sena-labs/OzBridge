@@ -193,7 +193,8 @@ ends up in `CHANGELOG`-adjacent tooling and GitHub release notes.
   - Test path mirrors source path: `src/commands/runCommand.ts` ↔
     `test/commands/runCommand.test.ts`.
   - Use `createMock*()` helpers from `test/helpers.ts`.
-  - Italian language for test descriptions (`dovrebbe …`).
+  - English for test descriptions; older Italian `dovrebbe …` cases are
+    being converted, so do not add new ones.
   - One top-level `describe` per module/function.
 - **Run the suite the same way CI does:** `npm test -- --run`. Watch
   mode is fine for authoring, but never rely on it for validation.
