@@ -746,7 +746,8 @@ interface JsonRpcRequest {
 
 export interface JsonRpcResponse {
   jsonrpc: '2.0';
-  id: number | string | null;
+  /** Absent only on a `2026-07-28` error for a request whose id is unusable. */
+  id?: number | string | null;
   result?: unknown;
   error?: { code: number; message: string; data?: unknown };
 }
@@ -761,6 +762,11 @@ function isJsonRpcRequest(value: unknown): value is JsonRpcRequest {
   if (typeof value !== 'object' || value === null) { return false; }
   const obj = value as Record<string, unknown>;
   return obj.jsonrpc === '2.0' && typeof obj.method === 'string';
+}
+
+/** A `2026-07-28` request id: a string or an integer, never `null` (basic §Requests). */
+function isRequestId(value: unknown): value is string | number {
+  return typeof value === 'string' || Number.isInteger(value);
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -802,6 +808,13 @@ function checkRequestEnvelope(
       { requested: version, supported: [...supported] });
   }
   if (version !== MODERN_PROTOCOL_VERSION || message.id === undefined) { return null; }
+  // basic §Requests: the id MUST be a string or an integer and, unlike base
+  // JSON-RPC, MUST NOT be null. Such a message is neither a request nor a
+  // notification, so it is an Invalid Request; its id cannot be echoed, and
+  // §Error Responses lets the error omit it.
+  if (!isRequestId(message.id)) {
+    return { jsonrpc: '2.0', error: { code: ERR_INVALID_REQUEST, message: 'Invalid Request: id must be a string or an integer' } };
+  }
   const meta = isPlainObject(message.params) ? message.params._meta : undefined;
   for (const key of [META_PROTOCOL_VERSION, META_CLIENT_CAPABILITIES]) {
     const value = isPlainObject(meta) ? meta[key] : undefined;

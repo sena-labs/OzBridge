@@ -81,7 +81,9 @@ or `Mcp-Method` (on every request) or `Mcp-Name` (on `tools/call`) is a `400`
 + `-32020`, and so is a header-declared `2026-07-28` whose body carries no
 `_meta` version. Its body must also carry the required `_meta` fields
 `io.modelcontextprotocol/protocolVersion` and
-`io.modelcontextprotocol/clientCapabilities`, else `400` + `-32602`.
+`io.modelcontextprotocol/clientCapabilities`, else `400` + `-32602`, and an
+`id` that is a string or an integer: `null` (allowed by base JSON-RPC but
+not by MCP), a boolean, an object or a fraction is `400` + `-32600`.
 Requests on the older revisions never sent any of this, so for them the
 headers stay optional; a request with no version anywhere is read as
 `2025-03-26`.

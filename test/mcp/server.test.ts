@@ -1120,6 +1120,31 @@ describe('McpServer.dispatch — 2026-07-28 requests', () => {
     }
   });
 
+  it('rejects a request id that is null, boolean, an object or a fraction as -32600 without an id', async () => {
+    for (const id of [null, true, {}, [], 1.5]) {
+      for (const method of ['tools/list', 'subscriptions/listen']) {
+        const resp = await server.dispatch({
+          jsonrpc: '2.0', id, method, params: { notifications: {}, _meta: modernMeta() },
+        } as any);
+        expect(resp?.error?.code, `${method} id=${JSON.stringify(id)}`).toBe(-32600);
+        expect(resp && 'id' in resp, `${method} id=${JSON.stringify(id)}`).toBe(false);
+        expect(resp?.result).toBeUndefined();
+      }
+    }
+  });
+
+  it('accepts a string request id and echoes it', async () => {
+    const resp = await server.dispatch({ jsonrpc: '2.0', id: 'req-1', method: 'tools/list', params: { _meta: modernMeta() } });
+    expect(resp?.id).toBe('req-1');
+    expect((resp?.result as any).resultType).toBe('complete');
+  });
+
+  it('keeps the older revisions lenient about a null id, as base JSON-RPC is', async () => {
+    const resp = await server.dispatch({ jsonrpc: '2.0', id: null, method: 'tools/list' });
+    expect(resp?.id).toBeNull();
+    expect(resp?.result).toEqual({ tools: [makeRegistry().get('echo_tool')!.descriptor] });
+  });
+
   it('lists every implemented revision on server/discover, with caching hints', async () => {
     const result = (await modern(6, 'server/discover'))?.result as any;
     expect(result.resultType).toBe('complete');
@@ -1240,6 +1265,17 @@ describe('McpServer Streamable HTTP — 2026-07-28 requests', () => {
       expect(status, drop).toBe(400);
       expect(body.error.code, drop).toBe(-32020);
     }
+  });
+
+  it('rejects a null request id with 400 + -32600 and no id in the error', async () => {
+    const { status, body } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: null, method: 'tools/list', params: { _meta: modernMeta() } },
+      modernHeaders('tools/list'),
+    );
+    expect(status).toBe(400);
+    expect(body.error.code).toBe(-32600);
+    expect('id' in body).toBe(false);
   });
 
   it('rejects a 2026-07-28 header whose body carries no version as -32020', async () => {

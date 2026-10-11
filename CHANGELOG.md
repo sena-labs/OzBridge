@@ -67,7 +67,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `resultType: "complete"` and `_meta["io.modelcontextprotocol/serverInfo"]`;
   `tools/list` is a `CacheableResult` (`ttlMs`, `cacheScope: "public"`);
   `initialize` and `ping` are gone (`-32601`, HTTP `404`); an unknown tool is
-  `-32602`; a request missing the required `_meta` fields
+  `-32602`; a request id that is not a string or an integer (`null`
+  included) is `-32600`; a request missing the required `_meta` fields
   (`protocolVersion`, `clientCapabilities`) is `-32602`; over HTTP a missing
   `MCP-Protocol-Version`, `Mcp-Method` or (on `tools/call`) `Mcp-Name` header
   is `400` + `-32020`; an unrecognised per-request `logLevel` is `-32602`.
@@ -108,7 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `2025-03-26` / `2024-11-05`, and its `server/discover` lists only those.
   Existing SSE clients never send `2026-07-28` and are unaffected.
 - **Bundle budget raised from 165 KB to 170 KB.** `dist/extension.js` is
-  167.0 KB with `2026-07-28` support (164.5 KB before); 170 KB keeps ~3 KB of
+  167.2 KB with `2026-07-28` support (164.5 KB before); 170 KB keeps ~3 KB of
   headroom. The required CI check keeps its name,
   `Bundle budget (dist/extension.js)`, and `CONTRIBUTING.md`, which still
   quoted a stale 145 KB, now states the enforced value.
