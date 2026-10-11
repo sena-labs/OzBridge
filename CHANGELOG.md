@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Release jobs run on Node 22.** The Marketplace and Open VSX jobs fetch the
+  latest `@vscode/vsce` and `ovsx` through `npx`, and both now require Node 22
+  (vsce 4.0.0, ovsx 1.2.0), while every `publish.yml` job still ran on Node 20
+  (end-of-life). The next tag would have been the first release on that
+  combination. All jobs now use Node 22, like CI, CodeQL and the npm job.
 - **Idempotency guard for the MCP Registry job.** The registry answers a
   re-publish with `cannot publish duplicate version`, so the job failed on any
   re-run — which is precisely how a partially completed release is finished.

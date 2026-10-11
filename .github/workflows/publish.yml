@@ -29,10 +29,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # Node 22 in every job: @vscode/vsce >= 4 and ovsx >= 1.2 (fetched by npx below)
+      # require it, and Node 20 is end-of-life.
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
@@ -107,7 +109,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Publish to Marketplace
         env:
@@ -152,7 +154,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Publish to Open VSX
         env:
@@ -251,7 +253,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '22'
 
       # The registry proves npm ownership by fetching the published package and
       # matching its `mcpName` against the server name. A local-only rename —
