@@ -497,16 +497,58 @@ async function rpc(
   return { status: res.status, headers: res.headers, body: res.raw ? JSON.parse(res.raw) : undefined };
 }
 
+/** The per-request `_meta` a `2026-07-28` request MUST carry (basic §_meta). */
+function modernMeta(extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+    'io.modelcontextprotocol/clientInfo': { name: 'vitest', version: '1.0.0' },
+    'io.modelcontextprotocol/clientCapabilities': {},
+    ...extra,
+  };
+}
+
+/** The standard request headers a `2026-07-28` POST MUST carry. */
+function modernHeaders(method: string, name?: string): Record<string, string> {
+  return {
+    Accept: 'application/json, text/event-stream',
+    'MCP-Protocol-Version': '2026-07-28',
+    'Mcp-Method': method,
+    ...(name !== undefined ? { 'Mcp-Name': name } : {}),
+  };
+}
+
+/** A well-formed `2026-07-28` request over `/mcp`. */
+function modernRpc(
+  port: number,
+  id: number,
+  method: string,
+  params: Record<string, unknown> = {},
+  headers: Record<string, string> = {},
+) {
+  const name = typeof params.name === 'string' ? params.name : undefined;
+  return rpc(
+    port,
+    { jsonrpc: '2.0', id, method, params: { ...params, _meta: modernMeta() } },
+    { ...modernHeaders(method, name), ...headers },
+  );
+}
+
+/** Splits an SSE body into the JSON payloads of its `data:` lines. */
+function sseMessages(raw: string): any[] {
+  return raw
+    .split(/\r?\n\r?\n/)
+    .map((frame) => frame.split(/\r?\n/).find((line) => line.startsWith('data: ')))
+    .filter((line): line is string => line !== undefined)
+    .map((line) => JSON.parse(line.slice('data: '.length)));
+}
+
 describe('McpServer.dispatch — server/discover', () => {
   it('advertises only the protocol versions the server really implements', async () => {
     const server = new McpServer(makeRegistry());
     const resp = await server.dispatch({ jsonrpc: '2.0', id: 1, method: 'server/discover', params: {} });
     const result = resp?.result as any;
     expect(resp?.error).toBeUndefined();
-    expect(result.supportedVersions).toEqual(['2025-03-26', '2024-11-05']);
-    // 2026-07-28 is deliberately absent: the server does not implement that
-    // revision's MUSTs, so a probing client must be able to see that.
-    expect(result.supportedVersions).not.toContain('2026-07-28');
+    expect(result.supportedVersions).toEqual(['2026-07-28', '2025-03-26', '2024-11-05']);
     expect(result.capabilities.tools).toBeDefined();
     expect(result.resultType).toBe('complete');
     expect(typeof result.ttlMs).toBe('number');
@@ -652,18 +694,18 @@ describe('McpServer Streamable HTTP — protocol version negotiation', () => {
     const { status, body } = await rpc(
       port,
       { jsonrpc: '2.0', id: 2, method: 'tools/list' },
-      { 'MCP-Protocol-Version': '2026-07-28' },
+      { 'MCP-Protocol-Version': '2099-01-01' },
     );
     expect(status).toBe(400);
     expect(body.error.code).toBe(-32022);
-    expect(body.error.data.requested).toBe('2026-07-28');
-    expect(body.error.data.supported).toEqual(['2025-03-26', '2024-11-05']);
+    expect(body.error.data.requested).toBe('2099-01-01');
+    expect(body.error.data.supported).toEqual(['2026-07-28', '2025-03-26', '2024-11-05']);
   });
 
   it('reads the version out of params._meta when no header is sent', async () => {
     const { status, body } = await rpc(port, {
       jsonrpc: '2.0', id: 3, method: 'tools/list',
-      params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } },
+      params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2099-01-01' } },
     });
     expect(status).toBe(400);
     expect(body.error.code).toBe(-32022);
@@ -874,35 +916,37 @@ describe('McpServer Streamable HTTP — review follow-ups', () => {
     await server?.stop();
   });
 
-  // server/discover is the version-negotiation probe. Rejecting it on an
-  // unsupported version would leave it reachable only to clients that omit or
-  // misstate their version — the opposite of why it exists.
-  it('answers server/discover even when the caller claims an unsupported version', async () => {
-    const { status, body, headers } = await rpc(
+  // server/discover is the version-negotiation probe. On a revision the
+  // server does not implement, 2026-07-28 (basic/versioning) requires the
+  // UnsupportedProtocolVersionError — whose `supported` list is exactly what
+  // the probe is after, and which a dual-era client reads as "modern server".
+  it('answers server/discover on an unsupported version with -32022 and the supported list', async () => {
+    const { status, body } = await rpc(
       port,
       { jsonrpc: '2.0', id: 1, method: 'server/discover', params: {} },
-      { 'MCP-Protocol-Version': '2026-07-28' },
+      { 'MCP-Protocol-Version': '2099-01-01' },
     );
-    expect(status).toBe(200);
-    expect(body.result.supportedVersions).toEqual(['2025-03-26', '2024-11-05']);
-    // Never echo a version we do not speak.
-    expect(headers['mcp-protocol-version']).toBe('2025-03-26');
+    expect(status).toBe(400);
+    expect(body.error.code).toBe(-32022);
+    expect(body.error.data.supported).toEqual(['2026-07-28', '2025-03-26', '2024-11-05']);
   });
 
   it('answers server/discover when the version arrives via params._meta', async () => {
-    const { status, body } = await rpc(port, {
-      jsonrpc: '2.0', id: 2, method: 'server/discover',
-      params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } },
-    });
+    const { status, body, headers } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: 2, method: 'server/discover', params: { _meta: modernMeta() } },
+      modernHeaders('server/discover'),
+    );
     expect(status).toBe(200);
     expect(body.result.supportedVersions).toContain('2025-03-26');
+    expect(headers['mcp-protocol-version']).toBe('2026-07-28');
   });
 
   it('still rejects an unsupported version on every other method', async () => {
     const { status, body } = await rpc(
       port,
       { jsonrpc: '2.0', id: 3, method: 'tools/list' },
-      { 'MCP-Protocol-Version': '2026-07-28' },
+      { 'MCP-Protocol-Version': '2099-01-01' },
     );
     expect(status).toBe(400);
     expect(body.error.code).toBe(-32022);
@@ -981,5 +1025,501 @@ describe('McpServer Streamable HTTP — review follow-ups', () => {
       { Accept: 'text/*' },
     );
     expect(res.headers['content-type']).toContain('text/event-stream');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// MCP 2026-07-28 — version-gated conformance
+// ---------------------------------------------------------------------------
+
+describe('McpServer.dispatch — older revisions stay byte-identical', () => {
+  let server: McpServer;
+
+  beforeEach(() => {
+    server = new McpServer(makeRegistry());
+  });
+
+  it('returns tools/list without resultType or caching hints when no 2026-07-28 version is declared', async () => {
+    const resp = await server.dispatch({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+    expect(resp?.result).toEqual({ tools: [makeRegistry().get('echo_tool')!.descriptor] });
+  });
+
+  it('returns the tool result unchanged on tools/call for an older revision', async () => {
+    const resp = await server.dispatch({
+      jsonrpc: '2.0', id: 2, method: 'tools/call',
+      params: { name: 'echo_tool', arguments: { prompt: 'hi' } },
+    });
+    expect(resp?.result).toEqual({ content: [{ type: 'text', text: 'echo:hi' }] });
+  });
+
+  it('keeps answering a 2025-03-26 request declared in _meta exactly like a bare one', async () => {
+    const resp = await server.dispatch({
+      jsonrpc: '2.0', id: 3, method: 'ping',
+      params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2025-03-26' } },
+    });
+    expect(resp?.result).toEqual({});
+  });
+
+  it('never negotiates 2026-07-28 through initialize — that revision has no handshake', async () => {
+    const resp = await server.dispatch({
+      jsonrpc: '2.0', id: 4, method: 'initialize', params: { protocolVersion: '2026-07-28' },
+    });
+    expect((resp?.result as any).protocolVersion).toBe('2025-03-26');
+  });
+
+  it('still treats subscriptions/listen as an unknown method on an older revision', async () => {
+    const resp = await server.dispatch({ jsonrpc: '2.0', id: 5, method: 'subscriptions/listen', params: {} });
+    expect(resp?.error?.code).toBe(-32601);
+  });
+});
+
+describe('McpServer.dispatch — 2026-07-28 requests', () => {
+  let server: McpServer;
+
+  beforeEach(() => {
+    server = new McpServer(makeRegistry());
+  });
+
+  const modern = (id: number, method: string, params: Record<string, unknown> = {}, meta: Record<string, unknown> = {}) =>
+    server.dispatch({ jsonrpc: '2.0', id, method, params: { ...params, _meta: modernMeta(meta) } });
+
+  it('marks tools/list complete and attaches ttlMs, cacheScope and serverInfo', async () => {
+    const result = (await modern(1, 'tools/list'))?.result as any;
+    expect(result.resultType).toBe('complete');
+    expect(result.tools.map((t: any) => t.name)).toEqual(['echo_tool']);
+    expect(Number.isInteger(result.ttlMs) && result.ttlMs >= 0).toBe(true);
+    expect(result.cacheScope).toBe('public');
+    expect(result._meta['io.modelcontextprotocol/serverInfo'].name).toBe('oz-bridge');
+  });
+
+  it('marks tools/call complete without caching hints (CallToolResult is not cacheable)', async () => {
+    const result = (await modern(2, 'tools/call', { name: 'echo_tool', arguments: { prompt: 'hi' } }))?.result as any;
+    expect(result.resultType).toBe('complete');
+    expect(result.content[0].text).toBe('echo:hi');
+    expect(result.ttlMs).toBeUndefined();
+    expect(result._meta['io.modelcontextprotocol/serverInfo'].name).toBe('oz-bridge');
+  });
+
+  it('keeps a tool-level failure a complete result with isError, not a protocol error', async () => {
+    const resp = await modern(3, 'tools/call', { name: 'echo_tool', arguments: {} });
+    expect(resp?.error).toBeUndefined();
+    expect((resp?.result as any).resultType).toBe('complete');
+    expect((resp?.result as any).isError).toBe(true);
+  });
+
+  it('reports an unknown tool as -32602 Invalid params, as server/tools specifies', async () => {
+    const resp = await modern(4, 'tools/call', { name: 'does_not_exist', arguments: {} });
+    expect(resp?.error?.code).toBe(-32602);
+    expect(resp?.error?.message).toContain('Unknown tool');
+  });
+
+  it('treats ping, initialize and logging/setLevel as removed methods', async () => {
+    for (const method of ['ping', 'initialize', 'logging/setLevel']) {
+      const resp = await modern(5, method);
+      expect(resp?.error?.code, method).toBe(-32601);
+    }
+  });
+
+  it('rejects a request id that is null, boolean, an object or a fraction as -32600 without an id', async () => {
+    for (const id of [null, true, {}, [], 1.5]) {
+      for (const method of ['tools/list', 'subscriptions/listen']) {
+        const resp = await server.dispatch({
+          jsonrpc: '2.0', id, method, params: { notifications: {}, _meta: modernMeta() },
+        } as any);
+        expect(resp?.error?.code, `${method} id=${JSON.stringify(id)}`).toBe(-32600);
+        expect(resp && 'id' in resp, `${method} id=${JSON.stringify(id)}`).toBe(false);
+        expect(resp?.result).toBeUndefined();
+      }
+    }
+  });
+
+  it('accepts a string request id and echoes it', async () => {
+    const resp = await server.dispatch({ jsonrpc: '2.0', id: 'req-1', method: 'tools/list', params: { _meta: modernMeta() } });
+    expect(resp?.id).toBe('req-1');
+    expect((resp?.result as any).resultType).toBe('complete');
+  });
+
+  it('keeps the older revisions lenient about a null id, as base JSON-RPC is', async () => {
+    const resp = await server.dispatch({ jsonrpc: '2.0', id: null, method: 'tools/list' });
+    expect(resp?.id).toBeNull();
+    expect(resp?.result).toEqual({ tools: [makeRegistry().get('echo_tool')!.descriptor] });
+  });
+
+  it('lists every implemented revision on server/discover, with caching hints', async () => {
+    const result = (await modern(6, 'server/discover'))?.result as any;
+    expect(result.resultType).toBe('complete');
+    expect(result.supportedVersions).toEqual(['2026-07-28', '2025-03-26', '2024-11-05']);
+    expect(result.capabilities).toEqual({ tools: { listChanged: false } });
+    expect(typeof result.ttlMs).toBe('number');
+    expect(result.cacheScope).toBe('public');
+  });
+
+  it('rejects a request missing the required clientCapabilities with -32602', async () => {
+    const resp = await server.dispatch({
+      jsonrpc: '2.0', id: 7, method: 'tools/list',
+      params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } },
+    });
+    expect(resp?.error?.code).toBe(-32602);
+    expect(resp?.error?.message).toContain('clientCapabilities');
+  });
+
+  it('rejects an unrecognised per-request log level with -32602 and accepts a valid one', async () => {
+    const bad = await modern(8, 'tools/list', {}, { 'io.modelcontextprotocol/logLevel': 'verbose' });
+    expect(bad?.error?.code).toBe(-32602);
+    const good = await modern(9, 'tools/list', {}, { 'io.modelcontextprotocol/logLevel': 'debug' });
+    expect(good?.error).toBeUndefined();
+  });
+
+  it('answers an unimplemented revision in _meta with -32022 and the supported list', async () => {
+    const resp = await server.dispatch({
+      jsonrpc: '2.0', id: 10, method: 'tools/list',
+      params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2099-01-01' } },
+    });
+    expect(resp?.error?.code).toBe(-32022);
+    expect((resp?.error?.data as any).supported).toEqual(['2026-07-28', '2025-03-26', '2024-11-05']);
+  });
+
+  it('never answers a notification, even a malformed one', async () => {
+    const resp = await server.dispatch({
+      jsonrpc: '2.0', method: 'notifications/cancelled',
+      params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2099-01-01' } },
+    });
+    expect(resp).toBeNull();
+  });
+
+  it('acknowledges subscriptions/listen with an empty honoured set, then closes it gracefully', async () => {
+    const notes: any[] = [];
+    const resp = await server.dispatch(
+      { jsonrpc: '2.0', id: 'sub-1', method: 'subscriptions/listen',
+        params: { notifications: { toolsListChanged: true, resourceSubscriptions: ['file:///x'] }, _meta: modernMeta() } },
+      { notify: (n) => notes.push(n) },
+    );
+    expect(notes).toEqual([{
+      jsonrpc: '2.0',
+      method: 'notifications/subscriptions/acknowledged',
+      params: { _meta: { 'io.modelcontextprotocol/subscriptionId': 'sub-1' }, notifications: {} },
+    }]);
+    const result = resp?.result as any;
+    expect(resp?.id).toBe('sub-1');
+    expect(result.resultType).toBe('complete');
+    expect(result._meta['io.modelcontextprotocol/subscriptionId']).toBe('sub-1');
+  });
+
+  it('rejects subscriptions/listen without a notifications filter with -32602', async () => {
+    const resp = await modern(11, 'subscriptions/listen');
+    expect(resp?.error?.code).toBe(-32602);
+  });
+
+  it('serves only the older revisions when the transport is restricted to them', async () => {
+    const resp = await server.dispatch(
+      { jsonrpc: '2.0', id: 12, method: 'tools/list', params: { _meta: modernMeta() } },
+      { legacyOnly: true },
+    );
+    expect(resp?.error?.code).toBe(-32022);
+    expect((resp?.error?.data as any).supported).toEqual(['2025-03-26', '2024-11-05']);
+    const discover = await server.dispatch({ jsonrpc: '2.0', id: 13, method: 'server/discover' }, { legacyOnly: true });
+    expect((discover?.result as any).supportedVersions).toEqual(['2025-03-26', '2024-11-05']);
+  });
+});
+
+describe('McpServer Streamable HTTP — 2026-07-28 requests', () => {
+  let server: McpServer;
+  let port: number;
+
+  beforeEach(async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0 });
+    await server.start();
+    port = server.endpoint!.port;
+  });
+
+  afterEach(async () => {
+    await server?.stop();
+  });
+
+  it('serves tools/list under 2026-07-28 and echoes the version', async () => {
+    const { status, headers, body } = await modernRpc(port, 1, 'tools/list');
+    expect(status).toBe(200);
+    expect(headers['mcp-protocol-version']).toBe('2026-07-28');
+    expect(body.result.resultType).toBe('complete');
+    expect(body.result.cacheScope).toBe('public');
+    expect(typeof body.result.ttlMs).toBe('number');
+  });
+
+  it('serves tools/call under 2026-07-28', async () => {
+    const { status, body } = await modernRpc(port, 2, 'tools/call', { name: 'echo_tool', arguments: { prompt: 'hi' } });
+    expect(status).toBe(200);
+    expect(body.result.resultType).toBe('complete');
+    expect(body.result.content[0].text).toBe('echo:hi');
+  });
+
+  it('rejects a missing Mcp-Method, Mcp-Name or MCP-Protocol-Version header with 400 + -32020', async () => {
+    const call = { name: 'echo_tool', arguments: { prompt: 'hi' } };
+    for (const drop of ['Mcp-Method', 'Mcp-Name', 'MCP-Protocol-Version']) {
+      const headers = modernHeaders('tools/call', 'echo_tool');
+      delete headers[drop];
+      const { status, body } = await rpc(
+        port,
+        { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { ...call, _meta: modernMeta() } },
+        headers,
+      );
+      expect(status, drop).toBe(400);
+      expect(body.error.code, drop).toBe(-32020);
+    }
+  });
+
+  it('rejects a null request id with 400 + -32600 and no id in the error', async () => {
+    const { status, body } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: null, method: 'tools/list', params: { _meta: modernMeta() } },
+      modernHeaders('tools/list'),
+    );
+    expect(status).toBe(400);
+    expect(body.error.code).toBe(-32600);
+    expect('id' in body).toBe(false);
+  });
+
+  it('rejects a 2026-07-28 header whose body carries no version as -32020', async () => {
+    const { status, body } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: 4, method: 'tools/list', params: {} },
+      modernHeaders('tools/list'),
+    );
+    expect(status).toBe(400);
+    expect(body.error.code).toBe(-32020);
+  });
+
+  it('rejects a body missing clientCapabilities with 400 + -32602', async () => {
+    const { status, body } = await rpc(
+      port,
+      { jsonrpc: '2.0', id: 5, method: 'tools/list',
+        params: { _meta: { 'io.modelcontextprotocol/protocolVersion': '2026-07-28' } } },
+      modernHeaders('tools/list'),
+    );
+    expect(status).toBe(400);
+    expect(body.error.code).toBe(-32602);
+  });
+
+  it('maps the removed ping to HTTP 404 + -32601 under 2026-07-28', async () => {
+    const { status, body } = await modernRpc(port, 6, 'ping');
+    expect(status).toBe(404);
+    expect(body.error.code).toBe(-32601);
+  });
+
+  it('keeps an unknown tool on HTTP 200 with -32602 under 2026-07-28', async () => {
+    const { status, body } = await modernRpc(port, 7, 'tools/call', { name: 'nope', arguments: {} });
+    expect(status).toBe(200);
+    expect(body.error.code).toBe(-32602);
+  });
+
+  it('streams the subscriptions/listen acknowledgement ahead of the closing result', async () => {
+    const res = await postMcp(
+      port,
+      JSON.stringify({
+        jsonrpc: '2.0', id: 8, method: 'subscriptions/listen',
+        params: { notifications: { toolsListChanged: true }, _meta: modernMeta() },
+      }),
+      modernHeaders('subscriptions/listen'),
+    );
+    expect(res.status).toBe(200);
+    // Even though the client also accepts JSON: the notification needs a stream.
+    expect(res.headers['content-type']).toContain('text/event-stream');
+    const [ack, done] = sseMessages(res.raw);
+    expect(ack.method).toBe('notifications/subscriptions/acknowledged');
+    expect(ack.params._meta['io.modelcontextprotocol/subscriptionId']).toBe(8);
+    expect(ack.params.notifications).toEqual({});
+    expect(done.id).toBe(8);
+    expect(done.result.resultType).toBe('complete');
+    expect(done.result._meta['io.modelcontextprotocol/subscriptionId']).toBe(8);
+  });
+
+  it('acknowledges a 2026-07-28 notification with a bare 202', async () => {
+    const res = await postMcp(
+      port,
+      JSON.stringify({ jsonrpc: '2.0', method: 'notifications/cancelled', params: { requestId: 1 } }),
+      { 'MCP-Protocol-Version': '2026-07-28', 'Mcp-Method': 'notifications/cancelled' },
+    );
+    expect(res.status).toBe(202);
+    expect(res.raw).toBe('');
+  });
+
+  it('serves a header-less older client exactly as before', async () => {
+    const { status, headers, body } = await rpc(port, { jsonrpc: '2.0', id: 9, method: 'tools/list' });
+    expect(status).toBe(200);
+    expect(headers['mcp-protocol-version']).toBe('2025-03-26');
+    expect(body.result).toEqual({ tools: [makeRegistry().get('echo_tool')!.descriptor] });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// HTTP+SSE (/sse + /messages) — Origin validation and era restriction
+// ---------------------------------------------------------------------------
+
+interface SseHandle {
+  status: number;
+  /** `/messages?sessionId=…` from the `endpoint` event (200 only). */
+  endpoint?: string;
+  /** Resolves with the next `event: message` payload. */
+  nextMessage: () => Promise<any>;
+  close: () => void;
+}
+
+/** Opens `GET /sse` and, on 200, waits for the `endpoint` event. */
+function openSse(port: number, headers: Record<string, string> = {}): Promise<SseHandle> {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      { host: '127.0.0.1', port, path: '/sse', method: 'GET', headers: { Accept: 'text/event-stream', ...headers } },
+      (res) => {
+        const close = () => req.destroy();
+        if (res.statusCode !== 200) {
+          res.resume();
+          resolve({ status: res.statusCode!, nextMessage: () => Promise.reject(new Error('no stream')), close });
+          return;
+        }
+        let buffer = '';
+        let resolved = false;
+        const queue: any[] = [];
+        const waiters: Array<(m: any) => void> = [];
+        res.on('data', (chunk: Buffer) => {
+          buffer += chunk.toString('utf8');
+          let idx: number;
+          while ((idx = buffer.indexOf('\n\n')) !== -1) {
+            const frame = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 2);
+            const lines = frame.split('\n');
+            const event = lines.find((l) => l.startsWith('event: '))?.slice('event: '.length);
+            const data = lines.find((l) => l.startsWith('data: '))?.slice('data: '.length);
+            if (event === 'endpoint' && !resolved) {
+              resolved = true;
+              resolve({
+                status: 200,
+                endpoint: data,
+                nextMessage: () => new Promise((r) => {
+                  const queued = queue.shift();
+                  if (queued !== undefined) { r(queued); } else { waiters.push(r); }
+                }),
+                close,
+              });
+            } else if (event === 'message' && data !== undefined) {
+              const msg = JSON.parse(data);
+              const waiter = waiters.shift();
+              if (waiter) { waiter(msg); } else { queue.push(msg); }
+            }
+          }
+        });
+      },
+    );
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+describe('McpServer HTTP+SSE — Origin validation', () => {
+  let server: McpServer;
+  const handles: SseHandle[] = [];
+
+  afterEach(async () => {
+    for (const h of handles.splice(0)) { h.close(); }
+    await server?.stop();
+  });
+
+  async function start(options: { allowedOrigins?: string[] } = {}): Promise<number> {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, ...options });
+    await server.start();
+    return server.endpoint!.port;
+  }
+
+  async function sse(port: number, headers: Record<string, string> = {}): Promise<SseHandle> {
+    const h = await openSse(port, headers);
+    handles.push(h);
+    return h;
+  }
+
+  it('opens GET /sse with no Origin (native MCP clients send none)', async () => {
+    const port = await start();
+    const h = await sse(port);
+    expect(h.status).toBe(200);
+    expect(h.endpoint).toMatch(/^\/messages\?sessionId=/);
+  });
+
+  it('opens GET /sse from loopback origins', async () => {
+    const port = await start();
+    for (const origin of ['http://localhost:5173', 'http://127.0.0.1:3000', 'http://[::1]:8080']) {
+      expect((await sse(port, { Origin: origin })).status, origin).toBe(200);
+    }
+  });
+
+  it('rejects GET /sse from a foreign origin with 403 and opens no session', async () => {
+    const port = await start();
+    for (const origin of ['https://evil.example', 'http://localhost.evil.example', 'null']) {
+      expect((await sse(port, { Origin: origin })).status, origin).toBe(403);
+    }
+    const health = await fetchJson(port, '/health');
+    expect(health.body.sessions).toBe(0);
+  });
+
+  it('honours allowedOrigins on GET /sse, replacing the loopback default', async () => {
+    const port = await start({ allowedOrigins: ['https://trusted.example'] });
+    expect((await sse(port, { Origin: 'https://trusted.example' })).status).toBe(200);
+    expect((await sse(port, { Origin: 'http://127.0.0.1:3000' })).status).toBe(403);
+  });
+
+  it('rejects POST /messages from a foreign origin even with a live session id', async () => {
+    const port = await start();
+    const h = await sse(port);
+    const ping = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' });
+    const denied = await postMcp(port, ping, { Origin: 'https://evil.example' }, h.endpoint!);
+    expect(denied.status).toBe(403);
+    const accepted = await postMcp(port, ping, {}, h.endpoint!);
+    expect(accepted.status).toBe(202);
+    expect(await h.nextMessage()).toEqual({ jsonrpc: '2.0', id: 1, result: {} });
+  });
+
+  it('accepts POST /messages from a loopback origin', async () => {
+    const port = await start();
+    const h = await sse(port);
+    const res = await postMcp(
+      port,
+      JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }),
+      { Origin: 'http://localhost:5173' },
+      h.endpoint!,
+    );
+    expect(res.status).toBe(202);
+    expect((await h.nextMessage()).result.tools).toHaveLength(1);
+  });
+});
+
+describe('McpServer HTTP+SSE — deprecated transport serves older revisions only', () => {
+  let server: McpServer;
+  let handle: SseHandle | undefined;
+
+  afterEach(async () => {
+    handle?.close();
+    await server?.stop();
+  });
+
+  it('answers a 2026-07-28 request on /messages with -32022 listing the older revisions', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0 });
+    await server.start();
+    const port = server.endpoint!.port;
+    handle = await openSse(port);
+    await postMcp(
+      port,
+      JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: { _meta: modernMeta() } }),
+      {},
+      handle.endpoint!,
+    );
+    const msg = await handle.nextMessage();
+    expect(msg.error.code).toBe(-32022);
+    expect(msg.error.data.supported).toEqual(['2025-03-26', '2024-11-05']);
+  });
+
+  it('advertises only the older revisions on server/discover over /messages', async () => {
+    server = new McpServer(makeRegistry(), undefined, { port: 0 });
+    await server.start();
+    const port = server.endpoint!.port;
+    handle = await openSse(port);
+    await postMcp(port, JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'server/discover' }), {}, handle.endpoint!);
+    const msg = await handle.nextMessage();
+    expect(msg.result.supportedVersions).toEqual(['2025-03-26', '2024-11-05']);
   });
 });

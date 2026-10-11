@@ -24,13 +24,14 @@ You can also start/stop the server on demand without touching settings:
 | Route | Method | Purpose |
 | --- | --- | --- |
 | `/mcp` | `POST` | **Streamable HTTP.** A single JSON-RPC 2.0 request as the body, answered in the same HTTP response — no session to open first. Anything but `POST` gets `405` with `Allow: POST`. |
-| `/sse` | `GET` | Opens a Server-Sent-Events stream. The first frame is `event: endpoint\ndata: /messages?sessionId=<uuid>` — the client posts subsequent JSON-RPC requests there. |
+| `/sse` | `GET` | Opens a Server-Sent-Events stream. The first frame is `event: endpoint\ndata: /messages?sessionId=<uuid>` — the client posts subsequent JSON-RPC requests there. Serves the handshake-based revisions only (see [Protocol](#protocol)). |
 | `/messages?sessionId=<uuid>` | `POST` | Single JSON-RPC 2.0 request as the body. The server acknowledges with `202 Accepted` and dispatches the response over the matching SSE stream. |
 | `/health` | `GET` | Returns `{ ok, name, version, tools, sessions }`. Unaffected by bearer auth only when token is unset. |
 All responses are JSON (`Content-Type: application/json`) except `/sse`,
 which is `text/event-stream`, and `/mcp`, which answers in JSON unless the
 client's `Accept` header asks for `text/event-stream` *without* also
-accepting JSON.
+accepting JSON — or the answer is preceded by a notification (the
+`subscriptions/listen` acknowledgement), which only a stream can carry.
 
 ### Which transport to use
 
@@ -45,11 +46,22 @@ Because the server keeps no per-connection state, a client may POST
 handshake, which is what MCP `2026-07-28`'s stateless core expects.
 
 ```bash
-# No handshake, no session — one POST, one answer.
+# No handshake, no session — one POST, one answer (served as 2025-03-26).
 curl -s -X POST http://127.0.0.1:3847/mcp \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+
+# The same call as a 2026-07-28 request: version and capabilities in _meta,
+# mirrored into the standard headers.
+curl -s -X POST http://127.0.0.1:3847/mcp \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -H 'MCP-Protocol-Version: 2026-07-28' \
+  -H 'Mcp-Method: tools/list' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{
+        "io.modelcontextprotocol/protocolVersion":"2026-07-28",
+        "io.modelcontextprotocol/clientCapabilities":{}}}}'
 ```
 
 #### Request metadata
@@ -64,50 +76,81 @@ silently misread:
 | `Mcp-Method` | `method` | `400` + `-32020` `HeaderMismatch` |
 | `Mcp-Name` | `params.name` or `params.uri` (the `=?base64?…?=` sentinel is decoded first) | `400` + `-32020` `HeaderMismatch` |
 
-Omitting them is accepted — they are only required of `2026-07-28` clients,
-and this endpoint also serves the older revisions that never sent them. A
-request with no version anywhere is read as `2025-03-26`.
+A `2026-07-28` request **must** send them: a missing `MCP-Protocol-Version`
+or `Mcp-Method` (on every request) or `Mcp-Name` (on `tools/call`) is a `400`
++ `-32020`, and so is a header-declared `2026-07-28` whose body carries no
+`_meta` version. Its body must also carry the required `_meta` fields
+`io.modelcontextprotocol/protocolVersion` and
+`io.modelcontextprotocol/clientCapabilities`, else `400` + `-32602`, and an
+`id` that is a string or an integer: `null` (allowed by base JSON-RPC but
+not by MCP), a boolean, an object or a fraction is `400` + `-32600`.
+Requests on the older revisions never sent any of this, so for them the
+headers stay optional; a request with no version anywhere is read as
+`2025-03-26`.
 
 Asking for a revision the server does not implement returns `400` with
-`-32022` `UnsupportedProtocolVersion` and the list to pick from, so a newer
-client can negotiate down rather than guess:
+`-32022` `UnsupportedProtocolVersion` and the list to pick from, so a client
+can negotiate rather than guess. `server/discover` answers the same way,
+since the list is exactly what a probe is after:
 
 ```json
 { "jsonrpc": "2.0", "id": 1, "error": { "code": -32022,
-  "message": "Unsupported protocol version: 2026-07-28",
-  "data": { "requested": "2026-07-28", "supported": ["2025-03-26", "2024-11-05"] } } }
+  "message": "Unsupported protocol version: 2099-01-01",
+  "data": { "requested": "2099-01-01", "supported": ["2026-07-28", "2025-03-26", "2024-11-05"] } } }
 ```
 
 #### Origin validation
 
-The spec requires a Streamable HTTP server to validate `Origin` so a web page
-cannot drive a loopback MCP server through DNS rebinding. `/mcp` accepts a
-request with no `Origin` at all (native MCP clients are not browsers and send
-none) plus any loopback origin, and answers everything else with `403`. Pass
-`allowedOrigins` to `McpServer` to widen that to exact origin strings.
+The spec requires a server to validate `Origin` so a web page cannot drive a
+loopback MCP server through DNS rebinding — the Streamable HTTP binding says
+so, and so did the HTTP+SSE transport's own security warning in `2024-11-05`.
+`/mcp`, `GET /sse` and `POST /messages` apply the same rule: a request with no
+`Origin` at all is accepted (native MCP clients are not browsers and send
+none), so is any loopback origin, and everything else gets `403` — on `/sse`
+before a session is opened, on `/messages` even with a valid session id. Pass
+`allowedOrigins` to `McpServer` to replace the loopback default with exact
+origin strings.
 ## Protocol
-OzBridge implements the **Model Context Protocol 2025-03-26** (and
-gracefully negotiates down to 2024-11-05 on request). The supported
-method set is deliberately small:
-- `initialize` — returns server capabilities + `serverInfo`.
-- `server/discover` — the discovery RPC MCP `2026-07-28` uses in place of the
-  `initialize` handshake. It reports `supportedVersions`, `capabilities` and
-  `serverInfo`, so a newer client can use it as a compatibility probe and
-  negotiate down. The list names only the revisions this server actually
-  implements, so it never claims conformance OzBridge does not have.
-- `ping` — health probe, always returns `{}`.
-- `tools/list` — enumerates the registered tools.
-- `tools/call` — invokes a tool by name.
-`2026-07-28` is **not** advertised: beyond the transport, that revision adds
-MUST-level requirements OzBridge has not implemented (a `resultType` on every
-result, `ttlMs` / `cacheScope` on list results, `subscriptions/listen`, MRTR).
-A `2026-07-28` client still works over `/mcp`, because the spec requires
-clients to treat a result with no `resultType` from an earlier-protocol server
-as `"complete"`.
+OzBridge is a dual-era server. It implements the stateless **Model Context
+Protocol 2026-07-28** alongside the handshake-based **2025-03-26** and
+**2024-11-05**, and each request is served according to the revision it
+declares:
 
-Notifications (JSON-RPC requests without an `id`) are dropped if the
-method is unknown. Resource/prompt/sampling capabilities are *not*
-advertised in this release.
+| Request | Served as |
+| --- | --- |
+| Declares `2026-07-28` in `params._meta` (and, over HTTP, `MCP-Protocol-Version`) | `2026-07-28` — stdio and `POST /mcp` |
+| Anything else, including `initialize` | `2025-03-26` / `2024-11-05`, byte-identical to earlier releases — every transport |
+
+`initialize` can only negotiate the older revisions, because `2026-07-28` has
+no handshake. HTTP+SSE (`/sse` + `/messages`) predates `2026-07-28`, which
+deprecates it and lists only stdio and Streamable HTTP as its bindings, so it
+answers a `2026-07-28` request with `-32022` naming the older revisions, and
+its `server/discover` lists only those.
+
+Methods, per era:
+
+| Method | `2025-03-26` / `2024-11-05` | `2026-07-28` |
+| --- | --- | --- |
+| `initialize` | capabilities + `serverInfo` | removed → `-32601` |
+| `server/discover` | `supportedVersions`, `capabilities`, `serverInfo` | same |
+| `ping` | `{}` | removed → `-32601` |
+| `tools/list` | `{ tools }` | `{ tools }` + `resultType`, `ttlMs`, `cacheScope: "public"` |
+| `tools/call` | tool result; unknown tool `-32601` | tool result + `resultType`; unknown tool `-32602` |
+| `subscriptions/listen` | unknown | acknowledged with an empty honoured set, then closed gracefully |
+
+On `2026-07-28` every result carries `resultType: "complete"` and
+`_meta["io.modelcontextprotocol/serverInfo"]`. The tool set never changes at
+runtime (`listChanged: false`) and there are no resources or prompts, so a
+`subscriptions/listen` stream could never deliver anything: the server sends
+the required `notifications/subscriptions/acknowledged` with an empty
+`notifications` set and immediately ends the subscription with its
+completion result. The server sends no server-to-client requests, so it never
+returns `input_required`, and it emits no log notifications — a valid
+per-request `io.modelcontextprotocol/logLevel` is accepted and an
+unrecognised one is rejected with `-32602`.
+
+Notifications (JSON-RPC requests without an `id`) never draw a response.
+Resource/prompt/sampling capabilities are *not* advertised in this release.
 ## Tools exposed
 | Tool | Purpose |
 | --- | --- |

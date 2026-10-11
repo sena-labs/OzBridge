@@ -15,8 +15,8 @@ describe('CONTRIBUTING.md (deliverable O)', () => {
     expect(CONTRIB).toMatch(/`24`/);
   });
 
-  it('references the 145 KB bundle budget', () => {
-    expect(CONTRIB).toMatch(/145\s*KB/);
+  it('references the 170 KB bundle budget', () => {
+    expect(CONTRIB).toMatch(/170\s*KB/);
   });
 
   it('documents the non-watch test invocation used in CI', () => {
