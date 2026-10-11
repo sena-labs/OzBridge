@@ -50,7 +50,7 @@ body:
     id: vscode-version
     attributes:
       label: VS Code Version
-      placeholder: "e.g. 1.96.0"
+      placeholder: "e.g. 1.101.0"
     validations:
       required: true
 

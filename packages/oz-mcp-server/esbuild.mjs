@@ -21,7 +21,7 @@ const sharedOptions = {
   define: { __OZ_MCP_VERSION__: JSON.stringify(version) },
   bundle: true,
   platform: 'node',
-  target: 'node20',
+  target: 'node22',
   format: 'cjs',
   alias: {
     vscode: vscodeShim,

@@ -48,7 +48,7 @@ channels were moved to OIDC in 1.4.0 and hold no persistent secret.
 
 - A Microsoft account with access to [Azure DevOps](https://dev.azure.com).
 - A GitHub account, used to authorise Open VSX.
-- Node 20+, npm 10+.
+- Node 22.12+, npm 10+.
 - `vsce` and `ovsx` available through `npx` (no global install required).
 
 ---

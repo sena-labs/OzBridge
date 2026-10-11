@@ -36,7 +36,7 @@ updates:
           - '@vscode/*'
     ignore:
       # @types/vscode and @types/node must track the engines.vscode floor
-      # (^1.96.0 → VS Code's bundled Node 20). Bumping the type stubs ahead
+      # (^1.101.0 → VS Code's bundled Node 22). Bumping the type stubs ahead
       # of the lowest supported runtime would surface APIs that are not
       # guaranteed to exist when the extension actually runs. @types/vscode
       # advances by minor per VS Code release, so minor is ignored too.
@@ -62,7 +62,7 @@ updates:
       include: 'scope'
     ignore:
       # Mirror the root config: the toolkit pins @types/vscode to the
-      # extension's engines.vscode floor (1.96.0) via both peerDependencies
+      # extension's engines.vscode floor (1.101.0) via both peerDependencies
       # and devDependencies. Bumping the type stubs ahead of the lowest
       # supported VS Code runtime would surface APIs that are not guaranteed
       # to exist when the extension actually runs. @types/vscode advances by

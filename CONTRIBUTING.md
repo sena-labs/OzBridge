@@ -50,8 +50,8 @@ By participating, you agree to uphold this code.
 
 ### Prerequisites
 
-- **Node.js** `20.19` or `22.12` (matches the CI matrix).
-- **VS Code** ≥ `1.96.0`.
+- **Node.js** `22.12` or `24` (matches the CI matrix).
+- **VS Code** ≥ `1.101.0`.
 - **Warp Terminal** with the `oz` CLI — only required for manual
   end-to-end testing; unit tests run against a mocked `vscode` module.
 

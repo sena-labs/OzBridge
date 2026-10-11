@@ -15,7 +15,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12"
   },
   "keywords": [
     "vscode",
@@ -37,7 +37,7 @@
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
   },
   "peerDependencies": {
-    "@types/vscode": "1.96.0"
+    "@types/vscode": "1.101.0"
   },
   "peerDependenciesMeta": {
     "@types/vscode": {
@@ -45,7 +45,7 @@
     }
   },
   "devDependencies": {
-    "@types/vscode": "1.96.0",
+    "@types/vscode": "1.101.0",
     "typescript": "^7.0.2"
   }
 }
