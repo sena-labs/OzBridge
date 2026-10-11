@@ -80,11 +80,15 @@ client can negotiate down rather than guess:
 
 #### Origin validation
 
-The spec requires a Streamable HTTP server to validate `Origin` so a web page
-cannot drive a loopback MCP server through DNS rebinding. `/mcp` accepts a
-request with no `Origin` at all (native MCP clients are not browsers and send
-none) plus any loopback origin, and answers everything else with `403`. Pass
-`allowedOrigins` to `McpServer` to widen that to exact origin strings.
+The spec requires a server to validate `Origin` so a web page cannot drive a
+loopback MCP server through DNS rebinding — the Streamable HTTP binding says
+so, and so did the HTTP+SSE transport's own security warning in `2024-11-05`.
+`/mcp`, `GET /sse` and `POST /messages` apply the same rule: a request with no
+`Origin` at all is accepted (native MCP clients are not browsers and send
+none), so is any loopback origin, and everything else gets `403` — on `/sse`
+before a session is opened, on `/messages` even with a valid session id. Pass
+`allowedOrigins` to `McpServer` to replace the loopback default with exact
+origin strings.
 ## Protocol
 OzBridge implements the **Model Context Protocol 2025-03-26** (and
 gracefully negotiates down to 2024-11-05 on request). The supported

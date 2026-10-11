@@ -90,6 +90,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `Assert dist/extension.js ≤ 170 KB`, and `CONTRIBUTING.md`, which still
   quoted a stale 145 KB, now states the enforced value.
 
+### Security
+- **`Origin` validation on the HTTP+SSE transport.** `GET /sse` and
+  `POST /messages` now apply the same DNS-rebinding guard as `/mcp` — the
+  HTTP+SSE transport's own `2024-11-05` security warning already required it.
+  A page the user visits cannot read a loopback response, but it could open a
+  stream or fire a cross-origin `POST /messages` once it guessed a session id.
+  A missing `Origin` (native MCP clients send none) and loopback origins are
+  accepted, `allowedOrigins` is honoured, and everything else gets `403` — on
+  `/sse` before any session is opened, on `/messages` even with a valid
+  session id.
+
 ### Fixed
 - **Release jobs run on Node 22.** The Marketplace and Open VSX jobs fetch the
   latest `@vscode/vsce` and `ovsx` through `npx`, and both now require Node 22

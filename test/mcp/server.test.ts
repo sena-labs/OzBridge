@@ -983,3 +983,141 @@ describe('McpServer Streamable HTTP — review follow-ups', () => {
     expect(res.headers['content-type']).toContain('text/event-stream');
   });
 });
+
+// ---------------------------------------------------------------------------
+// HTTP+SSE (/sse + /messages) — Origin validation
+// ---------------------------------------------------------------------------
+
+interface SseHandle {
+  status: number;
+  /** `/messages?sessionId=…` from the `endpoint` event (200 only). */
+  endpoint?: string;
+  /** Resolves with the next `event: message` payload. */
+  nextMessage: () => Promise<any>;
+  close: () => void;
+}
+
+/** Opens `GET /sse` and, on 200, waits for the `endpoint` event. */
+function openSse(port: number, headers: Record<string, string> = {}): Promise<SseHandle> {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      { host: '127.0.0.1', port, path: '/sse', method: 'GET', headers: { Accept: 'text/event-stream', ...headers } },
+      (res) => {
+        const close = () => req.destroy();
+        if (res.statusCode !== 200) {
+          res.resume();
+          resolve({ status: res.statusCode!, nextMessage: () => Promise.reject(new Error('no stream')), close });
+          return;
+        }
+        let buffer = '';
+        let resolved = false;
+        const queue: any[] = [];
+        const waiters: Array<(m: any) => void> = [];
+        res.on('data', (chunk: Buffer) => {
+          buffer += chunk.toString('utf8');
+          let idx: number;
+          while ((idx = buffer.indexOf('\n\n')) !== -1) {
+            const frame = buffer.slice(0, idx);
+            buffer = buffer.slice(idx + 2);
+            const lines = frame.split('\n');
+            const event = lines.find((l) => l.startsWith('event: '))?.slice('event: '.length);
+            const data = lines.find((l) => l.startsWith('data: '))?.slice('data: '.length);
+            if (event === 'endpoint' && !resolved) {
+              resolved = true;
+              resolve({
+                status: 200,
+                endpoint: data,
+                nextMessage: () => new Promise((r) => {
+                  const queued = queue.shift();
+                  if (queued !== undefined) { r(queued); } else { waiters.push(r); }
+                }),
+                close,
+              });
+            } else if (event === 'message' && data !== undefined) {
+              const msg = JSON.parse(data);
+              const waiter = waiters.shift();
+              if (waiter) { waiter(msg); } else { queue.push(msg); }
+            }
+          }
+        });
+      },
+    );
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+describe('McpServer HTTP+SSE — Origin validation', () => {
+  let server: McpServer;
+  const handles: SseHandle[] = [];
+
+  afterEach(async () => {
+    for (const h of handles.splice(0)) { h.close(); }
+    await server?.stop();
+  });
+
+  async function start(options: { allowedOrigins?: string[] } = {}): Promise<number> {
+    server = new McpServer(makeRegistry(), undefined, { port: 0, ...options });
+    await server.start();
+    return server.endpoint!.port;
+  }
+
+  async function sse(port: number, headers: Record<string, string> = {}): Promise<SseHandle> {
+    const h = await openSse(port, headers);
+    handles.push(h);
+    return h;
+  }
+
+  it('opens GET /sse with no Origin (native MCP clients send none)', async () => {
+    const port = await start();
+    const h = await sse(port);
+    expect(h.status).toBe(200);
+    expect(h.endpoint).toMatch(/^\/messages\?sessionId=/);
+  });
+
+  it('opens GET /sse from loopback origins', async () => {
+    const port = await start();
+    for (const origin of ['http://localhost:5173', 'http://127.0.0.1:3000', 'http://[::1]:8080']) {
+      expect((await sse(port, { Origin: origin })).status, origin).toBe(200);
+    }
+  });
+
+  it('rejects GET /sse from a foreign origin with 403 and opens no session', async () => {
+    const port = await start();
+    for (const origin of ['https://evil.example', 'http://localhost.evil.example', 'null']) {
+      expect((await sse(port, { Origin: origin })).status, origin).toBe(403);
+    }
+    const health = await fetchJson(port, '/health');
+    expect(health.body.sessions).toBe(0);
+  });
+
+  it('honours allowedOrigins on GET /sse, replacing the loopback default', async () => {
+    const port = await start({ allowedOrigins: ['https://trusted.example'] });
+    expect((await sse(port, { Origin: 'https://trusted.example' })).status).toBe(200);
+    expect((await sse(port, { Origin: 'http://127.0.0.1:3000' })).status).toBe(403);
+  });
+
+  it('rejects POST /messages from a foreign origin even with a live session id', async () => {
+    const port = await start();
+    const h = await sse(port);
+    const ping = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' });
+    const denied = await postMcp(port, ping, { Origin: 'https://evil.example' }, h.endpoint!);
+    expect(denied.status).toBe(403);
+    const accepted = await postMcp(port, ping, {}, h.endpoint!);
+    expect(accepted.status).toBe(202);
+    expect(await h.nextMessage()).toEqual({ jsonrpc: '2.0', id: 1, result: {} });
+  });
+
+  it('accepts POST /messages from a loopback origin', async () => {
+    const port = await start();
+    const h = await sse(port);
+    const res = await postMcp(
+      port,
+      JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }),
+      { Origin: 'http://localhost:5173' },
+      h.endpoint!,
+    );
+    expect(res.status).toBe(202);
+    expect((await h.nextMessage()).result.tools).toHaveLength(1);
+  });
+});

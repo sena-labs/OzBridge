@@ -28,13 +28,14 @@ export interface McpServerOptions {
    */
   sseMaxLifetimeMs?: number;
   /**
-   * Origins accepted on the Streamable HTTP endpoint. The MCP spec requires
-   * servers to validate `Origin` to block DNS rebinding: a web page cannot
-   * read a loopback response, but it *can* fire a cross-origin POST at one,
-   * and the browser attaches `Origin` when it does. Native MCP clients are
-   * not browsers and send no `Origin` at all, so the default accepts a
-   * missing header plus any loopback origin and answers everything else with
-   * HTTP 403. Set this to widen the allow-list to exact origin strings.
+   * Origins accepted on every MCP transport endpoint (`POST /mcp`,
+   * `GET /sse`, `POST /messages`). The MCP spec requires servers to validate
+   * `Origin` to block DNS rebinding: a web page cannot read a loopback
+   * response, but it *can* fire a cross-origin request at one, and the
+   * browser attaches `Origin` when it does. Native MCP clients are not
+   * browsers and send no `Origin` at all, so the default accepts a missing
+   * header plus any loopback origin and answers everything else with HTTP
+   * 403. Set this to replace the loopback default with exact origin strings.
    */
   allowedOrigins?: string[];
 }
@@ -322,11 +323,13 @@ export class McpServer {
       }
 
       if (req.method === 'GET' && url.pathname === '/sse') {
+        if (this.rejectForeignOrigin(req, res)) { return; }
         this.openSseStream(req, res);
         return;
       }
 
       if (req.method === 'POST' && url.pathname === '/messages') {
+        if (this.rejectForeignOrigin(req, res)) { return; }
         const sessionId = url.searchParams.get('sessionId') ?? '';
         await this.handleMessage(req, res, sessionId);
         return;
@@ -538,7 +541,17 @@ export class McpServer {
     res.end(JSON.stringify(response));
   }
 
-  /** Origin allow-list check for the Streamable HTTP endpoint. */
+  /**
+   * DNS-rebinding guard shared by every MCP endpoint. Answers `403` and
+   * returns `true` when the request carries an `Origin` that is not allowed.
+   */
+  private rejectForeignOrigin(req: http.IncomingMessage, res: http.ServerResponse): boolean {
+    if (this.isOriginAllowed(req)) { return false; }
+    sendJson(res, 403, { error: 'origin_not_allowed' });
+    return true;
+  }
+
+  /** Origin allow-list check, identical for `/mcp`, `/sse` and `/messages`. */
   private isOriginAllowed(req: http.IncomingMessage): boolean {
     const origin = req.headers['origin'];
     // Native MCP clients are not browsers and send no Origin at all.
