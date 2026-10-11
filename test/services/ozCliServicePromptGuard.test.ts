@@ -34,23 +34,23 @@ beforeEach(() => {
 // agentRun — empty prompt guard
 // ---------------------------------------------------------------------------
 describe('agentRun() empty prompt guard', () => {
-  it('dovrebbe lanciare OzCliError per prompt stringa vuota', async () => {
+  it('throws OzCliError for an empty-string prompt', async () => {
     await expect(cli.agentRun({ prompt: '' })).rejects.toThrow(OzCliError);
     await expect(cli.agentRun({ prompt: '' })).rejects.toThrow('Prompt cannot be empty');
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it('dovrebbe lanciare OzCliError per prompt con soli spazi', async () => {
+  it('throws OzCliError for a prompt with only spaces', async () => {
     await expect(cli.agentRun({ prompt: '   ' })).rejects.toThrow(OzCliError);
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it('dovrebbe lanciare OzCliError per prompt con tab e newline', async () => {
+  it('throws OzCliError for a prompt with tabs and newlines', async () => {
     await expect(cli.agentRun({ prompt: '\t\n  ' })).rejects.toThrow('Prompt cannot be empty');
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it('dovrebbe lanciare con kind CLI_ERROR', async () => {
+  it('throws with kind CLI_ERROR', async () => {
     try {
       await cli.agentRun({ prompt: '' });
     } catch (e) {
@@ -64,17 +64,17 @@ describe('agentRun() empty prompt guard', () => {
 // agentRunCloud — empty prompt guard
 // ---------------------------------------------------------------------------
 describe('agentRunCloud() empty prompt guard', () => {
-  it('dovrebbe lanciare OzCliError per prompt stringa vuota', async () => {
+  it('throws OzCliError for an empty-string prompt', async () => {
     await expect(cli.agentRunCloud({ prompt: '' })).rejects.toThrow('Prompt cannot be empty');
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it('dovrebbe lanciare OzCliError per prompt con soli spazi', async () => {
+  it('throws OzCliError for a prompt with only spaces', async () => {
     await expect(cli.agentRunCloud({ prompt: '   ' })).rejects.toThrow(OzCliError);
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it('dovrebbe lanciare OzCliError per prompt con tab/newline', async () => {
+  it('throws OzCliError for a prompt with tabs/newlines', async () => {
     await expect(cli.agentRunCloud({ prompt: '\n\t' })).rejects.toThrow('Prompt cannot be empty');
   });
 });
@@ -83,22 +83,22 @@ describe('agentRunCloud() empty prompt guard', () => {
 // scheduleCreate — empty prompt guard
 // ---------------------------------------------------------------------------
 describe('scheduleCreate() empty prompt guard', () => {
-  it('dovrebbe lanciare OzCliError per prompt stringa vuota', async () => {
+  it('throws OzCliError for an empty-string prompt', async () => {
     await expect(
       cli.scheduleCreate({ name: 'job', cron: '0 9 * * *', prompt: '' }),
     ).rejects.toThrow('Prompt cannot be empty');
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it('dovrebbe lanciare OzCliError per prompt con soli spazi', async () => {
+  it('throws OzCliError for a prompt with only spaces', async () => {
     await expect(
       cli.scheduleCreate({ name: 'job', cron: '0 9 * * *', prompt: '   ' }),
     ).rejects.toThrow(OzCliError);
     expect(mockSpawn).not.toHaveBeenCalled();
   });
 
-  it('guard prompt eseguito prima di validateCliArg (nome non viene validato)', async () => {
-    // Se il guard prompt avviene prima di validateCliArg, un nome invalido non viene raggiunto
+  it('prompt guard runs before validateCliArg (the name is not validated)', async () => {
+    // If the prompt guard runs before validateCliArg, an invalid name is never reached
     await expect(
       cli.scheduleCreate({ name: 'job --inject', cron: '* * * * *', prompt: '' }),
     ).rejects.toThrow('Prompt cannot be empty');

@@ -99,7 +99,7 @@ export interface WarpBridgeConfig extends BridgeConfig {
  */
 export type OzBridgeConfig = WarpBridgeConfig;
 
-// IMPL: valori di default allineati con package.json contributes.configuration
+// IMPL: default values aligned with package.json contributes.configuration
 export const DEFAULT_CONFIG: WarpBridgeConfig = {
   ozPath: 'oz',
   defaultModel: 'auto',
@@ -197,7 +197,7 @@ export interface OzSecret {
 }
 
 // ============================================================================
-// Mappa Agenti → Skill
+// Agent → Skill map
 // ============================================================================
 
 export const AGENT_SKILL_MAP: Record<string, string> = {

@@ -4,22 +4,22 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 export interface ResourceSample {
-  /** ISO timestamp del campione */
+  /** ISO timestamp of the sample */
   ts: string;
-  /** secondi trascorsi dall'inizio del monitor */
+  /** seconds elapsed since the monitor started */
   elapsedSec: number;
-  /** numero di processi figli osservati (incluso il root) */
+  /** number of child processes observed (including the root) */
   processCount: number;
-  /** RSS totale in MB */
+  /** total RSS in MB */
   rssMb: number;
-  /** % CPU totale (somma figli, può superare 100% su multi-core) */
+  /** total CPU % (sum of children, can exceed 100% on multi-core) */
   cpuPct: number;
-  /** load average 1m della macchina (NaN su Windows) */
+  /** machine 1m load average (NaN on Windows) */
   loadAvg1m: number;
-  /** memoria libera/totale macchina in MB */
+  /** machine free/total memory in MB */
   hostFreeMb: number;
   hostTotalMb: number;
-  /** label opzionale per segnare lo step in corso */
+  /** optional label to mark the current step */
   label?: string;
 }
 
@@ -30,10 +30,10 @@ export interface ResourceMonitorOptions {
 }
 
 /**
- * Campiona periodicamente CPU/RAM dell'albero di processi che ha
- * radice in `rootPid` e scrive un JSON-lines su disco. Funziona su
- * Windows (`wmic`) e Unix (`ps`). Implementazione volutamente senza
- * dipendenze native per evitare build step in CI.
+ * Periodically samples CPU/RAM of the process tree rooted
+ * at `rootPid` and writes JSON lines to disk. Works on
+ * Windows (`wmic`) and Unix (`ps`). Deliberately implemented without
+ * native dependencies to avoid build steps in CI.
  */
 export class ResourceMonitor {
   private timer: NodeJS.Timeout | undefined;
@@ -51,13 +51,13 @@ export class ResourceMonitor {
         const sample = await this.sample();
         this.samples.push(sample);
       } catch (err) {
-        // Best-effort: il monitor non deve mai far fallire un test.
+        // Best-effort: the monitor must never make a test fail.
         // eslint-disable-next-line no-console
         console.warn('[resource-monitor] sample failed:', (err as Error).message);
       }
     };
     this.timer = setInterval(loop, interval);
-    // Primo campione immediato.
+    // First sample immediately.
     void loop();
   }
 
@@ -76,7 +76,7 @@ export class ResourceMonitor {
     return this.samples;
   }
 
-  /** Statistiche aggregate utili per assertion/reportistica. */
+  /** Aggregate statistics useful for assertions/reporting. */
   summary(): { peakRssMb: number; peakCpuPct: number; avgRssMb: number; avgCpuPct: number; samples: number } {
     if (this.samples.length === 0) {
       return { peakRssMb: 0, peakCpuPct: 0, avgRssMb: 0, avgCpuPct: 0, samples: 0 };
@@ -112,7 +112,7 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
-/** Raccoglie RSS+CPU% dell'albero di processi cross-platform. */
+/** Collects RSS+CPU% of the process tree, cross-platform. */
 async function collectProcessTreeStats(rootPid: number): Promise<{ processCount: number; rssMb: number; cpuPct: number }> {
   if (process.platform === 'win32') {
     return collectWindows(rootPid);
@@ -121,9 +121,9 @@ async function collectProcessTreeStats(rootPid: number): Promise<{ processCount:
 }
 
 async function collectWindows(rootPid: number): Promise<{ processCount: number; rssMb: number; cpuPct: number }> {
-  // `Get-Process` è ~10x più veloce di `Get-CimInstance Win32_Process`,
-  // ma non espone PPID. Per la mappa parent->child usiamo CIM una volta
-  // ogni 10 s e cachiamo: la topologia dei figli di Electron è stabile.
+  // `Get-Process` is ~10x faster than `Get-CimInstance Win32_Process`,
+  // but does not expose the PPID. For the parent->child map we use CIM once
+  // every 10 s and cache it: Electron's child-process topology is stable.
   const ppidMap = await getPpidMapCached();
   const ps = `Get-Process | Select-Object Id,WorkingSet64,@{n='Cpu100ns';e={[int64]$_.TotalProcessorTime.Ticks}} | ConvertTo-Csv -NoTypeInformation`;
   const csv = await runText('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps]);

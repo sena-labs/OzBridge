@@ -16,7 +16,7 @@ describe('ContextCollector', () => {
   // gather()
   // =======================================================================
   describe('gather()', () => {
-    it('dovrebbe tornare contesto vuoto senza editor aperto', () => {
+    it('returns an empty context with no open editor', () => {
       const ctx = collector.gather();
       expect(ctx.activeFilePath).toBeNull();
       expect(ctx.activeFileLanguageId).toBeNull();
@@ -24,12 +24,12 @@ describe('ContextCollector', () => {
       expect(ctx.diagnostics).toEqual([]);
     });
 
-    it('dovrebbe tornare workspacePath vuoto senza workspace aperto', () => {
+    it('returns an empty workspacePath with no open workspace', () => {
       const ctx = collector.gather();
       expect(ctx.workspacePath).toBe('');
     });
 
-    it('dovrebbe leggere workspacePath dal primo workspace folder', () => {
+    it('reads workspacePath from the first workspace folder', () => {
       workspace.workspaceFolders = [
         { uri: Uri.file('/my/project'), name: 'project', index: 0 },
       ];
@@ -37,7 +37,7 @@ describe('ContextCollector', () => {
       expect(ctx.workspacePath).toBe('/my/project');
     });
 
-    it('dovrebbe leggere file attivo e linguaggio', () => {
+    it('reads the active file and language', () => {
       window.activeTextEditor = {
         document: {
           uri: Uri.file('/my/project/main.ts'),
@@ -51,7 +51,7 @@ describe('ContextCollector', () => {
       expect(ctx.activeFileLanguageId).toBe('typescript');
     });
 
-    it('dovrebbe catturare la selezione attiva', () => {
+    it('captures the active selection', () => {
       window.activeTextEditor = {
         document: {
           uri: Uri.file('/f.ts'),
@@ -65,7 +65,7 @@ describe('ContextCollector', () => {
       expect(ctx.selection).toBe('selected text');
     });
 
-    it('dovrebbe mappare diagnostics del file corrente', () => {
+    it('maps the diagnostics of the current file', () => {
       window.activeTextEditor = {
         document: {
           uri: Uri.file('/f.ts'),
@@ -95,7 +95,7 @@ describe('ContextCollector', () => {
       expect(ctx.diagnostics[1].severity).toBe('warning');
     });
 
-    it('dovrebbe mappare DiagnosticSeverity.Information → info', () => {
+    it('maps DiagnosticSeverity.Information → info', () => {
       window.activeTextEditor = {
         document: { uri: Uri.file('/f.ts'), languageId: 'ts', getText: vi.fn(() => '') },
         selection: { isEmpty: true },
@@ -106,7 +106,7 @@ describe('ContextCollector', () => {
       expect(collector.gather().diagnostics[0].severity).toBe('info');
     });
 
-    it('dovrebbe mappare DiagnosticSeverity.Hint → hint', () => {
+    it('maps DiagnosticSeverity.Hint → hint', () => {
       window.activeTextEditor = {
         document: { uri: Uri.file('/f.ts'), languageId: 'ts', getText: vi.fn(() => '') },
         selection: { isEmpty: true },
@@ -122,7 +122,7 @@ describe('ContextCollector', () => {
   // formatForPrompt()
   // =======================================================================
   describe('formatForPrompt()', () => {
-    it('dovrebbe wrappare in [CONTEXT]...[/CONTEXT]', () => {
+    it('wraps in [CONTEXT]...[/CONTEXT]', () => {
       const result = collector.formatForPrompt({
         workspacePath: '/wp',
         activeFilePath: null,
@@ -134,7 +134,7 @@ describe('ContextCollector', () => {
       expect(result).toMatch(/\[\/CONTEXT\]$/);
     });
 
-    it('dovrebbe includere workspace path', () => {
+    it('includes the workspace path', () => {
       const result = collector.formatForPrompt({
         workspacePath: '/my/project',
         activeFilePath: null,
@@ -145,7 +145,7 @@ describe('ContextCollector', () => {
       expect(result).toContain('Workspace: /my/project');
     });
 
-    it('dovrebbe includere file e lingua', () => {
+    it('includes file and language', () => {
       const result = collector.formatForPrompt({
         workspacePath: '',
         activeFilePath: '/file.py',
@@ -156,7 +156,7 @@ describe('ContextCollector', () => {
       expect(result).toContain('File: /file.py (python)');
     });
 
-    it('dovrebbe omettere suffisso lingua se activeFileLanguageId è null', () => {
+    it('omits the language suffix when activeFileLanguageId is null', () => {
       const result = collector.formatForPrompt({
         workspacePath: '',
         activeFilePath: '/file.unknown',
@@ -165,11 +165,11 @@ describe('ContextCollector', () => {
         diagnostics: [],
       });
       expect(result).toContain('File: /file.unknown');
-      // Non deve avere le parentesi con la lingua
+      // Must not have the parentheses with the language
       expect(result).not.toMatch(/File:.*\(/);
     });
 
-    it('dovrebbe troncare selezione a 2000 caratteri', () => {
+    it('truncates the selection to 2000 characters', () => {
       const longSelection = 'a'.repeat(3000);
       const result = collector.formatForPrompt({
         workspacePath: '',
@@ -182,7 +182,7 @@ describe('ContextCollector', () => {
       expect(result.length).toBeLessThan(longSelection.length);
     });
 
-    it('dovrebbe non troncare selezione ≤ 2000 caratteri', () => {
+    it('does not truncate a selection of ≤ 2000 characters', () => {
       const sel = 'hello world';
       const result = collector.formatForPrompt({
         workspacePath: '',
@@ -195,7 +195,7 @@ describe('ContextCollector', () => {
       expect(result).not.toContain('truncated');
     });
 
-    it('dovrebbe mostrare conteggio errori e warning', () => {
+    it('shows the error and warning counts', () => {
       const result = collector.formatForPrompt({
         workspacePath: '',
         activeFilePath: null,
@@ -211,7 +211,7 @@ describe('ContextCollector', () => {
       expect(result).toContain('1 warnings');
     });
 
-    it('dovrebbe limitare a 10 diagnostics nel prompt', () => {
+    it('limits the prompt to 10 diagnostics', () => {
       const diags = Array.from({ length: 15 }, (_, i) => ({
         severity: 'error' as const,
         message: `err-${i}`,
@@ -224,7 +224,7 @@ describe('ContextCollector', () => {
         selection: null,
         diagnostics: diags,
       });
-      // Dovrebbe contenere err-0 fino a err-9 ma non err-10
+      // Should contain err-0 through err-9 but not err-10
       expect(result).toContain('err-9');
       expect(result).not.toContain('err-10');
     });

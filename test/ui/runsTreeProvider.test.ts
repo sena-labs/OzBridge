@@ -195,18 +195,18 @@ describe('RunTreeDragAndDropController', () => {
     onCancellationRequested: vi.fn(),
   };
 
-  it('dovrebbe esporre dragMimeTypes con RUN_NODE_MIME_TYPE e text/plain', () => {
+  it('exposes dragMimeTypes with RUN_NODE_MIME_TYPE and text/plain', () => {
     const ctrl = new RunTreeDragAndDropController();
     expect(ctrl.dragMimeTypes).toContain(RUN_NODE_MIME_TYPE);
     expect(ctrl.dragMimeTypes).toContain('text/plain');
   });
 
-  it('dovrebbe esporre dropMimeTypes come array vuoto', () => {
+  it('exposes dropMimeTypes as an empty array', () => {
     const ctrl = new RunTreeDragAndDropController();
     expect(ctrl.dropMimeTypes).toEqual([]);
   });
 
-  it('dovrebbe popolare DataTransfer con entrambi i MIME per RunNode items', () => {
+  it('populates DataTransfer with both MIME types for RunNode items', () => {
     const ctrl = new RunTreeDragAndDropController();
     const dt = new vscodeMock.DataTransfer();
     ctrl.handleDrag([mockRunNode], dt as unknown as Parameters<typeof ctrl.handleDrag>[1], mockToken as never);
@@ -216,7 +216,7 @@ describe('RunTreeDragAndDropController', () => {
     expect(dt.get(RUN_NODE_MIME_TYPE)!.value).toBe(JSON.stringify([mockRunNode.runId]));
   });
 
-  it('dovrebbe lasciare DataTransfer vuoto per nodi non-RunNode', () => {
+  it('leaves DataTransfer empty for non-RunNode nodes', () => {
     const ctrl = new RunTreeDragAndDropController();
     const dt = new vscodeMock.DataTransfer();
     ctrl.handleDrag([mockCategoryNode], dt as unknown as Parameters<typeof ctrl.handleDrag>[1], mockToken as never);
@@ -224,7 +224,7 @@ describe('RunTreeDragAndDropController', () => {
     expect(dt.get('text/plain')).toBeUndefined();
   });
 
-  it('dovrebbe ignorare handleDrop senza lanciare (no-op)', () => {
+  it('ignores handleDrop without throwing (no-op)', () => {
     const ctrl = new RunTreeDragAndDropController();
     expect(() => ctrl.handleDrop()).not.toThrow();
   });

@@ -9,18 +9,18 @@ process.env.TS_NODE_PROJECT = path.join(__dirname, 'tsconfig.e2e.json');
 /**
  * Playwright config for OzBridge end-to-end tests.
  *
- * I test E2E avviano un'istanza reale di VS Code (Electron) tramite
- * `@vscode/test-electron`, caricano l'estensione in development mode
- * e simulano un utente che apre dashboard, tree views, status bar
- * e command palette. Durante l'esecuzione viene registrato un report
- * di utilizzo risorse (CPU/RAM) per ogni step.
+ * The E2E tests launch a real VS Code instance (Electron) through
+ * `@vscode/test-electron`, load the extension in development mode
+ * and simulate a user who opens the dashboard, tree views, status bar
+ * and command palette. During the run a resource-usage report
+ * (CPU/RAM) is recorded for every step.
  *
- * Lanciare con:  npm run test:e2e
+ * Run with:  npm run test:e2e
  */
 export default defineConfig({
   testDir: __dirname,
   testMatch: ['**/*.e2e.spec.ts'],
-  // Ogni test e2e fa boot di Electron: serve un timeout generoso.
+  // Every e2e test boots Electron: a generous timeout is needed.
   timeout: 5 * 60 * 1000,
   expect: { timeout: 30_000 },
   fullyParallel: false,

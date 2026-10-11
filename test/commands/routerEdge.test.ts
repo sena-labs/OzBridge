@@ -1,6 +1,6 @@
 /**
- * Test ad alta densità per CommandRouter — dispatch, unknown command,
- * risultati con metadata, factory wiring.
+ * High-density tests for CommandRouter — dispatch, unknown command,
+ * results with metadata, factory wiring.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { CommandRouter } from '../../src/commands/router.js';
@@ -36,7 +36,7 @@ beforeEach(() => {
   token = createMockToken();
 });
 
-// Helper per invocare l'handler con un certo command name
+// Helper to invoke the handler with a given command name
 async function dispatch(command: string | undefined, prompt = 'test prompt') {
   const handler = router.createHandler();
   return (await handler(
@@ -51,38 +51,38 @@ async function dispatch(command: string | undefined, prompt = 'test prompt') {
 // Routing dispatch table
 // ============================================================================
 describe('CommandRouter — dispatch', () => {
-  it('dovrebbe registrare i 9 comandi slash attesi', async () => {
+  it('registers the 9 expected slash commands', async () => {
     const expectedCommands = ['run', 'cloud', 'status', 'history', 'schedule', 'models', 'mcp', 'config', 'init'];
     for (const cmd of expectedCommands) {
-      // Dispatch senza errore — il comando è registrato
+      // Dispatch without error — the command is registered
       const result = await dispatch(cmd);
       expect(result).toEqual(expect.objectContaining({ metadata: expect.any(Object) }));
       expect(typeof result).toBe('object');
     }
   });
 
-  it('/run dovrebbe invocare agentRun', async () => {
+  it('/run invokes agentRun', async () => {
     cli.agentRun.mockResolvedValue({ runId: 'r1', status: 'SUCCEEDED', output: 'ok', exitCode: 0, durationMs: 100, raw: null });
     const result = await dispatch('run');
     expect(cli.agentRun).toHaveBeenCalled();
     expect(result.metadata?.command).toBe('run');
   });
 
-  it('/models dovrebbe invocare modelList', async () => {
+  it('/models invokes modelList', async () => {
     cli.modelList.mockResolvedValue({ items: [], rawText: 'no models' });
     const result = await dispatch('models');
     expect(cli.modelList).toHaveBeenCalled();
     expect(result.metadata?.command).toBe('models');
   });
 
-  it('/mcp dovrebbe invocare mcpList', async () => {
+  it('/mcp invokes mcpList', async () => {
     cli.mcpList.mockResolvedValue({ items: [], rawText: 'no servers' });
     const result = await dispatch('mcp');
     expect(cli.mcpList).toHaveBeenCalled();
     expect(result.metadata?.command).toBe('mcp');
   });
 
-  it('default (nessun command) dovrebbe usare /run', async () => {
+  it('default (no command) uses /run', async () => {
     cli.agentRun.mockResolvedValue({ runId: 'r2', status: 'SUCCEEDED', output: 'ok', exitCode: 0, durationMs: 100, raw: null });
     const result = await dispatch(undefined);
     expect(cli.agentRun).toHaveBeenCalled();
@@ -91,10 +91,10 @@ describe('CommandRouter — dispatch', () => {
 });
 
 // ============================================================================
-// Comando sconosciuto
+// Unknown command
 // ============================================================================
-describe('CommandRouter — comando sconosciuto', () => {
-  it('dovrebbe mostrare messaggio di errore markdown', async () => {
+describe('CommandRouter — unknown command', () => {
+  it('shows a markdown error message', async () => {
     const result = await dispatch('nonexistent');
     const output = mock.getFullOutput();
     expect(output).toContain('nonexistent');
@@ -109,7 +109,7 @@ describe('CommandRouter — comando sconosciuto', () => {
     expect(result).toEqual({});
   });
 
-  it('dovrebbe contenere emoji ❓ nel messaggio', async () => {
+  it('contains the ❓ emoji in the message', async () => {
     await dispatch('unknown');
     expect(mock.getFullOutput()).toContain('❓');
   });
@@ -119,26 +119,26 @@ describe('CommandRouter — comando sconosciuto', () => {
 // Metadata propagation
 // ============================================================================
 describe('CommandRouter — metadata', () => {
-  it('/status dovrebbe avere metadata.command = "status"', async () => {
+  it('/status has metadata.command = "status"', async () => {
     cli.runList.mockResolvedValue({ items: [], rawText: '' });
     const result = await dispatch('status');
     expect(result.metadata).toBeDefined();
     expect(result.metadata!.command).toBe('status');
   });
 
-  it('/config dovrebbe avere metadata.command = "config"', async () => {
+  it('/config has metadata.command = "config"', async () => {
     const result = await dispatch('config', 'show');
     expect(result.metadata).toBeDefined();
     expect(result.metadata!.command).toBe('config');
   });
 
-  it('/init dovrebbe avere metadata.command = "init"', async () => {
+  it('/init has metadata.command = "init"', async () => {
     const result = await dispatch('init', '');
     expect(result.metadata).toBeDefined();
     expect(result.metadata!.command).toBe('init');
   });
 
-  it('/schedule dovrebbe avere metadata.command = "schedule"', async () => {
+  it('/schedule has metadata.command = "schedule"', async () => {
     cli.scheduleList.mockResolvedValue({ items: [], rawText: '' });
     const result = await dispatch('schedule', 'list');
     expect(result.metadata).toBeDefined();
@@ -147,15 +147,15 @@ describe('CommandRouter — metadata', () => {
 });
 
 // ============================================================================
-// createHandler ritorna handler valido
+// createHandler returns a valid handler
 // ============================================================================
 describe('CommandRouter — createHandler()', () => {
-  it('dovrebbe ritornare una funzione', () => {
+  it('returns a function', () => {
     const handler = router.createHandler();
     expect(typeof handler).toBe('function');
   });
 
-  it('handler è re-invocabile più volte', async () => {
+  it('handler can be re-invoked multiple times', async () => {
     cli.agentRun.mockResolvedValue({ runId: 'r', status: 'SUCCEEDED', output: '', exitCode: 0, durationMs: 0, raw: null });
     const handler = router.createHandler();
     const r1 = await handler({ command: 'run', prompt: 'a' } as any, {} as any, mock.stream as any, token as any);

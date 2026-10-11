@@ -1,5 +1,5 @@
 /**
- * Test helpers — factory per mock dei servizi e del ChatResponseStream.
+ * Test helpers — factories for service mocks and the ChatResponseStream.
  */
 import { vi } from 'vitest';
 import {

@@ -28,8 +28,8 @@ import {
  * {@link OzCliError} without losing the kind.
  */
 export class ProgressiveRunSteerer implements IRunSteerer {
-  // IMPL: capability probe lazy + cached per istanza; nessuna invalidation
-  // automatica: se l'utente aggiorna l'Oz CLI, basta riattivare l'estensione.
+  // IMPL: capability probe is lazy + cached per instance; no automatic
+  // invalidation: if the user upgrades the Oz CLI, reactivating the extension is enough.
   private capabilityPromise: Promise<SteerCapabilities> | null = null;
 
   constructor(private readonly cli: IOzCliService) {}

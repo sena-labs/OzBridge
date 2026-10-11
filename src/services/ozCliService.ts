@@ -143,7 +143,7 @@ export class OzCliService implements IOzCliService {
     this.extensionToken = token;
   }
 
-  /** Accesso dinamico alla config — ogni lettura riflette le impostazioni correnti */
+  /** Dynamic config access — every read reflects the current settings */
   private get config() {
     return this.configManager.getConfig();
   }
@@ -730,7 +730,7 @@ export class OzCliService implements IOzCliService {
   // Internals
   // =========================================================================
 
-  // IMPL: esecuzione core con child_process.spawn — gestisce timeout, cancellazione, errori
+  // IMPL: core execution with child_process.spawn — handles timeout, cancellation, errors
   private exec(
     args: string[],
     cwd?: string,
@@ -1224,7 +1224,7 @@ export class OzCliService implements IOzCliService {
         }
 
         if (exitCode !== 0) {
-          // IMPL: riconosce errori di autenticazione nello stderr
+          // IMPL: recognise authentication errors in stderr
           const combined = (stderr + stdout).toLowerCase();
           if (combined.includes('not logged in') || combined.includes('unauthorized') || combined.includes('please log in') || combined.includes('must log in')) {
             reject(new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'Oz CLI: not authenticated', exitCode, stderr));
@@ -1259,7 +1259,7 @@ export class OzCliService implements IOzCliService {
     });
   }
 
-  // IMPL: converte ExecResult in OzRunResult con JsonParser robusto (D2)
+  // IMPL: converts ExecResult into OzRunResult with the robust JsonParser (D2)
   // Handles both single-JSON responses and NDJSON streams from `oz agent run`.
   private toRunResult(result: ExecResult): OzRunResult {
     const stdout = result.stdout;
@@ -1293,7 +1293,7 @@ export class OzCliService implements IOzCliService {
       };
     }
 
-    // Fallback: output testuale puro (agent locale non strutturato)
+    // Fallback: plain-text output (unstructured local agent)
     return {
       runId: null,
       status: result.exitCode === 0 ? 'SUCCEEDED' : 'FAILED',
@@ -1450,7 +1450,7 @@ export class OzCliService implements IOzCliService {
   private _resolvedOzPath: string | undefined;
   private _resolvedFor: string | undefined;
 
-  // IMPL: converte ExecResult in lista generica con fallback a rawText (R1).
+  // IMPL: converts ExecResult into a generic list with a rawText fallback (R1).
   //
   // Bug-fix (dashboard 90s timeout): the Warp CLI returns paginated list
   // endpoints wrapped in an envelope object such as
@@ -1495,7 +1495,7 @@ export class OzCliService implements IOzCliService {
       return { items: [parsed as T] };
     }
 
-    // Fallback: nessun JSON valido (es. "No runs found.")
+    // Fallback: no valid JSON (e.g. "No runs found.")
     return { items: [], rawText: rawText || undefined };
   }
 
@@ -1546,7 +1546,7 @@ export class OzCliService implements IOzCliService {
     return env;
   }
 
-  /** Valida che un ID utente contenga solo caratteri sicuri (protezione injection) */
+  /** Validates that a user-supplied ID contains only safe characters (injection protection) */
   private sanitizeId(id: string, paramName: string): void {
     // Defensive: reject non-strings, empty values, and stringified `undefined`/`null`
     // that could slip through if a caller forwards a missing field. Without this

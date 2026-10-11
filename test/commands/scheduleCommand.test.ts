@@ -23,7 +23,7 @@ beforeEach(() => {
 describe('/schedule command', () => {
   // --- list ---
   describe('list', () => {
-    it('dovrebbe mostrare lista schedule', async () => {
+    it('shows the schedule list', async () => {
       cli.scheduleList.mockResolvedValue(makeListResult([
         { id: 's1', name: 'daily', cron: '0 9 * * *', paused: false },
       ]));
@@ -34,7 +34,7 @@ describe('/schedule command', () => {
       expect(mock.getFullOutput()).toContain('daily');
     });
 
-    it('dovrebbe usare "list" come default senza subcommand', async () => {
+    it('uses "list" as the default without a subcommand', async () => {
       cli.scheduleList.mockResolvedValue(makeListResult([]));
 
       await handler('', mock.stream as any, createMockToken() as any);
@@ -46,7 +46,7 @@ describe('/schedule command', () => {
 
   // --- create ---
   describe('create', () => {
-    it('dovrebbe creare schedule con doppi apici', async () => {
+    it('creates a schedule with double quotes', async () => {
       cli.scheduleCreate.mockResolvedValue({
         id: 's-new', name: 'lint', cron: '0 9 * * *', prompt: 'Run linting', paused: false,
       });
@@ -61,7 +61,7 @@ describe('/schedule command', () => {
       expect(mock.getFullOutput()).toContain('Schedule created');
     });
 
-    it('dovrebbe creare schedule con apici singoli', async () => {
+    it('creates a schedule with single quotes', async () => {
       cli.scheduleCreate.mockResolvedValue({
         id: 's-new', name: 'test', cron: '*/5 * * * *', prompt: 'Run tests', paused: false,
       });
@@ -85,7 +85,7 @@ describe('/schedule command', () => {
       expect(mock.getFullOutput()).toContain('Usage');
     });
 
-    it('dovrebbe accettare quote opposte annidate nel prompt', async () => {
+    it('accepts opposite quotes nested in the prompt', async () => {
       cli.scheduleCreate.mockResolvedValue({
         id: 's-nest', name: 'tests', cron: '0 9 * * *', prompt: "Run 'test' suite", paused: false,
       });
@@ -97,7 +97,7 @@ describe('/schedule command', () => {
       }));
     });
 
-    it('dovrebbe accettare quote stesso tipo escapate con backslash', async () => {
+    it('accepts same-type quotes escaped with a backslash', async () => {
       cli.scheduleCreate.mockResolvedValue({
         id: 's-esc', name: 'esc', cron: '0 9 * * *', prompt: 'He said "hi"', paused: false,
       });
@@ -109,8 +109,8 @@ describe('/schedule command', () => {
       }));
     });
 
-    // Gap: create passa environment dalla config
-    it('dovrebbe passare environment alla CLI se configurato', async () => {
+    // Gap: create passes environment from the config
+    it('passes environment to the CLI when configured', async () => {
       handler = createScheduleCommand(
         cli,
         createMockConfigManager({ defaultEnvironment: 'staging' }),
@@ -129,7 +129,7 @@ describe('/schedule command', () => {
 
   // --- pause ---
   describe('pause', () => {
-    it('dovrebbe pausare schedule con ID', async () => {
+    it('pauses a schedule by ID', async () => {
       cli.schedulePause.mockResolvedValue(undefined);
 
       await handler('pause s-123', mock.stream as any, createMockToken() as any);
@@ -148,7 +148,7 @@ describe('/schedule command', () => {
 
   // --- unpause ---
   describe('unpause', () => {
-    it('dovrebbe riattivare schedule', async () => {
+    it('reactivates a schedule', async () => {
       cli.scheduleUnpause.mockResolvedValue(undefined);
 
       await handler('unpause s-456', mock.stream as any, createMockToken() as any);
@@ -166,7 +166,7 @@ describe('/schedule command', () => {
 
   // --- delete ---
   describe('delete', () => {
-    it('dovrebbe eliminare schedule', async () => {
+    it('deletes a schedule', async () => {
       cli.scheduleDelete.mockResolvedValue(undefined);
 
       await handler('delete s-789', mock.stream as any, createMockToken() as any);
@@ -194,7 +194,7 @@ describe('/schedule command', () => {
 
   // --- get ---
   describe('get', () => {
-    it('dovrebbe mostrare i campi dello schedule', async () => {
+    it('shows the schedule fields', async () => {
       cli.scheduleGet.mockResolvedValue({
         id: 's1', name: 'daily', cron: '0 9 * * *', prompt: 'lint', paused: false,
       });
@@ -208,13 +208,13 @@ describe('/schedule command', () => {
       expect(out).toContain('running');
     });
 
-    it('dovrebbe mostrare usage senza id', async () => {
+    it('shows usage without an id', async () => {
       await handler('get', mock.stream as any, createMockToken() as any);
       expect(cli.scheduleGet).not.toHaveBeenCalled();
       expect(mock.getFullOutput()).toContain('Usage');
     });
 
-    it('paused schedule dovrebbe mostrare paused', async () => {
+    it('paused schedule shows paused', async () => {
       cli.scheduleGet.mockResolvedValue({
         id: 's1', name: 'd', cron: '* * * * *', prompt: 'p', paused: true,
       });
@@ -225,7 +225,7 @@ describe('/schedule command', () => {
 
   // --- update ---
   describe('update', () => {
-    it('dovrebbe inviare solo il --name specificato', async () => {
+    it('sends only the specified --name', async () => {
       cli.scheduleUpdate.mockResolvedValue({
         id: 's1', name: 'new-name', cron: '0 9 * * *', prompt: 'p', paused: false,
       });
@@ -236,7 +236,7 @@ describe('/schedule command', () => {
       expect(mock.getFullOutput()).toContain('Schedule updated');
     });
 
-    it('dovrebbe accettare più flag in qualsiasi ordine', async () => {
+    it('accepts multiple flags in any order', async () => {
       cli.scheduleUpdate.mockResolvedValue({
         id: 's1', name: 'n', cron: '*/5 * * * *', prompt: 'do x', paused: false,
       });
@@ -248,19 +248,19 @@ describe('/schedule command', () => {
       });
     });
 
-    it('dovrebbe mostrare usage senza id', async () => {
+    it('shows usage without an id', async () => {
       await handler('update', mock.stream as any, createMockToken() as any);
       expect(cli.scheduleUpdate).not.toHaveBeenCalled();
       expect(mock.getFullOutput()).toContain('Usage');
     });
 
-    it('senza alcun flag non chiama scheduleUpdate', async () => {
+    it('does not call scheduleUpdate without any flag', async () => {
       await handler('update s1', mock.stream as any, createMockToken() as any);
       expect(cli.scheduleUpdate).not.toHaveBeenCalled();
       expect(mock.getFullOutput()).toContain('Nothing to update');
     });
 
-    it('flag sconosciuto mostra usage', async () => {
+    it('unknown flag shows usage', async () => {
       await handler('update s1 --bogus "x"', mock.stream as any, createMockToken() as any);
       expect(cli.scheduleUpdate).not.toHaveBeenCalled();
       expect(mock.getFullOutput()).toContain('Usage');
@@ -276,7 +276,7 @@ describe('/schedule command', () => {
     expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
-  it('dovrebbe gestire errore generico', async () => {
+  it('handles a generic error', async () => {
     cli.scheduleList.mockRejectedValue(new Error('network'));
 
     await handler('list', mock.stream as any, createMockToken() as any);
@@ -284,8 +284,8 @@ describe('/schedule command', () => {
     expect(mock.getFullOutput()).toContain('network');
   });
 
-  // Gap: error handling per sub-command create/pause/unpause/delete
-  it('dovrebbe gestire errore su scheduleCreate', async () => {
+  // Gap: error handling for the create/pause/unpause/delete sub-commands
+  it('handles an error on scheduleCreate', async () => {
     cli.scheduleCreate.mockRejectedValue(new OzCliError(OzCliErrorKind.CLI_ERROR, 'invalid cron', 1));
 
     await handler('create job "invalid cron" "prompt"', mock.stream as any, createMockToken() as any);
@@ -293,7 +293,7 @@ describe('/schedule command', () => {
     expect(mock.getFullOutput()).toContain('CLI Error');
   });
 
-  it('dovrebbe gestire errore generico su scheduleCreate', async () => {
+  it('handles a generic error on scheduleCreate', async () => {
     cli.scheduleCreate.mockRejectedValue(new Error('timeout'));
 
     await handler('create job "0 9 * * *" "run lint"', mock.stream as any, createMockToken() as any);
@@ -301,7 +301,7 @@ describe('/schedule command', () => {
     expect(mock.getFullOutput()).toContain('timeout');
   });
 
-  it('dovrebbe gestire errore su schedulePause', async () => {
+  it('handles an error on schedulePause', async () => {
     cli.schedulePause.mockRejectedValue(new OzCliError(OzCliErrorKind.NOT_FOUND, 'schedule not found'));
 
     await handler('pause s-invalid', mock.stream as any, createMockToken() as any);
@@ -309,7 +309,7 @@ describe('/schedule command', () => {
     expect(mock.getFullOutput()).toContain('not found');
   });
 
-  it('dovrebbe gestire errore su scheduleUnpause', async () => {
+  it('handles an error on scheduleUnpause', async () => {
     cli.scheduleUnpause.mockRejectedValue(new Error('service unavailable'));
 
     await handler('unpause s-down', mock.stream as any, createMockToken() as any);
@@ -317,7 +317,7 @@ describe('/schedule command', () => {
     expect(mock.getFullOutput()).toContain('service unavailable');
   });
 
-  it('dovrebbe gestire errore su scheduleDelete', async () => {
+  it('handles an error on scheduleDelete', async () => {
     cli.scheduleDelete.mockRejectedValue(new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'forbidden'));
 
     await handler('delete s-perm', mock.stream as any, createMockToken() as any);
@@ -325,8 +325,8 @@ describe('/schedule command', () => {
     expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
-  // Gap: errore non-Error (stringa) nel catch → instanceof Error false branch (L122)
-  it('dovrebbe gestire errore non-Error (stringa) nel catch (String() branch)', async () => {
+  // Gap: non-Error (string) error in the catch → instanceof Error false branch (L122)
+  it('handles a non-Error (string) error in the catch (String() branch)', async () => {
     cli.scheduleList.mockRejectedValue('string thrown schedule error');
 
     await handler('list', mock.stream as any, createMockToken() as any);

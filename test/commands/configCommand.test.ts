@@ -32,7 +32,7 @@ describe('/config command', () => {
     expect(mock.getFullOutput()).toContain('Configuration');
   });
 
-  it('dovrebbe mostrare tutti i parametri settings', async () => {
+  it('shows all settings parameters', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));
     cli.environmentList.mockResolvedValue(makeListResult([]));
@@ -46,7 +46,7 @@ describe('/config command', () => {
     expect(output).toContain('Local timeout');
   });
 
-  it('dovrebbe mostrare stato CLI disponibile con versione', async () => {
+  it('shows the CLI status as available with the version', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '2.0.1', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));
     cli.environmentList.mockResolvedValue(makeListResult([]));
@@ -58,7 +58,7 @@ describe('/config command', () => {
     expect(mock.getFullOutput()).toContain('2.0.1');
   });
 
-  it('dovrebbe mostrare stato CLI non disponibile con button installa', async () => {
+  it('shows the CLI status as unavailable with an install button', async () => {
     cli.checkAvailability.mockResolvedValue({ available: false, version: null, path: null });
 
     await handler('', mock.stream as any, createMockToken() as any);
@@ -67,7 +67,7 @@ describe('/config command', () => {
     expect(mock.buttons.some(b => b.title.includes('Install'))).toBe(true);
   });
 
-  it('dovrebbe mostrare profili se disponibili', async () => {
+  it('shows profiles when available', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([
       { id: 'p1', name: 'Default' },
@@ -82,7 +82,7 @@ describe('/config command', () => {
     expect(mock.getFullOutput()).toContain('Custom');
   });
 
-  it('dovrebbe mostrare integrazioni con indicatore connesso/disconnesso', async () => {
+  it('shows integrations with a connected/disconnected indicator', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));
     cli.environmentList.mockResolvedValue(makeListResult([]));
@@ -100,7 +100,7 @@ describe('/config command', () => {
     expect(output).toContain('GitLab');
   });
 
-  it('dovrebbe usare console.warn se profileList fallisce (non blocca il comando)', async () => {
+  it('uses console.warn when profileList fails (does not block the command)', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockRejectedValue(new Error('network'));
@@ -142,8 +142,8 @@ describe('/config command', () => {
     expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
-  // Gap: environmentList failure dovrebbe loggare warning senza bloccare il comando
-  it('dovrebbe usare console.warn se environmentList fallisce (non blocca il comando)', async () => {
+  // Gap: environmentList failure should log a warning without blocking the command
+  it('uses console.warn when environmentList fails (does not block the command)', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));
@@ -161,7 +161,7 @@ describe('/config command', () => {
   });
 
   // Gap: integrationList failure should log warning without blocking
-  it('dovrebbe usare console.warn se integrationList fallisce (non blocca il comando)', async () => {
+  it('uses console.warn when integrationList fails (does not block the command)', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));
@@ -179,7 +179,7 @@ describe('/config command', () => {
   });
 
   // Gap: display environmentList with items
-  it('dovrebbe mostrare environments se disponibili', async () => {
+  it('shows environments when available', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));
     cli.environmentList.mockResolvedValue(makeListResult([
@@ -197,8 +197,8 @@ describe('/config command', () => {
     expect(output).toContain('team');
   });
 
-  // Gap: versione null → mostra 'unknown' (branch ?? 'unknown')
-  it('dovrebbe mostrare "unknown" se versione è null', async () => {
+  // Gap: null version → shows 'unknown' (branch ?? 'unknown')
+  it('shows "unknown" when the version is null', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: null, path: 'oz' });
     cli.profileList.mockResolvedValue(makeListResult([]));
     cli.environmentList.mockResolvedValue(makeListResult([]));
@@ -209,8 +209,8 @@ describe('/config command', () => {
     expect(mock.getFullOutput()).toContain('unknown');
   });
 
-  // Gap: errore non-Error (stringa) nel catch → instanceof Error false branch
-  it('dovrebbe gestire errore non-Error (stringa) nel catch (String() branch)', async () => {
+  // Gap: non-Error (string) error in the catch → instanceof Error false branch
+  it('handles a non-Error (string) error in the catch (String() branch)', async () => {
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     cli.checkAvailability.mockRejectedValue('string thrown');
 

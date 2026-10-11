@@ -40,7 +40,7 @@ export function createRunCommand(
       return {};
     }
 
-    // Raccogli contesto IDE
+    // Collect the IDE context
     const context = ctx.gather();
     const contextBlock = ctx.formatForPrompt(context);
 
@@ -51,7 +51,7 @@ export function createRunCommand(
     }
     const resolvedPrompt = expanded.text;
 
-    // Costruisci prompt con contesto iniettato (D5)
+    // Build the prompt with the injected context (D5)
     const fullPrompt = `${contextBlock}\n\n${resolvedPrompt}`;
 
     // Detect whether the prompt names a specific agent skill

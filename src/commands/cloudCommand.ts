@@ -85,7 +85,7 @@ export function createCloudCommand(
       }
     }
 
-    // Inietta contesto IDE nel prompt
+    // Inject the IDE context into the prompt
     const context = ctx.gather();
     const contextBlock = ctx.formatForPrompt(context);
 

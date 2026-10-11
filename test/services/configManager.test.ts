@@ -13,7 +13,7 @@ beforeEach(() => {
 describe('ConfigManager', () => {
   // --- getConfig() ---
   describe('getConfig()', () => {
-    it('dovrebbe ritornare la configurazione di default', () => {
+    it('returns the default configuration', () => {
       const mgr = new ConfigManager();
       const config = mgr.getConfig();
       expect(config.ozPath).toBe(DEFAULT_CONFIG.ozPath);
@@ -23,7 +23,7 @@ describe('ConfigManager', () => {
       mgr.dispose();
     });
 
-    it('dovrebbe leggere valori custom dalla configurazione VS Code', () => {
+    it('reads custom values from the VS Code configuration', () => {
       workspace.getConfiguration.mockReturnValue({
         get: vi.fn((key: string, defaultValue?: unknown) => {
           if (key === 'ozPath') return '/custom/oz';
@@ -39,23 +39,23 @@ describe('ConfigManager', () => {
       mgr.dispose();
     });
 
-    it('dovrebbe cachare la configurazione', () => {
+    it('caches the configuration', () => {
       const mgr = new ConfigManager();
       const config1 = mgr.getConfig();
       const config2 = mgr.getConfig();
-      expect(config1).toBe(config2); // Stessa referenza (cache)
+      expect(config1).toBe(config2); // Same reference (cache)
       expect(workspace.getConfiguration).toHaveBeenCalledTimes(1);
       mgr.dispose();
     });
 
-    it('dovrebbe leggere dalla sezione "ozBridge"', () => {
+    it('reads from the "ozBridge" section', () => {
       const mgr = new ConfigManager();
       mgr.getConfig();
       expect(workspace.getConfiguration).toHaveBeenCalledWith('ozBridge');
       mgr.dispose();
     });
 
-    it('dovrebbe leggere tutti i campi config con valori custom', () => {
+    it('reads all config fields with custom values', () => {
       workspace.getConfiguration.mockReturnValue({
         get: vi.fn((key: string, _default?: unknown) => {
           const customValues: Record<string, unknown> = {
@@ -88,8 +88,8 @@ describe('ConfigManager', () => {
 
   // --- Config change ---
   describe('config change', () => {
-    it('dovrebbe invalidare la cache al cambio configurazione', () => {
-      // Cattura il callback registrato su onDidChangeConfiguration
+    it('invalidates the cache on a configuration change', () => {
+      // Capture the callback registered on onDidChangeConfiguration
       let changeCallback: ((e: any) => void) | undefined;
       workspace.onDidChangeConfiguration.mockImplementation((cb: any) => {
         changeCallback = cb;
@@ -97,18 +97,18 @@ describe('ConfigManager', () => {
       });
 
       const mgr = new ConfigManager();
-      mgr.getConfig(); // Popola cache
+      mgr.getConfig(); // Populate the cache
       expect(workspace.getConfiguration).toHaveBeenCalledTimes(1);
 
-      // Simula cambio configurazione
+      // Simulate a configuration change
       changeCallback?.({ affectsConfiguration: (s: string) => s === 'ozBridge' });
 
-      mgr.getConfig(); // Dovrebbe rileggere
+      mgr.getConfig(); // Should re-read
       expect(workspace.getConfiguration).toHaveBeenCalledTimes(2);
       mgr.dispose();
     });
 
-    it('dovrebbe ignorare cambi ad altre sezioni', () => {
+    it('ignores changes to other sections', () => {
       let changeCallback: ((e: any) => void) | undefined;
       workspace.onDidChangeConfiguration.mockImplementation((cb: any) => {
         changeCallback = cb;
@@ -119,13 +119,13 @@ describe('ConfigManager', () => {
       mgr.getConfig();
       changeCallback?.({ affectsConfiguration: (s: string) => s === 'editor' });
       mgr.getConfig();
-      // Solo 1 chiamata — cache non invalidata
+      // Only 1 call — cache not invalidated
       expect(workspace.getConfiguration).toHaveBeenCalledTimes(1);
       mgr.dispose();
     });
 
-    // Gap: onConfigChanged emette la config aggiornata
-    it('dovrebbe emettere evento onConfigChanged con config aggiornata', () => {
+    // Gap: onConfigChanged emits the updated config
+    it('emits the onConfigChanged event with the updated config', () => {
       let changeCallback: ((e: any) => void) | undefined;
       workspace.onDidChangeConfiguration.mockImplementation((cb: any) => {
         changeCallback = cb;
@@ -136,10 +136,10 @@ describe('ConfigManager', () => {
       const listener = vi.fn();
       mgr.onConfigChanged(listener);
 
-      // Primo getConfig con default
+      // First getConfig with defaults
       mgr.getConfig();
 
-      // Cambia configurazione
+      // Change the configuration
       workspace.getConfiguration.mockReturnValue({
         get: vi.fn((key: string, defaultValue?: unknown) => {
           if (key === 'ozPath') return '/new/oz';
@@ -159,7 +159,7 @@ describe('ConfigManager', () => {
 
   // --- dispose() ---
   describe('dispose()', () => {
-    it('dovrebbe rilasciare le risorse senza errori', () => {
+    it('releases resources without errors', () => {
       const disposeFn = vi.fn();
       workspace.onDidChangeConfiguration.mockReturnValue({ dispose: disposeFn });
 

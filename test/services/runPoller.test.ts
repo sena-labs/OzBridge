@@ -11,7 +11,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   cli = createMockCli();
   poller = new RunPoller(cli, createMockConfigManager({
-    cloudPollingIntervalMs: 100,     // Veloce per test
+    cloudPollingIntervalMs: 100,     // Fast for tests
     cloudPollingTimeoutMs: 10_000,
   }));
 });
@@ -29,13 +29,13 @@ describe('RunPoller', () => {
   // poll() - happy path
   // =========================================================================
   describe('poll() success', () => {
-    it('dovrebbe ritornare immediatamente se lo stato è terminale al primo poll', async () => {
+    it('returns immediately when the status is terminal on the first poll', async () => {
       cli.runGet.mockResolvedValue(makeRunResult({ status: 'SUCCEEDED' }));
 
       const onProgress = vi.fn();
       const pollPromise = poller.poll('run-1', onProgress);
 
-      // Avanziamo il timer per il primo intervallo
+      // Advance the timer for the first interval
       await vi.advanceTimersByTimeAsync(100);
 
       const result = await pollPromise;
@@ -44,7 +44,7 @@ describe('RunPoller', () => {
       expect(cli.runGet).toHaveBeenCalledWith('run-1');
     });
 
-    it('dovrebbe pollare più volte prima del risultato finale', async () => {
+    it('polls multiple times before the final result', async () => {
       let callCount = 0;
       cli.runGet.mockImplementation(async () => {
         callCount++;
@@ -70,7 +70,7 @@ describe('RunPoller', () => {
       expect(onProgress).toHaveBeenCalledWith('SUCCEEDED');
     });
 
-    it('dovrebbe gestire stato FAILED come terminale', async () => {
+    it('handles status FAILED as terminal', async () => {
       cli.runGet.mockResolvedValue(makeRunResult({ status: 'FAILED' }));
       const pollPromise = poller.poll('run-3', vi.fn());
       await vi.advanceTimersByTimeAsync(100);
@@ -83,8 +83,8 @@ describe('RunPoller', () => {
   // poll() - timeout
   // =========================================================================
   describe('poll() timeout', () => {
-    it('dovrebbe lanciare TIMEOUT se supera cloudPollingTimeoutMs', async () => {
-      // Usa un poller con timeout BASSO per evitare timeout del test
+    it('throws TIMEOUT when cloudPollingTimeoutMs is exceeded', async () => {
+      // Use a poller with a LOW timeout to avoid a test timeout
       const fastPoller = new RunPoller(cli, createMockConfigManager({
         cloudPollingIntervalMs: 50,
         cloudPollingTimeoutMs: 300,
@@ -93,10 +93,10 @@ describe('RunPoller', () => {
       cli.runGet.mockResolvedValue(makeRunResult({ status: 'INPROGRESS' }));
 
       const pollPromise = fastPoller.poll('run-timeout', vi.fn());
-      // Attacca catch per prevenire Unhandled Rejection
+      // Attach catch to prevent an Unhandled Rejection
       const settled = pollPromise.catch((e: unknown) => e);
 
-      // Avanziamo in piccoli step per permettere la creazione dei timer
+      // Advance in small steps to allow the timers to be created
       for (let i = 0; i < 20; i++) {
         await vi.advanceTimersByTimeAsync(50);
       }
@@ -113,10 +113,10 @@ describe('RunPoller', () => {
   // poll() - cancellation
   // =========================================================================
   describe('poll() cancellation', () => {
-    it('dovrebbe lanciare CANCELLED se il token viene cancellato', async () => {
+    it('throws CANCELLED when the token is cancelled', async () => {
       cli.runGet.mockResolvedValue(makeRunResult({ status: 'INPROGRESS' }));
 
-      // Crea mock CancellationToken
+      // Create a mock CancellationToken
       const listeners: Array<() => void> = [];
       const mockToken = {
         isCancellationRequested: false,
@@ -127,7 +127,7 @@ describe('RunPoller', () => {
       };
 
       const pollPromise = poller.poll('run-cancel', vi.fn(), mockToken as any);
-      // Attacca catch per prevenire Unhandled Rejection
+      // Attach catch to prevent an Unhandled Rejection
       const settled = pollPromise.catch((e: unknown) => e);
 
       // Let one poll cycle run
@@ -149,13 +149,13 @@ describe('RunPoller', () => {
   // disposeAll()
   // =========================================================================
   describe('disposeAll()', () => {
-    it('dovrebbe abortire tutti i poller attivi', async () => {
+    it('aborts all active pollers', async () => {
       cli.runGet.mockResolvedValue(makeRunResult({ status: 'INPROGRESS' }));
 
       const p1 = poller.poll('r1', vi.fn());
       const p2 = poller.poll('r2', vi.fn());
 
-      // Attacca catch PRIMA di disposeAll per evitare Unhandled Rejection
+      // Attach catch BEFORE disposeAll to avoid an Unhandled Rejection
       const p1Settled = p1.catch((e: unknown) => e);
       const p2Settled = p2.catch((e: unknown) => e);
 
@@ -171,7 +171,7 @@ describe('RunPoller', () => {
       expect((r2 as OzCliError).kind).toBe(OzCliErrorKind.CANCELLED);
     });
 
-    it('dovrebbe essere idempotente', () => {
+    it('is idempotent', () => {
       expect(() => {
         poller.disposeAll();
         poller.disposeAll();
@@ -180,21 +180,21 @@ describe('RunPoller', () => {
   });
 
   // =========================================================================
-  // sleep() short-circuit con signal pre-aborted
+  // sleep() short-circuit with a pre-aborted signal
   // =========================================================================
-  describe('sleep() con signal già abortito', () => {
-    it('dovrebbe lanciare CANCELLED se il signal è già abortito prima del poll', async () => {
+  describe('sleep() with an already-aborted signal', () => {
+    it('throws CANCELLED when the signal is already aborted before the poll', async () => {
       cli.runGet.mockResolvedValue(makeRunResult({ status: 'INPROGRESS' }));
 
-      // Abort immediatamente prima di poll
+      // Abort immediately before poll
       const abort = new AbortController();
       abort.abort();
 
-      // Usiamo CancellationToken pre-cancelled
+      // Use a pre-cancelled CancellationToken
       const mockToken = {
         isCancellationRequested: true,
         onCancellationRequested: (cb: () => void) => {
-          // Invoca subito poiché già cancelled
+          // Invoke immediately since it is already cancelled
           cb();
           return { dispose: vi.fn() };
         },
@@ -214,8 +214,8 @@ describe('RunPoller', () => {
   // =========================================================================
   // poll() - runGet failure during polling
   // =========================================================================
-  describe('poll() con runGet che fallisce', () => {
-    it('dovrebbe propagare errore se runGet lancia OzCliError', async () => {
+  describe('poll() with a failing runGet', () => {
+    it('propagates the error when runGet throws OzCliError', async () => {
       cli.runGet.mockRejectedValue(new OzCliError(OzCliErrorKind.CLI_ERROR, 'service unavailable', 1));
 
       const pollPromise = poller.poll('run-err', vi.fn());
@@ -228,7 +228,7 @@ describe('RunPoller', () => {
       expect((err as OzCliError).kind).toBe(OzCliErrorKind.CLI_ERROR);
     });
 
-    it('dovrebbe propagare errore generico se runGet lancia Error', async () => {
+    it('propagates a generic error when runGet throws Error', async () => {
       cli.runGet.mockRejectedValue(new Error('ECONNREFUSED'));
 
       const pollPromise = poller.poll('run-net-err', vi.fn());
@@ -245,8 +245,8 @@ describe('RunPoller', () => {
   // =========================================================================
   // Backoff behavior
   // =========================================================================
-  describe('backoff esponenziale', () => {
-    it('dovrebbe aumentare l\'intervallo fino a maxInterval (30s)', async () => {
+  describe('exponential backoff', () => {
+    it('increases the interval up to maxInterval (30s)', async () => {
       // Create a poller with a longer timeout for this backoff test
       const backoffPoller = new RunPoller(cli, createMockConfigManager({
         cloudPollingIntervalMs: 100,
@@ -262,7 +262,7 @@ describe('RunPoller', () => {
 
       const pollPromise = backoffPoller.poll('run-backoff', vi.fn());
 
-      // Avanziamo abbastanza per completare 10 cicli con backoff
+      // Advance enough to complete 10 cycles with backoff
       for (let i = 0; i < 15; i++) {
         await vi.advanceTimersByTimeAsync(5000);
       }

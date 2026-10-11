@@ -2,36 +2,36 @@ import { describe, it, expect } from 'vitest';
 import { detectSkill } from '../../src/commands/skillDetector.js';
 
 describe('detectSkill', () => {
-  it('dovrebbe rilevare skill "spec" nel prompt', () => {
+  it('detects the "spec" skill in the prompt', () => {
     expect(detectSkill('write a spec for the new module')).toBe('1-spec-agent');
   });
 
-  it('dovrebbe rilevare skill "test" nel prompt', () => {
+  it('detects the "test" skill in the prompt', () => {
     expect(detectSkill('generate test cases')).toBe('5-test-agent');
   });
 
-  it('dovrebbe rilevare skill "review" nel prompt', () => {
+  it('detects the "review" skill in the prompt', () => {
     expect(detectSkill('review my code')).toBe('4-review-agent');
   });
 
-  it('dovrebbe restituire undefined se nessuna skill rilevata', () => {
+  it('returns undefined when no skill is detected', () => {
     expect(detectSkill('fix the bug in production')).toBeUndefined();
   });
 
-  it('non dovrebbe avere falsi positivi su sottostringhe', () => {
-    // "inspector" contiene "spec" come sottostringa, ma non è un word match
+  it('has no false positives on substrings', () => {
+    // "inspector" contains "spec" as a substring, but it is not a word match
     expect(detectSkill('run the inspector tool')).toBeUndefined();
   });
 
-  it('dovrebbe essere case-insensitive', () => {
+  it('is case-insensitive', () => {
     expect(detectSkill('Write a SPEC please')).toBe('1-spec-agent');
   });
 
-  it('dovrebbe rilevare skill con punteggiatura adiacente', () => {
+  it('detects skills with adjacent punctuation', () => {
     expect(detectSkill('please run test, thanks!')).toBe('5-test-agent');
   });
 
-  it('dovrebbe restituire undefined per prompt vuoto', () => {
+  it('returns undefined for an empty prompt', () => {
     expect(detectSkill('')).toBeUndefined();
   });
 });

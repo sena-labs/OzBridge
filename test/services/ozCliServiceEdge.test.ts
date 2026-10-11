@@ -87,7 +87,7 @@ describe('OzCliService exec() — coverage gaps', () => {
   // Lines 232-236: Synchronous spawn throw
   // =========================================================================
   describe('sync spawn throw', () => {
-    it('dovrebbe rigettare con NOT_FOUND se spawn lancia sincronamente', async () => {
+    it('rejects with NOT_FOUND when spawn throws synchronously', async () => {
       mockSpawn.mockImplementation(() => {
         throw new Error('EPERM: operation not permitted');
       });
@@ -103,7 +103,7 @@ describe('OzCliService exec() — coverage gaps', () => {
       }
     });
 
-    it('dovrebbe includere il percorso oz nel messaggio di errore sync', async () => {
+    it('includes the oz path in the sync error message', async () => {
       mockSpawn.mockImplementation(() => {
         throw new TypeError('Cannot execute');
       });
@@ -122,7 +122,7 @@ describe('OzCliService exec() — coverage gaps', () => {
   // Line 273: proc.on('error') non-ENOENT → CLI_ERROR
   // =========================================================================
   describe('non-ENOENT spawn error', () => {
-    it('dovrebbe rigettare con CLI_ERROR per errore generico (non ENOENT)', async () => {
+    it('rejects with CLI_ERROR for a generic error (not ENOENT)', async () => {
       createMockProcess({ error: new Error('EACCES: permission denied') });
 
       try {
@@ -135,7 +135,7 @@ describe('OzCliService exec() — coverage gaps', () => {
       }
     });
 
-    it('dovrebbe rigettare con CLI_ERROR per errore EPIPE', async () => {
+    it('rejects with CLI_ERROR for an EPIPE error', async () => {
       createMockProcess({ error: new Error('EPIPE: broken pipe') });
 
       try {
@@ -152,20 +152,20 @@ describe('OzCliService exec() — coverage gaps', () => {
   // Lines 253-255 + 287-292: Timeout → killed=true → TIMEOUT on close
   // =========================================================================
   describe('timeout handling', () => {
-    it('dovrebbe rigettare con TIMEOUT quando il processo non termina in tempo', async () => {
+    it('rejects with TIMEOUT when the process does not finish in time', async () => {
       vi.useFakeTimers();
 
       const proc = createControllableProcess();
 
       const promise = cli.agentRun({ prompt: 'slow operation' });
 
-      // Avanza il timer oltre il timeout (200ms configurato)
+      // Advance the timer past the timeout (200ms configured)
       await vi.advanceTimersByTimeAsync(250);
 
-      // Il timeout handler ha settato killed=true e chiamato proc.kill
+      // The timeout handler has set killed=true and called proc.kill
       expect(proc.kill).toHaveBeenCalledWith('SIGTERM');
 
-      // Ora il processo mock emette 'close' (come farebbe dopo SIGTERM)
+      // Now the mock process emits 'close' (as it would after SIGTERM)
       proc.emit('close', null);
 
       await expect(promise).rejects.toThrow(OzCliError);
@@ -185,7 +185,7 @@ describe('OzCliService exec() — coverage gaps', () => {
   // Lines 260-261 + 287-292: Cancellation → killed=true → CANCELLED on close
   // =========================================================================
   describe('cancellation handling', () => {
-    it('dovrebbe short-circuitare se il token è già cancellato prima dello spawn', async () => {
+    it('short-circuits when the token is already cancelled before spawn', async () => {
       const token = {
         isCancellationRequested: true,
         onCancellationRequested: vi.fn(() => ({ dispose: vi.fn() })),
@@ -198,20 +198,20 @@ describe('OzCliService exec() — coverage gaps', () => {
       expect(token.onCancellationRequested).not.toHaveBeenCalled();
     });
 
-    it('dovrebbe rigettare con CANCELLED quando il token viene cancellato', async () => {
+    it('rejects with CANCELLED when the token is cancelled', async () => {
       const proc = createControllableProcess();
 
       const cts = new CancellationTokenSource();
       // agentRun passes cancellation token to exec()
       const promise = cli.agentRun({ prompt: 'cancel me', cancellation: cts.token as any });
 
-      // Simula la cancellazione dell'utente
+      // Simulate the user cancelling
       cts.cancel();
 
-      // Il cancel handler ha settato killed=true e chiamato proc.kill
+      // The cancel handler has set killed=true and called proc.kill
       expect(proc.kill).toHaveBeenCalledWith('SIGTERM');
 
-      // Il processo chiude dopo il kill
+      // The process closes after the kill
       proc.emit('close', null);
 
       await expect(promise).rejects.toThrow(OzCliError);
@@ -229,7 +229,7 @@ describe('OzCliService exec() — coverage gaps', () => {
   // Line 234: spawn throw non-Error → String(err) branch
   // =========================================================================
   describe('sync spawn throw non-Error', () => {
-    it('dovrebbe gestire throw di stringa con String() nel messaggio', async () => {
+    it('handles a thrown string with String() in the message', async () => {
       mockSpawn.mockImplementation(() => {
         // eslint-disable-next-line no-throw-literal
         throw 'raw string error';
@@ -249,29 +249,29 @@ describe('OzCliService exec() — coverage gaps', () => {
   // Lines 267, 280: settled guards — double event race
   // =========================================================================
   describe('settled guards (double event)', () => {
-    it('dovrebbe ignorare evento error se già settled da close (L267)', async () => {
+    it('ignores the error event when already settled by close (L267)', async () => {
       const proc = createControllableProcess();
       const promise = cli.agentRun({ prompt: 'double-settle' });
 
-      // stdout con dati validi poi close → settled = true
+      // stdout with valid data then close → settled = true
       proc.stdout.emit('data', Buffer.from('{"status":"SUCCEEDED"}'));
       proc.emit('close', 0);
 
-      // Error tardivo → deve essere ignorato dal settled guard
+      // Late error → must be ignored by the settled guard
       proc.emit('error', new Error('late error'));
 
       const result = await promise;
       expect(result.status).toBe('SUCCEEDED');
     });
 
-    it('dovrebbe ignorare evento close se già settled da error (L280)', async () => {
+    it('ignores the close event when already settled by error (L280)', async () => {
       const proc = createControllableProcess();
       const promise = cli.agentRun({ prompt: 'err-then-close' });
 
       // Error fires first → settled = true
       proc.emit('error', new Error('ENOENT: not found'));
 
-      // Close tardivo → deve essere ignorato dal settled guard
+      // Late close → must be ignored by the settled guard
       proc.emit('close', 1);
 
       await expect(promise).rejects.toThrow(OzCliError);
@@ -282,11 +282,11 @@ describe('OzCliService exec() — coverage gaps', () => {
   // Line 302: CLI_ERROR with empty stderr + stdout → "Exit code N" fallback
   // =========================================================================
   describe('CLI_ERROR empty output fallback', () => {
-    it('dovrebbe usare "Exit code N" come messaggio se stderr e stdout sono vuoti', async () => {
+    it('uses "Exit code N" as the message when stderr and stdout are empty', async () => {
       const proc = createControllableProcess();
       const promise = cli.agentRun({ prompt: 'empty-fail' });
 
-      // Close con exit code non-zero senza emettere stdout/stderr
+      // Close with a non-zero exit code without emitting stdout/stderr
       proc.emit('close', 42);
 
       try {

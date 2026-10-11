@@ -18,12 +18,12 @@ beforeEach(() => {
 
 describe('CommandRouter', () => {
   describe('createHandler()', () => {
-    it('dovrebbe creare un handler valido', () => {
+    it('creates a valid handler', () => {
       const handler = router.createHandler();
       expect(handler).toBeTypeOf('function');
     });
 
-    it('dovrebbe delegare al comando /run per default (nessun command)', async () => {
+    it('delegates to the /run command by default (no command)', async () => {
       cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
       cli.agentRun.mockResolvedValue({
         runId: null, status: 'SUCCEEDED', output: 'ok', exitCode: 0, durationMs: 100, raw: null,
@@ -42,7 +42,7 @@ describe('CommandRouter', () => {
       expect((result!.metadata as any).command).toBe('run');
     });
 
-    it('dovrebbe delegare a /models quando command = "models"', async () => {
+    it('delegates to /models when command = "models"', async () => {
       cli.modelList.mockResolvedValue({ items: [{ id: 'gpt-4' }] });
 
       const handler = router.createHandler();
@@ -58,7 +58,7 @@ describe('CommandRouter', () => {
       expect(cli.modelList).toHaveBeenCalled();
     });
 
-    it('dovrebbe mostrare help per comando sconosciuto', async () => {
+    it('shows help for an unknown command', async () => {
       const handler = router.createHandler();
       const mock = createMockStream();
       await handler(
@@ -75,7 +75,7 @@ describe('CommandRouter', () => {
       expect(output).toContain('/config');
     });
 
-    it('dovrebbe iniettare metadata.command nel risultato', async () => {
+    it('injects metadata.command into the result', async () => {
       cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
       cli.agentRun.mockResolvedValue({
         runId: null, status: 'SUCCEEDED', output: '', exitCode: 0, durationMs: 0, raw: null,
@@ -93,16 +93,16 @@ describe('CommandRouter', () => {
       expect(result!.metadata).toHaveProperty('command', 'run');
     });
 
-    // Gap: routing diretto per ogni comando registrato
+    // Gap: direct routing for every registered command
     it.each([
       ['cloud', 'agentRunCloud'],
       ['status', 'runList'],
       ['history', 'runList'],
       ['schedule', 'scheduleList'],
       ['mcp', 'mcpList'],
-    ] as const)('dovrebbe delegare a /%s', async (command, mockMethod) => {
+    ] as const)('delegates to /%s', async (command, mockMethod) => {
       (cli as any)[mockMethod].mockResolvedValue({ items: [], rawText: undefined });
-      // cloud ha bisogno di checkAvailability
+      // cloud needs checkAvailability
       cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
       cli.agentRunCloud.mockResolvedValue({
         runId: null, status: 'SUCCEEDED', output: '', exitCode: 0, durationMs: 0, raw: null,
@@ -120,7 +120,7 @@ describe('CommandRouter', () => {
       expect((result!.metadata as any).command).toBe(command);
     });
 
-    it('dovrebbe delegare a /config', async () => {
+    it('delegates to /config', async () => {
       cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
       cli.profileList.mockResolvedValue({ items: [], rawText: undefined });
       cli.environmentList.mockResolvedValue({ items: [], rawText: undefined });
@@ -138,7 +138,7 @@ describe('CommandRouter', () => {
       expect((result!.metadata as any).command).toBe('config');
     });
 
-    it('dovrebbe delegare a /init', async () => {
+    it('delegates to /init', async () => {
       const handler = router.createHandler();
       const mock = createMockStream();
       const result = await handler(

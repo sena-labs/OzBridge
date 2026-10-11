@@ -17,10 +17,10 @@ describe('StartupCoordinator', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Stato iniziale
+  // Initial state
   // ---------------------------------------------------------------------------
 
-  it('dovrebbe iniziare in stato cold', () => {
+  it('starts in the cold state', () => {
     expect(sc.currentState).toBe('cold');
   });
 
@@ -28,7 +28,7 @@ describe('StartupCoordinator', () => {
   // enqueue
   // ---------------------------------------------------------------------------
 
-  it('dovrebbe accodare task in stato cold senza eseguirlo subito', async () => {
+  it('queues a task in the cold state without running it immediately', async () => {
     const task = vi.fn().mockResolvedValue(undefined);
     sc.enqueue('test.task', task);
     expect(task).not.toHaveBeenCalled();
@@ -38,21 +38,21 @@ describe('StartupCoordinator', () => {
     expect(task).toHaveBeenCalledOnce();
   });
 
-  it('dovrebbe lanciare un errore se il label è una stringa vuota', () => {
+  it('throws an error when the label is an empty string', () => {
     expect(() => sc.enqueue('', vi.fn())).toThrow('Startup task label cannot be empty.');
   });
 
-  it('dovrebbe lanciare un errore se il label contiene solo spazi', () => {
+  it('throws an error when the label contains only spaces', () => {
     expect(() => sc.enqueue('   ', vi.fn())).toThrow('Startup task label cannot be empty.');
   });
 
-  it('dovrebbe ignorare enqueue dopo dispose senza lanciare', () => {
+  it('ignores enqueue after dispose without throwing', () => {
     sc.dispose();
     expect(() => sc.enqueue('late', vi.fn())).not.toThrow();
     expect(sc.currentState).toBe('cold');
   });
 
-  it('dovrebbe eseguire task accodata dopo start (late enqueue best-effort)', async () => {
+  it('runs a task queued after start (best-effort late enqueue)', async () => {
     sc.start();
     await sc.ensureReady({ softTimeoutMs: 5_000 });
 
@@ -67,7 +67,7 @@ describe('StartupCoordinator', () => {
   // start / single-flight
   // ---------------------------------------------------------------------------
 
-  it('dovrebbe essere idempotente: start() chiamato due volte non esegue la coda due volte', async () => {
+  it('is idempotent: start() called twice does not run the queue twice', async () => {
     const task = vi.fn().mockResolvedValue(undefined);
     sc.enqueue('t', task);
     sc.start();
@@ -76,17 +76,17 @@ describe('StartupCoordinator', () => {
     expect(task).toHaveBeenCalledOnce();
   });
 
-  it('dovrebbe ignorare start() dopo dispose', () => {
+  it('ignores start() after dispose', () => {
     sc.dispose();
     expect(() => sc.start()).not.toThrow();
     expect(sc.currentState).toBe('cold');
   });
 
   // ---------------------------------------------------------------------------
-  // Ordine di esecuzione
+  // Execution order
   // ---------------------------------------------------------------------------
 
-  it("dovrebbe eseguire task nell'ordine di accodamento", async () => {
+  it("runs tasks in the order they were queued", async () => {
     const order: number[] = [];
     sc.enqueue('first', async () => { order.push(1); });
     sc.enqueue('second', async () => { order.push(2); });
@@ -97,10 +97,10 @@ describe('StartupCoordinator', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Gestione degli errori / stato degraded
+  // Error handling / degraded state
   // ---------------------------------------------------------------------------
 
-  it('dovrebbe passare a stato degraded se un task fallisce continuando gli altri', async () => {
+  it('moves to the degraded state when a task fails, while still running the others', async () => {
     const after = vi.fn().mockResolvedValue(undefined);
     sc.enqueue('failing', async () => { throw new Error('boom'); });
     sc.enqueue('after', after);
@@ -111,7 +111,7 @@ describe('StartupCoordinator', () => {
     expect(after).toHaveBeenCalledOnce();
   });
 
-  it("dovrebbe restituire 'degraded' da ensureReady quando lo stato è degraded", async () => {
+  it("returns 'degraded' from ensureReady when the state is degraded", async () => {
     sc.enqueue('bad', async () => { throw new Error('x'); });
     sc.start();
     const r = await sc.ensureReady({ softTimeoutMs: 5_000 });
@@ -122,14 +122,14 @@ describe('StartupCoordinator', () => {
   // ensureReady — timeout
   // ---------------------------------------------------------------------------
 
-  it("dovrebbe restituire 'timeout' quando i task impiegano più del softTimeout", async () => {
+  it("returns 'timeout' when the tasks take longer than softTimeout", async () => {
     sc.enqueue('slow', () => new Promise<void>((resolve) => { setTimeout(resolve, 500); }));
     sc.start();
     const result = await sc.ensureReady({ softTimeoutMs: 10 });
     expect(result).toBe('timeout');
   });
 
-  it("dovrebbe restituire 'ready' al termine dei task entro il timeout", async () => {
+  it("returns 'ready' when the tasks finish within the timeout", async () => {
     sc.enqueue('fast', async () => { /* instant */ });
     sc.start();
     const result = await sc.ensureReady({ softTimeoutMs: 5_000 });
@@ -137,20 +137,20 @@ describe('StartupCoordinator', () => {
     expect(sc.currentState).toBe('ready');
   });
 
-  it("dovrebbe attendere il completamento completo quando softTimeoutMs è zero", async () => {
+  it("waits for full completion when softTimeoutMs is zero", async () => {
     sc.enqueue('task', async () => { /* instant */ });
     sc.start();
     const result = await sc.ensureReady({ softTimeoutMs: 0 });
     expect(['ready', 'degraded']).toContain(result);
   });
 
-  it("dovrebbe restituire 'degraded' da ensureReady se già disposed", async () => {
+  it("returns 'degraded' from ensureReady when already disposed", async () => {
     sc.dispose();
     const result = await sc.ensureReady();
     expect(result).toBe('degraded');
   });
 
-  it("dovrebbe chiamare start() internamente se non ancora avviato (auto-start)", async () => {
+  it("calls start() internally when not started yet (auto-start)", async () => {
     sc.enqueue('t', async () => { /* instant */ });
     const result = await sc.ensureReady({ softTimeoutMs: 5_000 });
     expect(result).toBe('ready');
@@ -160,13 +160,13 @@ describe('StartupCoordinator', () => {
   // dispose
   // ---------------------------------------------------------------------------
 
-  it('dovrebbe svuotare la coda su dispose', () => {
+  it('empties the queue on dispose', () => {
     sc.enqueue('pending', async () => { /* instant */ });
     sc.dispose();
     expect(sc.currentState).toBe('cold');
   });
 
-  it('dovrebbe essere idempotente: dispose() chiamato due volte non lancia', () => {
+  it('is idempotent: dispose() called twice does not throw', () => {
     expect(() => {
       sc.dispose();
       sc.dispose();
@@ -174,10 +174,10 @@ describe('StartupCoordinator', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // Transizioni di stato
+  // State transitions
   // ---------------------------------------------------------------------------
 
-  it("dovrebbe passare a stato ready su coda vuota dopo start()", async () => {
+  it("moves to the ready state on an empty queue after start()", async () => {
     sc.start();
     await sc.ensureReady({ softTimeoutMs: 5_000 });
     expect(sc.currentState).toBe('ready');

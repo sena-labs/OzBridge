@@ -16,13 +16,13 @@ beforeEach(() => {
 // formatRunResult()
 // ==========================================================================
 describe('formatRunResult()', () => {
-  it('dovrebbe mostrare icona ✅ per run SUCCEEDED', () => {
+  it('shows the ✅ icon for a SUCCEEDED run', () => {
     formatter.formatRunResult(makeRunResult({ status: 'SUCCEEDED' }), mock.stream as any);
     expect(mock.getFullOutput()).toContain('✅');
     expect(mock.getFullOutput()).toContain('SUCCEEDED');
   });
 
-  it('dovrebbe mostrare icona ❌ per run FAILED', () => {
+  it('shows the ❌ icon for a FAILED run', () => {
     formatter.formatRunResult(makeRunResult({ status: 'FAILED' }), mock.stream as any);
     expect(mock.getFullOutput()).toContain('❌');
     expect(mock.getFullOutput()).toContain('FAILED');
@@ -35,50 +35,50 @@ describe('formatRunResult()', () => {
     expect(out).not.toContain('❌');
   });
 
-  it('dovrebbe mostrare Run ID se presente', () => {
+  it('shows the Run ID when present', () => {
     formatter.formatRunResult(makeRunResult({ runId: 'abc-123' }), mock.stream as any);
     expect(mock.getFullOutput()).toContain('abc-123');
   });
 
-  it('dovrebbe omettere Run ID se null', () => {
+  it('omits the Run ID when null', () => {
     formatter.formatRunResult(makeRunResult({ runId: null }), mock.stream as any);
     expect(mock.getFullOutput()).not.toContain('Run ID');
   });
 
-  it('dovrebbe mostrare durata in secondi', () => {
+  it('shows the duration in seconds', () => {
     formatter.formatRunResult(makeRunResult({ durationMs: 3500 }), mock.stream as any);
     expect(mock.getFullOutput()).toContain('3.5s');
   });
 
-  it('dovrebbe non mostrare durata se 0', () => {
+  it('does not show the duration when 0', () => {
     formatter.formatRunResult(makeRunResult({ durationMs: 0 }), mock.stream as any);
     expect(mock.getFullOutput()).not.toContain('⏱️');
   });
 
-  it('dovrebbe mostrare output agente', () => {
+  it('shows the agent output', () => {
     formatter.formatRunResult(makeRunResult({ output: 'Agent result text' }), mock.stream as any);
     expect(mock.getFullOutput()).toContain('Agent result text');
   });
 
-  it('dovrebbe aggiungere button web se runId presente (senza autoOpened)', () => {
+  it('adds a web button when runId is present (without autoOpened)', () => {
     formatter.formatRunResult(makeRunResult({ runId: 'xyz' }), mock.stream as any);
     expect(mock.buttons).toHaveLength(1);
     expect(mock.buttons[0].title).toContain('browser');
-    // URL di fallback usa /session/ con runId
+    // The fallback URL uses /session/ with runId
     expect(mock.buttons[0].arguments![0].toString()).toContain('/session/xyz');
   });
 
-  it('dovrebbe non mostrare bottoni se autoOpened è true (Warp aperto via --open)', () => {
+  it('does not show buttons when autoOpened is true (Warp opened via --open)', () => {
     formatter.formatRunResult(makeRunResult({ runId: 'conv-123' }), mock.stream as any, { autoOpened: true });
     expect(mock.buttons).toHaveLength(0);
   });
 
-  it('dovrebbe non mostrare bottoni se local è true (run locale)', () => {
+  it('does not show buttons when local is true (local run)', () => {
     formatter.formatRunResult(makeRunResult({ runId: 'local-conv-id' }), mock.stream as any, { local: true });
     expect(mock.buttons).toHaveLength(0);
   });
 
-  it('dovrebbe estrarre session URL dall\' output se presente', () => {
+  it('extracts the session URL from the output when present', () => {
     const result = makeRunResult({
       runId: 'abc',
       output: 'Spawned agent\nView agent session: https://app.warp.dev/session/e84b70c3-b2fa-4c8e-8d51-afc319898bb1',
@@ -88,16 +88,16 @@ describe('formatRunResult()', () => {
     expect(mock.buttons[0].arguments![0].toString()).toContain('/session/e84b70c3-b2fa-4c8e-8d51-afc319898bb1');
   });
 
-  it('dovrebbe non aggiungere button se runId null', () => {
+  it('does not add a button when runId is null', () => {
     formatter.formatRunResult(makeRunResult({ runId: null }), mock.stream as any);
     expect(mock.buttons).toHaveLength(0);
   });
 
-  // Gap: output vuoto (stringa falsy) → blocco output saltato
-  it('dovrebbe non mostrare blocco output se output è stringa vuota', () => {
+  // Gap: empty output (falsy string) → output block skipped
+  it('does not show the output block when output is an empty string', () => {
     formatter.formatRunResult(makeRunResult({ output: '' }), mock.stream as any);
     const output = mock.getFullOutput();
-    // Non deve contenere il separatore ---\n che precede l'output
+    // Must not contain the ---\n separator that precedes the output
     expect(output).not.toContain('---');
   });
 
@@ -127,12 +127,12 @@ describe('formatList()', () => {
     expect(mock.getFullOutput()).toContain('No items found');
   });
 
-  it('dovrebbe mostrare rawText per lista vuota con rawText', () => {
+  it('shows rawText for an empty list with rawText', () => {
     formatter.formatList(makeListResult([], 'No runs found.'), ['id'], mock.stream as any);
     expect(mock.getFullOutput()).toContain('No runs found.');
   });
 
-  it('dovrebbe renderizzare una tabella markdown con header e righe', () => {
+  it('renders a markdown table with header and rows', () => {
     const items = [
       { id: 'run-1', status: 'SUCCEEDED' },
       { id: 'run-2', status: 'FAILED' },
@@ -146,7 +146,7 @@ describe('formatList()', () => {
     expect(output).toContain('SUCCEEDED');
   });
 
-  it('dovrebbe gestire colonne mancanti con stringa vuota', () => {
+  it('handles missing columns with an empty string', () => {
     const items = [{ id: 'x' }];
     formatter.formatList(makeListResult(items), ['id', 'name' as any], mock.stream as any);
     const output = mock.getFullOutput();
@@ -230,7 +230,7 @@ describe('formatError()', () => {
     expect(mock.getFullOutput()).toContain('1');
   });
 
-  it('dovrebbe gestire CLI_ERROR senza stderr', () => {
+  it('handles CLI_ERROR without stderr', () => {
     const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'fail');
     formatter.formatError(err, mock.stream as any);
     expect(mock.getFullOutput()).toContain('fail');
@@ -248,33 +248,33 @@ describe('handleError()', () => {
     expect(mock.buttons.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('dovrebbe formattare Error generico con messaggio', () => {
+  it('formats a generic Error with its message', () => {
     formatter.handleError(new Error('something broke'), mock.stream as any);
     expect(mock.getFullOutput()).toContain('something broke');
   });
 
-  it('dovrebbe formattare stringa plain come errore', () => {
+  it('formats a plain string as an error', () => {
     formatter.handleError('raw string error', mock.stream as any);
     expect(mock.getFullOutput()).toContain('raw string error');
   });
 
-  // Edge case: null / undefined / numerico
-  it('dovrebbe gestire null senza crash', () => {
+  // Edge case: null / undefined / numeric
+  it('handles null without crashing', () => {
     expect(() => formatter.handleError(null, mock.stream as any)).not.toThrow();
     expect(mock.getFullOutput()).toContain('null');
   });
 
-  it('dovrebbe gestire undefined senza crash', () => {
+  it('handles undefined without crashing', () => {
     expect(() => formatter.handleError(undefined, mock.stream as any)).not.toThrow();
     expect(mock.getFullOutput()).toContain('undefined');
   });
 
-  it('dovrebbe gestire errore numerico (throw 42)', () => {
+  it('handles a numeric error (throw 42)', () => {
     formatter.handleError(42, mock.stream as any);
     expect(mock.getFullOutput()).toContain('42');
   });
 
-  it('dovrebbe delegare OzCliError TIMEOUT a formatError', () => {
+  it('delegates OzCliError TIMEOUT to formatError', () => {
     const err = new OzCliError(OzCliErrorKind.TIMEOUT, 'timed out');
     formatter.handleError(err, mock.stream as any);
     expect(mock.getFullOutput()).toContain('Timeout');

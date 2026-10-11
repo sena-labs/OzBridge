@@ -76,23 +76,23 @@ function createMockExtensionContext() {
 
 describe('extension.ts — refactoring coverage', () => {
   // -----------------------------------------------------------------------
-  // state encapsulation: deactivate() è safe anche se activate non è stato chiamato
+  // state encapsulation: deactivate() is safe even if activate was never called
   // -----------------------------------------------------------------------
-  it('deactivate() non dovrebbe lanciare se activate non è stato chiamato (state vuoto)', async () => {
+  it('deactivate() does not throw when activate was never called (empty state)', async () => {
     const { deactivate } = await import('../src/extension.js');
     expect(() => deactivate()).not.toThrow();
   });
 
   // -----------------------------------------------------------------------
-  // state encapsulation: multiple activate → deactivate cicli
+  // state encapsulation: multiple activate → deactivate cycles
   // -----------------------------------------------------------------------
-  it('dovrebbe supportare multiple activate/deactivate senza crash', async () => {
+  it('supports repeated activate/deactivate without crashing', async () => {
     const { activate, deactivate } = await import('../src/extension.js');
     activate(createMockExtensionContext() as any);
     await flushMicrotasks();
     deactivate();
 
-    // Secondo ciclo
+    // Second cycle
     activate(createMockExtensionContext() as any);
     await flushMicrotasks();
     expect(() => deactivate()).not.toThrow();
@@ -101,7 +101,7 @@ describe('extension.ts — refactoring coverage', () => {
   // -----------------------------------------------------------------------
   // Lazy activation: no availability warning is shown during activate()
   // -----------------------------------------------------------------------
-  it('non dovrebbe mostrare warning CLI durante activate()', async () => {
+  it('does not show a CLI warning during activate()', async () => {
     spawnBehavior = 'not-available';
 
     const { activate } = await import('../src/extension.js');
@@ -116,7 +116,7 @@ describe('extension.ts — refactoring coverage', () => {
   // -----------------------------------------------------------------------
   // Lazy activation: no install URL is opened while user ignores Oz features
   // -----------------------------------------------------------------------
-  it('non dovrebbe aprire URL download durante activate()', async () => {
+  it('does not open the download URL during activate()', async () => {
     spawnBehavior = 'not-available';
     window.showWarningMessage.mockResolvedValue(undefined);
 
@@ -128,9 +128,9 @@ describe('extension.ts — refactoring coverage', () => {
   });
 
   // -----------------------------------------------------------------------
-  // state.configManager.onConfigChanged è raggiungibile
+  // state.configManager.onConfigChanged is reachable
   // -----------------------------------------------------------------------
-  it('dovrebbe loggare config changed via state.configManager.onConfigChanged', async () => {
+  it('logs config changed via state.configManager.onConfigChanged', async () => {
     const { activate } = await import('../src/extension.js');
     activate(createMockExtensionContext() as any);
     await flushMicrotasks();
@@ -147,16 +147,16 @@ describe('extension.ts — refactoring coverage', () => {
   // -----------------------------------------------------------------------
   // subscriptions dispose callback: state.runPoller?.disposeAll()
   // -----------------------------------------------------------------------
-  it('subscriptions dispose callback dovrebbe chiamare runPoller.disposeAll()', async () => {
+  it('subscriptions dispose callback calls runPoller.disposeAll()', async () => {
     const { activate } = await import('../src/extension.js');
     const ctx = createMockExtensionContext();
     activate(ctx as any);
     await flushMicrotasks();
 
-    // Trova la subscription con dispose che chiama runPoller?.disposeAll()
-    // È l'ultimo o penultimo push in subscriptions
+    // Find the subscription whose dispose calls runPoller?.disposeAll()
+    // It is the last or second-to-last push into subscriptions
     const disposables = ctx.subscriptions;
-    // Chiamare dispose su ciascuna subscription non dovrebbe lanciare
+    // Calling dispose on each subscription should not throw
     for (const d of disposables) {
       expect(() => d.dispose()).not.toThrow();
     }

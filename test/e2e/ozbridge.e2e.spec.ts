@@ -20,8 +20,8 @@ let vscode: LaunchedVSCode;
 let monitor: ResourceMonitor;
 
 /**
- * Setup: scarica VS Code (cache `.vscode-test/`), lancia con
- * extensionDevelopmentPath = repo root e avvia il monitor risorse.
+ * Setup: downloads VS Code (cache `.vscode-test/`), launches it with
+ * extensionDevelopmentPath = repo root and starts the resource monitor.
  */
 test.beforeAll(async () => {
   await fs.mkdir(ARTIFACTS_DIR, { recursive: true });
@@ -49,14 +49,14 @@ test.afterAll(async () => {
 });
 
 test.describe('OzBridge end-to-end user simulation', () => {
-  test('boot: il workbench si carica e l\'estensione si attiva', async () => {
+  test('boot: the workbench loads and the extension activates', async () => {
     monitor.setLabel('boot');
     const win = vscode.window;
     await expect(win.locator('.monaco-workbench')).toBeVisible();
-    // Title bar / activity bar presenti.
+    // Title bar / activity bar present.
     await expect(win.locator('.activitybar')).toBeVisible();
-    // L'extension contribuisce un viewlet "OzBridge" nell'activity bar.
-    // Il selettore può matchare più nodi (icona + tooltip): basta 1+.
+    // The extension contributes an "OzBridge" viewlet to the activity bar.
+    // The selector may match several nodes (icon + tooltip): 1+ is enough.
     const ozIcons = win.locator(
       '.activitybar [aria-label*="OzBridge" i], .activitybar [title*="OzBridge" i]',
     );
@@ -64,7 +64,7 @@ test.describe('OzBridge end-to-end user simulation', () => {
     expect(await ozIcons.count()).toBeGreaterThanOrEqual(1);
   });
 
-  test('command palette: i comandi OzBridge sono registrati', async () => {
+  test('command palette: the OzBridge commands are registered', async () => {
     monitor.setLabel('palette');
     const win = vscode.window;
     const isMac = process.platform === 'darwin';
@@ -72,35 +72,35 @@ test.describe('OzBridge end-to-end user simulation', () => {
     const input = win.locator('.quick-input-widget input.input');
     await input.waitFor({ state: 'visible' });
     await input.fill('>OzBridge');
-    // Attendi che la quick-pick popoli i risultati.
+    // Wait for the quick-pick to populate the results.
     const items = win.locator('.quick-input-widget .monaco-list-row');
     await expect(items.first()).toBeVisible({ timeout: 15_000 });
     const count = await items.count();
     expect(count).toBeGreaterThanOrEqual(5);
-    // Chiudi senza selezionare.
+    // Close without selecting.
     await win.keyboard.press('Escape');
   });
 
-  test('activity bar: apertura del viewlet OzBridge mostra le tree views', async () => {
+  test('activity bar: opening the OzBridge viewlet shows the tree views', async () => {
     monitor.setLabel('viewlet');
     const win = vscode.window;
-    // Click sull'icona del viewlet.
+    // Click the viewlet icon.
     const icon = win.locator('.activitybar [aria-label*="OzBridge" i]').first();
     await icon.click();
-    // Le due viste contributed: Runs & Resources, Warp Drive.
+    // The two contributed views: Runs & Resources, Warp Drive.
     await expect(win.locator('.pane-header .title', { hasText: /Runs.*Resources/i })).toBeVisible({ timeout: 30_000 });
     await expect(win.locator('.pane-header .title', { hasText: /Warp Drive/i })).toBeVisible({ timeout: 30_000 });
   });
 
-  test('dashboard webview: il pannello viene aperto con contenuto coerente', async () => {
+  test('dashboard webview: the panel opens with consistent content', async () => {
     monitor.setLabel('dashboard');
     const { window: win } = vscode;
     await runCommand(win, 'OzBridge: Open Dashboard');
 
-    // Webview pronto: VS Code 1.118+ usa un `iframe[active]` quando
-    // il pannello ha il focus. La struttura interna è isolata da CSP
-    // e non sempre ispezionabile da Playwright; ci accontentiamo di
-    // verificare la presenza dell'iframe del webview.
+    // Webview ready: VS Code 1.118+ uses an `iframe[active]` when
+    // the panel has focus. The inner structure is isolated by CSP
+    // and not always inspectable from Playwright; we settle for
+    // checking that the webview iframe is present.
     const webviewIframe = win.locator(
       'iframe.webview, iframe[active], iframe[src*="vscode-webview"]',
     );
@@ -119,8 +119,8 @@ test.describe('OzBridge end-to-end user simulation', () => {
       });
     }
 
-    // Best-effort: prova a leggere il testo dentro l'iframe; non
-    // facciamo fallire il test se la CSP del webview lo impedisce.
+    // Best-effort: try to read the text inside the iframe; we do not
+    // fail the test if the webview CSP prevents it.
     const innerText = await tryReadDashboardText(win).catch(() => '');
     if (innerText) {
       const looksLikeVsCodeWebviewBootstrap =
@@ -136,17 +136,17 @@ test.describe('OzBridge end-to-end user simulation', () => {
     } else {
       test.info().annotations.push({
         type: 'warning',
-        description: 'Webview body non ispezionabile (CSP) — verificata solo la presenza dell\'iframe',
+        description: 'Webview body not inspectable (CSP) — only the iframe presence was verified',
       });
     }
   });
 
-  test('status bar: voce OzBridge presente e cliccabile', async () => {
+  test('status bar: OzBridge item is present and clickable', async () => {
     monitor.setLabel('statusbar');
     const win = vscode.window;
-    // VS Code recente espone le voci di status bar con role="button" e
-    // aria-label che inizia con "OzBridge: …". Usiamo selettori multipli
-    // per resistere ai cambi di markup.
+    // Recent VS Code exposes status bar items with role="button" and an
+    // aria-label starting with "OzBridge: …". We use multiple selectors
+    // to withstand markup changes.
     const item = win.locator(
       [
         '[id="workbench.parts.statusbar"] [aria-label*="OzBridge" i]',
@@ -155,35 +155,35 @@ test.describe('OzBridge end-to-end user simulation', () => {
         '[role="status"] [aria-label*="OzBridge" i]',
       ].join(', '),
     );
-    // L'item dipende dall'ActiveRunsTracker: se l'attivazione non ha
-    // potuto inizializzare la CLI Oz (workspace tmp privo di config) la
-    // voce può non comparire. In quel caso emettiamo un warning ma
-    // non facciamo fallire la suite: lo stato è comunque registrato
-    // negli artefatti.
+    // The item depends on the ActiveRunsTracker: if activation could not
+    // initialize the Oz CLI (tmp workspace without config) the
+    // item may not appear. In that case we emit a warning but
+    // do not fail the suite: the state is still recorded
+    // in the artifacts.
     const visible = await item.first().isVisible().catch(() => false)
       || await item.first().waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false);
     if (!visible) {
       // eslint-disable-next-line no-console
-      console.warn('[e2e] status bar OzBridge non presente — probabile attivazione parziale (no Oz CLI in $PATH).');
-      test.info().annotations.push({ type: 'warning', description: 'OzBridge status bar item non visibile' });
+      console.warn('[e2e] OzBridge status bar not present — likely partial activation (no Oz CLI in $PATH).');
+      test.info().annotations.push({ type: 'warning', description: 'OzBridge status bar item not visible' });
       return;
     }
     await expect(item.first()).toBeVisible();
   });
 
-  test('risorse: il monitor ha catturato samples ragionevoli', async () => {
+  test('resources: the monitor captured reasonable samples', async () => {
     monitor.setLabel('resource-check');
-    // Lascia accumulare almeno qualche campione.
+    // Let at least a few samples accumulate.
     await new Promise((r) => setTimeout(r, 4_000));
     const summary = monitor.summary();
     expect(summary.samples).toBeGreaterThan(2);
     expect(summary.peakRssMb).toBeGreaterThan(50); // Electron + extension > 50MB
-    // Hard cap di sicurezza: se sforiamo 6 GB qualcosa è andato in leak.
+    // Safety hard cap: if we exceed 6 GB, something has leaked.
     expect(summary.peakRssMb).toBeLessThan(6_000);
   });
 });
 
-/** Tenta di leggere il body del webview attraverso i vari livelli di iframe. */
+/** Tries to read the webview body through the various iframe levels. */
 async function tryReadDashboardText(win: Page): Promise<string> {
   const outerLocators = [
     win.locator('iframe.webview'),
@@ -208,8 +208,8 @@ async function tryReadDashboardText(win: Page): Promise<string> {
 
 
 // ===========================================================================
-// Suite estesa: copertura comandi, viste, output, settings, chat participant.
-// Riusa l'istanza VS Code lanciata in beforeAll dalla suite principale.
+// Extended suite: command coverage, views, output, settings, chat participant.
+// Reuses the VS Code instance launched in beforeAll by the main suite.
 // ===========================================================================
 
 const EXPECTED_COMMAND_TITLES: string[] = [
@@ -232,14 +232,14 @@ const EXPECTED_COMMAND_TITLES: string[] = [
   'Warp Skill: Save current as project skill…',
 ];
 
-test.describe('OzBridge — copertura comandi (palette)', () => {
-  test('tutti i comandi attesi sono registrati', async () => {
+test.describe('OzBridge — command coverage (palette)', () => {
+  test('all expected commands are registered', async () => {
     monitor.setLabel('cmd-registry');
     const win = vscode.window;
-    // Per evitare problemi con il fuzzy-matching della palette (che con
-    // un singolo prefisso può troncare/deprioritizzare alcune voci),
-    // interroghiamo la palette con il TITOLO COMPLETO di ciascun comando
-    // e verifichiamo che almeno una riga combaci esattamente.
+    // To avoid problems with the palette's fuzzy matching (which, with
+    // a single prefix, can truncate/deprioritize some entries),
+    // we query the palette with the FULL TITLE of each command
+    // and check that at least one row matches exactly.
     const missing: string[] = [];
     const found: Record<string, string[]> = {};
     for (const title of EXPECTED_COMMAND_TITLES) {
@@ -252,10 +252,10 @@ test.describe('OzBridge — copertura comandi (palette)', () => {
       if (!hit) missing.push(title);
     }
     test.info().attach('palette-items.json', { body: JSON.stringify(found, null, 2), contentType: 'application/json' });
-    expect(missing, `Comandi mancanti dalla palette: ${missing.join(' | ')}`).toEqual([]);
+    expect(missing, `Commands missing from the palette: ${missing.join(' | ')}`).toEqual([]);
   });
 
-  test('ogni comando OzBridge produce un segnale UI atteso', async () => {
+  test('every OzBridge command produces an expected UI signal', async () => {
     monitor.setLabel('cmd-invoke');
     const win = vscode.window;
     type Signal = Awaited<ReturnType<typeof waitForAnySignal>>;
@@ -265,22 +265,22 @@ test.describe('OzBridge — copertura comandi (palette)', () => {
       noSignalOk?: boolean;
     };
     const specs: CmdSpec[] = [
-      // OzBridge: Refresh — non mostra UI propria.
+      // OzBridge: Refresh — shows no UI of its own.
       { title: 'OzBridge: Refresh', expect: () => true, noSignalOk: true },
-      // Hand off: può aprire direttamente Warp (nessun overlay) oppure mostrare
-      // InputBox/QuickPick o un toast d'avviso.
+      // Hand off: may open Warp directly (no overlay) or show
+      // an InputBox/QuickPick or a warning toast.
       { title: 'OzBridge: Hand off to Warp terminal…', expect: (s) => s?.kind === 'inputBox' || s?.kind === 'quickPick' || (s?.kind === 'notification' && /run|hand off|warp/i.test(s.text)), noSignalOk: true },
-      // MCP status → notification "running" o "stopped"
+      // MCP status → notification "running" or "stopped"
       { title: 'OzBridge: Show MCP server status', expect: (s) => s?.kind === 'notification' && /(running|stopped)/i.test(s.text) },
-      // MCP register → quickPick (server attivo) o notification "server is not running".
+      // MCP register → quickPick (server active) or notification "server is not running".
       { title: 'OzBridge: Register MCP client (Claude Code / Cursor / Codex)', expect: (s) => (s?.kind === 'quickPick' && s.items.length >= 1) || (s?.kind === 'notification' && /MCP|server|running/i.test(s.text)) },
-      // MCP unregister → quickPick o notification
+      // MCP unregister → quickPick or notification
       { title: 'OzBridge: Unregister MCP client', expect: (s) => s?.kind === 'quickPick' || s?.kind === 'notification', noSignalOk: true },
       // Skill new → InputBox
       { title: 'Warp Skill: New…', expect: (s) => s?.kind === 'inputBox', noSignalOk: true },
-      // Skill saveGlobal → notification (no editor) o quickPick/input.
+      // Skill saveGlobal → notification (no editor) or quickPick/input.
       { title: 'Warp Skill: Save current as global skill…', expect: (s) => !!s },
-      // Triage failure → notification (Copilot LM non disponibile) oppure input.
+      // Triage failure → notification (Copilot LM unavailable) or input.
       { title: 'OzBridge: Triage Failed Run…', expect: (s) => !!s, noSignalOk: true },
       // Export Dataset → quickPick "JSON Lines" / "CSV"
       { title: 'OzBridge: Export Run Dataset…', expect: (s) => s?.kind === 'quickPick' && s.items.some((i) => /JSON|CSV/i.test(i)), noSignalOk: true },
@@ -289,11 +289,11 @@ test.describe('OzBridge — copertura comandi (palette)', () => {
     const results: Array<{ title: string; signal: unknown; ok: boolean }> = [];
     for (const spec of specs) {
       await dismissOverlays(win);
-      // Cattura il toast precedente per discriminare segnali freschi.
+      // Capture the previous toast to tell fresh signals apart.
       const prevToast = await lastNotificationText(win);
       await runExactCommand(win, spec.title);
-      // Cerca prima un segnale UI generico, ma se è una notification verifica
-      // che sia "fresca" (testo diverso dal precedente).
+      // Look for a generic UI signal first, but if it is a notification check
+      // that it is "fresh" (text different from the previous one).
       let sig: Signal = await waitForAnySignal(win, 6_000);
       if (sig?.kind === 'notification' && sig.text === prevToast) {
         const fresh = await waitForFreshNotification(win, prevToast, 4_000);
@@ -308,16 +308,16 @@ test.describe('OzBridge — copertura comandi (palette)', () => {
       contentType: 'application/json',
     });
     const failures = results.filter((r) => !r.ok);
-    expect(failures, `Comandi senza segnale atteso: ${failures.map((f) => f.title).join(' | ')}`).toEqual([]);
+    expect(failures, `Commands without the expected signal: ${failures.map((f) => f.title).join(' | ')}`).toEqual([]);
   });
 });
 
-test.describe('OzBridge — MCP lifecycle reale', () => {
+test.describe('OzBridge — real MCP lifecycle', () => {
   test('start → status running → copy URL → stop → status stopped', async () => {
     monitor.setLabel('mcp-lifecycle');
     const win = vscode.window;
 
-    // 1) Start: deve mostrare info toast con URL http://...:PORT/sse
+    // 1) Start: must show an info toast with the URL http://...:PORT/sse
     await dismissOverlays(win);
     const prev0 = await lastNotificationText(win);
     await runExactCommand(win, 'OzBridge: Start MCP server');
@@ -325,7 +325,7 @@ test.describe('OzBridge — MCP lifecycle reale', () => {
     if (startText && /all installed extensions are temporarily disabled/i.test(startText)) {
       startText = await waitForFreshNotification(win, startText, 12_000);
     }
-    expect(startText, 'start: nessun toast').toBeTruthy();
+    expect(startText, 'start: no toast').toBeTruthy();
     expect(startText!).toMatch(/MCP|server|listening|http/i);
     await dismissOverlays(win);
 
@@ -337,7 +337,7 @@ test.describe('OzBridge — MCP lifecycle reale', () => {
       // VS Code can emit this unrelated toast in `--disable-extensions` mode; ignore and wait again.
       stRunning = await waitForFreshNotification(win, stRunning, 8_000);
     }
-    expect(stRunning, 'status running: nessun toast').toBeTruthy();
+    expect(stRunning, 'status running: no toast').toBeTruthy();
     expect(stRunning!).toMatch(/running|listening/i);
     await dismissOverlays(win);
 
@@ -345,7 +345,7 @@ test.describe('OzBridge — MCP lifecycle reale', () => {
     const prev2 = await lastNotificationText(win);
     await runExactCommand(win, 'OzBridge: Copy MCP endpoint URL');
     const copyText = await waitForFreshNotification(win, prev2, 8_000);
-    expect(copyText, 'copy: nessun toast').toBeTruthy();
+    expect(copyText, 'copy: no toast').toBeTruthy();
     expect(copyText!).toMatch(/http:\/\/.*\/sse|MCP endpoint|copied/i);
     await dismissOverlays(win);
 
@@ -368,25 +368,25 @@ test.describe('OzBridge — MCP lifecycle reale', () => {
       }
       await win.waitForTimeout(150);
     }
-    expect(stStopped, 'status stopped: nessun toast').toBeTruthy();
+    expect(stStopped, 'status stopped: no toast').toBeTruthy();
     await dismissOverlays(win);
   });
 });
 
-test.describe('OzBridge — viste, settings, chat participant', () => {
-  test('tree views Runs & Drive sono espandibili e mostrano placeholder o nodi', async () => {
+test.describe('OzBridge — views, settings, chat participant', () => {
+  test('Runs & Drive tree views are expandable and show placeholders or nodes', async () => {
     monitor.setLabel('tree-views');
     const win = vscode.window;
     await dismissOverlays(win);
-    // Assicurati che la sidebar primaria sia visibile (Ctrl+B la toggla;
-    // controlliamo prima lo stato per non chiuderla per sbaglio).
+    // Make sure the primary sidebar is visible (Ctrl+B toggles it;
+    // we check the state first so we do not close it by mistake).
     const sidebar = win.locator('.part.sidebar:not(.empty), .part.sidebar.right').first();
     if (!(await sidebar.isVisible().catch(() => false))) {
       await win.keyboard.press(process.platform === 'darwin' ? 'Meta+B' : 'Control+B');
       await win.waitForTimeout(400);
     }
-    // Apri esplicitamente il viewlet OzBridge via palette (più affidabile
-    // del click sull'icona, che può fare il toggle).
+    // Explicitly open the OzBridge viewlet via the palette (more reliable
+    // than clicking the icon, which may toggle it).
     await runCommand(win, 'View: Show OzBridge').catch(async () => {
       await win.locator('.activitybar [aria-label*="OzBridge" i]').first().click();
     });
@@ -397,7 +397,7 @@ test.describe('OzBridge — viste, settings, chat participant', () => {
     await expect(runsHeader).toBeVisible({ timeout: 30_000 });
     await expect(driveHeader).toBeVisible({ timeout: 30_000 });
 
-    // Pane container = parent ".pane" del header. Espandi se collassato.
+    // Pane container = parent ".pane" of the header. Expand if collapsed.
     for (const header of [runsHeader, driveHeader]) {
       const pane = header.locator('xpath=ancestor::div[contains(@class,"pane")][1]');
       const expanded = await pane.locator('.pane-header').first().getAttribute('aria-expanded').catch(() => null);
@@ -407,7 +407,7 @@ test.describe('OzBridge — viste, settings, chat participant', () => {
       }
     }
 
-    // Catturiamo il contenuto delle pane bodies — anche solo welcome view va bene.
+    // Capture the content of the pane bodies — even just a welcome view is fine.
     const bodies = win.locator('.pane .pane-body');
     const bodyCount = await bodies.count();
     let totalText = '';
@@ -416,18 +416,18 @@ test.describe('OzBridge — viste, settings, chat participant', () => {
       totalText += t + '\n';
     }
     test.info().attach('tree-views-body.txt', { body: totalText, contentType: 'text/plain' });
-    // Almeno il viewlet OzBridge deve essere caricato (non vuoto).
+    // At least the OzBridge viewlet must be loaded (not empty).
     expect(totalText.length).toBeGreaterThan(0);
   });
 
-  test('Settings UI mostra le configurazioni ozBridge.*', async () => {
+  test('Settings UI shows the ozBridge.* settings', async () => {
     monitor.setLabel('settings');
     const win = vscode.window;
     await dismissOverlays(win);
     await runCommand(win, 'Preferences: Open Settings (UI)');
-    // Attendi il container dell'editor delle impostazioni.
+    // Wait for the settings editor container.
     await win.locator('.settings-editor').first().waitFor({ state: 'visible', timeout: 30_000 });
-    // L'input REALE ricerca è dentro `.suggest-input-container .monaco-inputbox input`.
+    // The REAL search input is inside `.suggest-input-container .monaco-inputbox input`.
     const searchBox = win
       .locator('.settings-editor .suggest-input-container input.input')
       .or(win.locator('.settings-editor input[type="text"]:not([readonly])'))
@@ -444,30 +444,30 @@ test.describe('OzBridge — viste, settings, chat participant', () => {
       if (t) captured.push(t.trim());
     }
     test.info().attach('ozbridge-settings.json', { body: JSON.stringify(captured, null, 2), contentType: 'application/json' });
-    expect(count, `Setting items trovati: ${count}`).toBeGreaterThanOrEqual(5);
+    expect(count, `Setting items found: ${count}`).toBeGreaterThanOrEqual(5);
     await dismissOverlays(win);
   });
 
-  test('Output channel "OzBridge" è presente', async () => {
+  test('Output channel "OzBridge" is present', async () => {
     monitor.setLabel('output');
     const win = vscode.window;
     await dismissOverlays(win);
-    // Forza il focus sul workbench cliccando l'activity bar (la palette può
-    // restare "non attivabile" se l'editor Settings UI ha intercettato il
-    // focus). Poi premi Escape per essere sicuri di non lasciare overlay.
+    // Force focus onto the workbench by clicking the activity bar (the palette can
+    // stay "non-activatable" if the Settings UI editor has captured the
+    // focus). Then press Escape to make sure no overlay is left open.
     await win.locator('.activitybar').first().click({ position: { x: 5, y: 5 } }).catch(() => {});
     await win.keyboard.press('Escape');
     await win.waitForTimeout(200);
-    // Apri il pannello Output.
+    // Open the Output panel.
     await runCommand(win, 'View: Toggle Output');
     await win.waitForTimeout(800);
-    // In VS Code 1.118 il channel selector ha aria-label "Switch Output".
+    // In VS Code 1.118 the channel selector has aria-label "Switch Output".
     const channelButton = win.locator('[aria-label="Switch Output"], [role="combobox"][aria-label*="Output" i]').first();
     await expect(channelButton).toBeVisible({ timeout: 10_000 });
     await channelButton.click();
     await win.waitForTimeout(700);
-    // Il dropdown è una select native HTML (combobox) oppure un context menu Monaco.
-    // Strategia: leggi le option/items disponibili.
+    // The dropdown is a native HTML select (combobox) or a Monaco context menu.
+    // Strategy: read the available options/items.
     const items = win.locator(
       '[aria-label="Switch Output"] option, .context-view .action-label, .monaco-menu .action-label, .quick-input-widget .monaco-list-row',
     );
@@ -477,13 +477,13 @@ test.describe('OzBridge — viste, settings, chat participant', () => {
       const t = (await items.nth(i).innerText().catch(() => '')).trim();
       if (t) labels.push(t);
     }
-    // Fallback: leggi gli option di una select native con evaluate.
+    // Fallback: read the options of a native select with evaluate.
     if (!labels.some((l) => /OzBridge/i.test(l))) {
       const optionTexts = await channelButton.evaluate((el) => {
         if (el.tagName === 'SELECT') {
           return Array.from((el as HTMLSelectElement).options).map((o) => o.textContent || '');
         }
-        // Cerca <select> figli o vicini.
+        // Look for child or nearby <select> elements.
         const sel = el.querySelector('select') ?? (el.parentElement?.querySelector('select') ?? null);
         if (sel) return Array.from(sel.options).map((o) => o.textContent || '');
         return [] as string[];
@@ -492,22 +492,22 @@ test.describe('OzBridge — viste, settings, chat participant', () => {
     }
     test.info().attach('output-channels.json', { body: JSON.stringify(labels, null, 2), contentType: 'application/json' });
     await win.keyboard.press('Escape');
-    expect(labels.some((l) => /OzBridge/i.test(l)), `Channels visti: ${labels.join(' | ')}`).toBe(true);
+    expect(labels.some((l) => /OzBridge/i.test(l)), `Channels seen: ${labels.join(' | ')}`).toBe(true);
     await dismissOverlays(win);
   });
 
-  test('Chat participant @oz è registrato (best-effort)', async () => {
+  test('Chat participant @oz is registered (best-effort)', async () => {
     monitor.setLabel('chat-participant');
     const win = vscode.window;
     await dismissOverlays(win);
-    // Apri la chat view; può non esistere se Copilot non è installato.
+    // Open the chat view; it may not exist if Copilot is not installed.
     await runCommand(win, 'Chat: Focus on Chat View').catch(() => {});
     await win.waitForTimeout(1_500);
     const chatInput = win.locator(
       '.interactive-input-part textarea, .chat-input-container textarea, [aria-label*="Type" i] textarea',
     ).first();
     if (!(await chatInput.isVisible().catch(() => false))) {
-      test.info().annotations.push({ type: 'warning', description: 'Chat view non disponibile (Copilot non installato): test saltato' });
+      test.info().annotations.push({ type: 'warning', description: 'Chat view not available (Copilot not installed): test skipped' });
       return;
     }
     await chatInput.click({ force: true }).catch(() => {});
@@ -515,7 +515,7 @@ test.describe('OzBridge — viste, settings, chat participant', () => {
     await win.waitForTimeout(800);
     const suggestion = win.locator('.suggest-widget, .monaco-list-row', { hasText: /oz|OzBridge/i }).first();
     if (!(await suggestion.isVisible().catch(() => false))) {
-      test.info().annotations.push({ type: 'warning', description: 'Suggerimento @oz non visualizzato (Copilot Chat richiesto)' });
+      test.info().annotations.push({ type: 'warning', description: '@oz suggestion not shown (Copilot Chat required)' });
       return;
     }
     await expect(suggestion).toBeVisible();

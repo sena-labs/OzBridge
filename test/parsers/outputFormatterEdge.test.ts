@@ -1,5 +1,5 @@
 /**
- * Test approfonditi per OutputFormatter — edge case e copertura completa di formatError,
+ * In-depth tests for OutputFormatter — edge cases and full coverage of formatError,
  * formatRunResult, formatList, truncate.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -16,10 +16,10 @@ beforeEach(() => {
 });
 
 // ============================================================================
-// formatRunResult — edge case aggiuntivi
+// formatRunResult — additional edge cases
 // ============================================================================
 describe('formatRunResult() — edge case', () => {
-  it('dovrebbe mostrare sia header che runId e durata insieme', () => {
+  it('shows header, runId and duration together', () => {
     const result = makeRunResult({ runId: 'run-abc', durationMs: 12345 });
     formatter.formatRunResult(result, mock.stream as any);
     const out = mock.getFullOutput();
@@ -30,7 +30,7 @@ describe('formatRunResult() — edge case', () => {
     expect(mock.buttons[0].title).toContain('browser');
   });
 
-  it('dovrebbe mostrare run FAILED senza runId e senza durata', () => {
+  it('shows a FAILED run without runId and without duration', () => {
     const result = makeRunResult({ status: 'FAILED', runId: null, durationMs: 0, output: '' });
     formatter.formatRunResult(result, mock.stream as any);
     const out = mock.getFullOutput();
@@ -41,26 +41,26 @@ describe('formatRunResult() — edge case', () => {
     expect(mock.buttons).toHaveLength(0);
   });
 
-  it('dovrebbe gestire status QUEUED', () => {
+  it('handles status QUEUED', () => {
     const result = makeRunResult({ status: 'QUEUED' });
     formatter.formatRunResult(result, mock.stream as any);
     const out = mock.getFullOutput();
     expect(out).toContain('QUEUED');
   });
 
-  it('dovrebbe gestire status INPROGRESS', () => {
+  it('handles status INPROGRESS', () => {
     const result = makeRunResult({ status: 'INPROGRESS' });
     formatter.formatRunResult(result, mock.stream as any);
     expect(mock.getFullOutput()).toContain('INPROGRESS');
   });
 
-  it('dovrebbe gestire status UNKNOWN', () => {
+  it('handles status UNKNOWN', () => {
     const result = makeRunResult({ status: 'UNKNOWN' });
     formatter.formatRunResult(result, mock.stream as any);
     expect(mock.getFullOutput()).toContain('UNKNOWN');
   });
 
-  it('dovrebbe troncare output lungo e mostrare indicatore', () => {
+  it('truncates long output and shows an indicator', () => {
     const longOutput = 'x'.repeat(6000);
     const cfgMgr = createMockConfigManager({ maxOutputChars: 100 });
     const fmt = new OutputFormatter(cfgMgr);
@@ -82,13 +82,13 @@ describe('formatRunResult() — edge case', () => {
     expect(out).not.toContain('truncated');
   });
 
-  it('dovrebbe non renderizzare output se è undefined/stringa vuota', () => {
+  it('does not render output when it is undefined/an empty string', () => {
     const result = makeRunResult({ output: '' });
     formatter.formatRunResult(result, mock.stream as any);
     expect(mock.getFullOutput()).not.toContain('---');
   });
 
-  it('dovrebbe mostrare durata con precisione 1 decimale', () => {
+  it('shows the duration with 1-decimal precision', () => {
     const result = makeRunResult({ durationMs: 1550 });
     formatter.formatRunResult(result, mock.stream as any);
     expect(mock.getFullOutput()).toContain('1.6');
@@ -96,10 +96,10 @@ describe('formatRunResult() — edge case', () => {
 });
 
 // ============================================================================
-// formatList — edge case aggiuntivi
+// formatList — additional edge cases
 // ============================================================================
 describe('formatList() — edge case', () => {
-  it('dovrebbe gestire un singolo elemento', () => {
+  it('handles a single item', () => {
     const list = makeListResult([{ name: 'alpha', status: 'active' }]);
     formatter.formatList(list, ['name', 'status'], mock.stream as any);
     const out = mock.getFullOutput();
@@ -109,7 +109,7 @@ describe('formatList() — edge case', () => {
     expect(out).toContain('active');
   });
 
-  it('dovrebbe gestire molti elementi', () => {
+  it('handles many items', () => {
     const items = Array.from({ length: 20 }, (_, i) => ({ id: `id-${i}`, val: `v${i}` }));
     const list = makeListResult(items);
     formatter.formatList(list, ['id', 'val'], mock.stream as any);
@@ -119,15 +119,15 @@ describe('formatList() — edge case', () => {
     expect((out.match(/\|/g) ?? []).length).toBeGreaterThan(40);
   });
 
-  it('dovrebbe gestire colonne con valori undefined usando stringa vuota', () => {
+  it('handles columns with undefined values using an empty string', () => {
     const list = makeListResult([{ a: 1 } as any]);
     formatter.formatList(list, ['a', 'missing' as any], mock.stream as any);
     const out = mock.getFullOutput();
     expect(out).toContain('1');
-    expect(out).toContain('|  |'); // colonna missing = vuota (spazio padding)
+    expect(out).toContain('|  |'); // missing column = empty (space padding)
   });
 
-  it('dovrebbe mostrare rawText se lista vuota con rawText', () => {
+  it('shows rawText when the list is empty with rawText', () => {
     const list = makeListResult([], 'No items available.');
     formatter.formatList(list, ['id'], mock.stream as any);
     expect(mock.getFullOutput()).toContain('No items available.');
@@ -141,10 +141,10 @@ describe('formatList() — edge case', () => {
 });
 
 // ============================================================================
-// formatError — copertura aggiuntiva
+// formatError — additional coverage
 // ============================================================================
-describe('formatError() — copertura aggiuntiva', () => {
-  it('NOT_FOUND: button dovrebbe aprire URL warp.dev', () => {
+describe('formatError() — additional coverage', () => {
+  it('NOT_FOUND: button opens the warp.dev URL', () => {
     const err = new OzCliError(OzCliErrorKind.NOT_FOUND, 'not found');
     formatter.formatError(err, mock.stream as any);
     expect(mock.buttons.length).toBe(1);
@@ -152,7 +152,7 @@ describe('formatError() — copertura aggiuntiva', () => {
     expect(btnUrl).toContain('warp.dev');
   });
 
-  it('NOT_AUTHENTICATED: button dovrebbe aprire app.warp.dev', () => {
+  it('NOT_AUTHENTICATED: button opens app.warp.dev', () => {
     const err = new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'unauthorized');
     formatter.formatError(err, mock.stream as any);
     expect(mock.buttons.length).toBe(1);
@@ -160,7 +160,7 @@ describe('formatError() — copertura aggiuntiva', () => {
     expect(btnUrl).toContain('app.warp.dev');
   });
 
-  it('TIMEOUT: dovrebbe menzionare il timeout configurato in secondi', () => {
+  it('TIMEOUT: mentions the configured timeout in seconds', () => {
     const cfgMgr = createMockConfigManager({ timeoutMs: 60000 });
     const fmt = new OutputFormatter(cfgMgr);
     const err = new OzCliError(OzCliErrorKind.TIMEOUT, 'timeout');
@@ -168,7 +168,7 @@ describe('formatError() — copertura aggiuntiva', () => {
     expect(mock.getFullOutput()).toContain('60');
   });
 
-  it('CLI_ERROR senza stderr: dovrebbe mostrare solo message', () => {
+  it('CLI_ERROR without stderr: shows only message', () => {
     const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'generic error', 2);
     formatter.formatError(err, mock.stream as any);
     const out = mock.getFullOutput();
@@ -177,29 +177,29 @@ describe('formatError() — copertura aggiuntiva', () => {
     expect(out).not.toContain('stderr');
   });
 
-  it('CLI_ERROR con stderr lungo: dovrebbe troncare stderr a 500 chars', () => {
+  it('CLI_ERROR with long stderr: truncates stderr to 500 chars', () => {
     const longStderr = 'E'.repeat(1000);
     const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'fail', 1, longStderr);
     formatter.formatError(err, mock.stream as any);
     const out = mock.getFullOutput();
     expect(out).toContain('stderr');
-    // La stringa stderr nel markdown non dovrebbe contenere l'intero stdout
+    // The stderr string in the markdown should not contain the whole stdout
     expect(out.length).toBeLessThan(longStderr.length + 500);
   });
 
-  it('CLI_ERROR senza exitCode: dovrebbe mostrare "?"', () => {
+  it('CLI_ERROR without exitCode: shows "?"', () => {
     const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'bad');
     formatter.formatError(err, mock.stream as any);
     expect(mock.getFullOutput()).toContain('?');
   });
 
-  it('CANCELLED: dovrebbe non mostrare button', () => {
+  it('CANCELLED: shows no button', () => {
     const err = new OzCliError(OzCliErrorKind.CANCELLED, 'user cancel');
     formatter.formatError(err, mock.stream as any);
     expect(mock.buttons).toHaveLength(0);
   });
 
-  it('PARSE_ERROR con stderr: dovrebbe mostrare stderr nel blocco di codice', () => {
+  it('PARSE_ERROR with stderr: shows stderr in the code block', () => {
     const err = new OzCliError(OzCliErrorKind.PARSE_ERROR, 'bad json', 0, 'unexpected < at 0');
     formatter.formatError(err, mock.stream as any);
     const out = mock.getFullOutput();
