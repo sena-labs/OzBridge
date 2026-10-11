@@ -136,7 +136,7 @@ test.describe('OzBridge end-to-end user simulation', () => {
     } else {
       test.info().annotations.push({
         type: 'warning',
-        description: 'Webview body non ispezionabile (CSP) — verificata solo la presenza dell\'iframe',
+        description: 'Webview body not inspectable (CSP) — only the iframe presence was verified',
       });
     }
   });
@@ -164,8 +164,8 @@ test.describe('OzBridge end-to-end user simulation', () => {
       || await item.first().waitFor({ state: 'visible', timeout: 10_000 }).then(() => true).catch(() => false);
     if (!visible) {
       // eslint-disable-next-line no-console
-      console.warn('[e2e] status bar OzBridge non presente — probabile attivazione parziale (no Oz CLI in $PATH).');
-      test.info().annotations.push({ type: 'warning', description: 'OzBridge status bar item non visibile' });
+      console.warn('[e2e] OzBridge status bar not present — likely partial activation (no Oz CLI in $PATH).');
+      test.info().annotations.push({ type: 'warning', description: 'OzBridge status bar item not visible' });
       return;
     }
     await expect(item.first()).toBeVisible();
@@ -252,7 +252,7 @@ test.describe('OzBridge — command coverage (palette)', () => {
       if (!hit) missing.push(title);
     }
     test.info().attach('palette-items.json', { body: JSON.stringify(found, null, 2), contentType: 'application/json' });
-    expect(missing, `Comandi mancanti dalla palette: ${missing.join(' | ')}`).toEqual([]);
+    expect(missing, `Commands missing from the palette: ${missing.join(' | ')}`).toEqual([]);
   });
 
   test('every OzBridge command produces an expected UI signal', async () => {
@@ -308,7 +308,7 @@ test.describe('OzBridge — command coverage (palette)', () => {
       contentType: 'application/json',
     });
     const failures = results.filter((r) => !r.ok);
-    expect(failures, `Comandi senza segnale atteso: ${failures.map((f) => f.title).join(' | ')}`).toEqual([]);
+    expect(failures, `Commands without the expected signal: ${failures.map((f) => f.title).join(' | ')}`).toEqual([]);
   });
 });
 
@@ -325,7 +325,7 @@ test.describe('OzBridge — real MCP lifecycle', () => {
     if (startText && /all installed extensions are temporarily disabled/i.test(startText)) {
       startText = await waitForFreshNotification(win, startText, 12_000);
     }
-    expect(startText, 'start: nessun toast').toBeTruthy();
+    expect(startText, 'start: no toast').toBeTruthy();
     expect(startText!).toMatch(/MCP|server|listening|http/i);
     await dismissOverlays(win);
 
@@ -337,7 +337,7 @@ test.describe('OzBridge — real MCP lifecycle', () => {
       // VS Code can emit this unrelated toast in `--disable-extensions` mode; ignore and wait again.
       stRunning = await waitForFreshNotification(win, stRunning, 8_000);
     }
-    expect(stRunning, 'status running: nessun toast').toBeTruthy();
+    expect(stRunning, 'status running: no toast').toBeTruthy();
     expect(stRunning!).toMatch(/running|listening/i);
     await dismissOverlays(win);
 
@@ -345,7 +345,7 @@ test.describe('OzBridge — real MCP lifecycle', () => {
     const prev2 = await lastNotificationText(win);
     await runExactCommand(win, 'OzBridge: Copy MCP endpoint URL');
     const copyText = await waitForFreshNotification(win, prev2, 8_000);
-    expect(copyText, 'copy: nessun toast').toBeTruthy();
+    expect(copyText, 'copy: no toast').toBeTruthy();
     expect(copyText!).toMatch(/http:\/\/.*\/sse|MCP endpoint|copied/i);
     await dismissOverlays(win);
 
@@ -368,7 +368,7 @@ test.describe('OzBridge — real MCP lifecycle', () => {
       }
       await win.waitForTimeout(150);
     }
-    expect(stStopped, 'status stopped: nessun toast').toBeTruthy();
+    expect(stStopped, 'status stopped: no toast').toBeTruthy();
     await dismissOverlays(win);
   });
 });
@@ -444,7 +444,7 @@ test.describe('OzBridge — views, settings, chat participant', () => {
       if (t) captured.push(t.trim());
     }
     test.info().attach('ozbridge-settings.json', { body: JSON.stringify(captured, null, 2), contentType: 'application/json' });
-    expect(count, `Setting items trovati: ${count}`).toBeGreaterThanOrEqual(5);
+    expect(count, `Setting items found: ${count}`).toBeGreaterThanOrEqual(5);
     await dismissOverlays(win);
   });
 
@@ -492,7 +492,7 @@ test.describe('OzBridge — views, settings, chat participant', () => {
     }
     test.info().attach('output-channels.json', { body: JSON.stringify(labels, null, 2), contentType: 'application/json' });
     await win.keyboard.press('Escape');
-    expect(labels.some((l) => /OzBridge/i.test(l)), `Channels visti: ${labels.join(' | ')}`).toBe(true);
+    expect(labels.some((l) => /OzBridge/i.test(l)), `Channels seen: ${labels.join(' | ')}`).toBe(true);
     await dismissOverlays(win);
   });
 
@@ -507,7 +507,7 @@ test.describe('OzBridge — views, settings, chat participant', () => {
       '.interactive-input-part textarea, .chat-input-container textarea, [aria-label*="Type" i] textarea',
     ).first();
     if (!(await chatInput.isVisible().catch(() => false))) {
-      test.info().annotations.push({ type: 'warning', description: 'Chat view non disponibile (Copilot non installato): test saltato' });
+      test.info().annotations.push({ type: 'warning', description: 'Chat view not available (Copilot not installed): test skipped' });
       return;
     }
     await chatInput.click({ force: true }).catch(() => {});
@@ -515,7 +515,7 @@ test.describe('OzBridge — views, settings, chat participant', () => {
     await win.waitForTimeout(800);
     const suggestion = win.locator('.suggest-widget, .monaco-list-row', { hasText: /oz|OzBridge/i }).first();
     if (!(await suggestion.isVisible().catch(() => false))) {
-      test.info().annotations.push({ type: 'warning', description: 'Suggerimento @oz non visualizzato (Copilot Chat richiesto)' });
+      test.info().annotations.push({ type: 'warning', description: '@oz suggestion not shown (Copilot Chat required)' });
       return;
     }
     await expect(suggestion).toBeVisible();

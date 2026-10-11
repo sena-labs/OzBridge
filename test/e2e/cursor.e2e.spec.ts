@@ -63,7 +63,7 @@ test.describe('OzBridge — Cursor IDE E2E', () => {
     // 1) Start the server first.
     await runExactCommand(win, 'OzBridge: Start MCP server');
     const startToast = await waitForFreshNotification(win, null, 12_000);
-    expect(startToast, 'start: nessun toast').toBeTruthy();
+    expect(startToast, 'start: no toast').toBeTruthy();
     expect(startToast!).toMatch(/MCP|listening|http/i);
     await dismissOverlays(win);
 
@@ -73,7 +73,7 @@ test.describe('OzBridge — Cursor IDE E2E', () => {
     await expect(cursorPick.first()).toBeVisible({ timeout: 10_000 });
     await cursorPick.first().click();
     const registeredToast = await waitForFreshNotification(win, startToast, 12_000);
-    expect(registeredToast, 'register: nessun toast').toBeTruthy();
+    expect(registeredToast, 'register: no toast').toBeTruthy();
     expect(registeredToast!).toMatch(/Registered|Cursor/i);
     await dismissOverlays(win);
 

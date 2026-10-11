@@ -58,7 +58,7 @@ describe('/run command', () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
-    await handler('genera le spec per il modulo auth', mock.stream as any, createMockToken() as any);
+    await handler('generate the spec for the auth module', mock.stream as any, createMockToken() as any);
 
     const callArgs = cli.agentRun.mock.calls[0][0];
     expect(callArgs.skill).toBe('1-spec-agent');
@@ -91,7 +91,7 @@ describe('/run command', () => {
     cli.agentRun.mockResolvedValue(makeRunResult());
 
     // Uppercase "SPEC" must match the "spec" key
-    await handler('genera le SPEC del modulo', mock.stream as any, createMockToken() as any);
+    await handler('generate the SPEC for the module', mock.stream as any, createMockToken() as any);
 
     const callArgs = cli.agentRun.mock.calls[0][0];
     expect(callArgs.skill).toBe('1-spec-agent');
@@ -102,7 +102,7 @@ describe('/run command', () => {
     cli.agentRun.mockResolvedValue(makeRunResult());
 
     // "test," → split on \W+ produces ["test", ""] → must match
-    await handler('scrivi test, per favore', mock.stream as any, createMockToken() as any);
+    await handler('write test, please', mock.stream as any, createMockToken() as any);
 
     const callArgs = cli.agentRun.mock.calls[0][0];
     expect(callArgs.skill).toBe('5-test-agent');

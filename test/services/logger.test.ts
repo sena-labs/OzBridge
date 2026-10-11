@@ -102,10 +102,10 @@ describe('Logger', () => {
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel as any);
       vi.spyOn(console, 'warn').mockImplementation(() => {});
-      logger.logWarn('attenzione');
+      logger.logWarn('caution');
       const lastCall = channel.appendLine.mock.calls.at(-1)?.[0] as string;
       expect(lastCall).toContain('WARN');
-      expect(lastCall).toContain('attenzione');
+      expect(lastCall).toContain('caution');
     });
 
     it('logs to console.warn', async () => {
@@ -139,10 +139,10 @@ describe('Logger', () => {
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel as any);
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      logger.logError('errore');
+      logger.logError('failure');
       const lastCall = channel.appendLine.mock.calls.at(-1)?.[0] as string;
       expect(lastCall).toContain('ERROR');
-      expect(lastCall).toContain('errore');
+      expect(lastCall).toContain('failure');
     });
 
     it('logs to console.error', async () => {
