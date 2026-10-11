@@ -40,11 +40,14 @@ declare const __OZ_MCP_VERSION__: string;
  * Run the server over the stdio transport: newline-delimited JSON-RPC 2.0 on
  * stdin/stdout. stdout is reserved for the protocol stream, so every
  * diagnostic goes to stderr. Reuses {@link McpServer.dispatch}, the same
- * request handler the HTTP+SSE transport calls.
+ * request handler the HTTP transports call. Notifications a request emits
+ * before its response (the `subscriptions/listen` acknowledgement) share the
+ * single channel, written ahead of the response.
  */
 async function runStdio(tools: Map<string, McpToolEntry>): Promise<void> {
   const server = new McpServer(tools, { name: 'oz-mcp-server', version: __OZ_MCP_VERSION__ });
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
+  const write = (message: unknown): void => { process.stdout.write(JSON.stringify(message) + '\n'); };
   console.error('[oz-mcp-server] stdio transport ready (JSON-RPC over stdin/stdout).');
   for await (const line of rl) {
     const trimmed = line.trim();
@@ -53,15 +56,13 @@ async function runStdio(tools: Map<string, McpToolEntry>): Promise<void> {
     try {
       message = JSON.parse(trimmed);
     } catch {
-      process.stdout.write(
-        JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } }) + '\n',
-      );
+      write({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } });
       continue;
     }
-    const response = await server.dispatch(message);
+    const response = await server.dispatch(message, { notify: write });
     // `dispatch` returns null for notifications (no id) — nothing to emit.
     if (response) {
-      process.stdout.write(JSON.stringify(response) + '\n');
+      write(response);
     }
   }
 }

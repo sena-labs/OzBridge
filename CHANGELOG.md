@@ -60,6 +60,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `server.json` advertises the `streamable-http` transport alongside `sse`, so
   registry clients can pick the modern endpoint. Validated against the
   `2025-12-11` registry schema the file declares.
+- **MCP `2026-07-28` support.** OzBridge is now a dual-era server: a request
+  that declares `2026-07-28` in `params._meta` is served statelessly under
+  that revision on stdio and `POST /mcp`, and `server/discover` lists it. The
+  revision's MUSTs are met rather than assumed: every result carries
+  `resultType: "complete"` and `_meta["io.modelcontextprotocol/serverInfo"]`;
+  `tools/list` is a `CacheableResult` (`ttlMs`, `cacheScope: "public"`);
+  `initialize` and `ping` are gone (`-32601`, HTTP `404`); an unknown tool is
+  `-32602`; a request missing the required `_meta` fields
+  (`protocolVersion`, `clientCapabilities`) is `-32602`; over HTTP a missing
+  `MCP-Protocol-Version`, `Mcp-Method` or (on `tools/call`) `Mcp-Name` header
+  is `400` + `-32020`; an unrecognised per-request `logLevel` is `-32602`.
+  `subscriptions/listen` — a message pattern every implementation must
+  support — is acknowledged with an empty honoured set (the tool list never
+  changes and there are no resources or prompts) and closed gracefully, the
+  acknowledgement travelling on a request-scoped SSE stream. MRTR needs no
+  code: the server sends no server-to-client requests, so it never returns
+  `input_required`. Requests on `2025-03-26` / `2024-11-05` — including every
+  request with no version at all — are answered byte-identically to before.
 
 ### Changed
 - **Minimum VS Code 1.101 and Node.js 22.12 (breaking).** Node.js 20 reached
@@ -84,22 +102,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `server.json` `packages[]` entry instead of reading `packages[0]` alone, so
   the second (streamable-http) entry cannot silently drift out of step with
   the extension manifest.
+- **HTTP+SSE serves the handshake-based revisions only.** `2026-07-28`
+  deprecates the transport and does not list it among its bindings, so
+  `/messages` answers a `2026-07-28` request with `-32022` naming
+  `2025-03-26` / `2024-11-05`, and its `server/discover` lists only those.
+  Existing SSE clients never send `2026-07-28` and are unaffected.
 - **Bundle budget raised from 165 KB to 170 KB.** `dist/extension.js` is
   167.0 KB with `2026-07-28` support (164.5 KB before); 170 KB keeps ~3 KB of
-  headroom. The CI check is renamed accordingly to
-  `Assert dist/extension.js ≤ 170 KB`, and `CONTRIBUTING.md`, which still
+  headroom. The required CI check keeps its name,
+  `Bundle budget (dist/extension.js)`, and `CONTRIBUTING.md`, which still
   quoted a stale 145 KB, now states the enforced value.
-
-### Security
-- **`Origin` validation on the HTTP+SSE transport.** `GET /sse` and
-  `POST /messages` now apply the same DNS-rebinding guard as `/mcp` — the
-  HTTP+SSE transport's own `2024-11-05` security warning already required it.
-  A page the user visits cannot read a loopback response, but it could open a
-  stream or fire a cross-origin `POST /messages` once it guessed a session id.
-  A missing `Origin` (native MCP clients send none) and loopback origins are
-  accepted, `allowedOrigins` is honoured, and everything else gets `403` — on
-  `/sse` before any session is opened, on `/messages` even with a valid
-  session id.
 
 ### Fixed
 - **Release jobs run on Node 22.** The Marketplace and Open VSX jobs fetch the
@@ -114,6 +126,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   served, matching the contract the Marketplace, Open VSX and npm jobs already
   had: only an explicit match skips, and a failed or empty query falls through
   to the publish attempt so a genuine first release is never suppressed.
+
+### Security
+- **`Origin` validation on the HTTP+SSE transport.** `GET /sse` and
+  `POST /messages` now apply the same DNS-rebinding guard as `/mcp` — the
+  HTTP+SSE transport's own `2024-11-05` security warning already required it.
+  A page the user visits cannot read a loopback response, but it could open a
+  stream or fire a cross-origin `POST /messages` once it guessed a session id.
+  A missing `Origin` (native MCP clients send none) and loopback origins are
+  accepted, `allowedOrigins` is honoured, and everything else gets `403` — on
+  `/sse` before any session is opened, on `/messages` even with a valid
+  session id.
 
 ## [1.4.0] — 2026-07-25
 
