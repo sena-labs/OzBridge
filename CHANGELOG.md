@@ -84,6 +84,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `server.json` `packages[]` entry instead of reading `packages[0]` alone, so
   the second (streamable-http) entry cannot silently drift out of step with
   the extension manifest.
+- **Bundle budget raised from 165 KB to 170 KB.** `dist/extension.js` is
+  167.0 KB with `2026-07-28` support (164.5 KB before); 170 KB keeps ~3 KB of
+  headroom. The CI check is renamed accordingly to
+  `Assert dist/extension.js ≤ 170 KB`, and `CONTRIBUTING.md`, which still
+  quoted a stale 145 KB, now states the enforced value.
 
 ### Fixed
 - **Release jobs run on Node 22.** The Marketplace and Open VSX jobs fetch the

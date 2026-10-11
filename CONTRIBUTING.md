@@ -107,7 +107,7 @@ request**. One PR = one reviewable unit of value. The playbook:
    ## Verification
    - `npm run compile` — clean.
    - `npm test -- --run` — **<count> / <count>** green.
-   - Bundle size: **XX.XX KB** (budget 145 KB).
+   - Bundle size: **XX.XX KB** (budget 170 KB).
 
    ## Next
    - Follow-up 1
@@ -201,7 +201,7 @@ ends up in `CHANGELOG`-adjacent tooling and GitHub release notes.
 
 ## Bundle budget
 
-CI enforces a **145 KB** ceiling on `dist/extension.js` via
+CI enforces a **170 KB** ceiling on `dist/extension.js` via
 `.github/workflows/bundle-budget.yml`. Before opening a PR, confirm
 locally:
 
