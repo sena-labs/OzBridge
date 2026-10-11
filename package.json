@@ -784,7 +784,7 @@
     "@types/vscode": "1.96.0",
     "@vitest/coverage-v8": "^4.1.11",
     "@vscode/test-electron": "^3.1.0",
-    "@vscode/vsce": "^3.9.2",
+    "@vscode/vsce": "^4.0.0",
     "esbuild": "^0.28.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.7"
