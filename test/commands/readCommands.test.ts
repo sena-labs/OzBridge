@@ -176,8 +176,8 @@ describe('/models command', () => {
     expect(mock.getFullOutput()).toContain('not found');
   });
 
-  // Gap: errore generico (non-OzCliError)
-  it('dovrebbe gestire errore generico (non-OzCliError)', async () => {
+  // Gap: generic error (non-OzCliError)
+  it('handles a generic error (non-OzCliError)', async () => {
     cli.modelList.mockRejectedValue(new Error('network failure'));
 
     await handler('', mock.stream as any, createMockToken() as any);
@@ -185,8 +185,8 @@ describe('/models command', () => {
     expect(mock.getFullOutput()).toContain('network failure');
   });
 
-  // Gap: errore non-Error (stringa) → instanceof Error false branch (L43)
-  it('dovrebbe gestire errore non-Error (stringa) nel catch (String() branch)', async () => {
+  // Gap: non-Error (string) error → instanceof Error false branch (L43)
+  it('handles a non-Error (string) error in the catch (String() branch)', async () => {
     cli.modelList.mockRejectedValue('raw models error');
 
     await handler('', mock.stream as any, createMockToken() as any);
@@ -263,8 +263,8 @@ describe('/mcp command', () => {
     expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
-  // Gap: errore non-Error (stringa) → instanceof Error false branch (L41)
-  it('dovrebbe gestire errore non-Error (stringa) nel catch (String() branch)', async () => {
+  // Gap: non-Error (string) error → instanceof Error false branch (L41)
+  it('handles a non-Error (string) error in the catch (String() branch)', async () => {
     cli.mcpList.mockRejectedValue('raw mcp error');
 
     await handler('', mock.stream as any, createMockToken() as any);

@@ -1,8 +1,8 @@
 import { Page, expect } from '@playwright/test';
 
 /**
- * Apre la Command Palette, filtra con `query`, restituisce i label visibili.
- * Lascia la palette aperta — chiamare `closePalette` o premere Escape.
+ * Opens the Command Palette, filters with `query`, returns the visible labels.
+ * Leaves the palette open — call `closePalette` or press Escape.
  */
 export async function listPaletteItems(win: Page, query: string): Promise<string[]> {
   const isMac = process.platform === 'darwin';
@@ -18,7 +18,7 @@ export async function listPaletteItems(win: Page, query: string): Promise<string
   const count = await rows.count();
   const labels: string[] = [];
   for (let i = 0; i < count; i++) {
-    // L'intero contenuto della riga (label + categoria + descrizione).
+    // The full content of the row (label + category + description).
     const text = await rows.nth(i).innerText({ timeout: 1_000 }).catch(() => '');
     if (text) labels.push(text.replace(/\s+/g, ' ').trim());
   }
@@ -27,14 +27,14 @@ export async function listPaletteItems(win: Page, query: string): Promise<string
 
 export async function closePalette(win: Page): Promise<void> {
   await win.keyboard.press('Escape');
-  // attendi chiusura
+  // wait for it to close
   await win.locator('.quick-input-widget').waitFor({ state: 'hidden', timeout: 3_000 }).catch(() => {});
 }
 
 /**
- * Esegue un comando dalla Command Palette. Diversamente da `runCommand`
- * generale, qui scegliamo l'item *esatto* per evitare ambiguità quando
- * il prefisso matcha più voci.
+ * Runs a command from the Command Palette. Unlike the general `runCommand`,
+ * here we pick the *exact* item to avoid ambiguity when
+ * the prefix matches several entries.
  */
 export async function runExactCommand(win: Page, exactTitle: string): Promise<void> {
   const isMac = process.platform === 'darwin';
@@ -53,8 +53,8 @@ export async function runExactCommand(win: Page, exactTitle: string): Promise<vo
   await win.waitForTimeout(100);
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
   await qiw.waitFor({ state: 'visible', timeout: 15_000 });
-  // Il filtro fuzzy può non gestire bene il glifo ellissi U+2026;
-  // togliamolo dal pattern di ricerca.
+  // The fuzzy filter may not handle the ellipsis glyph U+2026 well;
+  // strip it from the search pattern.
   const query = exactTitle.replace(/…/g, '').trim();
 
   // Avoid relying on `.fill()` visibility heuristics (VS Code sometimes keeps
@@ -69,13 +69,13 @@ export async function runExactCommand(win: Page, exactTitle: string): Promise<vo
   // considered "hidden" by Playwright during transitions; pressing Enter is
   // more resilient than trying to click a row.
   await win.keyboard.press('Enter');
-  // Attendi che la palette chiuda (la nuova UI può aprirsi subito dopo).
+  // Wait for the palette to close (the new UI may open right after).
   await win.locator('.quick-input-widget').waitFor({ state: 'hidden', timeout: 4_000 }).catch(() => {});
 }
 
 /**
- * Aspetta che venga mostrato uno dei segnali UI tipici dopo l'invocazione
- * di un comando. Restituisce il tipo trovato o null se nessuno entro timeout.
+ * Waits for one of the typical UI signals to be shown after a command
+ * is invoked. Returns the type found, or null if none appears within the timeout.
  */
 export type PostCommandSignal =
   | { kind: 'notification'; text: string }
@@ -126,16 +126,16 @@ export async function waitForAnySignal(win: Page, timeoutMs = 8_000): Promise<Po
     if (await term.first().isVisible().catch(() => false)) {
       return { kind: 'terminal' };
     }
-    // Editor tab cambiata: rilevata dal chiamante via diff. Skip qui.
+    // Editor tab changed: detected by the caller via diff. Skipped here.
     await win.waitForTimeout(150);
   }
   return null;
 }
 
 /**
- * Variante di `waitForAnySignal` che ignora le notification toast esistenti
- * e attende che ne compaia una NUOVA (testo diverso). Utile per sequenze
- * di comandi successivi che producono toast con messaggi diversi.
+ * Variant of `waitForAnySignal` that ignores existing notification toasts
+ * and waits for a NEW one to appear (different text). Useful for sequences
+ * of consecutive commands that produce toasts with different messages.
  */
 export async function waitForFreshNotification(
   win: Page,
@@ -159,7 +159,7 @@ export async function waitForFreshNotification(
   return null;
 }
 
-/** Restituisce il testo dell'ultimo toast visibile, oppure null. */
+/** Returns the text of the last visible toast, or null. */
 export async function lastNotificationText(win: Page): Promise<string | null> {
   const toasts = win.locator(
     '[role="alert"], .notifications-toasts .notification-list-item-message',
@@ -181,16 +181,16 @@ export async function listEditorTabs(win: Page): Promise<string[]> {
   return out;
 }
 
-/** Chiude qualsiasi UI overlay (palette, quick pick, input box, modale). */
+/** Closes any UI overlay (palette, quick pick, input box, modal). */
 export async function dismissOverlays(win: Page): Promise<void> {
-  // Premi Escape multiple volte per chiudere widget annidati.
+  // Press Escape several times to close nested widgets.
   for (let i = 0; i < 3; i++) {
     if (!(await win.locator('.quick-input-widget, .monaco-dialog-box').first().isVisible().catch(() => false))) break;
     await win.keyboard.press('Escape');
     await win.waitForTimeout(100);
   }
-  // Pulisci tutte le notification toasts via comando dedicato (più
-  // affidabile del click sull'icona di close che può essere intercettato).
+  // Clear all notification toasts via the dedicated command (more
+  // reliable than clicking the close icon, which can be intercepted).
   // Check for visible notifications via ARIA role (VS Code 1.118+) or legacy CSS selector.
   const hasToasts = await win.locator(
     '[role="alert"], .notifications-toasts .notification-list-item',
@@ -201,7 +201,7 @@ export async function dismissOverlays(win: Page): Promise<void> {
   }
 }
 
-/** Esegue un comando da palette (filtro stretto, primo match). Helper interno. */
+/** Runs a command from the palette (strict filter, first match). Internal helper. */
 async function runPaletteCommand(win: Page, title: string): Promise<void> {
   const isMac = process.platform === 'darwin';
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');

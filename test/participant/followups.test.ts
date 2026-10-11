@@ -15,14 +15,14 @@ function getFollowups(command?: string) {
 }
 
 describe('FollowupProvider', () => {
-  it('dovrebbe fornire followup per /run → status + models', () => {
+  it('provides followups for /run → status + models', () => {
     const followups = getFollowups('run');
     expect(followups).toHaveLength(2);
     expect(followups.some(f => f.command === 'status')).toBe(true);
     expect(followups.some(f => f.command === 'models')).toBe(true);
   });
 
-  it('dovrebbe fornire followup per /cloud → status + models', () => {
+  it('provides followups for /cloud → status + models', () => {
     const followups = getFollowups('cloud');
     expect(followups).toHaveLength(2);
     expect(followups.some(f => f.command === 'status')).toBe(true);
@@ -35,21 +35,21 @@ describe('FollowupProvider', () => {
     expect(followups.some(f => f.command === 'history')).toBe(true);
   });
 
-  it('dovrebbe fornire followup per /config → run + init', () => {
+  it('provides followups for /config → run + init', () => {
     const followups = getFollowups('config');
     expect(followups).toHaveLength(2);
     expect(followups.some(f => f.command === 'run')).toBe(true);
     expect(followups.some(f => f.command === 'init')).toBe(true);
   });
 
-  it('dovrebbe fornire followup per /init → run + config', () => {
+  it('provides followups for /init → run + config', () => {
     const followups = getFollowups('init');
     expect(followups).toHaveLength(2);
     expect(followups.some(f => f.command === 'run')).toBe(true);
     expect(followups.some(f => f.command === 'config')).toBe(true);
   });
 
-  it('dovrebbe fornire followup di default per comando sconosciuto', () => {
+  it('provides default followups for an unknown command', () => {
     const followups = getFollowups('unknown_cmd');
     expect(followups).toHaveLength(3);
     expect(followups.some(f => f.command === 'status')).toBe(true);
@@ -57,12 +57,12 @@ describe('FollowupProvider', () => {
     expect(followups.some(f => f.command === 'config')).toBe(true);
   });
 
-  it('dovrebbe fornire followup di default senza metadata', () => {
+  it('provides default followups without metadata', () => {
     const followups = getFollowups(undefined);
     expect(followups).toHaveLength(3);
   });
 
-  it('dovrebbe avere prompt vuoto e label non vuota per ogni followup', () => {
+  it('has an empty prompt and a non-empty label for every followup', () => {
     for (const cmd of ['run', 'cloud', 'status', 'config', 'init', undefined]) {
       const followups = getFollowups(cmd);
       for (const f of followups) {

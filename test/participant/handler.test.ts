@@ -20,7 +20,7 @@ describe('registerChatParticipant()', () => {
     };
   }
 
-  it('dovrebbe registrare participant con ID corretto', () => {
+  it('registers the participant with the correct ID', () => {
     const ctx = createMockExtensionContext();
     registerChatParticipant(
       ctx as any,
@@ -36,7 +36,7 @@ describe('registerChatParticipant()', () => {
     );
   });
 
-  it('dovrebbe aggiungere participant a subscriptions', () => {
+  it('adds the participant to subscriptions', () => {
     const ctx = createMockExtensionContext();
     registerChatParticipant(
       ctx as any,
@@ -49,7 +49,7 @@ describe('registerChatParticipant()', () => {
     expect(ctx.subscriptions.length).toBe(1);
   });
 
-  it('dovrebbe impostare iconPath', () => {
+  it('sets iconPath', () => {
     const participant = { iconPath: undefined as any, followupProvider: undefined as any, dispose: vi.fn() };
     chat.createChatParticipant.mockReturnValue(participant);
 
@@ -65,7 +65,7 @@ describe('registerChatParticipant()', () => {
     expect(participant.iconPath).toBeDefined();
   });
 
-  it('dovrebbe impostare followupProvider', () => {
+  it('sets followupProvider', () => {
     const participant = { iconPath: undefined as any, followupProvider: undefined as any, dispose: vi.fn() };
     chat.createChatParticipant.mockReturnValue(participant);
 
@@ -81,7 +81,7 @@ describe('registerChatParticipant()', () => {
     expect(participant.followupProvider).toBeDefined();
   });
 
-  it('dovrebbe ritornare il participant creato', () => {
+  it('returns the created participant', () => {
     const ctx = createMockExtensionContext();
     const result = registerChatParticipant(
       ctx as any,

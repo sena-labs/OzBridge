@@ -228,7 +228,7 @@ describe('McpServer HTTP transport', () => {
     await server.stop(); // second call must not throw
   });
 
-  it('chiama close prima di forzare la chiusura delle connessioni', async () => {
+  it('calls close before force-closing the connections', async () => {
     server = new McpServer(makeRegistry(), undefined, { port: 0 });
     await server.start();
     const nodeServer = (server as unknown as { http: http.Server }).http;

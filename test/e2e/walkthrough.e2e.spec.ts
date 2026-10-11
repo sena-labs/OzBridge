@@ -4,13 +4,13 @@ import * as path from 'node:path';
 import { launchVSCode, runCommand, LaunchedVSCode } from './helpers/launchVscode';
 
 /**
- * Walkthrough end-to-end: simula un utente reale che usa l'estensione su
- * VS Code (Electron) e cattura screenshot + un video da consegnare come
- * artefatti (`/opt/cursor/artifacts`). Voluto piccolo e deterministico:
- * apre il workbench, ispeziona l'activity bar, la palette, le tree views,
- * la dashboard e la Settings UI con `ozBridge.*`. Verifica anche che il
- * fix di `promptExpander` (alias `#warp.*`) sia presente nel bundle
- * caricato da VS Code.
+ * End-to-end walkthrough: simulates a real user using the extension in
+ * VS Code (Electron) and captures screenshots + a video to deliver as
+ * artifacts (`/opt/cursor/artifacts`). Intentionally small and deterministic:
+ * it opens the workbench, inspects the activity bar, the palette, the tree views,
+ * the dashboard and the Settings UI with `ozBridge.*`. It also checks that the
+ * `promptExpander` fix (alias `#warp.*`) is present in the bundle
+ * loaded by VS Code.
  */
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
@@ -27,26 +27,26 @@ test.afterAll(async () => {
   await vscode?.dispose();
 });
 
-test('walkthrough: utente reale apre VS Code, sidebar, palette, dashboard, settings', async () => {
+test('walkthrough: a real user opens VS Code, sidebar, palette, dashboard, settings', async () => {
   test.setTimeout(180_000);
   const win = vscode.window;
 
   // 1) Workbench loaded.
   await expect(win.locator('.monaco-workbench')).toBeVisible({ timeout: 60_000 });
 
-  // 2) Activity bar mostra l'icona OzBridge.
+  // 2) Activity bar shows the OzBridge icon.
   const ozIcons = win.locator('.activitybar [aria-label*="OzBridge" i]');
   await expect(ozIcons.first()).toBeVisible({ timeout: 60_000 });
   await win.screenshot({ path: path.join(ARTIFACTS_DIR, 'screenshot_e2e_1_workbench.png') });
 
-  // 3) Apri il viewlet OzBridge dall'activity bar.
+  // 3) Open the OzBridge viewlet from the activity bar.
   await ozIcons.first().click();
   await expect(win.locator('.pane-header .title', { hasText: /Runs.*Resources/i })).toBeVisible({ timeout: 30_000 });
   await expect(win.locator('.pane-header .title', { hasText: /Warp Drive/i })).toBeVisible({ timeout: 30_000 });
   await win.waitForTimeout(800);
   await win.screenshot({ path: path.join(ARTIFACTS_DIR, 'screenshot_e2e_2_sidebar.png') });
 
-  // 4) Command palette: comandi OzBridge presenti.
+  // 4) Command palette: OzBridge commands present.
   const isMac = process.platform === 'darwin';
   await win.keyboard.press(isMac ? 'Meta+Shift+P' : 'Control+Shift+P');
   const input = win.locator('.quick-input-widget input.input');
@@ -64,7 +64,7 @@ test('walkthrough: utente reale apre VS Code, sidebar, palette, dashboard, setti
   await win.keyboard.press('Escape');
   await win.locator('.quick-input-widget').waitFor({ state: 'hidden', timeout: 4_000 }).catch(() => undefined);
 
-  // 5) Apri Settings UI e filtra per ozBridge.*
+  // 5) Open the Settings UI and filter by ozBridge.*
   await runCommand(win, 'Preferences: Open Settings (UI)');
   await win.locator('.settings-editor').first().waitFor({ state: 'visible', timeout: 30_000 });
   const searchBox = win
@@ -79,18 +79,18 @@ test('walkthrough: utente reale apre VS Code, sidebar, palette, dashboard, setti
   expect(await settingTitles.count()).toBeGreaterThanOrEqual(5);
   await win.screenshot({ path: path.join(ARTIFACTS_DIR, 'screenshot_e2e_4_settings.png') });
 
-  // 6) Dashboard: apri il webview e attendi che la tab editor compaia.
+  // 6) Dashboard: open the webview and wait for the editor tab to appear.
   await win.keyboard.press('Escape');
   await runCommand(win, 'OzBridge: Open Dashboard');
-  // Attendi un po' qualunque tab/iframe webview comparire.
+  // Wait a bit for any webview tab/iframe to appear.
   const webviewIframe = win.locator('iframe.webview, iframe[src*="vscode-webview"]');
   await expect(webviewIframe.first()).toBeAttached({ timeout: 60_000 });
   await win.waitForTimeout(1_500);
   await win.screenshot({ path: path.join(ARTIFACTS_DIR, 'screenshot_e2e_5_dashboard.png') });
 
-  // 7) Verifica che il bundle di estensione caricato contenga il fix
-  // del promptExpander: leggiamo dist/extension.js e cerchiamo i
-  // marcatori del nuovo TOKEN_REGEX (`warp.env|warp.profile|warp.model`).
+  // 7) Check that the loaded extension bundle contains the
+  // promptExpander fix: we read dist/extension.js and look for the
+  // markers of the new TOKEN_REGEX (`warp.env|warp.profile|warp.model`).
   const bundle = await fs.readFile(path.join(REPO_ROOT, 'dist', 'extension.js'), 'utf8');
   expect(bundle).toContain('warp\\.env');
   expect(bundle).toContain('warp\\.profile');

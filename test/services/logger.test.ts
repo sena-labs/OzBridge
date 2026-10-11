@@ -1,11 +1,11 @@
 /**
- * Test approfonditi per il logger — initLogger, logInfo, logWarn, logError, buffer pre-init.
+ * In-depth tests for the logger — initLogger, logInfo, logWarn, logError, pre-init buffer.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Il logger usa stato di modulo (let _channel, const _buffer). Per poterlo testare
-// in isolamento dobbiamo reimportarlo con un modulo fresco ad ogni test-suite.
-// Vitest supporta vi.resetModules + import dinamico.
+// The logger uses module state (let _channel, const _buffer). To test it
+// in isolation we must re-import it as a fresh module for each test suite.
+// Vitest supports vi.resetModules + dynamic import.
 
 async function freshLogger() {
   vi.resetModules();
@@ -21,31 +21,31 @@ describe('Logger', () => {
   // initLogger
   // --------------------------------------------------------------------------
   describe('initLogger()', () => {
-    it('dovrebbe accettare un OutputChannel senza errori', async () => {
+    it('accepts an OutputChannel without errors', async () => {
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       expect(() => logger.initLogger(channel as any)).not.toThrow();
     });
 
-    it('dovrebbe flushare il buffer pre-init al channel', async () => {
+    it('flushes the pre-init buffer to the channel', async () => {
       const logger = await freshLogger();
-      // Log prima dell'init — va nel buffer
+      // Log before init — goes into the buffer
       logger.logInfo('before init');
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel as any);
-      // Il buffer deve essere stato scritto nel channel
+      // The buffer must have been written to the channel
       expect(channel.appendLine).toHaveBeenCalled();
       const flushed = channel.appendLine.mock.calls.map((c: unknown[]) => c[0] as string);
       expect(flushed.some((line) => line.includes('before init'))).toBe(true);
     });
 
-    it('dovrebbe svuotare il buffer dopo il flush', async () => {
+    it('empties the buffer after the flush', async () => {
       const logger = await freshLogger();
       logger.logInfo('buffered');
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel as any);
       const callCount = channel.appendLine.mock.calls.length;
-      // Seconda init — non deve ri-flushare i vecchi messaggi
+      // Second init — must not re-flush the old messages
       const channel2 = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel2 as any);
       expect(channel2.appendLine.mock.calls.length).toBeLessThan(callCount);
@@ -56,7 +56,7 @@ describe('Logger', () => {
   // logInfo
   // --------------------------------------------------------------------------
   describe('logInfo()', () => {
-    it('dovrebbe scrivere nel channel con prefisso [ozbridge]', async () => {
+    it('writes to the channel with the [ozbridge] prefix', async () => {
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel as any, '[ozbridge]');
@@ -66,7 +66,7 @@ describe('Logger', () => {
       expect(lastCall).toContain('hello');
     });
 
-    it('dovrebbe loggare anche su console.log', async () => {
+    it('also logs to console.log', async () => {
       const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
@@ -78,13 +78,13 @@ describe('Logger', () => {
       spy.mockRestore();
     });
 
-    it('dovrebbe bufferare se channel non inizializzato', async () => {
+    it('buffers when the channel is not initialized', async () => {
       const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const logger = await freshLogger();
-      // Non chiamo initLogger — il messaggio va nel buffer
+      // initLogger is not called — the message goes into the buffer
       logger.logInfo('buffered message');
       expect(spy).toHaveBeenCalled();
-      // Ora init
+      // Now init
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel as any);
       const allAppended = channel.appendLine.mock.calls.map((c: unknown[]) => c[0]).join('\n');
@@ -97,7 +97,7 @@ describe('Logger', () => {
   // logWarn
   // --------------------------------------------------------------------------
   describe('logWarn()', () => {
-    it('dovrebbe scrivere nel channel con prefisso WARN', async () => {
+    it('writes to the channel with the WARN prefix', async () => {
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel as any);
@@ -108,7 +108,7 @@ describe('Logger', () => {
       expect(lastCall).toContain('attenzione');
     });
 
-    it('dovrebbe loggare su console.warn', async () => {
+    it('logs to console.warn', async () => {
       const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
@@ -119,7 +119,7 @@ describe('Logger', () => {
       spy.mockRestore();
     });
 
-    it('dovrebbe passare argomenti extra a console.warn', async () => {
+    it('passes extra arguments to console.warn', async () => {
       const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
@@ -134,7 +134,7 @@ describe('Logger', () => {
   // logError
   // --------------------------------------------------------------------------
   describe('logError()', () => {
-    it('dovrebbe scrivere nel channel con prefisso ERROR', async () => {
+    it('writes to the channel with the ERROR prefix', async () => {
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
       logger.initLogger(channel as any);
@@ -145,7 +145,7 @@ describe('Logger', () => {
       expect(lastCall).toContain('errore');
     });
 
-    it('dovrebbe loggare su console.error', async () => {
+    it('logs to console.error', async () => {
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
@@ -156,7 +156,7 @@ describe('Logger', () => {
       spy.mockRestore();
     });
 
-    it('dovrebbe passare argomenti extra a console.error', async () => {
+    it('passes extra arguments to console.error', async () => {
       const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
       const logger = await freshLogger();
       const channel = { appendLine: vi.fn(), dispose: vi.fn() };
@@ -168,10 +168,10 @@ describe('Logger', () => {
   });
 
   // --------------------------------------------------------------------------
-  // Buffer pre-init multiplo
+  // Pre-init buffer with multiple messages
   // --------------------------------------------------------------------------
   describe('Buffer pre-init', () => {
-    it('dovrebbe bufferare messaggi multipli e flusharli in ordine', async () => {
+    it('buffers multiple messages and flushes them in order', async () => {
       const logger = await freshLogger();
       vi.spyOn(console, 'log').mockImplementation(() => {});
       vi.spyOn(console, 'warn').mockImplementation(() => {});

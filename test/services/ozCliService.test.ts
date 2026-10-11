@@ -22,7 +22,7 @@ import { spawn } from 'node:child_process';
 const mockSpawn = vi.mocked(spawn);
 
 // ---------------------------------------------------------------------------
-// Helper: crea un processo mock che emette stdout/stderr e chiude
+// Helper: creates a mock process that emits stdout/stderr and closes
 // ---------------------------------------------------------------------------
 function createMockProcess(opts: {
   stdout?: string;
@@ -39,7 +39,7 @@ function createMockProcess(opts: {
 
   mockSpawn.mockReturnValue(proc as any);
 
-  // Emetti eventi in modo asincrono (dopo che exec() ha registrato i listener)
+  // Emit events asynchronously (after exec() has registered the listeners)
   process.nextTick(() => {
     if (opts.error) {
       proc.emit('error', opts.error);
@@ -68,7 +68,7 @@ describe('OzCliService', () => {
   // checkAvailability()
   // =========================================================================
   describe('checkAvailability()', () => {
-    it('dovrebbe tornare available=true quando --help riesce', async () => {
+    it('returns available=true when --help succeeds', async () => {
       createMockProcess({ stdout: 'Usage: oz <COMMAND>\n' });
       const result = await cli.checkAvailability();
       expect(result.available).toBe(true);
@@ -76,14 +76,14 @@ describe('OzCliService', () => {
       expect(result.path).toBe('oz');
     });
 
-    it('dovrebbe tornare available=false se spawn fallisce', async () => {
+    it('returns available=false when spawn fails', async () => {
       createMockProcess({ error: new Error('ENOENT: not found') });
       const result = await cli.checkAvailability();
       expect(result.available).toBe(false);
       expect(result.version).toBeNull();
     });
 
-    it('dovrebbe tornare available=true anche se stdout è vuoto', async () => {
+    it('returns available=true even when stdout is empty', async () => {
       createMockProcess({ stdout: '' });
       const result = await cli.checkAvailability();
       expect(result.available).toBe(true);
@@ -96,7 +96,7 @@ describe('OzCliService', () => {
   // agentRun()
   // =========================================================================
   describe('agentRun()', () => {
-    it('dovrebbe eseguire agent run con prompt e parsare risultato JSON', async () => {
+    it('runs agent run with the prompt and parses the JSON result', async () => {
       createMockProcess({
         stdout: JSON.stringify({ id: 'run-1', status: 'SUCCEEDED', output: 'Result' }),
       });
@@ -108,9 +108,9 @@ describe('OzCliService', () => {
       expect(result.output).toBe('Result');
       expect(result.exitCode).toBe(0);
 
-      // Verifica args passati a spawn. Il formato output è ora veicolato
-      // dall'env var WARP_OUTPUT_FORMAT (vedi exec()), non più ripetuto
-      // su ogni argv — quindi `--output-format` NON deve più comparire.
+      // Check the args passed to spawn. The output format is now carried
+      // by the WARP_OUTPUT_FORMAT env var (see exec()), no longer repeated
+      // on every argv — so `--output-format` must NOT appear anymore.
       const args = mockSpawn.mock.calls[0][1] as string[];
       expect(args).toContain('agent');
       expect(args).toContain('run');
@@ -118,12 +118,12 @@ describe('OzCliService', () => {
       expect(args).toContain('fix the bug');
       expect(args).not.toContain('--output-format');
 
-      // L'env passato a spawn deve impostare WARP_OUTPUT_FORMAT=json
+      // The env passed to spawn must set WARP_OUTPUT_FORMAT=json
       const spawnOpts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
       expect(spawnOpts.env?.WARP_OUTPUT_FORMAT).toBe('json');
     });
 
-    it('dovrebbe passare --model se specificato', async () => {
+    it('passes --model when specified', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRun({ prompt: 'test', model: 'gpt-4' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -131,7 +131,7 @@ describe('OzCliService', () => {
       expect(args).toContain('gpt-4');
     });
 
-    it('dovrebbe passare --profile se specificato', async () => {
+    it('passes --profile when specified', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRun({ prompt: 'test', profile: 'custom' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -139,7 +139,7 @@ describe('OzCliService', () => {
       expect(args).toContain('custom');
     });
 
-    it('dovrebbe passare --skill se specificato', async () => {
+    it('passes --skill when specified', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRun({ prompt: 'test', skill: '1-spec-agent' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -147,7 +147,7 @@ describe('OzCliService', () => {
       expect(args).toContain('1-spec-agent');
     });
 
-    it('dovrebbe gestire output non-JSON (testo puro)', async () => {
+    it('handles non-JSON output (plain text)', async () => {
       createMockProcess({ stdout: 'Plain text output from agent' });
       const result = await cli.agentRun({ prompt: 'hello' });
       expect(result.runId).toBeNull();
@@ -155,13 +155,13 @@ describe('OzCliService', () => {
       expect(result.output).toBe('Plain text output from agent');
     });
 
-    it('dovrebbe gestire run_id alternativo nel JSON', async () => {
+    it('handles the alternative run_id in the JSON', async () => {
       createMockProcess({ stdout: '{"run_id":"alt-123","status":"QUEUED"}' });
       const result = await cli.agentRun({ prompt: 'test' });
       expect(result.runId).toBe('alt-123');
     });
 
-    it('dovrebbe impostare status FAILED per exit code non-zero con output testuale', async () => {
+    it('sets status FAILED for a non-zero exit code with text output', async () => {
       createMockProcess({ stdout: 'Something went wrong', exitCode: 1, stderr: 'err' });
       await expect(cli.agentRun({ prompt: 'test' })).rejects.toThrow(OzCliError);
     });
@@ -171,7 +171,7 @@ describe('OzCliService', () => {
   // agentRunCloud()
   // =========================================================================
   describe('agentRunCloud()', () => {
-    it('dovrebbe eseguire run-cloud con parametri corretti', async () => {
+    it('runs run-cloud with the correct parameters', async () => {
       createMockProcess({ stdout: '{"id":"cloud-1","status":"QUEUED"}' });
       await cli.agentRunCloud({ prompt: 'deploy it', environment: 'prod' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -180,7 +180,7 @@ describe('OzCliService', () => {
       expect(args).toContain('prod');
     });
 
-    it('dovrebbe passare --model se specificato', async () => {
+    it('passes --model when specified', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRunCloud({ prompt: 'test', model: 'gpt-4' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -188,7 +188,7 @@ describe('OzCliService', () => {
       expect(args).toContain('gpt-4');
     });
 
-    it('dovrebbe passare --skill se specificato', async () => {
+    it('passes --skill when specified', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRunCloud({ prompt: 'test', skill: '1-spec-agent' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -196,7 +196,7 @@ describe('OzCliService', () => {
       expect(args).toContain('1-spec-agent');
     });
 
-    it('dovrebbe passare --no-environment se noEnvironment è true', async () => {
+    it('passes --no-environment when noEnvironment is true', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRunCloud({ prompt: 'test', noEnvironment: true });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -204,7 +204,7 @@ describe('OzCliService', () => {
       expect(args).not.toContain('-e');
     });
 
-    it('dovrebbe preferire -e su --no-environment se entrambi forniti', async () => {
+    it('prefers -e over --no-environment when both are provided', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRunCloud({ prompt: 'test', environment: 'prod', noEnvironment: true });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -213,14 +213,14 @@ describe('OzCliService', () => {
       expect(args).not.toContain('--no-environment');
     });
 
-    it('dovrebbe passare --open se open è true', async () => {
+    it('passes --open when open is true', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRunCloud({ prompt: 'test', open: true });
       const args = mockSpawn.mock.calls[0][1] as string[];
       expect(args).toContain('--open');
     });
 
-    it('dovrebbe non passare --open se open non specificato', async () => {
+    it('does not pass --open when open is not specified', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRunCloud({ prompt: 'test' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -232,14 +232,14 @@ describe('OzCliService', () => {
   // runList() / runGet()
   // =========================================================================
   describe('runList()', () => {
-    it('dovrebbe tornare lista di run', async () => {
+    it('returns a list of runs', async () => {
       createMockProcess({ stdout: '[{"id":"r1","status":"SUCCEEDED"},{"id":"r2","status":"FAILED"}]' });
       const result = await cli.runList();
       expect(result.items).toHaveLength(2);
       expect(result.items[0].id).toBe('r1');
     });
 
-    it('dovrebbe gestire output "No runs found."', async () => {
+    it('handles the output "No runs found."', async () => {
       createMockProcess({ stdout: 'No runs found.' });
       const result = await cli.runList();
       expect(result.items).toHaveLength(0);
@@ -248,18 +248,18 @@ describe('OzCliService', () => {
   });
 
   describe('runGet()', () => {
-    it('dovrebbe ottenere dettaglio di un run', async () => {
+    it('gets the details of a run', async () => {
       createMockProcess({ stdout: '{"id":"run-x","status":"SUCCEEDED","output":"done"}' });
       const result = await cli.runGet('run-x');
       expect(result.runId).toBe('run-x');
     });
 
-    it('dovrebbe rifiutare ID con caratteri non validi (injection protection)', async () => {
+    it('rejects IDs with invalid characters (injection protection)', async () => {
       await expect(cli.runGet('id; rm -rf /')).rejects.toThrow(OzCliError);
       await expect(cli.runGet('id; rm -rf /')).rejects.toThrow('Invalid runId');
     });
 
-    it('dovrebbe accettare ID alfanumerici con trattini e underscore', async () => {
+    it('accepts alphanumeric IDs with hyphens and underscores', async () => {
       createMockProcess({ stdout: '{"id":"run_abc-123","status":"SUCCEEDED"}' });
       const result = await cli.runGet('run_abc-123');
       expect(result.runId).toBe('run_abc-123');
@@ -279,7 +279,7 @@ describe('OzCliService', () => {
   // Schedule methods
   // =========================================================================
   describe('scheduleCreate()', () => {
-    it('dovrebbe creare uno schedule', async () => {
+    it('creates a schedule', async () => {
       createMockProcess({
         stdout: JSON.stringify({ id: 'sched-1', name: 'daily', cron: '0 9 * * *', prompt: 'lint', paused: false }),
       });
@@ -288,19 +288,19 @@ describe('OzCliService', () => {
       expect(result.name).toBe('daily');
     });
 
-    it('dovrebbe lanciare se output non parsabile', async () => {
+    it('throws when the output cannot be parsed', async () => {
       createMockProcess({ stdout: 'Something unexpected' });
       await expect(cli.scheduleCreate({ name: 'x', cron: '* * * * *', prompt: 'y' }))
         .rejects.toThrow(OzCliError);
     });
 
-    it('dovrebbe rifiutare nome con caratteri non validi (validateCliArg)', async () => {
+    it('rejects a name with invalid characters (validateCliArg)', async () => {
       await expect(
         cli.scheduleCreate({ name: 'bad;name', cron: '0 9 * * *', prompt: 'lint' }),
       ).rejects.toThrow('Invalid schedule name');
     });
 
-    it('dovrebbe passare --skill e -e se specificati', async () => {
+    it('passes --skill and -e when specified', async () => {
       createMockProcess({
         stdout: JSON.stringify({ id: 'sched-opt', name: 'job', cron: '0 9 * * *', prompt: 'run', paused: false }),
       });
@@ -314,19 +314,19 @@ describe('OzCliService', () => {
   });
 
   describe('schedulePause/Unpause/Delete', () => {
-    it('dovrebbe rifiutare ID non valido per pause', async () => {
+    it('rejects an invalid ID for pause', async () => {
       await expect(cli.schedulePause('bad id!')).rejects.toThrow('Invalid schedule id');
     });
 
-    it('dovrebbe rifiutare ID non valido per unpause', async () => {
+    it('rejects an invalid ID for unpause', async () => {
       await expect(cli.scheduleUnpause('x y')).rejects.toThrow('Invalid schedule id');
     });
 
-    it('dovrebbe rifiutare ID non valido per delete', async () => {
+    it('rejects an invalid ID for delete', async () => {
       await expect(cli.scheduleDelete('../etc')).rejects.toThrow('Invalid schedule id');
     });
 
-    it('dovrebbe accettare ID validi', async () => {
+    it('accepts valid IDs', async () => {
       createMockProcess();
       await cli.schedulePause('sched-1');
       expect(mockSpawn).toHaveBeenCalled();
@@ -337,7 +337,7 @@ describe('OzCliService', () => {
   // Discovery methods
   // =========================================================================
   describe('modelList()', () => {
-    it('dovrebbe tornare lista modelli', async () => {
+    it('returns the model list', async () => {
       createMockProcess({ stdout: '[{"id":"gpt-4"},{"id":"claude-3"}]' });
       const result = await cli.modelList();
       expect(result.items).toHaveLength(2);
@@ -345,7 +345,7 @@ describe('OzCliService', () => {
   });
 
   describe('mcpList()', () => {
-    it('dovrebbe tornare lista server MCP', async () => {
+    it('returns the MCP server list', async () => {
       createMockProcess({ stdout: '[{"uuid":"u1","name":"mcp-1"}]' });
       const result = await cli.mcpList();
       expect(result.items).toHaveLength(1);
@@ -357,7 +357,7 @@ describe('OzCliService', () => {
   // Error handling in exec()
   // =========================================================================
   describe('exec() error handling', () => {
-    it('dovrebbe rilevare ENOENT come NOT_FOUND', async () => {
+    it('detects ENOENT as NOT_FOUND', async () => {
       createMockProcess({ error: new Error('ENOENT: spawn oz failed') });
       try {
         await cli.agentRun({ prompt: 'test' });
@@ -368,7 +368,7 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe rilevare "not logged in" come NOT_AUTHENTICATED', async () => {
+    it('detects "not logged in" as NOT_AUTHENTICATED', async () => {
       createMockProcess({ stderr: 'Error: not logged in', exitCode: 1 });
       try {
         await cli.agentRun({ prompt: 'test' });
@@ -379,7 +379,7 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe rilevare "unauthorized" come NOT_AUTHENTICATED', async () => {
+    it('detects "unauthorized" as NOT_AUTHENTICATED', async () => {
       createMockProcess({ stderr: 'Unauthorized access', exitCode: 1 });
       try {
         await cli.agentRun({ prompt: 'test' });
@@ -389,8 +389,8 @@ describe('OzCliService', () => {
       }
     });
 
-    // P1 fix: nuovi pattern di autenticazione
-    it('dovrebbe rilevare "please log in" come NOT_AUTHENTICATED (P1)', async () => {
+    // P1 fix: new authentication patterns
+    it('detects "please log in" as NOT_AUTHENTICATED (P1)', async () => {
       createMockProcess({ stderr: 'Error: please log in to continue', exitCode: 1 });
       try {
         await cli.agentRun({ prompt: 'test' });
@@ -401,7 +401,7 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe rilevare "must log in" come NOT_AUTHENTICATED (P1)', async () => {
+    it('detects "must log in" as NOT_AUTHENTICATED (P1)', async () => {
       createMockProcess({ stderr: 'You must log in before using this feature', exitCode: 1 });
       try {
         await cli.agentRun({ prompt: 'test' });
@@ -412,8 +412,8 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe NON rilevare "login" generico come NOT_AUTHENTICATED (P1 regression)', async () => {
-      // "login" da solo non deve triggerare NOT_AUTHENTICATED — la fix P1 ha rimosso questo pattern
+    it('does NOT detect a generic "login" as NOT_AUTHENTICATED (P1 regression)', async () => {
+      // "login" on its own must not trigger NOT_AUTHENTICATED — the P1 fix removed this pattern
       createMockProcess({ stderr: 'Error fetching login page data', exitCode: 1 });
       try {
         await cli.agentRun({ prompt: 'test' });
@@ -424,7 +424,7 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe rilevare "out of credits" come INSUFFICIENT_CREDITS', async () => {
+    it('detects "out of credits" as INSUFFICIENT_CREDITS', async () => {
       createMockProcess({ stderr: 'Error: account is out of credits', exitCode: 1 });
       try {
         await cli.agentRun({ prompt: 'test' });
@@ -435,7 +435,7 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe NOT classificare exit 402 senza messaggio crediti come INSUFFICIENT_CREDITS', async () => {
+    it('does NOT classify exit 402 without a credits message as INSUFFICIENT_CREDITS', async () => {
       // Warp’s insufficient_credits is documented as HTTP 403 with a
       // canonical "add-on credits" body. A bare 402 is NOT enough to
       // claim the user is out of credits — surface CLI_ERROR instead.
@@ -449,7 +449,7 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe rilevare 403 con "add-on credits" come INSUFFICIENT_CREDITS', async () => {
+    it('detects 403 with "add-on credits" as INSUFFICIENT_CREDITS', async () => {
       createMockProcess({
         stderr: 'HTTP 403: Your team has run out of add-on credits.',
         exitCode: 403,
@@ -462,7 +462,7 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe tornare CLI_ERROR per exit code non-zero generico', async () => {
+    it('returns CLI_ERROR for a generic non-zero exit code', async () => {
       createMockProcess({ stderr: 'Unknown error', exitCode: 2 });
       try {
         await cli.agentRun({ prompt: 'test' });
@@ -473,7 +473,7 @@ describe('OzCliService', () => {
       }
     });
 
-    it('dovrebbe usare shell: true su Windows, false altrove (compat .cmd)', async () => {
+    it('uses shell: true on Windows, false elsewhere (.cmd compat)', async () => {
       createMockProcess({ stdout: '{}' });
       await cli.agentRun({ prompt: 'test' });
       const options = mockSpawn.mock.calls[0][2] as any;
@@ -483,7 +483,7 @@ describe('OzCliService', () => {
       expect(options.shell).toBe(expected);
     });
 
-    it('dovrebbe impostare windowsHide: true', async () => {
+    it('sets windowsHide: true', async () => {
       createMockProcess({ stdout: '{}' });
       await cli.agentRun({ prompt: 'test' });
       const options = mockSpawn.mock.calls[0][2] as any;
@@ -505,30 +505,30 @@ describe('OzCliService', () => {
   });
 
   // =========================================================================
-  // parseStatus() (indirettamente tramite toRunResult)
+  // parseStatus() (indirectly via toRunResult)
   // =========================================================================
   describe('status parsing', () => {
-    it('dovrebbe parsare QUEUED', async () => {
+    it('parses QUEUED', async () => {
       createMockProcess({ stdout: '{"status":"QUEUED"}' });
       expect((await cli.agentRun({ prompt: 't' })).status).toBe('QUEUED');
     });
 
-    it('dovrebbe parsare INPROGRESS', async () => {
+    it('parses INPROGRESS', async () => {
       createMockProcess({ stdout: '{"status":"INPROGRESS"}' });
       expect((await cli.agentRun({ prompt: 't' })).status).toBe('INPROGRESS');
     });
 
-    it('dovrebbe mappare status sconosciuto a UNKNOWN', async () => {
+    it('maps an unknown status to UNKNOWN', async () => {
       createMockProcess({ stdout: '{"status":"WTFSTATUS"}' });
       expect((await cli.agentRun({ prompt: 't' })).status).toBe('UNKNOWN');
     });
 
-    it('dovrebbe mappare status non-stringa a UNKNOWN', async () => {
+    it('maps a non-string status to UNKNOWN', async () => {
       createMockProcess({ stdout: '{"status":42}' });
       expect((await cli.agentRun({ prompt: 't' })).status).toBe('UNKNOWN');
     });
 
-    it('dovrebbe gestire case-insensitive (lowercase → uppercase)', async () => {
+    it('is case-insensitive (lowercase → uppercase)', async () => {
       createMockProcess({ stdout: '{"status":"succeeded"}' });
       expect((await cli.agentRun({ prompt: 't' })).status).toBe('SUCCEEDED');
     });
@@ -541,7 +541,7 @@ describe('OzCliService', () => {
   // Discovery methods — scheduleList, profileList, environmentList, integrationList
   // =========================================================================
   describe('scheduleList()', () => {
-    it('dovrebbe tornare lista schedule', async () => {
+    it('returns the schedule list', async () => {
       createMockProcess({ stdout: '[{"id":"s1","name":"daily","cron":"0 9 * * *","paused":false}]' });
       const result = await cli.scheduleList();
       expect(result.items).toHaveLength(1);
@@ -550,7 +550,7 @@ describe('OzCliService', () => {
   });
 
   describe('profileList()', () => {
-    it('dovrebbe tornare lista profili', async () => {
+    it('returns the profile list', async () => {
       createMockProcess({ stdout: '[{"id":"p1","name":"Default"}]' });
       const result = await cli.profileList();
       expect(result.items).toHaveLength(1);
@@ -558,7 +558,7 @@ describe('OzCliService', () => {
   });
 
   describe('environmentList()', () => {
-    it('dovrebbe tornare lista environments', async () => {
+    it('returns the environment list', async () => {
       createMockProcess({ stdout: '[{"id":"e1","name":"staging"}]' });
       const result = await cli.environmentList();
       expect(result.items).toHaveLength(1);
@@ -566,7 +566,7 @@ describe('OzCliService', () => {
   });
 
   describe('integrationList()', () => {
-    it('dovrebbe tornare lista integrazioni', async () => {
+    it('returns the integration list', async () => {
       createMockProcess({ stdout: '[{"provider":"GitHub","status":"Connected"}]' });
       const result = await cli.integrationList();
       expect(result.items).toHaveLength(1);
@@ -577,13 +577,13 @@ describe('OzCliService', () => {
   // toListResult() edge cases
   // =========================================================================
   describe('toListResult() edge cases', () => {
-    it('dovrebbe wrappare singolo oggetto in array', async () => {
+    it('wraps a single object in an array', async () => {
       createMockProcess({ stdout: '{"id":"single"}' });
       const result = await cli.modelList();
       expect(result.items).toHaveLength(1);
     });
 
-    it('dovrebbe tornare rawText undefined se stdout è vuoto', async () => {
+    it('returns rawText undefined when stdout is empty', async () => {
       createMockProcess({ stdout: '' });
       const result = await cli.modelList();
       expect(result.items).toHaveLength(0);
@@ -610,7 +610,7 @@ describe('OzCliService', () => {
       '{"type":"tool_result","tool":"run_command","status":"error","output":"ENOENT"}',
     ].join('\n');
 
-    it('dovrebbe parsare NDJSON e restituire SUCCEEDED', async () => {
+    it('parses NDJSON and returns SUCCEEDED', async () => {
       createMockProcess({ stdout: NDJSON_SUCCEEDED });
       const result = await cli.agentRun({ prompt: 'explain this file' });
       expect(result.status).toBe('SUCCEEDED');
@@ -619,7 +619,7 @@ describe('OzCliService', () => {
       expect(result.output).toContain('This file implements the main entry point.');
     });
 
-    it('dovrebbe estrarre solo i testi agent come output', async () => {
+    it('extracts only the agent texts as output', async () => {
       createMockProcess({ stdout: NDJSON_SUCCEEDED });
       const result = await cli.agentRun({ prompt: 'explain' });
       // Should NOT contain tool_call/tool_result raw JSON
@@ -627,27 +627,27 @@ describe('OzCliService', () => {
       expect(result.output).not.toContain('tool_result');
     });
 
-    it('dovrebbe rilevare errori nei tool_result', async () => {
+    it('detects errors in tool_result', async () => {
       createMockProcess({ stdout: NDJSON_WITH_ERROR });
       const result = await cli.agentRun({ prompt: 'run tests' });
       expect(result.status).toBe('FAILED');
       expect(result.runId).toBe('err-456');
     });
 
-    it('dovrebbe conservare conversation_id come runId', async () => {
+    it('keeps conversation_id as runId', async () => {
       createMockProcess({ stdout: NDJSON_SUCCEEDED });
       const result = await cli.agentRun({ prompt: 'test' });
       expect(result.runId).toBe('abc-123');
     });
 
-    it('dovrebbe conservare gli events nel campo raw', async () => {
+    it('keeps the events in the raw field', async () => {
       createMockProcess({ stdout: NDJSON_SUCCEEDED });
       const result = await cli.agentRun({ prompt: 'test' });
       expect(result.raw).toHaveProperty('events');
       expect((result.raw as any).events).toHaveLength(5);
     });
 
-    it('dovrebbe fare fallback a single-JSON se una sola riga', async () => {
+    it('falls back to single-JSON when there is only one line', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED","output":"done"}' });
       const result = await cli.agentRun({ prompt: 'test' });
       expect(result.status).toBe('SUCCEEDED');
@@ -660,7 +660,7 @@ describe('OzCliService', () => {
   // positional argument, causing warp CLI to exit with code 2)
   // =========================================================================
   describe('runGet() — argument shape', () => {
-    it('dovrebbe passare runId come argomento posizionale (non --id)', async () => {
+    it('passes runId as a positional argument (not --id)', async () => {
       createMockProcess({ stdout: '{"id":"uuid-abc","status":"SUCCEEDED"}' });
       await cli.runGet('uuid-abc');
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -676,7 +676,7 @@ describe('OzCliService', () => {
   // Passing `--id` makes the upstream CLI exit with `unexpected argument`.
   // =========================================================================
   describe('schedulePause/Unpause/Delete — argument shape', () => {
-    it('schedulePause dovrebbe passare l\'ID come argomento posizionale', async () => {
+    it('schedulePause passes the ID as a positional argument', async () => {
       createMockProcess();
       await cli.schedulePause('sched-1');
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -684,7 +684,7 @@ describe('OzCliService', () => {
       expect(args).not.toContain('--id');
     });
 
-    it('scheduleUnpause dovrebbe passare l\'ID come argomento posizionale', async () => {
+    it('scheduleUnpause passes the ID as a positional argument', async () => {
       createMockProcess();
       await cli.scheduleUnpause('sched-2');
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -692,7 +692,7 @@ describe('OzCliService', () => {
       expect(args).not.toContain('--id');
     });
 
-    it('scheduleDelete dovrebbe passare l\'ID come argomento posizionale', async () => {
+    it('scheduleDelete passes the ID as a positional argument', async () => {
       createMockProcess();
       await cli.scheduleDelete('sched-3');
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -706,7 +706,7 @@ describe('OzCliService', () => {
   // (issue: runId mismatch between chat banner and sidebar)
   // =========================================================================
   describe('agentRunCloud() — banner UUID precedence', () => {
-    it('dovrebbe preferire il run ID dal banner CLI rispetto al JSON id', async () => {
+    it('prefers the run ID from the CLI banner over the JSON id', async () => {
       // Simulate CLI emitting both a banner line and a JSON id that differ
       const stdout =
         'Spawned ambient agent with run ID: BANNER-UUID-001\n' +
@@ -717,7 +717,7 @@ describe('OzCliService', () => {
       expect(result.runId).toBe('banner-uuid-001');
     });
 
-    it('dovrebbe normalizzare il run ID del banner in lowercase', async () => {
+    it('normalizes the banner run ID to lowercase', async () => {
       createMockProcess({
         stdout: 'Spawned ambient agent with run ID: UPPER-CASE-ID\n{"status":"INPROGRESS"}',
       });
@@ -725,13 +725,13 @@ describe('OzCliService', () => {
       expect(result.runId).toBe('upper-case-id');
     });
 
-    it('dovrebbe usare il JSON id se non c\'è banner', async () => {
+    it('uses the JSON id when there is no banner', async () => {
       createMockProcess({ stdout: '{"id":"json-only-id","status":"INPROGRESS"}' });
       const result = await cli.agentRunCloud({ prompt: 'test' });
       expect(result.runId).toBe('json-only-id');
     });
 
-    it('dovrebbe estrarre il banner anche se il testo è in stderr', async () => {
+    it('extracts the banner even when the text is in stderr', async () => {
       createMockProcess({
         stdout: '{"id":"json-id","status":"INPROGRESS"}',
         stderr: 'Spawned ambient agent with run ID: stderr-uuid-42',
@@ -745,25 +745,25 @@ describe('OzCliService', () => {
   // extractCloudBannerRunId() — static helper
   // =========================================================================
   describe('OzCliService.extractCloudBannerRunId()', () => {
-    it('dovrebbe estrarre l\'ID dal banner classico', () => {
+    it('extracts the ID from the classic banner', () => {
       const id = OzCliService.extractCloudBannerRunId(
         'Spawned ambient agent with run ID: abc-def-123',
       );
       expect(id).toBe('abc-def-123');
     });
 
-    it('dovrebbe essere case-insensitive', () => {
+    it('is case-insensitive', () => {
       const id = OzCliService.extractCloudBannerRunId(
         'SPAWNED AMBIENT AGENT WITH RUN ID: MyRunId',
       );
       expect(id).toBe('myrunid');
     });
 
-    it('dovrebbe tornare null se il banner non è presente', () => {
+    it('returns null when the banner is not present', () => {
       expect(OzCliService.extractCloudBannerRunId('{"id":"no-banner"}')).toBeNull();
     });
 
-    it('dovrebbe tornare null per stringa vuota', () => {
+    it('returns null for an empty string', () => {
       expect(OzCliService.extractCloudBannerRunId('')).toBeNull();
     });
   });
@@ -772,7 +772,7 @@ describe('OzCliService', () => {
   // WARP_OUTPUT_FORMAT env propagation (replaces repeated --output-format)
   // =========================================================================
   describe('WARP_OUTPUT_FORMAT env propagation', () => {
-    it('dovrebbe impostare WARP_OUTPUT_FORMAT=json per i comandi list', async () => {
+    it('sets WARP_OUTPUT_FORMAT=json for list commands', async () => {
       createMockProcess({ stdout: '[]' });
       await cli.runList();
       const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
@@ -781,21 +781,21 @@ describe('OzCliService', () => {
       expect(args).not.toContain('--output-format');
     });
 
-    it('dovrebbe NON impostare WARP_OUTPUT_FORMAT per --help (checkAvailability)', async () => {
+    it('does NOT set WARP_OUTPUT_FORMAT for --help (checkAvailability)', async () => {
       createMockProcess({ stdout: 'usage: oz...' });
       await cli.checkAvailability();
       const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
       expect(opts.env?.WARP_OUTPUT_FORMAT).toBeUndefined();
     });
 
-    it('dovrebbe NON impostare WARP_OUTPUT_FORMAT per driveGet (markdown raw)', async () => {
+    it('does NOT set WARP_OUTPUT_FORMAT for driveGet (raw markdown)', async () => {
       createMockProcess({ stdout: '# Markdown body' });
       await cli.driveGet('drive-1');
       const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
       expect(opts.env?.WARP_OUTPUT_FORMAT).toBeUndefined();
     });
 
-    it('buildChildEnv dovrebbe stripare le chiavi sensibili', () => {
+    it('buildChildEnv strips sensitive keys', () => {
       const env = OzCliService.buildChildEnv('json', {
         PATH: '/usr/bin',
         GITHUB_TOKEN: 'ghp_secret',
@@ -809,7 +809,7 @@ describe('OzCliService', () => {
       expect(env.WARP_OUTPUT_FORMAT).toBe('json');
     });
 
-    it('buildChildEnv con outputFormat=null non deve impostare WARP_OUTPUT_FORMAT', () => {
+    it('buildChildEnv with outputFormat=null does not set WARP_OUTPUT_FORMAT', () => {
       const env = OzCliService.buildChildEnv(null, { PATH: '/usr/bin' } as NodeJS.ProcessEnv);
       expect(env.WARP_OUTPUT_FORMAT).toBeUndefined();
     });
@@ -821,7 +821,7 @@ describe('OzCliService', () => {
       expect(env.WARP_OUTPUT_FORMAT).toBeUndefined();
     });
 
-    it('buildChildEnv con outputFormat=ndjson lo deve impostare', () => {
+    it('buildChildEnv with outputFormat=ndjson sets it', () => {
       const env = OzCliService.buildChildEnv('ndjson', { PATH: '/usr/bin' } as NodeJS.ProcessEnv);
       expect(env.WARP_OUTPUT_FORMAT).toBe('ndjson');
     });
@@ -831,7 +831,7 @@ describe('OzCliService', () => {
   // --jq <FILTER> opt-in passthrough on read-only methods
   // =========================================================================
   describe('--jq filter passthrough', () => {
-    it('runList dovrebbe propagare --jq quando fornito', async () => {
+    it('runList propagates --jq when provided', async () => {
       createMockProcess({ stdout: '[]' });
       await cli.runList({ jq: '.runs[].id' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -839,7 +839,7 @@ describe('OzCliService', () => {
       expect(args[args.indexOf('--jq') + 1]).toBe('.runs[].id');
     });
 
-    it('runGet dovrebbe propagare --jq', async () => {
+    it('runGet propagates --jq', async () => {
       createMockProcess({ stdout: '{"id":"r1"}' });
       await cli.runGet('r1', { jq: '.status' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -847,14 +847,14 @@ describe('OzCliService', () => {
       expect(args[args.indexOf('--jq') + 1]).toBe('.status');
     });
 
-    it('integrationList dovrebbe propagare --jq', async () => {
+    it('integrationList propagates --jq', async () => {
       createMockProcess({ stdout: '[]' });
       await cli.integrationList({ jq: '.[].name' });
       const args = mockSpawn.mock.calls[0][1] as string[];
       expect(args).toContain('--jq');
     });
 
-    it('dovrebbe rifiutare jq filter con shell metacharacters', async () => {
+    it('rejects a jq filter with shell metacharacters', async () => {
       await expect(cli.runList({ jq: '. ; rm -rf /' })).rejects.toThrow(/Invalid jq filter/);
       await expect(cli.runList({ jq: '. && evil' })).rejects.toThrow(/Invalid jq filter/);
       await expect(cli.runList({ jq: '. > out' })).rejects.toThrow(/Invalid jq filter/);
@@ -862,9 +862,9 @@ describe('OzCliService', () => {
       await expect(cli.runList({ jq: '`evil`' })).rejects.toThrow(/Invalid jq filter/);
     });
 
-    it('dovrebbe accettare filtri jq legittimi con pipes interni a jq', async () => {
+    it('accepts legitimate jq filters with pipes internal to jq', async () => {
       createMockProcess({ stdout: '[]' });
-      // jq usa `|` come pipe-operator interno; deve essere ammesso
+      // jq uses `|` as its internal pipe operator; it must be allowed
       await cli.runList({ jq: '.runs[] | select(.status=="SUCCEEDED") | .id' });
       const args = mockSpawn.mock.calls[0][1] as string[];
       expect(args).toContain('--jq');
@@ -875,7 +875,7 @@ describe('OzCliService', () => {
   // integrationList fallback for feature-flagged subcommand
   // =========================================================================
   describe('integrationList() — feature-flag fallback', () => {
-    it('dovrebbe ritornare items vuoti quando il CLI emette "unrecognized subcommand"', async () => {
+    it('returns empty items when the CLI emits "unrecognized subcommand"', async () => {
       createMockProcess({
         exitCode: 2,
         stderr: "error: unrecognized subcommand 'integration'",
@@ -884,7 +884,7 @@ describe('OzCliService', () => {
       expect(result.items).toEqual([]);
     });
 
-    it('dovrebbe ritornare items vuoti per "unknown subcommand"', async () => {
+    it('returns empty items for "unknown subcommand"', async () => {
       createMockProcess({
         exitCode: 2,
         stderr: 'error: unknown subcommand integration',
@@ -893,7 +893,7 @@ describe('OzCliService', () => {
       expect(result.items).toEqual([]);
     });
 
-    it('dovrebbe propagare errori reali (non legati al feature-flag)', async () => {
+    it('propagates real errors (unrelated to the feature flag)', async () => {
       createMockProcess({ exitCode: 1, stderr: 'unauthorized' });
       await expect(cli.integrationList()).rejects.toThrow(OzCliError);
     });
@@ -925,14 +925,14 @@ describe('OzCliService', () => {
       expect(events[2]).toContain('"done"');
     });
 
-    it('senza onProgress dovrebbe usare json (non ndjson)', async () => {
+    it('uses json (not ndjson) without onProgress', async () => {
       createMockProcess({ stdout: '{"status":"SUCCEEDED"}' });
       await cli.agentRun({ prompt: 'go' });
       const opts = mockSpawn.mock.calls[0][2] as { env?: Record<string, string> };
       expect(opts.env?.WARP_OUTPUT_FORMAT).toBe('json');
     });
 
-    it('errori del callback onProgress non devono bloccare il run', async () => {
+    it('errors in the onProgress callback do not block the run', async () => {
       createMockProcess({
         stdout:
           '{"type":"system","event_type":"conversation_started","conversation_id":"c-1"}\n' +
@@ -945,7 +945,7 @@ describe('OzCliService', () => {
       expect(result.exitCode).toBe(0);
     });
 
-    it('dovrebbe interrompere onProgress dopo il cap stdout (OZ-mem)', async () => {
+    it('stops onProgress after the stdout cap (OZ-mem)', async () => {
       const proc = Object.assign(new EventEmitter(), {
         stdout: new EventEmitter(),
         stderr: new EventEmitter(),
@@ -979,19 +979,19 @@ describe('OzCliService', () => {
   // isUnrecognizedSubcommandError() — static helper
   // =========================================================================
   describe('OzCliService.isUnrecognizedSubcommandError()', () => {
-    it('riconosce "unrecognized subcommand"', () => {
+    it('recognizes "unrecognized subcommand"', () => {
       const err = new OzCliError(OzCliErrorKind.CLI_ERROR, "unrecognized subcommand 'foo'", 2, '');
       expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(true);
     });
-    it('riconosce "unknown command"', () => {
+    it('recognizes "unknown command"', () => {
       const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'x', 2, 'error: unknown command bar');
       expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(true);
     });
-    it('non riconosce errori generici', () => {
+    it('does not recognize generic errors', () => {
       const err = new OzCliError(OzCliErrorKind.CLI_ERROR, 'network failure', 1, '');
       expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(false);
     });
-    it('non riconosce errori di altro kind (es. NOT_AUTHENTICATED)', () => {
+    it('does not recognize errors of another kind (e.g. NOT_AUTHENTICATED)', () => {
       const err = new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'unrecognized subcommand', 1, '');
       expect(OzCliService.isUnrecognizedSubcommandError(err)).toBe(false);
     });
@@ -1001,11 +1001,11 @@ describe('OzCliService', () => {
   // scheduleGet / scheduleUpdate
   // =========================================================================
   describe('scheduleGet()', () => {
-    it('dovrebbe rifiutare ID non valido', async () => {
+    it('rejects an invalid ID', async () => {
       await expect(cli.scheduleGet('bad id!')).rejects.toThrow('Invalid schedule id');
     });
 
-    it('dovrebbe ritornare lo schedule parsato', async () => {
+    it('returns the parsed schedule', async () => {
       createMockProcess({
         stdout: JSON.stringify({ id: 's1', name: 'daily', cron: '0 9 * * *', prompt: 'lint', paused: false }),
       });
@@ -1015,18 +1015,18 @@ describe('OzCliService', () => {
       expect(args).toEqual(['schedule', 'get', 's1']);
     });
 
-    it('dovrebbe lanciare PARSE_ERROR su output non parsabile', async () => {
+    it('throws PARSE_ERROR on unparseable output', async () => {
       createMockProcess({ stdout: 'not json' });
       await expect(cli.scheduleGet('s1')).rejects.toThrow(OzCliError);
     });
   });
 
   describe('scheduleUpdate()', () => {
-    it('dovrebbe rifiutare ID non valido', async () => {
+    it('rejects an invalid ID', async () => {
       await expect(cli.scheduleUpdate({ id: 'bad id!' })).rejects.toThrow('Invalid schedule id');
     });
 
-    it('dovrebbe inviare solo i campi specificati', async () => {
+    it('sends only the specified fields', async () => {
       createMockProcess({
         stdout: JSON.stringify({ id: 's1', name: 'new-name', cron: '0 9 * * *', prompt: 'p', paused: false }),
       });
@@ -1039,7 +1039,7 @@ describe('OzCliService', () => {
       expect(args).not.toContain('-p');
     });
 
-    it('dovrebbe supportare --remove-environment / --remove-skill', async () => {
+    it('supports --remove-environment / --remove-skill', async () => {
       createMockProcess({
         stdout: JSON.stringify({ id: 's1', name: 'n', cron: '0 9 * * *', prompt: 'p', paused: false }),
       });
@@ -1049,7 +1049,7 @@ describe('OzCliService', () => {
       expect(args).toContain('--remove-skill');
     });
 
-    it('dovrebbe rifiutare cron con caratteri non validi', async () => {
+    it('rejects a cron with invalid characters', async () => {
       await expect(
         cli.scheduleUpdate({ id: 's1', cron: '0 9 * * *; rm -rf /' }),
       ).rejects.toThrow('Invalid cron expression');
@@ -1060,11 +1060,11 @@ describe('OzCliService', () => {
   // artifactGet / artifactDownload + normalizeArtifact
   // =========================================================================
   describe('artifactGet()', () => {
-    it('dovrebbe rifiutare uid non valido', async () => {
+    it('rejects an invalid uid', async () => {
       await expect(cli.artifactGet('bad uid!')).rejects.toThrow('Invalid artifact uid');
     });
 
-    it('dovrebbe normalizzare le chiavi alternative', async () => {
+    it('normalizes the alternative keys', async () => {
       createMockProcess({
         stdout: JSON.stringify({ id: 'a1', filename: 'log.txt', mime_type: 'text/plain', size: 42, runId: 'r1' }),
       });
@@ -1076,33 +1076,33 @@ describe('OzCliService', () => {
       expect(r.runId).toBe('r1');
     });
 
-    it('dovrebbe usare uid passato se mancante in payload', async () => {
+    it('uses the passed uid when it is missing from the payload', async () => {
       createMockProcess({ stdout: JSON.stringify({ name: 'x' }) });
       const r = await cli.artifactGet('a-fallback');
       expect(r.uid).toBe('a-fallback');
     });
 
-    it('dovrebbe lanciare PARSE_ERROR su output non parsabile', async () => {
+    it('throws PARSE_ERROR on unparseable output', async () => {
       createMockProcess({ stdout: 'nope' });
       await expect(cli.artifactGet('a1')).rejects.toThrow(OzCliError);
     });
   });
 
   describe('artifactDownload()', () => {
-    it('dovrebbe rifiutare uid non valido', async () => {
+    it('rejects an invalid uid', async () => {
       await expect(cli.artifactDownload('bad uid!', '/tmp/out')).rejects.toThrow('Invalid artifact uid');
     });
 
-    it('dovrebbe rifiutare outPath vuoto', async () => {
+    it('rejects an empty outPath', async () => {
       await expect(cli.artifactDownload('a1', '')).rejects.toThrow(/Invalid outPath/);
       await expect(cli.artifactDownload('a1', '   ')).rejects.toThrow(/Invalid outPath/);
     });
 
-    it('dovrebbe rifiutare outPath con NUL byte', async () => {
+    it('rejects an outPath with a NUL byte', async () => {
       await expect(cli.artifactDownload('a1', '/tmp/x\u0000bad')).rejects.toThrow(/NUL byte/);
     });
 
-    it('dovrebbe chiamare la CLI con -o e ritornare outPath', async () => {
+    it('calls the CLI with -o and returns outPath', async () => {
       createMockProcess({ stdout: '' });
       const result = await cli.artifactDownload('a1', '/tmp/out.bin');
       expect(result).toBe('/tmp/out.bin');
@@ -1112,7 +1112,7 @@ describe('OzCliService', () => {
   });
 
   // =========================================================================
-  // Secrets — argv non deve mai contenere il valore (stdin only)
+  // Secrets — argv must never contain the value (stdin only)
   // =========================================================================
   describe('secret*()', () => {
     function createMockProcessWithStdin(opts: { stdout?: string; exitCode?: number } = {}) {
@@ -1139,7 +1139,7 @@ describe('OzCliService', () => {
       return { proc, stdin, stdinWrites };
     }
 
-    it('secretList dovrebbe chiamare `secret list`', async () => {
+    it('secretList calls `secret list`', async () => {
       createMockProcess({ stdout: '[]' });
       const r = await cli.secretList();
       expect(r.items).toEqual([]);
@@ -1147,14 +1147,14 @@ describe('OzCliService', () => {
       expect(args).toEqual(['secret', 'list']);
     });
 
-    it('secretList dovrebbe propagare --jq', async () => {
+    it('secretList propagates --jq', async () => {
       createMockProcess({ stdout: '[]' });
       await cli.secretList({ jq: '.[].name' });
       const args = mockSpawn.mock.calls[0][1] as string[];
       expect(args).toContain('--jq');
     });
 
-    it('secretCreate NON deve mettere il valore in argv (stdin only)', async () => {
+    it('secretCreate does NOT put the value in argv (stdin only)', async () => {
       const { stdinWrites } = createMockProcessWithStdin({ stdout: '' });
       await cli.secretCreate({ name: 'API_KEY', value: 'super-secret-VALUE' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -1165,15 +1165,15 @@ describe('OzCliService', () => {
       }
     });
 
-    it('secretCreate dovrebbe rifiutare nomi non validi', async () => {
+    it('secretCreate rejects invalid names', async () => {
       await expect(cli.secretCreate({ name: 'bad;name', value: 'v' })).rejects.toThrow('Invalid secret name');
     });
 
-    it('secretCreate dovrebbe rifiutare value vuoto', async () => {
+    it('secretCreate rejects an empty value', async () => {
       await expect(cli.secretCreate({ name: 'N', value: '' })).rejects.toThrow(/cannot be empty/);
     });
 
-    it('secretCreate dovrebbe propagare --team / -d', async () => {
+    it('secretCreate propagates --team / -d', async () => {
       createMockProcessWithStdin({ stdout: '' });
       await cli.secretCreate({ name: 'N', value: 'v', description: 'desc', scope: 'team' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -1182,7 +1182,7 @@ describe('OzCliService', () => {
       expect(args).toContain('desc');
     });
 
-    it('secretUpdate con value usa --value e pipa via stdin', async () => {
+    it('secretUpdate with value uses --value and pipes via stdin', async () => {
       const { stdinWrites } = createMockProcessWithStdin({ stdout: '' });
       await cli.secretUpdate({ name: 'N', value: 'new-value' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -1191,7 +1191,7 @@ describe('OzCliService', () => {
       expect(stdinWrites.join('')).toBe('new-value');
     });
 
-    it('secretUpdate solo description NON usa --value e non pipa nulla', async () => {
+    it('secretUpdate with only description does NOT use --value and pipes nothing', async () => {
       const { stdinWrites } = createMockProcessWithStdin({ stdout: '' });
       await cli.secretUpdate({ name: 'N', description: 'new desc' });
       const args = mockSpawn.mock.calls[0][1] as string[];
@@ -1201,18 +1201,18 @@ describe('OzCliService', () => {
       expect(stdinWrites.length).toBe(0);
     });
 
-    it('secretUpdate richiede almeno value o description', async () => {
+    it('secretUpdate requires at least value or description', async () => {
       await expect(cli.secretUpdate({ name: 'N' })).rejects.toThrow(/value or description/);
     });
 
-    it('secretDelete dovrebbe sempre passare --force', async () => {
+    it('secretDelete always passes --force', async () => {
       createMockProcess({ stdout: '' });
       await cli.secretDelete('API_KEY');
       const args = mockSpawn.mock.calls[0][1] as string[];
       expect(args).toEqual(['secret', 'delete', 'API_KEY', '--force']);
     });
 
-    it('secretDelete dovrebbe propagare scope personal', async () => {
+    it('secretDelete propagates scope personal', async () => {
       createMockProcess({ stdout: '' });
       await cli.secretDelete('K', { scope: 'personal' });
       const args = mockSpawn.mock.calls[0][1] as string[];

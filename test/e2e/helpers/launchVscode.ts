@@ -8,28 +8,28 @@ import * as path from 'node:path';
 export interface LaunchedVSCode {
   app: ElectronApplication;
   window: Page;
-  /** PID del processo principale (root dell'albero da monitorare). */
+  /** PID of the main process (root of the tree to monitor). */
   pid: number;
-  /** Cartella tmp usata come workspace. */
+  /** Tmp folder used as the workspace. */
   workspacePath: string;
-  /** Cartella tmp user-data. */
+  /** Tmp user-data folder. */
   userDataDir: string;
-  /** Cartella tmp extensions-dir. */
+  /** Tmp extensions-dir folder. */
   extensionsDir: string;
-  /** Cleanup completo (chiude app + rimuove dirs). */
+  /** Full cleanup (closes the app + removes dirs). */
   dispose: () => Promise<void>;
 }
 
 export interface LaunchOptions {
-  /** Path assoluto della radice dell'estensione (cartella con package.json). */
+  /** Absolute path of the extension root (folder containing package.json). */
   extensionPath: string;
-  /** Versione VS Code da scaricare (default: stable). */
+  /** VS Code version to download (default: stable). */
   vscodeVersion?: string;
 }
 
 /**
- * Scarica VS Code (cache `.vscode-test/`), prepara workspace tmp e
- * lancia l'app con Playwright Electron + extensionDevelopmentPath.
+ * Downloads VS Code (cache `.vscode-test/`), prepares a tmp workspace and
+ * launches the app with Playwright Electron + extensionDevelopmentPath.
  */
 export async function launchVSCode(opts: LaunchOptions): Promise<LaunchedVSCode> {
   // Ensure `dist/extension.js` reflects the current sources before starting VS Code.
@@ -45,12 +45,12 @@ export async function launchVSCode(opts: LaunchOptions): Promise<LaunchedVSCode>
   await fs.mkdir(workspacePath, { recursive: true });
   await fs.mkdir(userDataDir, { recursive: true });
   await fs.mkdir(extensionsDir, { recursive: true });
-  // Seed minimo del workspace.
+  // Minimal workspace seed.
   await fs.writeFile(path.join(workspacePath, 'README.md'), '# OzBridge E2E workspace\n', 'utf8');
 
-  // Pre-seed user settings: disabilita Git autodetection (evita prompt
-  // "A git repository was found in the parent folders…") e altri toast
-  // che possono interferire con l'asserzione dei segnali UI.
+  // Pre-seed user settings: disable Git autodetection (avoids the prompt
+  // "A git repository was found in the parent folders…") and other toasts
+  // that can interfere with asserting the UI signals.
   const settingsDir = path.join(userDataDir, 'User');
   await fs.mkdir(settingsDir, { recursive: true });
   await fs.writeFile(
@@ -71,7 +71,7 @@ export async function launchVSCode(opts: LaunchOptions): Promise<LaunchedVSCode>
   const app = await _electron.launch({
     executablePath: vscodeExecutable,
     args: [
-      // CLI bootstrap: alcuni VS Code richiedono di passare il modulo CLI come primo arg.
+      // CLI bootstrap: some VS Code versions require passing the CLI module as the first arg.
       cliArg,
       `--extensionDevelopmentPath=${opts.extensionPath}`,
       `--user-data-dir=${userDataDir}`,
@@ -83,20 +83,20 @@ export async function launchVSCode(opts: LaunchOptions): Promise<LaunchedVSCode>
       '--no-sandbox',
       '--skip-welcome',
       '--skip-release-notes',
-      '--disable-extensions', // disabilita le estensioni utente; quella in dev resta attiva
+      '--disable-extensions', // disable user extensions; the one under development stays active
       '--locale=en',
       workspacePath,
     ],
     env: {
       ...process.env,
-      // Evita che l'estensione provi a scaricare/spawnare la CLI Oz vera.
+      // Prevent the extension from trying to download/spawn the real Oz CLI.
       OZBRIDGE_E2E: '1',
     },
   });
 
   const window = await app.firstWindow({ timeout: 90_000 });
   await window.waitForLoadState('domcontentloaded');
-  // Attendi che il workbench sia montato.
+  // Wait for the workbench to be mounted.
   await window.waitForSelector('.monaco-workbench', { timeout: 90_000 });
 
   const pid = (await getMainProcessPid(app)) ?? process.pid;
@@ -105,12 +105,12 @@ export async function launchVSCode(opts: LaunchOptions): Promise<LaunchedVSCode>
     try {
       await app.close();
     } catch {
-      /* ignora */
+      /* ignore */
     }
     try {
       await fs.rm(tmpRoot, { recursive: true, force: true });
     } catch {
-      /* ignora */
+      /* ignore */
     }
   };
 
@@ -207,7 +207,7 @@ async function ensureBuilt(extensionPath: string): Promise<void> {
   });
 }
 
-/** Apre la Command Palette ed esegue un comando esatto. */
+/** Opens the Command Palette and runs an exact command. */
 export async function runCommand(window: Page, commandTitle: string): Promise<void> {
   // Ctrl+Shift+P / Cmd+Shift+P
   const isMac = process.platform === 'darwin';
@@ -220,7 +220,7 @@ export async function runCommand(window: Page, commandTitle: string): Promise<vo
   await window.keyboard.press(isMac ? 'Meta+A' : 'Control+A').catch(() => {});
   await window.keyboard.press('Backspace').catch(() => {});
   await window.keyboard.type(`>${commandTitle}`, { delay: 10 });
-  // Aspetta che la prima entry combaci.
+  // Wait until the first entry matches.
   await window.waitForTimeout(250);
   await window.keyboard.press('Enter');
 }

@@ -81,7 +81,7 @@ describe('extension.ts — coverage gaps', () => {
   // -----------------------------------------------------------------------
   // Line 43: configManager.onConfigChanged callback
   // -----------------------------------------------------------------------
-  it('dovrebbe loggare quando la configurazione cambia (riga 43)', async () => {
+  it('logs when the configuration changes (line 43)', async () => {
     const { activate } = await import('../src/extension.js');
     activate(createMockExtensionContext() as any);
     await flushMicrotasks();
@@ -99,7 +99,7 @@ describe('extension.ts — coverage gaps', () => {
   // -----------------------------------------------------------------------
   // Lazy activation: checkAvailability is no longer run during activate()
   // -----------------------------------------------------------------------
-  it('non dovrebbe mostrare warning se Oz CLI non è disponibile durante activate()', async () => {
+  it('does not show a warning when the Oz CLI is unavailable during activate()', async () => {
     spawnBehavior = 'not-available';
 
     const { activate } = await import('../src/extension.js');
@@ -111,7 +111,7 @@ describe('extension.ts — coverage gaps', () => {
     );
   });
 
-  it('non dovrebbe aprire URL download durante activate()', async () => {
+  it('does not open the download URL during activate()', async () => {
     spawnBehavior = 'not-available';
     window.showWarningMessage.mockResolvedValue('Install Warp' as any);
 
@@ -125,7 +125,7 @@ describe('extension.ts — coverage gaps', () => {
   // -----------------------------------------------------------------------
   // Sync spawn errors must not affect activation because no spawn is attempted.
   // -----------------------------------------------------------------------
-  it('non dovrebbe loggare availability failure durante activate()', async () => {
+  it('does not log an availability failure during activate()', async () => {
     spawnBehavior = 'sync-throw';
 
     const { activate } = await import('../src/extension.js');

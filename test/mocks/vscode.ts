@@ -1,6 +1,6 @@
 /**
- * Mock completo del modulo 'vscode' per unit testing.
- * Usato come alias in vitest.config.ts.
+ * Complete mock of the 'vscode' module for unit testing.
+ * Used as an alias in vitest.config.ts.
  */
 import { vi } from 'vitest';
 
@@ -448,7 +448,7 @@ export const l10n = {
 };
 
 // ---------------------------------------------------------------------------
-// DataTransfer / DataTransferItem (per TreeDragAndDropController)
+// DataTransfer / DataTransferItem (for TreeDragAndDropController)
 // ---------------------------------------------------------------------------
 export class DataTransferItem {
   constructor(public readonly value: unknown) {}

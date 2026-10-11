@@ -26,7 +26,7 @@ beforeEach(() => {
 });
 
 describe('/cloud command', () => {
-  it('dovrebbe mostrare errore se CLI non disponibile', async () => {
+  it('shows an error when the CLI is not available', async () => {
     cli.checkAvailability.mockResolvedValue({ available: false, version: null, path: null });
 
     await handler('deploy app', mock.stream as any, createMockToken() as any);
@@ -39,7 +39,7 @@ describe('/cloud command', () => {
     expect(cli.agentRunCloud).not.toHaveBeenCalled();
   });
 
-  it('dovrebbe mostrare avviso crediti prima del lancio', async () => {
+  it('shows a credits warning before launching', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null }));
 
@@ -48,7 +48,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('credits');
   });
 
-  it('dovrebbe iniettare contesto IDE nel prompt', async () => {
+  it('injects IDE context into the prompt', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null }));
 
@@ -59,7 +59,7 @@ describe('/cloud command', () => {
     expect(callArgs.prompt).toContain('deploy');
   });
 
-  it('dovrebbe avviare polling se runId presente', async () => {
+  it('starts polling when runId is present', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'cloud-run-1', status: 'QUEUED' }));
     (pollerMock.poll as any).mockResolvedValue(makeRunResult({ runId: 'cloud-run-1', status: 'SUCCEEDED' }));
@@ -71,8 +71,8 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('SUCCEEDED');
   });
 
-  // Gap: progress callback di poller.poll() dovrebbe essere invocata
-  it('dovrebbe invocare stream.progress tramite la callback di polling', async () => {
+  // Gap: the poller.poll() progress callback should be invoked
+  it('invokes stream.progress through the polling callback', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-prog', status: 'QUEUED' }));
     (pollerMock.poll as any).mockImplementation(
@@ -89,7 +89,7 @@ describe('/cloud command', () => {
     expect(mock.progresses).toContain('Status: FINALIZING...');
   });
 
-  it('dovrebbe mostrare risultato direttamente se runId mancante', async () => {
+  it('shows the result directly when runId is missing', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null, output: 'direct result' }));
 
@@ -99,7 +99,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('direct result');
   });
 
-  it('dovrebbe gestire errore polling', async () => {
+  it('handles a polling error', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-err' }));
     (pollerMock.poll as any).mockRejectedValue(new OzCliError(OzCliErrorKind.TIMEOUT, 'timeout'));
@@ -109,7 +109,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('Timeout');
   });
 
-  it('dovrebbe gestire OzCliError su agentRunCloud', async () => {
+  it('handles OzCliError on agentRunCloud', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockRejectedValue(new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'not logged'));
 
@@ -118,7 +118,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('Not authenticated');
   });
 
-  it('dovrebbe gestire errore generico su agentRunCloud', async () => {
+  it('handles a generic error on agentRunCloud', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockRejectedValue(new Error('network error'));
 
@@ -127,7 +127,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('network error');
   });
 
-  it('dovrebbe gestire errore generico (non-OzCliError) durante polling', async () => {
+  it('handles a generic error (non-OzCliError) during polling', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-poll-err' }));
     (pollerMock.poll as any).mockRejectedValue(new Error('network disconnected'));
@@ -138,7 +138,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('network disconnected');
   });
 
-  it('dovrebbe chiamare showInformationMessage dopo polling SUCCEEDED', async () => {
+  it('calls showInformationMessage after polling ends in SUCCEEDED', async () => {
     const { window } = await import('../mocks/vscode.js');
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-notify', status: 'QUEUED' }));
@@ -151,7 +151,7 @@ describe('/cloud command', () => {
     );
   });
 
-  it('dovrebbe chiamare showErrorMessage dopo polling FAILED', async () => {
+  it('calls showErrorMessage after polling ends in FAILED', async () => {
     const { window } = await import('../mocks/vscode.js');
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-fail-notify', status: 'QUEUED' }));
@@ -164,7 +164,7 @@ describe('/cloud command', () => {
     );
   });
 
-  it('dovrebbe passare model se defaultModel non è "auto"', async () => {
+  it('passes model when defaultModel is not "auto"', async () => {
     handler = createCloudCommand(
       cli,
       createMockConfigManager({ defaultModel: 'gpt-4' }),
@@ -179,7 +179,7 @@ describe('/cloud command', () => {
     expect(cli.agentRunCloud.mock.calls[0][0].model).toBe('gpt-4');
   });
 
-  it('dovrebbe mostrare environment se configurato', async () => {
+  it('shows the environment when configured', async () => {
     handler = createCloudCommand(
       cli,
       createMockConfigManager({ defaultEnvironment: 'staging' }),
@@ -194,7 +194,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('staging');
   });
 
-  it('dovrebbe rilevare skill "review" nel prompt e passarla al CLI', async () => {
+  it('detects the "review" skill in the prompt and passes it to the CLI', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null }));
 
@@ -203,7 +203,7 @@ describe('/cloud command', () => {
     expect(cli.agentRunCloud.mock.calls[0][0].skill).toBe('4-review-agent');
   });
 
-  it('dovrebbe non passare skill se non rilevata nel prompt', async () => {
+  it('does not pass a skill when none is detected in the prompt', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null }));
 
@@ -212,8 +212,8 @@ describe('/cloud command', () => {
     expect(cli.agentRunCloud.mock.calls[0][0].skill).toBeUndefined();
   });
 
-  // Gap: errore non-Error (stringa) durante polling → instanceof Error false branch
-  it('dovrebbe gestire errore non-Error (stringa) durante polling (String() branch)', async () => {
+  // Gap: non-Error (string) error during polling → instanceof Error false branch
+  it('handles a non-Error (string) error during polling (String() branch)', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: 'run-str-poll' }));
     (pollerMock.poll as any).mockRejectedValue('raw string poll error');
@@ -223,8 +223,8 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('raw string poll error');
   });
 
-  // Gap: errore non-Error (stringa) nel catch principale → instanceof Error false branch
-  it('dovrebbe gestire errore non-Error (stringa) nel catch principale (String() branch)', async () => {
+  // Gap: non-Error (string) error in the main catch → instanceof Error false branch
+  it('handles a non-Error (string) error in the main catch (String() branch)', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockRejectedValue('string thrown error');
 
@@ -237,7 +237,7 @@ describe('/cloud command', () => {
   // Environment auto-detection tests
   // =========================================================================
 
-  it('dovrebbe auto-selezionare il primo environment se non configurato', async () => {
+  it('auto-selects the first environment when none is configured', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.environmentList.mockResolvedValue(makeListResult([
       { id: 'env-abc-123', name: 'my-environment', base_image: { docker_image: 'img' }, github_repos: [], setup_commands: [], creator_email: 'a@b.c', last_edited: '', scope: 'Team' },
@@ -253,7 +253,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('env-abc-123');
   });
 
-  it('dovrebbe usare --no-environment se nessun environment disponibile', async () => {
+  it('uses --no-environment when no environment is available', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.environmentList.mockResolvedValue(makeListResult([]));
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null }));
@@ -266,7 +266,7 @@ describe('/cloud command', () => {
     expect(mock.getFullOutput()).toContain('No environments available');
   });
 
-  it('dovrebbe usare --no-environment se environmentList fallisce', async () => {
+  it('uses --no-environment when environmentList fails', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.environmentList.mockRejectedValue(new Error('network error'));
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null }));
@@ -277,7 +277,7 @@ describe('/cloud command', () => {
     expect(callArgs.noEnvironment).toBe(true);
   });
 
-  it('dovrebbe non chiamare environmentList se defaultEnvironment è configurato', async () => {
+  it('does not call environmentList when defaultEnvironment is configured', async () => {
     handler = createCloudCommand(
       cli,
       createMockConfigManager({ defaultEnvironment: 'staging' }),
@@ -298,7 +298,7 @@ describe('/cloud command', () => {
   // Regression: open: false (issue — orphan warp.exe processes)
   // =========================================================================
 
-  it('dovrebbe NON passare open: true a agentRunCloud (nessun warp.exe orfano)', async () => {
+  it('does NOT pass open: true to agentRunCloud (no orphan warp.exe)', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRunCloud.mockResolvedValue(makeRunResult({ runId: null }));
 
@@ -312,7 +312,7 @@ describe('/cloud command', () => {
   // Regression: tracker integration — immediate sidebar updates
   // =========================================================================
 
-  it('dovrebbe chiamare tracker.markRunStatus(INPROGRESS) quando il cloud run inizia', async () => {
+  it('calls tracker.markRunStatus(INPROGRESS) when the cloud run starts', async () => {
     const tracker = { markRunStatus: vi.fn() };
     handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector(), tracker);
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
@@ -324,7 +324,7 @@ describe('/cloud command', () => {
     expect(tracker.markRunStatus).toHaveBeenCalledWith('run-track-1', 'INPROGRESS');
   });
 
-  it('dovrebbe chiamare tracker.markRunStatus(SUCCEEDED) alla fine del polling', async () => {
+  it('calls tracker.markRunStatus(SUCCEEDED) at the end of polling', async () => {
     const tracker = { markRunStatus: vi.fn() };
     handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector(), tracker);
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
@@ -336,7 +336,7 @@ describe('/cloud command', () => {
     expect(tracker.markRunStatus).toHaveBeenCalledWith('run-track-2', 'SUCCEEDED');
   });
 
-  it('dovrebbe chiamare tracker.markRunStatus(FAILED) su errore di polling', async () => {
+  it('calls tracker.markRunStatus(FAILED) on a polling error', async () => {
     const tracker = { markRunStatus: vi.fn() };
     handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector(), tracker);
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
@@ -348,7 +348,7 @@ describe('/cloud command', () => {
     expect(tracker.markRunStatus).toHaveBeenCalledWith('run-track-err', 'FAILED');
   });
 
-  it('dovrebbe funzionare senza tracker (parametro opzionale)', async () => {
+  it('works without a tracker (optional parameter)', async () => {
     // No tracker — should not throw
     handler = createCloudCommand(cli, createMockConfigManager(), pollerMock, createMockContextCollector());
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });

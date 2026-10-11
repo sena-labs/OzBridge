@@ -23,7 +23,7 @@ beforeEach(() => {
 });
 
 describe('/run command', () => {
-  it('dovrebbe mostrare errore se CLI non disponibile', async () => {
+  it('shows an error when the CLI is not available', async () => {
     cli.checkAvailability.mockResolvedValue({ available: false, version: null, path: null });
 
     await handler('test prompt', mock.stream as any, createMockToken() as any);
@@ -32,7 +32,7 @@ describe('/run command', () => {
     expect(cli.agentRun).not.toHaveBeenCalled();
   });
 
-  it('dovrebbe eseguire agentRun con prompt e contesto', async () => {
+  it('runs agentRun with prompt and context', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
@@ -40,12 +40,12 @@ describe('/run command', () => {
 
     expect(cli.agentRun).toHaveBeenCalledTimes(1);
     const callArgs = cli.agentRun.mock.calls[0][0];
-    // Il prompt deve contenere il contesto iniettato
+    // The prompt must contain the injected context
     expect(callArgs.prompt).toContain('[CONTEXT]');
     expect(callArgs.prompt).toContain('fix this bug');
   });
 
-  it('dovrebbe mostrare progresso prima dell\'esecuzione', async () => {
+  it('shows progress before execution', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
@@ -54,7 +54,7 @@ describe('/run command', () => {
     expect(mock.progresses.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('dovrebbe rilevare skill "spec" nel prompt', async () => {
+  it('detects the "spec" skill in the prompt', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
@@ -64,7 +64,7 @@ describe('/run command', () => {
     expect(callArgs.skill).toBe('1-spec-agent');
   });
 
-  it('dovrebbe rilevare skill "test" nel prompt', async () => {
+  it('detects the "test" skill in the prompt', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
@@ -74,41 +74,41 @@ describe('/run command', () => {
     expect(callArgs.skill).toBe('5-test-agent');
   });
 
-  it('dovrebbe usare word boundary per skill detection (no falsi positivi)', async () => {
+  it('uses word boundaries for skill detection (no false positives)', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
-    // "contest" contiene "test" ma non dovrebbe matchare con word boundary
+    // "contest" contains "test" but should not match with a word boundary
     await handler('run a contest', mock.stream as any, createMockToken() as any);
 
     const callArgs = cli.agentRun.mock.calls[0][0];
     expect(callArgs.skill).toBeUndefined();
   });
 
-  // P3 fix: case-insensitive skill detection con split(/\W+/)
-  it('dovrebbe rilevare skill case-insensitive (P3)', async () => {
+  // P3 fix: case-insensitive skill detection with split(/\W+/)
+  it('detects skills case-insensitively (P3)', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
-    // "SPEC" maiuscolo deve matchare la chiave "spec"
+    // Uppercase "SPEC" must match the "spec" key
     await handler('genera le SPEC del modulo', mock.stream as any, createMockToken() as any);
 
     const callArgs = cli.agentRun.mock.calls[0][0];
     expect(callArgs.skill).toBe('1-spec-agent');
   });
 
-  it('dovrebbe rilevare skill con punteggiatura adiacente (P3)', async () => {
+  it('detects skills with adjacent punctuation (P3)', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
-    // "test," → split su \W+ produce ["test", ""] → deve matchare
+    // "test," → split on \W+ produces ["test", ""] → must match
     await handler('scrivi test, per favore', mock.stream as any, createMockToken() as any);
 
     const callArgs = cli.agentRun.mock.calls[0][0];
     expect(callArgs.skill).toBe('5-test-agent');
   });
 
-  it('dovrebbe non passare model se defaultModel è "auto"', async () => {
+  it('does not pass model when defaultModel is "auto"', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockResolvedValue(makeRunResult());
 
@@ -118,7 +118,7 @@ describe('/run command', () => {
     expect(callArgs.model).toBeUndefined();
   });
 
-  it('dovrebbe passare model se defaultModel non è "auto"', async () => {
+  it('passes model when defaultModel is not "auto"', async () => {
     cli = createMockCli();
     handler = createRunCommand(
       cli,
@@ -133,7 +133,7 @@ describe('/run command', () => {
     expect(cli.agentRun.mock.calls[0][0].model).toBe('gpt-4');
   });
 
-  it('dovrebbe gestire OzCliError nel catch', async () => {
+  it('handles OzCliError in the catch', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockRejectedValue(new OzCliError(OzCliErrorKind.TIMEOUT, 'timeout'));
 
@@ -142,7 +142,7 @@ describe('/run command', () => {
     expect(mock.getFullOutput()).toContain('Timeout');
   });
 
-  it('dovrebbe gestire errore generico nel catch', async () => {
+  it('handles a generic error in the catch', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockRejectedValue(new Error('unexpected'));
 
@@ -152,8 +152,8 @@ describe('/run command', () => {
     expect(mock.getFullOutput()).toContain('unexpected');
   });
 
-  // Gap: profile non-Default → dovrebbe passare profile ad agentRun (L59)
-  it('dovrebbe passare profile se defaultProfile non è "Default"', async () => {
+  // Gap: non-Default profile → should pass profile to agentRun (L59)
+  it('passes profile when defaultProfile is not "Default"', async () => {
     cli = createMockCli();
     handler = createRunCommand(
       cli,
@@ -168,8 +168,8 @@ describe('/run command', () => {
     expect(cli.agentRun.mock.calls[0][0].profile).toBe('CustomProfile');
   });
 
-  // Gap: workspacePath vuoto → cwd undefined (L61)
-  it('dovrebbe passare cwd=undefined se workspacePath è vuoto', async () => {
+  // Gap: empty workspacePath → cwd undefined (L61)
+  it('passes cwd=undefined when workspacePath is empty', async () => {
     cli = createMockCli();
     handler = createRunCommand(
       cli,
@@ -184,8 +184,8 @@ describe('/run command', () => {
     expect(cli.agentRun.mock.calls[0][0].cwd).toBeUndefined();
   });
 
-  // Gap: errore non-Error (stringa) → instanceof Error false branch (L70)
-  it('dovrebbe gestire errore non-Error (stringa) nel catch (String() branch)', async () => {
+  // Gap: non-Error (string) error → instanceof Error false branch (L70)
+  it('handles a non-Error (string) error in the catch (String() branch)', async () => {
     cli.checkAvailability.mockResolvedValue({ available: true, version: '1.0', path: 'oz' });
     cli.agentRun.mockRejectedValue('string thrown error');
 
