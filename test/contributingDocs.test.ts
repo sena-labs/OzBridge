@@ -11,8 +11,8 @@ describe('CONTRIBUTING.md (deliverable O)', () => {
   });
 
   it('references the 2 × 3 CI matrix Node versions', () => {
-    expect(CONTRIB).toMatch(/20\.19/);
     expect(CONTRIB).toMatch(/22\.12/);
+    expect(CONTRIB).toMatch(/`24`/);
   });
 
   it('references the 145 KB bundle budget', () => {

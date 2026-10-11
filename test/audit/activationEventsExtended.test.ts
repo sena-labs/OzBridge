@@ -30,7 +30,7 @@ describe('activationEvents extended audit', () => {
   it('must NOT declare redundant onCommand:* activation events for contributed commands', () => {
     // VS Code ≥1.74 auto-generates onCommand activation events for every
     // contributed command; declaring them explicitly is redundant noise that
-    // we audited away in v1.2 (MED-1). engines.vscode is pinned at ^1.96 so
+    // we audited away in v1.2 (MED-1). engines.vscode is pinned at ^1.101 so
     // this is safe.
     const commands = new Set((pkg.contributes?.commands ?? []).map((c) => c.command));
     const redundant = (pkg.activationEvents ?? [])

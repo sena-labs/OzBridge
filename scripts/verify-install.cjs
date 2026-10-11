@@ -45,7 +45,7 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 assert(manifest.name === 'ozbridge', 'name', manifest.name);
 assert(manifest.publisher === 'sena-labs', 'publisher', manifest.publisher);
 assert(manifest.version === '1.1.0', 'version', manifest.version);
-assert(manifest.engines.vscode === '^1.96.0', 'engines.vscode', manifest.engines.vscode);
+assert(manifest.engines.vscode === '^1.101.0', 'engines.vscode', manifest.engines.vscode);
 assert(manifest.main === './dist/extension.js', 'main', manifest.main);
 assert(Array.isArray(manifest.contributes.chatParticipants), 'chatParticipants declared');
 assert(

@@ -1,6 +1,6 @@
 # OzBridge — Warp Oz for any IDE or agent, via MCP
 [![Build](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml)
-[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.96.0-blue)](https://code.visualstudio.com/)
+[![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.101.0-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![OzBridge screenshot](media/screenshot.png)
 ## What is OzBridge?
@@ -110,7 +110,7 @@ flowchart LR
 
 ## Requirements
 
-- **VS Code** ≥ 1.96.0 (the `@oz` participant requires the stable Chat Participant API; LM Tools additionally require `vscode.lm.registerTool`).
+- **VS Code** ≥ 1.101.0 (the `@oz` participant requires the stable Chat Participant API; LM Tools additionally require `vscode.lm.registerTool`).
 - **[Warp Terminal](https://www.warp.dev/)** installed, with the `oz` CLI accessible in `PATH`.
 - A **Warp account**, signed in via `oz login`.
 - **GitHub Copilot Chat** extension (optional but required to actually invoke `@oz` or use Agent mode tools).
@@ -598,7 +598,7 @@ To activate it manually:
 1. Open the Chat panel (`Ctrl+Shift+I`).
 2. Type `@oz` followed by any command (e.g. `@oz /config`).
 
-Make sure you have **VS Code ≥ 1.96.0** and the **GitHub Copilot Chat**
+Make sure you have **VS Code ≥ 1.101.0** and the **GitHub Copilot Chat**
 extension installed and signed in.
 
 ## FAQ

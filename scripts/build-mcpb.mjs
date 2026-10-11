@@ -137,7 +137,7 @@ const manifest = {
   // The harvest above still runs: it fails the build if the server exposes no
   // tools, and prints the surface being shipped.
   tools_generated: true,
-  compatibility: { runtimes: { node: '>=20.19' } },
+  compatibility: { runtimes: { node: '>=22.12' } },
   user_config: {
     oz_path: {
       type: 'string',

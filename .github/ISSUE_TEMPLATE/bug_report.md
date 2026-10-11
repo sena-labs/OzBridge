@@ -27,7 +27,7 @@ What actually happened. Include error messages or screenshots if applicable.
 
 ## Environment
 
-- **VS Code version**: <!-- e.g., 1.96.0 -->
+- **VS Code version**: <!-- e.g., 1.101.0 -->
 - **Extension version**: <!-- e.g., 0.1.0 -->
 - **Warp version**: <!-- e.g., "oz --version" output -->
 - **OS**: <!-- e.g., Windows 11, macOS 15, Ubuntu 24.04 -->

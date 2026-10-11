@@ -18,7 +18,7 @@ Events transport, so any MCP client can launch and inspect Oz runs.
 
 ## Requirements
 
-- **Node.js ≥ 20.19**
+- **Node.js ≥ 22.12**
 - The **Oz CLI** installed and on your `PATH` (or pointed at via `OZ_PATH`).
   Download Warp from <https://www.warp.dev/download> — the `oz` command ships
   with it. Verify with `oz --version`.

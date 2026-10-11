@@ -62,6 +62,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `2025-12-11` registry schema the file declares.
 
 ### Changed
+- **Minimum VS Code 1.101 and Node.js 22.12 (breaking).** Node.js 20 reached
+  end-of-life on 2026-04-30, and the toolchain has moved on: Vitest 5 and
+  `@vscode/vsce` 4 require Node 22. The extension runs on the Node.js bundled
+  with VS Code, which is Node 20 up to VS Code 1.100 and Node 22.15 from 1.101,
+  so the floor moves together:
+  - `engines.vscode` `^1.96.0` → `^1.101.0`, `@types/vscode` 1.101.0;
+  - `engines.node` `>=20.19` → `>=22.12` for the extension, the standalone
+    `@sena-labs/oz-mcp-server` package and the MCPB bundle;
+  - esbuild targets `node22`; the Docker image builds and runs on
+    `node:22-alpine`;
+  - the CI matrix runs Node 22.12 and 24 on Linux, Windows and macOS.
+
+  Users on VS Code 1.96–1.100, or running the MCP server on Node 20, should
+  stay on the previous release.
+- Vitest 4 → 5 (`vitest`, `@vitest/coverage-v8`) and `@types/node` 20 → 22.
+- The bundle-budget CI check is now named `Bundle budget (dist/extension.js)`
+  instead of carrying the budget value, so changing the budget no longer
+  renames a required status check.
 - The release version-consistency gate now collapses the version of **every**
   `server.json` `packages[]` entry instead of reading `packages[0]` alone, so
   the second (streamable-http) entry cannot silently drift out of step with

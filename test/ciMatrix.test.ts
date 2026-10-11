@@ -10,8 +10,8 @@ const BUDGET = fs.readFileSync(
 );
 
 describe('CI matrix (deliverable N)', () => {
-  it('declares both Node 20.19 and 22.12', () => {
-    expect(CI).toMatch(/node-version:\s*\[\s*['"]20\.19['"]\s*,\s*['"]22\.12['"]\s*\]/);
+  it('declares both Node 22.12 and 24', () => {
+    expect(CI).toMatch(/node-version:\s*\[\s*['"]22\.12['"]\s*,\s*['"]24['"]\s*\]/);
   });
 
   it('runs on ubuntu + windows + macos', () => {

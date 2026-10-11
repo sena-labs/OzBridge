@@ -35,8 +35,8 @@ import {
 
 ## Requirements
 
-- VS Code `^1.96.0`
-- Node.js `>=20`
+- VS Code `^1.101.0`
+- Node.js `>=22.12`
 
 ## License
 
