@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   check-bundle-size:
-    name: Assert dist/extension.js ≤ 165 KB
+    name: Bundle budget (dist/extension.js)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

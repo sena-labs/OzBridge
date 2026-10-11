@@ -77,6 +77,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Users on VS Code 1.96–1.100, or running the MCP server on Node 20, should
   stay on the previous release.
 - Vitest 4 → 5 (`vitest`, `@vitest/coverage-v8`) and `@types/node` 20 → 22.
+- The bundle-budget CI check is now named `Bundle budget (dist/extension.js)`
+  instead of carrying the budget value, so changing the budget no longer
+  renames a required status check.
 - The release version-consistency gate now collapses the version of **every**
   `server.json` `packages[]` entry instead of reading `packages[0]` alone, so
   the second (streamable-http) entry cannot silently drift out of step with
