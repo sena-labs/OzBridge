@@ -223,8 +223,8 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   // Initialize services.
-  // WorkspaceConfigResolver loads `.warp/warp-bridge.yaml` from the workspace
-  // corrente e offre override typed che vincono sui settings VS Code.
+  // WorkspaceConfigResolver loads `.warp/warp-bridge.yaml` from the current
+  // workspace and exposes typed overrides that take precedence over VS Code settings.
   state.workspaceConfigResolver = new WorkspaceConfigResolver(firstWorkspaceFolderPath());
   context.subscriptions.push(state.workspaceConfigResolver);
   if (typeof vscode.workspace.onDidChangeWorkspaceFolders === 'function') {
@@ -380,7 +380,7 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(disposable);
   }
 
-  // Warp handoff — apre un tab Warp con contesto tramite URI warp://
+  // Warp handoff — opens a Warp tab with context through a warp:// URI
   for (const disposable of registerHandoffCommands({})) {
     context.subscriptions.push(disposable);
   }

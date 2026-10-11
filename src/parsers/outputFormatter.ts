@@ -8,7 +8,7 @@ import {
   IConfigManager,
 } from '../types/index.js';
 
-// IMPL: formattazione output Oz CLI → ChatResponseStream con troncamento (D7)
+// IMPL: Oz CLI output formatting → ChatResponseStream with truncation (D7)
 
 const WARP_INSTALL_URL = 'https://www.warp.dev/download';
 const WARP_LOGIN_URL = 'https://app.warp.dev';
@@ -108,7 +108,7 @@ export class OutputFormatter {
       return;
     }
 
-    // Header tabella
+    // Table header
     const headerRow = '| ' + columns.join(' | ') + ' |';
     const separatorRow = '| ' + columns.map(() => '---').join(' | ') + ' |';
     // Escape `|` and collapse newlines per cell so user-supplied values

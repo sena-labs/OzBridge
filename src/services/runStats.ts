@@ -166,7 +166,7 @@ export function bucketByDate(
   const map = new Map<string, RunStatsBucket>();
 
   // Pre-seed the window so missing days appear as zero buckets.
-  // IMPL: lavoriamo in millisecondi local-time per evitare drift su DST.
+  // IMPL: work in local-time milliseconds to avoid drift across DST.
   const cutoff = new Date(now);
   cutoff.setHours(0, 0, 0, 0);
   cutoff.setDate(cutoff.getDate() - (windowDays - 1));
