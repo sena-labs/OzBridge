@@ -2,6 +2,7 @@
 [![Build](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml/badge.svg)](https://github.com/sena-labs/OzBridge/actions/workflows/ci.yml)
 [![VS Code](https://img.shields.io/badge/VS%20Code-%5E1.101.0-blue)](https://code.visualstudio.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Listed on MCP ServerList](https://mcp-serverlist.com/api/badge/ozbridge)](https://mcp-serverlist.com/mcp/ozbridge)
 ![OzBridge screenshot](media/screenshot.png)
 ## What is OzBridge?
 
