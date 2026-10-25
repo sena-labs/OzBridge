@@ -49,7 +49,7 @@ test.describe('OzBridge — Claude Code (CLI) E2E', () => {
     const parsed = JSON.parse(raw) as { mcpServers?: Record<string, Record<string, unknown>> };
     const entry = parsed.mcpServers?.['oz-bridge'];
     expect(entry).toBeTruthy();
-    expect(entry!.type).toBe('sse');
+    expect(entry!.type).toBe('http');
     expect(entry!.url).toBe(harness.url);
   });
 

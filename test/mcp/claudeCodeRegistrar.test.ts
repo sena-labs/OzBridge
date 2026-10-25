@@ -26,30 +26,30 @@ describe('ClaudeCodeRegistrar', () => {
   });
 
   it('creates a new config file when none exists', async () => {
-    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/sse' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp' });
     expect(fs.existsSync(configPath)).toBe(true);
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(parsed.mcpServers['oz-bridge'].url).toBe('http://127.0.0.1:3847/sse');
-    // Claude Code requires `type: "sse"` to select the SSE transport
-    expect(parsed.mcpServers['oz-bridge'].type).toBe('sse');
+    expect(parsed.mcpServers['oz-bridge'].url).toBe('http://127.0.0.1:3847/mcp');
+    // Claude Code requires `type: "http"` to select the Streamable HTTP transport
+    expect(parsed.mcpServers['oz-bridge'].type).toBe('http');
   });
 
   it('embeds an Authorization header when a bearer token is supplied', async () => {
     await registrar.register({
       name: 'oz-bridge',
-      url: 'http://127.0.0.1:3847/sse',
+      url: 'http://127.0.0.1:3847/mcp',
       bearerToken: 's3cr3t',
     });
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(parsed.mcpServers['oz-bridge'].headers.Authorization).toBe('Bearer s3cr3t');
-    expect(parsed.mcpServers['oz-bridge'].type).toBe('sse');
+    expect(parsed.mcpServers['oz-bridge'].type).toBe('http');
   });
 
   it('omits headers entirely when no bearer token is supplied', async () => {
-    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/sse' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp' });
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(parsed.mcpServers['oz-bridge'].headers).toBeUndefined();
-    expect(parsed.mcpServers['oz-bridge'].type).toBe('sse');
+    expect(parsed.mcpServers['oz-bridge'].type).toBe('http');
   });
 
   it('preserves unrelated top-level keys on register', async () => {
@@ -59,13 +59,13 @@ describe('ClaudeCodeRegistrar', () => {
       mcpServers: { 'other-server': { url: 'http://example' } },
     }, null, 2));
 
-    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/sse' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp' });
 
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     expect(parsed.autoUpdate).toBe(false);
     expect(parsed.uiTheme).toBe('dark');
     expect(parsed.mcpServers['other-server'].url).toBe('http://example');
-    expect(parsed.mcpServers['oz-bridge'].url).toBe('http://127.0.0.1:3847/sse');
+    expect(parsed.mcpServers['oz-bridge'].url).toBe('http://127.0.0.1:3847/mcp');
   });
 
   it('overwrites an existing entry with the same name', async () => {
@@ -107,7 +107,7 @@ describe('ClaudeCodeRegistrar', () => {
   });
 
   it('status returns registered when the entry is present', async () => {
-    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/sse' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp' });
     expect(await registrar.status('oz-bridge')).toBe('registered');
   });
 
@@ -119,7 +119,7 @@ describe('ClaudeCodeRegistrar', () => {
   });
 
   it('writes atomically (no .tmp artifacts left in the config directory)', async () => {
-    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/sse' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp' });
     const residual = fs.readdirSync(tmpdir).filter((f) => f.endsWith('.tmp'));
     expect(residual).toEqual([]);
   });

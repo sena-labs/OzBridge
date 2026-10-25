@@ -156,13 +156,13 @@ export async function launchClaudeHarness(): Promise<LaunchedClaudeHarness> {
   if (!ep) {
     throw new Error('launchClaudeHarness: MCP server failed to bind');
   }
-  const url = `http://${ep.address}:${ep.port}/sse`;
+  const url = `http://${ep.address}:${ep.port}/mcp`;
 
   await fs.writeFile(
     claudeConfigPath,
     `${JSON.stringify({
       mcpServers: {
-        'oz-bridge': { type: 'sse', url },
+        'oz-bridge': { type: 'http', url },
       },
     }, null, 2)}\n`,
     'utf8',

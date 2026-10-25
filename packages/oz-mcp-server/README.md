@@ -11,8 +11,8 @@ Oz from Claude Code, Cursor, Codex, or any MCP client.
 
 This package is the VS Code‑free sibling of the
 [OzBridge](https://github.com/sena-labs/OzBridge) extension. It exposes the same
-MCP tool surface (`oz_agent_run`, `oz_run_list`, …) over an HTTP + Server‑Sent‑
-Events transport, so any MCP client can launch and inspect Oz runs.
+MCP tool surface (six tools: `oz_agent_run`, `oz_run_list`, …) over stdio or
+Streamable HTTP, so any MCP client can launch and inspect Oz runs.
 
 ---
 
@@ -21,37 +21,65 @@ Events transport, so any MCP client can launch and inspect Oz runs.
 - **Node.js ≥ 22.12**
 - The **Oz CLI** installed and on your `PATH` (or pointed at via `OZ_PATH`).
   Download Warp from <https://www.warp.dev/download> — the `oz` command ships
-  with it. Verify with `oz --version`.
+  with it (on Linux typically `~/.warp/bin/oz`). Verify with `oz --version`.
+- Signed in to Warp: run **`oz login`** once in a terminal.
 
 The server only ever shells out to the documented `oz` CLI; it does not embed,
 modify, or reverse‑engineer any Warp software.
 
 ---
 
-## Quick start
+## Quick start (stdio — recommended)
 
-Run the server with `npx` — no install step needed:
+Let your MCP client spawn the server over stdio — no install step, no port, no
+token, and no terminal to keep open.
+
+**Claude Code:**
 
 ```bash
-npx @sena-labs/oz-mcp-server
+claude mcp add oz -- npx -y @sena-labs/oz-mcp-server --stdio
 ```
 
-It binds to `127.0.0.1:3847` and prints:
+**Codex CLI** — add to `~/.codex/config.toml`:
 
-```
-[oz-mcp-server] Listening on http://127.0.0.1:3847
-[oz-mcp-server] SSE endpoint : http://127.0.0.1:3847/sse
-[oz-mcp-server] Health check : http://127.0.0.1:3847/health
-[oz-mcp-server] Press Ctrl+C to stop.
+```toml
+[mcp_servers.oz]
+command = "npx"
+args = ["-y", "@sena-labs/oz-mcp-server", "--stdio"]
 ```
 
-Leave it running, then point your MCP client at the SSE endpoint
-(`http://127.0.0.1:3847/sse`) — see [MCP client setup (HTTP + SSE)](#mcp-client-setup-http--sse).
+**Cursor / Windsurf / Claude Desktop** — add to `~/.cursor/mcp.json` (Cursor),
+`~/.codeium/windsurf/mcp_config.json` (Windsurf) or
+`claude_desktop_config.json` (Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "oz": {
+      "command": "npx",
+      "args": ["-y", "@sena-labs/oz-mcp-server", "--stdio"]
+    }
+  }
+}
+```
+
+### HTTP mode
+
+To run a long-lived server that clients reach by URL instead:
+
+```bash
+npx -y @sena-labs/oz-mcp-server
+```
+
+It binds to `127.0.0.1:3847`. Leave it running, then point your MCP client at
+the Streamable HTTP endpoint `http://127.0.0.1:3847/mcp` — see
+[MCP client setup (HTTP)](#mcp-client-setup-http). The legacy HTTP+SSE endpoint
+`/sse` is still served but deprecated.
 
 Pin a port and a bearer token instead of the defaults:
 
 ```bash
-npx @sena-labs/oz-mcp-server --port 3847 --token my-secret
+npx -y @sena-labs/oz-mcp-server --port 3847 --token my-secret
 ```
 
 Install it globally if you'd rather not re‑download on each run:
@@ -101,12 +129,12 @@ Settings resolve in this order (highest precedence first):
 OZ_PATH=/usr/local/bin/oz \
 OZ_MCP_PORT=3847 \
 OZ_MCP_TOKEN=my-secret \
-npx @sena-labs/oz-mcp-server
+npx -y @sena-labs/oz-mcp-server
 ```
 
 > On Windows PowerShell, set variables with `$env:` first:
 > ```powershell
-> $env:OZ_MCP_TOKEN = "my-secret"; npx @sena-labs/oz-mcp-server
+> $env:OZ_MCP_TOKEN = "my-secret"; npx -y @sena-labs/oz-mcp-server
 > ```
 
 ---
@@ -116,78 +144,43 @@ npx @sena-labs/oz-mcp-server
 The server speaks MCP over **two** transports:
 
 - **stdio** (`--stdio`) — the host spawns the server as a child process and
-  exchanges JSON-RPC over stdin/stdout. Use this for Claude Desktop, `mcp-proxy`,
-  and registry sandboxes (e.g. Glama). No port, no token.
-- **HTTP + SSE** (default) — the server listens on a port; clients connect by
-  **URL**. Use this for Claude Code, Cursor and Codex.
+  exchanges JSON-RPC over stdin/stdout. Recommended for Claude Code, Codex,
+  Cursor, Windsurf, Claude Desktop, `mcp-proxy`, and registry sandboxes (e.g.
+  Glama). No port, no token. See [Quick start](#quick-start-stdio--recommended).
+- **Streamable HTTP** (default when `--stdio` is not passed) — the server
+  listens on a port and clients connect by **URL** to `/mcp`. The older
+  HTTP + SSE transport (`/sse` + `/messages`) is still served for legacy
+  clients but is deprecated.
 
 ```bash
 # stdio (spawned by the host)
-npx @sena-labs/oz-mcp-server --stdio
+npx -y @sena-labs/oz-mcp-server --stdio
 
-# HTTP + SSE (default)
-npx @sena-labs/oz-mcp-server --port 3847
+# HTTP (default) — endpoint http://127.0.0.1:3847/mcp
+npx -y @sena-labs/oz-mcp-server --port 3847
 ```
 
-### Claude Desktop (stdio)
+## MCP client setup (HTTP)
 
-Add to `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "oz-bridge": {
-      "command": "npx",
-      "args": ["-y", "@sena-labs/oz-mcp-server", "--stdio"]
-    }
-  }
-}
-```
-
-## MCP client setup (HTTP + SSE)
-
-For URL-based clients, start the server (above), then add the endpoint to your
-client. These snippets mirror
-[`docs/MCP.md`](https://github.com/sena-labs/OzBridge/blob/main/docs/MCP.md);
-drop the `Authorization` header if you didn't set a token.
+For URL-based clients, start the server in HTTP mode (above), then add the
+endpoint to your client. These snippets mirror
+[`docs/MCP.md`](https://github.com/sena-labs/OzBridge/blob/main/docs/MCP.md).
 
 ### Claude Code
 
-Add to `~/.claude.json`:
-
-```json
-{
-  "mcpServers": {
-    "oz-bridge": {
-      "type": "sse",
-      "url": "http://127.0.0.1:3847/sse",
-      "headers": {
-        "Authorization": "Bearer my-secret"
-      }
-    }
-  }
-}
-```
-
-Or register it from the CLI:
-
 ```bash
-claude mcp add --transport sse oz-bridge http://127.0.0.1:3847/sse \
-  --header "Authorization: Bearer my-secret"
+claude mcp add --transport http oz http://127.0.0.1:3847/mcp
 ```
 
-### Cursor
+### Cursor / Windsurf
 
-Add to `~/.cursor/mcp.json`:
+Add to `~/.cursor/mcp.json` (or `~/.codeium/windsurf/mcp_config.json`):
 
 ```json
 {
   "mcpServers": {
-    "oz-bridge": {
-      "url": "http://127.0.0.1:3847/sse",
-      "headers": {
-        "Authorization": "Bearer my-secret"
-      }
+    "oz": {
+      "url": "http://127.0.0.1:3847/mcp"
     }
   }
 }
@@ -198,11 +191,18 @@ Add to `~/.cursor/mcp.json`:
 Add to `~/.codex/config.toml`:
 
 ```toml
-[[mcp.servers]]
-name = "oz-bridge"
-url = "http://127.0.0.1:3847/sse"
-authorization = "Bearer my-secret"
+[mcp_servers.oz]
+url = "http://127.0.0.1:3847/mcp"
 ```
+
+### If you set a token
+
+With `--token` / `OZ_MCP_TOKEN`, every request needs an
+`Authorization: Bearer <token>` header:
+
+- Claude Code: append `--header "Authorization: Bearer <token>"` to `claude mcp add`.
+- Cursor / Windsurf: add `"headers": { "Authorization": "Bearer <token>" }` next to `"url"`.
+- Codex: add `http_headers = { "Authorization" = "Bearer <token>" }` under `[mcp_servers.oz]`.
 
 ---
 
@@ -227,8 +227,9 @@ for the protocol details, raw‑`curl` cheatsheet, and endpoint reference.
 
 | Route | Method | Purpose |
 | --- | --- | --- |
-| `/sse` | `GET` | Opens the SSE stream. First frame is `event: endpoint` with the `sessionId` to POST to. |
-| `/messages?sessionId=<uuid>` | `POST` | A single JSON‑RPC 2.0 request. Acknowledged with `202`; the response streams back over `/sse`. |
+| `/mcp` | `POST` | **Streamable HTTP** — a single JSON‑RPC 2.0 request, answered in the same HTTP response. Use this one. |
+| `/sse` | `GET` | *Legacy (deprecated).* Opens the SSE stream. First frame is `event: endpoint` with the `sessionId` to POST to. |
+| `/messages?sessionId=<uuid>` | `POST` | *Legacy (deprecated).* A single JSON‑RPC 2.0 request. Acknowledged with `202`; the response streams back over `/sse`. |
 | `/health` | `GET` | Returns `{ ok, name, version, tools, sessions }`. |
 
 Quick health check:

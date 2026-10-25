@@ -32,6 +32,33 @@ describe('Publishing readiness (deliverable M)', () => {
     );
   });
 
+  it('restricts security-sensitive settings in untrusted workspaces', () => {
+    const untrusted = PKG.capabilities?.untrustedWorkspaces;
+    expect(untrusted?.supported).toBe('limited');
+    const restricted: string[] = untrusted?.restrictedConfigurations ?? [];
+    const sensitive = [
+      'ozBridge.ozPath',
+      'ozBridge.mcpEnabled',
+      'ozBridge.mcpBindAddress',
+      'ozBridge.mcpBearerToken',
+      'ozBridge.mcpPort',
+      'ozBridge.telemetry.connectionString',
+    ];
+    for (const key of sensitive) {
+      expect(restricted, `${key} must be restricted`).toContain(key);
+    }
+    // Every restricted key must be a real contributed setting (catches typos).
+    const configs = Array.isArray(PKG.contributes.configuration)
+      ? PKG.contributes.configuration
+      : [PKG.contributes.configuration];
+    const declared = new Set<string>(
+      configs.flatMap((c: { properties?: Record<string, unknown> }) => Object.keys(c.properties ?? {})),
+    );
+    for (const key of restricted) {
+      expect(declared.has(key), `${key} is not a contributed setting`).toBe(true);
+    }
+  });
+
   it('ships the packaged icon referenced in package.json', () => {
     const iconPath = path.join(ROOT, PKG.icon);
     expect(fs.existsSync(iconPath), `icon ${PKG.icon} missing on disk`).toBe(true);

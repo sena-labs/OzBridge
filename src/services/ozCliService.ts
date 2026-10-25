@@ -803,23 +803,21 @@ export class OzCliService implements IOzCliService {
       const needsShell = process.platform === 'win32' && !/\.exe$/i.test(ozPath);
 
       // Security (fail-closed): in `shell: true` mode Node does NOT quote argv
-      // — it joins them into a single cmd.exe command line. An embedded
-      // newline in an argument would split it into separate commands (the
-      // clearest injection/corruption vector, and one no legitimate single
-      // CLI argument — jq filters included — contains). We reject it loudly
-      // instead of silently mis-executing. The default install resolves to
-      // `warp.exe` (no shell), so this never triggers there. (Single-line `&`
-      // / `|` / `<` / `>` metacharacters in a free-text prompt remain a
-      // residual, low-likelihood risk on this rare `.cmd`/bare-name fallback —
-      // char-rejecting them would break legitimate jq filters and natural-
-      // language prompts; the robust fix is to pin `ozBridge.ozPath` to the
-      // `warp.exe` so no shell is used.)
-      if (needsShell && args.some((a) => /[\r\n]/.test(a))) {
+      // — it joins them into a single cmd.exe command line, so newlines and
+      // the cmd.exe metacharacters `& | < > ^ % ! "` in any argument (a
+      // free-text prompt included) could chain or redirect commands. We
+      // reject them instead of attempting fragile cmd.exe escaping. The
+      // default install resolves to `warp.exe` (no shell), so this only
+      // triggers on the `.cmd`/bare-name fallback; pinning `ozBridge.ozPath`
+      // (or `OZ_PATH` for the standalone server) to the `.exe` removes the
+      // shell and the restriction.
+      if (needsShell && args.some((a) => /[&|<>^%!"\r\n]/.test(a))) {
         reject(new OzCliError(
           OzCliErrorKind.CLI_ERROR,
-          'Refusing to run the Oz CLI through a shell with a newline in the input — cmd.exe would '
-          + 'split it into separate commands. Set `ozBridge.ozPath` to the absolute path of '
-          + '`warp.exe` to run without a shell.',
+          'Refusing to run the Oz CLI through cmd.exe with shell metacharacters '
+          + '(& | < > ^ % ! " or a newline) in the input — they could inject commands. '
+          + 'Set `ozBridge.ozPath` (or `OZ_PATH` for the standalone MCP server) to the full path '
+          + 'of the Warp/oz `.exe` so no shell is used.',
         ));
         return;
       }
@@ -1569,13 +1567,20 @@ export class OzCliService implements IOzCliService {
   /**
    * Validates a CLI argument value against shell metacharacter injection.
    * Allows alphanumeric, hyphens, underscores, dots, spaces, slashes,
-   * colons, and common cron characters (*, /, comma).
+   * colons, and common cron characters (*, /, comma). Values starting with
+   * `-` are rejected so they cannot be parsed as CLI options (e.g. `--help`).
    */
   private validateCliArg(value: string, paramName: string): void {
     if (!/^[a-zA-Z0-9_.\- /:,*]+$/.test(value)) {
       throw new OzCliError(
         OzCliErrorKind.CLI_ERROR,
         `Invalid ${paramName}: contains disallowed characters`,
+      );
+    }
+    if (value.startsWith('-')) {
+      throw new OzCliError(
+        OzCliErrorKind.CLI_ERROR,
+        `Invalid ${paramName}: must not start with "-"`,
       );
     }
   }

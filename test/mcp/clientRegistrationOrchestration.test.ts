@@ -107,7 +107,7 @@ describe('MCP client registration commands', () => {
 
     expect(cursor.registered).toBeDefined();
     expect(cursor.registered!.name).toBe(MCP_SERVER_NAME);
-    expect(cursor.registered!.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/sse$/);
+    expect(cursor.registered!.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/mcp$/);
     expect(cursor.registered!.bearerToken).toBe('tok');
     expect(claude.registered).toBeUndefined();
     expect(codex.registered).toBeUndefined();
@@ -174,7 +174,7 @@ describe('buildLocalEndpoint', () => {
 
     const endpoint = buildLocalEndpoint(lifecycle, cfgMgr);
     expect(endpoint.name).toBe(MCP_SERVER_NAME);
-    expect(endpoint.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/sse$/);
+    expect(endpoint.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/mcp$/);
     expect(endpoint.bearerToken).toBe('abc');
   });
 
@@ -183,7 +183,7 @@ describe('buildLocalEndpoint', () => {
     lifecycle = new McpLifecycle(createMockCli(), cfgMgr, '0.7.0-dev');
 
     const endpoint = buildLocalEndpoint(lifecycle, cfgMgr);
-    expect(endpoint.url).toBe('http://127.0.0.1:9999/sse');
+    expect(endpoint.url).toBe('http://127.0.0.1:9999/mcp');
     expect(endpoint.bearerToken).toBeUndefined();
   });
 });

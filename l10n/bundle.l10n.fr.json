@@ -11,7 +11,7 @@
   "❌ Cloud agent failed": "❌ Agent cloud échoué",
   "{0} already exists. Overwrite?": "{0} existe déjà. Écraser ?",
   "Overwrite": "Écraser",
-  "OzBridge MCP server listening on http://{0}:{1}/sse": "Serveur MCP OzBridge en écoute sur http://{0}:{1}/sse",
+  "OzBridge MCP server listening on http://{0}:{1}/mcp": "Serveur MCP OzBridge en écoute sur http://{0}:{1}/mcp",
   "OzBridge MCP server failed to start — see the OzBridge output channel.": "Le serveur MCP OzBridge n'a pas pu démarrer — consultez le canal de sortie d'OzBridge.",
   "OzBridge MCP server stopped.": "Serveur MCP OzBridge arrêté.",
   "OzBridge MCP server: {0}": "Serveur MCP OzBridge : {0}",

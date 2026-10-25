@@ -7,6 +7,7 @@ import {
 } from '../types/index.js';
 import { fetchModelIds } from '../services/modelCatalog.js';
 import { setWorkspaceOverride } from '../services/workspaceConfigWriter.js';
+import { errorHint } from '../tools/errorHint.js';
 
 /**
  * Public shape of a tool entry as exposed by the MCP `tools/list` method.
@@ -245,6 +246,7 @@ export function buildToolRegistry(deps: McpToolDeps): Map<string, McpToolEntry> 
           model: optionalString(input, 'model') ?? defaults.model,
           profile: optionalString(input, 'profile') ?? defaults.profile,
           skill: optionalString(input, 'skill'),
+          cwd: deps.workspaceRoot,
         });
         return okText(formatRunPayload(result));
       } catch (err) {
@@ -394,9 +396,10 @@ function okText(text: string): McpToolResult {
 
 function errorText(err: unknown): McpToolResult {
   if (err instanceof OzCliError) {
+    const hint = errorHint(err.kind);
     return {
       content: [
-        { type: 'text', text: `Oz CLI error (${err.kind}): ${err.message}${err.stderr ? `\n${err.stderr.substring(0, 500)}` : ''}` },
+        { type: 'text', text: `Oz CLI error (${err.kind}): ${err.message}${hint ? `\nHint: ${hint}` : ''}${err.stderr ? `\n${err.stderr.substring(0, 500)}` : ''}` },
       ],
       isError: true,
     };

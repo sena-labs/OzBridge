@@ -170,7 +170,7 @@ export class McpLifecycle implements vscode.Disposable {
       await server.start();
       this.server = server;
       const ep = this.server.endpoint;
-      logInfo(`MCP server listening on http://${ep?.address}:${ep?.port}/sse (${registry.size} tools)`);
+      logInfo(`MCP server listening on http://${ep?.address}:${ep?.port}/mcp (${registry.size} tools)`);
       return;
     } catch (err) {
       if (isPortInUseError(err) && cfg.port !== 0) {
@@ -189,7 +189,7 @@ export class McpLifecycle implements vscode.Disposable {
           if (ep?.port && this.current) {
             this.current.port = ep.port;
           }
-          logInfo(`MCP server listening on fallback endpoint http://${ep?.address}:${ep?.port}/sse (${registry.size} tools)`);
+          logInfo(`MCP server listening on fallback endpoint http://${ep?.address}:${ep?.port}/mcp (${registry.size} tools)`);
           return;
         } catch (fallbackErr) {
           const msg = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
@@ -266,7 +266,7 @@ export function registerMcpCommands(
       // (blue) so the failure is communicated correctly.
       if (ep) {
         await vscode.window.showInformationMessage(
-          vscode.l10n.t('OzBridge MCP server listening on http://{0}:{1}/sse', ep.address, String(ep.port)),
+          vscode.l10n.t('OzBridge MCP server listening on http://{0}:{1}/mcp', ep.address, String(ep.port)),
         );
       } else {
         await vscode.window.showErrorMessage(
@@ -285,7 +285,7 @@ export function registerMcpCommands(
       const ep = lifecycle.endpoint;
       const tokenLabel = cfg.bearerToken ? 'bearer token required' : 'no bearer token';
       const state = lifecycle.running
-        ? `running — http://${ep?.address}:${ep?.port}/sse · ${tokenLabel}`
+        ? `running — http://${ep?.address}:${ep?.port}/mcp · ${tokenLabel}`
         : 'stopped';
       await vscode.window.showInformationMessage(vscode.l10n.t('OzBridge MCP server: {0}', state));
     }),
@@ -296,7 +296,7 @@ export function registerMcpCommands(
         await vscode.window.showWarningMessage(vscode.l10n.t('OzBridge MCP server is not running.'));
         return;
       }
-      const url = `http://${ep.address}:${ep.port}/sse`;
+      const url = `http://${ep.address}:${ep.port}/mcp`;
       await vscode.env.clipboard.writeText(url);
       await vscode.window.showInformationMessage(vscode.l10n.t('Copied MCP endpoint URL: {0}', url));
     }),
@@ -398,7 +398,7 @@ export function buildLocalEndpoint(lifecycle: McpLifecycle, cfgMgr: IConfigManag
   const port = ep?.port ?? cfg.port;
   return {
     name: MCP_SERVER_NAME,
-    url: `http://${address}:${port}/sse`,
+    url: `http://${address}:${port}/mcp`,
     bearerToken: cfg.bearerToken || undefined,
   };
 }

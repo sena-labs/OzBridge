@@ -148,7 +148,8 @@ async function main(): Promise<void> {
 
   const ep = server.endpoint;
   console.log(`[oz-mcp-server] Listening on http://${ep?.address ?? bind}:${ep?.port ?? port}`);
-  console.log(`[oz-mcp-server] SSE endpoint : http://${ep?.address ?? bind}:${ep?.port ?? port}/sse`);
+  console.log(`[oz-mcp-server] MCP endpoint : http://${ep?.address ?? bind}:${ep?.port ?? port}/mcp`);
+  console.log(`[oz-mcp-server] Legacy SSE   : http://${ep?.address ?? bind}:${ep?.port ?? port}/sse`);
   console.log(`[oz-mcp-server] Health check : http://${ep?.address ?? bind}:${ep?.port ?? port}/health`);
   console.log('[oz-mcp-server] Press Ctrl+C to stop.');
 
