@@ -129,6 +129,43 @@ X = "1"
     expect(content).toContain('url = "http://new"');
   });
 
+  it('removes a table and its blank-line-separated subtable without touching the next server', async () => {
+    writeConfig(`[mcp_servers.oz-bridge]
+url = "http://old"
+
+[mcp_servers.oz-bridge.env]
+X = "1"
+
+[mcp_servers.other]
+command = "npx"
+args = ["-y", "other"]
+`);
+    await registrar.unregister('oz-bridge');
+
+    expect(readConfig()).toBe(`[mcp_servers.other]
+command = "npx"
+args = ["-y", "other"]
+`);
+  });
+
+  it('recognizes headers and name lines with trailing comments', async () => {
+    writeConfig(`[mcp_servers.oz-bridge] # local oz
+url = "http://old"
+
+[[mcp.servers]] # legacy
+name = "oz-bridge" # old entry
+url = "http://legacy"
+`);
+    expect(await registrar.status('oz-bridge')).toBe('registered');
+    await registrar.register({ name: 'oz-bridge', url: 'http://new' });
+
+    const content = readConfig();
+    expect(content.match(/\[mcp_servers\.oz-bridge\]/g)?.length).toBe(1);
+    expect(content).not.toContain('http://old');
+    expect(content).not.toContain('http://legacy');
+    expect(content).toContain('url = "http://new"');
+  });
+
   it('migrates the legacy [[mcp.servers]] block for the same server', async () => {
     writeConfig(`log_level = "info"
 

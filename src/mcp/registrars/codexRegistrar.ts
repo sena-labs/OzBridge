@@ -85,9 +85,10 @@ interface BlockRange {
   readonly end: number;
 }
 
-const LEGACY_HEADER = /^\s*\[\[\s*mcp\.servers\s*\]\]\s*$/;
-const ANY_TABLE_HEADER = /^\s*\[{1,2}[^\]\r\n]+\]{1,2}\s*$/;
-const NAME_LINE = /^\s*name\s*=\s*"((?:[^"\\]|\\.)*)"\s*$/;
+// Headers and key/value lines may carry a trailing `# comment` in TOML.
+const LEGACY_HEADER = /^\s*\[\[\s*mcp\.servers\s*\]\]\s*(?:#.*)?$/;
+const ANY_TABLE_HEADER = /^\s*\[{1,2}[^\]\r\n]+\]{1,2}\s*(?:#.*)?$/;
+const NAME_LINE = /^\s*name\s*=\s*"((?:[^"\\]|\\.)*)"\s*(?:#.*)?$/;
 const BARE_KEY = /^[A-Za-z0-9_-]+$/;
 
 /** TOML key for `serverName`: bare when allowed, quoted otherwise. */
@@ -111,7 +112,7 @@ function currentHeaderMatcher(serverName: string): RegExp {
   const variants = [`"${escapeTomlString(serverName)}"`];
   if (BARE_KEY.test(serverName)) { variants.push(serverName); }
   const names = variants.map(esc).join('|');
-  return new RegExp(`^\\s*\\[\\s*mcp_servers\\s*\\.\\s*(?:${names})\\s*(?:\\.[^\\]]*)?\\]\\s*$`);
+  return new RegExp(`^\\s*\\[\\s*mcp_servers\\s*\\.\\s*(?:${names})\\s*(?:\\.[^\\]]*)?\\]\\s*(?:#.*)?$`);
 }
 
 function findServerRanges(text: string, serverName: string): { current: BlockRange[]; legacy: BlockRange[] } {
@@ -147,22 +148,42 @@ function findServerRanges(text: string, serverName: string): { current: BlockRan
  */
 function removeServer(text: string, serverName: string): string {
   const { current, legacy } = findServerRanges(text, serverName);
-  const ranges = [...current, ...legacy].sort((a, b) => b.start - a.start);
-  if (ranges.length === 0) { return text; }
+  if (current.length === 0 && legacy.length === 0) { return text; }
 
-  let lines = text.split(/\r?\n/);
-  for (const range of ranges) {
-    let removeStart = range.start;
-    let removeEnd = range.end;
-    while (removeStart > 0 && lines[removeStart - 1].trim() === '') {
-      removeStart--;
+  const lines = text.split(/\r?\n/);
+  // Widen every range over its separating blank lines against the ORIGINAL
+  // line array, then merge overlaps before deleting anything. Adjacent
+  // ranges (a table and its subtable) share blank lines; deleting them one
+  // at a time with indices computed up front would shift the second range
+  // onto unrelated lines.
+  const widened = [...current, ...legacy]
+    .map(({ start, end }) => {
+      let s = start;
+      let e = end;
+      while (s > 0 && lines[s - 1].trim() === '') { s--; }
+      if (e < lines.length && lines[e].trim() === '') { e++; }
+      return { start: s, end: e };
+    })
+    .sort((a, b) => a.start - b.start);
+
+  const merged: BlockRange[] = [];
+  for (const r of widened) {
+    const last = merged[merged.length - 1];
+    if (last && r.start <= last.end) {
+      merged[merged.length - 1] = { start: last.start, end: Math.max(last.end, r.end) };
+    } else {
+      merged.push(r);
     }
-    if (removeEnd < lines.length && lines[removeEnd].trim() === '') {
-      removeEnd++;
-    }
-    lines = [...lines.slice(0, removeStart), ...lines.slice(removeEnd)];
   }
-  return lines.join('\n');
+
+  const kept: string[] = [];
+  let cursor = 0;
+  for (const r of merged) {
+    kept.push(...lines.slice(cursor, r.start));
+    cursor = r.end;
+  }
+  kept.push(...lines.slice(cursor));
+  return kept.join('\n');
 }
 
 function appendServerTable(text: string, endpoint: McpClientEndpoint): string {
