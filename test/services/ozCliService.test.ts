@@ -905,11 +905,29 @@ describe('OzCliService', () => {
     });
 
     it('accepts legitimate jq filters with pipes internal to jq', async () => {
-      createMockProcess({ stdout: '[]' });
-      // jq uses `|` as its internal pipe operator; it must be allowed
-      await cli.runList({ jq: '.runs[] | select(.status=="SUCCEEDED") | .id' });
-      const args = mockSpawn.mock.calls[0][1] as string[];
-      expect(args).toContain('--jq');
+      // jq uses `|` as its internal pipe operator; the jq validator must allow
+      // it. Pinned to linux: on Windows the cmd.exe fallback refuses `|` by
+      // design (covered below).
+      const spy = vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
+      try {
+        createMockProcess({ stdout: '[]' });
+        await cli.runList({ jq: '.runs[] | select(.status=="SUCCEEDED") | .id' });
+        const args = mockSpawn.mock.calls[0][1] as string[];
+        expect(args).toContain('--jq');
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('refuses jq pipes on the Windows cmd.exe fallback', async () => {
+      const spy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+      try {
+        await expect(cli.runList({ jq: '.runs[] | .id' }))
+          .rejects.toThrow(/shell metacharacters/);
+        expect(mockSpawn).not.toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 
