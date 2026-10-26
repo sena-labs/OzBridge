@@ -71,6 +71,28 @@ describe('oz_agent_run', () => {
     expect(result.content[0].text).toContain('NOT_AUTHENTICATED');
     expect(result.content[0].text).toContain('stderr here');
   });
+
+  it('appends the remediation hint for the error kind', async () => {
+    cli.agentRun.mockRejectedValue(
+      new OzCliError(OzCliErrorKind.NOT_AUTHENTICATED, 'oz login required', 1),
+    );
+    const result = await registry.get('oz_agent_run')!.invoke({ prompt: 'x' });
+    expect(result.isError).toBe(true);
+    expect(result.content[0].text).toContain('\nHint: Run `oz login`');
+  });
+
+  it('omits the hint line for kinds without a hint', async () => {
+    cli.agentRun.mockRejectedValue(new OzCliError(OzCliErrorKind.CLI_ERROR, 'boom', 2));
+    const result = await registry.get('oz_agent_run')!.invoke({ prompt: 'x' });
+    expect(result.content[0].text).not.toContain('Hint:');
+  });
+
+  it('runs the agent in the host workspace (cwd = workspaceRoot)', async () => {
+    cli.agentRun.mockResolvedValue(makeRunResult({ output: 'done' }));
+    const reg = buildToolRegistry({ cli, cfgMgr: createMockConfigManager(), workspaceRoot: '/work/space' });
+    await reg.get('oz_agent_run')!.invoke({ prompt: 'hello' });
+    expect(cli.agentRun).toHaveBeenCalledWith(expect.objectContaining({ cwd: '/work/space' }));
+  });
 });
 
 describe('oz_run_get', () => {

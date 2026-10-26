@@ -56,7 +56,7 @@ test.describe('OzBridge — Cursor IDE E2E', () => {
     expect(items.some((it) => /Register MCP client/i.test(it))).toBe(true);
   });
 
-  test('MCP register Cursor: writes ~/.cursor/mcp.json with type:"sse" entry', async () => {
+  test('MCP register Cursor: writes ~/.cursor/mcp.json with type:"http" entry', async () => {
     const win = cursor.window;
     await dismissOverlays(win);
 
@@ -87,10 +87,10 @@ test.describe('OzBridge — Cursor IDE E2E', () => {
     const parsed = JSON.parse(raw) as { mcpServers?: Record<string, Record<string, unknown>> };
     const entry = parsed.mcpServers?.['oz-bridge'];
     expect(entry, 'oz-bridge entry missing from ~/.cursor/mcp.json').toBeTruthy();
-    // type:"sse" is required by Claude Code and harmless for Cursor.
-    expect(entry!.type).toBe('sse');
+    // type:"http" selects Streamable HTTP in Claude Code and is harmless for Cursor.
+    expect(entry!.type).toBe('http');
     expect(typeof entry!.url).toBe('string');
-    expect((entry!.url as string)).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/sse$/);
+    expect((entry!.url as string)).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/mcp$/);
 
     // 4) Cleanup: unregister and stop.
     await runCommand(win, 'OzBridge: Unregister MCP client');

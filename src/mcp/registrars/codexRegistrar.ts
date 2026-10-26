@@ -18,21 +18,22 @@ import { withConfigLock } from './jsonRegistrarBase.js';
  *
  * Rather than pulling in a full TOML parser (adding a dependency and
  * bundle weight for what amounts to one feature) this implementation
- * uses a **minimal, line-based writer** that only understands
- * `[[mcp.servers]]` array-of-tables. Every other byte of the file is
- * preserved verbatim.
+ * uses a **minimal, line-based writer** that only touches the tables
+ * belonging to our server. Every other byte of the file is preserved
+ * verbatim.
  *
- * Grammar accepted for our own blocks:
+ * Current Codex format (one table per server, Streamable HTTP):
  *
  * ```toml
- * [[mcp.servers]]
- * name = "oz-bridge"
- * url = "http://127.0.0.1:3847/sse"
- * bearer_token = "…"
+ * [mcp_servers.oz-bridge]
+ * url = "http://127.0.0.1:3847/mcp"
+ * http_headers = { "Authorization" = "Bearer …" }
  * ```
  *
- * Keys outside this narrow set inside an `[[mcp.servers]]` block are
- * preserved when re-writing the block.
+ * Older OzBridge releases wrote a `[[mcp.servers]]` array-of-tables
+ * block (with `name`/`url`/`bearer_token`) that current Codex ignores.
+ * Register and unregister also remove that legacy block for the same
+ * server name, so existing users are migrated in place.
  */
 export class CodexRegistrar implements IMcpClientRegistrar {
   readonly clientId = 'codex';
@@ -46,8 +47,8 @@ export class CodexRegistrar implements IMcpClientRegistrar {
   async register(endpoint: McpClientEndpoint): Promise<void> {
     return withConfigLock(this.configPath, async () => {
       const original = (await readIfExists(this.configPath)) ?? '';
-      const withoutExisting = removeMcpServerBlock(original, endpoint.name);
-      const appended = appendMcpServerBlock(withoutExisting, endpoint);
+      const withoutExisting = removeServer(original, endpoint.name);
+      const appended = appendServerTable(withoutExisting, endpoint);
       await atomicWriteText(this.configPath, appended);
     });
   }
@@ -56,7 +57,7 @@ export class CodexRegistrar implements IMcpClientRegistrar {
     return withConfigLock(this.configPath, async () => {
       const original = await readIfExists(this.configPath);
       if (original === undefined) { return; }
-      const next = removeMcpServerBlock(original, serverName);
+      const next = removeServer(original, serverName);
       if (next === original) { return; }
       await atomicWriteText(this.configPath, next);
     });
@@ -66,7 +67,7 @@ export class CodexRegistrar implements IMcpClientRegistrar {
     return withConfigLock(this.configPath, async () => {
       const original = await readIfExists(this.configPath);
       if (original === undefined) { return 'not-configured'; }
-      return findMcpServerBlock(original, serverName) !== undefined
+      return findServerRanges(original, serverName).current.length > 0
         ? 'registered'
         : 'missing';
     });
@@ -74,87 +75,123 @@ export class CodexRegistrar implements IMcpClientRegistrar {
 }
 
 // ===========================================================================
-// Minimal TOML helpers — only understand `[[mcp.servers]]` tables.
+// Minimal TOML helpers — only understand our own tables.
 // ===========================================================================
 
 interface BlockRange {
-  /** Inclusive line index of the `[[mcp.servers]]` header. */
+  /** Inclusive line index of the table header. */
   readonly start: number;
   /** Exclusive line index where the block ends (next header or EOF). */
   readonly end: number;
 }
 
-const MCP_SERVER_HEADER = /^\s*\[\[\s*mcp\.servers\s*\]\]\s*$/;
-const ANY_TABLE_HEADER = /^\s*\[{1,2}[^\]\r\n]+\]{1,2}\s*$/;
-const NAME_LINE = /^\s*name\s*=\s*"((?:[^"\\]|\\.)*)"\s*$/;
+// Headers and key/value lines may carry a trailing `# comment` in TOML.
+const LEGACY_HEADER = /^\s*\[\[\s*mcp\.servers\s*\]\]\s*(?:#.*)?$/;
+const ANY_TABLE_HEADER = /^\s*\[{1,2}[^\]\r\n]+\]{1,2}\s*(?:#.*)?$/;
+const NAME_LINE = /^\s*name\s*=\s*"((?:[^"\\]|\\.)*)"\s*(?:#.*)?$/;
+const BARE_KEY = /^[A-Za-z0-9_-]+$/;
 
-function findAllMcpServerBlocks(text: string): BlockRange[] {
+/** TOML key for `serverName`: bare when allowed, quoted otherwise. */
+export function tomlKey(serverName: string): string {
+  return BARE_KEY.test(serverName) ? serverName : `"${escapeTomlString(serverName)}"`;
+}
+
+function blockEnd(lines: string[], start: number): number {
+  for (let j = start + 1; j < lines.length; j++) {
+    if (ANY_TABLE_HEADER.test(lines[j])) { return j; }
+  }
+  return lines.length;
+}
+
+/**
+ * Returns a header matcher for `[mcp_servers.<name>]` and its subtables
+ * (`[mcp_servers.<name>.env]`, …), accepting the name bare or quoted.
+ */
+function currentHeaderMatcher(serverName: string): RegExp {
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const variants = [`"${escapeTomlString(serverName)}"`];
+  if (BARE_KEY.test(serverName)) { variants.push(serverName); }
+  const names = variants.map(esc).join('|');
+  return new RegExp(`^\\s*\\[\\s*mcp_servers\\s*\\.\\s*(?:${names})\\s*(?:\\.[^\\]]*)?\\]\\s*(?:#.*)?$`);
+}
+
+function findServerRanges(text: string, serverName: string): { current: BlockRange[]; legacy: BlockRange[] } {
   const lines = text.split(/\r?\n/);
-  const ranges: BlockRange[] = [];
+  const isCurrent = currentHeaderMatcher(serverName);
+  const current: BlockRange[] = [];
+  const legacy: BlockRange[] = [];
   for (let i = 0; i < lines.length; i++) {
-    if (!MCP_SERVER_HEADER.test(lines[i])) { continue; }
-    let end = lines.length;
-    for (let j = i + 1; j < lines.length; j++) {
-      if (ANY_TABLE_HEADER.test(lines[j])) { end = j; break; }
-    }
-    ranges.push({ start: i, end });
-    i = end - 1;
-  }
-  return ranges;
-}
-
-/**
- * Returns the `BlockRange` of the `[[mcp.servers]]` block whose
- * `name` key equals `serverName`, or `undefined` if no such block
- * exists.
- */
-function findMcpServerBlock(text: string, serverName: string): BlockRange | undefined {
-  const lines = text.split(/\r?\n/);
-  for (const range of findAllMcpServerBlocks(text)) {
-    for (let k = range.start + 1; k < range.end; k++) {
-      const m = NAME_LINE.exec(lines[k]);
-      if (m && unescapeTomlString(m[1]) === serverName) {
-        return range;
+    if (isCurrent.test(lines[i])) {
+      const end = blockEnd(lines, i);
+      current.push({ start: i, end });
+      i = end - 1;
+    } else if (LEGACY_HEADER.test(lines[i])) {
+      const end = blockEnd(lines, i);
+      for (let k = i + 1; k < end; k++) {
+        const m = NAME_LINE.exec(lines[k]);
+        if (m && unescapeTomlString(m[1]) === serverName) {
+          legacy.push({ start: i, end });
+          break;
+        }
       }
+      i = end - 1;
     }
   }
-  return undefined;
+  return { current, legacy };
 }
 
 /**
- * Removes the `[[mcp.servers]]` block named `serverName`, including
- * any immediately preceding blank lines that introduced it, so the
- * resulting file does not accumulate stray separators.
+ * Removes every table belonging to `serverName` (current format and
+ * legacy `[[mcp.servers]]`), including the blank lines that separated
+ * each removed block from the previous one, so repeated edits do not
+ * accumulate gaps.
  */
-function removeMcpServerBlock(text: string, serverName: string): string {
-  const range = findMcpServerBlock(text, serverName);
-  if (!range) { return text; }
+function removeServer(text: string, serverName: string): string {
+  const { current, legacy } = findServerRanges(text, serverName);
+  if (current.length === 0 && legacy.length === 0) { return text; }
 
   const lines = text.split(/\r?\n/);
-  let removeStart = range.start;
-  // Drop trailing blank lines inside the block (they belong to it).
-  let removeEnd = range.end;
-  // Strip leading blank lines immediately before the header if they
-  // only served to separate it from the previous block.
-  while (removeStart > 0 && lines[removeStart - 1].trim() === '') {
-    removeStart--;
+  // Widen every range over its separating blank lines against the ORIGINAL
+  // line array, then merge overlaps before deleting anything. Adjacent
+  // ranges (a table and its subtable) share blank lines; deleting them one
+  // at a time with indices computed up front would shift the second range
+  // onto unrelated lines.
+  const widened = [...current, ...legacy]
+    .map(({ start, end }) => {
+      let s = start;
+      let e = end;
+      while (s > 0 && lines[s - 1].trim() === '') { s--; }
+      if (e < lines.length && lines[e].trim() === '') { e++; }
+      return { start: s, end: e };
+    })
+    .sort((a, b) => a.start - b.start);
+
+  const merged: BlockRange[] = [];
+  for (const r of widened) {
+    const last = merged[merged.length - 1];
+    if (last && r.start <= last.end) {
+      merged[merged.length - 1] = { start: last.start, end: Math.max(last.end, r.end) };
+    } else {
+      merged.push(r);
+    }
   }
-  // Strip one trailing blank line after the block if present, to
-  // avoid accumulating gaps on repeated edits.
-  if (removeEnd < lines.length && lines[removeEnd].trim() === '') {
-    removeEnd++;
+
+  const kept: string[] = [];
+  let cursor = 0;
+  for (const r of merged) {
+    kept.push(...lines.slice(cursor, r.start));
+    cursor = r.end;
   }
-  const next = [...lines.slice(0, removeStart), ...lines.slice(removeEnd)].join('\n');
-  return next;
+  kept.push(...lines.slice(cursor));
+  return kept.join('\n');
 }
 
-function appendMcpServerBlock(text: string, endpoint: McpClientEndpoint): string {
+function appendServerTable(text: string, endpoint: McpClientEndpoint): string {
   const sections: string[] = [];
-  sections.push('[[mcp.servers]]');
-  sections.push(`name = "${escapeTomlString(endpoint.name)}"`);
+  sections.push(`[mcp_servers.${tomlKey(endpoint.name)}]`);
   sections.push(`url = "${escapeTomlString(endpoint.url)}"`);
   if (endpoint.bearerToken) {
-    sections.push(`bearer_token = "${escapeTomlString(endpoint.bearerToken)}"`);
+    sections.push(`http_headers = { "Authorization" = "Bearer ${escapeTomlString(endpoint.bearerToken)}" }`);
   }
   const block = sections.join('\n');
 

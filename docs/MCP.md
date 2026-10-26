@@ -13,8 +13,15 @@ Chat sees inside VS Code.
    - `ozBridge.mcpBearerToken` (default empty = no auth)
 4. Watch the OzBridge output channel for the log line:
    ```
-   MCP server listening on http://127.0.0.1:3847/sse (6 tools)
+   MCP server listening on http://127.0.0.1:3847/mcp (6 tools)
    ```
+   `/mcp` (Streamable HTTP) is the endpoint OzBridge registers in client
+   configs; `/sse` remains available for legacy clients but is deprecated.
+
+No VS Code at all? The standalone
+[`@sena-labs/oz-mcp-server`](../packages/oz-mcp-server) can be spawned by the
+client over stdio, e.g.
+`claude mcp add oz -- npx -y @sena-labs/oz-mcp-server --stdio`.
 You can also start/stop the server on demand without touching settings:
 - `OzBridge: Start MCP server` (Command Palette)
 - `OzBridge: Stop MCP server`
@@ -171,44 +178,39 @@ constant-time via `crypto.timingSafeEqual`.
 Bind to loopback (`127.0.0.1`) whenever possible; only change
 `ozBridge.mcpBindAddress` if you understand the implications.
 ## Integration examples
+These point a client at a running server's `/mcp` endpoint. No token is
+required on loopback by default; if you set `ozBridge.mcpBearerToken`, add the
+`Authorization: Bearer <token>` header shown under each example.
 ### Claude Code
-Add to `~/.claude.json`:
-```json
-{
-  "mcpServers": {
-    "oz-bridge": {
-      "type": "sse",
-      "url": "http://127.0.0.1:3847/sse",
-      "headers": {
-        "Authorization": "Bearer my-secret"
-      }
-    }
-  }
-}
+```bash
+claude mcp add --transport http oz http://127.0.0.1:3847/mcp
+# with a token: append --header "Authorization: Bearer <token>"
 ```
 ### Cursor
 Add to `~/.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
-    "oz-bridge": {
-      "url": "http://127.0.0.1:3847/sse",
-      "headers": {
-        "Authorization": "Bearer my-secret"
-      }
+    "oz": {
+      "url": "http://127.0.0.1:3847/mcp"
     }
   }
 }
 ```
+With a token, add `"headers": { "Authorization": "Bearer <token>" }` next to
+`"url"`.
 ### Codex CLI
 Add to `~/.codex/config.toml`:
 ```toml
-[[mcp.servers]]
-name = "oz-bridge"
-url = "http://127.0.0.1:3847/sse"
-authorization = "Bearer my-secret"
+[mcp_servers.oz]
+url = "http://127.0.0.1:3847/mcp"
+# with a token:
+# http_headers = { "Authorization" = "Bearer <token>" }
 ```
 ## Raw protocol cheatsheet
+For `/mcp`, see the one-shot `curl` examples under
+[Which transport to use](#which-transport-to-use). The steps below exercise
+the legacy (deprecated) `/sse` + `/messages` transport.
 ```bash
 # 1. Open the SSE stream (keep this process running).
 curl -N http://127.0.0.1:3847/sse

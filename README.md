@@ -18,8 +18,8 @@ MCP-compatible client — GitHub Copilot Chat, Claude Code, Cursor and Codex CLI
 
 Run it embedded in VS Code — where Oz shows up natively as the `@oz` **Chat
 Participant** and as **Agent-Native Language Model Tools** that Copilot Agent
-mode invokes autonomously — or expose the same Oz toolset over HTTP+SSE so
-**Claude Code, Cursor and Codex** drive Oz too. No editor at all? Ship the
+mode invokes autonomously — or expose the Oz toolset over MCP (stdio or
+Streamable HTTP) so **Claude Code, Cursor and Codex** drive Oz too. No editor at all? Ship the
 standalone [`@sena-labs/oz-mcp-server`](packages/oz-mcp-server) and point any
 MCP client at it.
 
@@ -32,13 +32,55 @@ flowchart LR
     end
     VSC["VS Code<br/>Copilot Chat"]
 
-    clients -->|"HTTP + SSE"| BR
+    clients -->|"stdio / HTTP"| BR
     VSC -->|"@oz participant<br/>LM Tools"| BR
 
     BR["OzBridge<br/>(6 MCP tools)"] -->|"spawn"| CLI["oz CLI"]
     CLI -->|"local run"| WS["Your workspace"]
     CLI -->|"cloud run"| CLOUD["Warp Oz cloud"]
 ```
+
+## Quick start
+
+**Prerequisites (every path):** [Warp](https://www.warp.dev/download) installed,
+the `oz` CLI on your `PATH` (on Linux typically `~/.warp/bin/oz` — see
+[Troubleshooting](#oz-command-not-found)), and `oz login` run once in a terminal.
+Check with `oz --version`. The npm server additionally needs **Node.js ≥ 22.12**.
+
+**Cursor / Windsurf / VSCodium (Open VSX)** — use OzBridge over MCP. Add this to
+`~/.cursor/mcp.json` (Cursor) or `~/.codeium/windsurf/mcp_config.json` (Windsurf):
+
+```json
+{ "mcpServers": { "oz": { "command": "npx", "args": ["-y", "@sena-labs/oz-mcp-server", "--stdio"] } } }
+```
+
+The `@oz` chat participant needs **GitHub Copilot Chat** and is VS Code-only,
+so MCP is the way to drive Oz from these editors.
+
+**VS Code + GitHub Copilot Chat** — install the extension
+(`code --install-extension sena-labs.ozbridge`), run `oz login` once, then in
+the Copilot Chat panel type:
+
+```text
+@oz /run fix the failing test in src/auth/login.ts
+```
+
+**Claude Code / Codex / any MCP client** — the client spawns the server over
+stdio, so no long-running terminal is needed:
+
+```bash
+claude mcp add oz -- npx -y @sena-labs/oz-mcp-server --stdio
+```
+
+```toml
+# ~/.codex/config.toml
+[mcp_servers.oz]
+command = "npx"
+args = ["-y", "@sena-labs/oz-mcp-server", "--stdio"]
+```
+
+Other clients (e.g. Claude Desktop) take the same JSON as Cursor above. More
+options, including HTTP, in [Connect your MCP client](#connect-your-mcp-client).
 
 
 ## Feature gallery
@@ -63,6 +105,7 @@ flowchart LR
 
 ## Table of Contents
 
+- [Quick start](#quick-start)
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -94,7 +137,7 @@ flowchart LR
 
 ## Features
 
-- **MCP bridge — Warp Oz for any client** — expose the Oz toolset as a Model Context Protocol server over HTTP+SSE so **Claude Code, Cursor and Codex** drive Oz through the same tools Copilot sees. Run it embedded in VS Code (opt-in) or fully standalone via [`@sena-labs/oz-mcp-server`](packages/oz-mcp-server). See [`docs/MCP.md`](docs/MCP.md).
+- **MCP bridge — Warp Oz for any client** — expose the Oz toolset as a Model Context Protocol server (stdio or Streamable HTTP) so **Claude Code, Cursor and Codex** drive Oz through six MCP tools that mirror the Language Model Tools Copilot sees. Run it embedded in VS Code (opt-in) or fully standalone via [`@sena-labs/oz-mcp-server`](packages/oz-mcp-server). See [`docs/MCP.md`](docs/MCP.md).
 - **`@oz` Chat Participant** — interact with Warp Oz agents from the VS Code chat panel.
 - **Agent-Native Language Model Tools** — Copilot Agent mode can invoke Warp Oz directly, without typing `@oz`.
 - **One-click model selection** — pick the Oz model from a QuickPick (`OzBridge: Select Model`), the `$(sparkle)` status-bar indicator, or `@oz /models <id>` — no hand-typing an id into settings. Agents switch it via the MCP tools `oz_list_models` / `oz_set_default_model`.
@@ -181,65 +224,75 @@ built extension loaded.
 
 ## Connect your MCP client
 
-OzBridge exposes the same six Oz tools to every MCP client. Start the bridge
-first — either enable the embedded server in VS Code (`"ozBridge.mcpEnabled": true`,
-then **OzBridge MCP: Start**) or run the standalone package:
+OzBridge exposes the same six MCP tools (`oz_agent_run`, `oz_agent_run_cloud`,
+`oz_run_get`, `oz_run_list`, `oz_list_models`, `oz_set_default_model`) to every
+MCP client. The simplest setup is **stdio**: the client spawns the standalone
+server itself, so there is nothing to keep running in a terminal.
 
-```bash
-npx -y @sena-labs/oz-mcp-server
-```
+Prefer a long-running HTTP server instead? Either enable the embedded server in
+VS Code (`"ozBridge.mcpEnabled": true`, then **OzBridge: Start MCP server**) or
+run `npx -y @sena-labs/oz-mcp-server`. Both listen on
+`http://127.0.0.1:3847/mcp` (Streamable HTTP) by default; the legacy `/sse`
+endpoint is deprecated. No token is required on loopback by default.
 
-Both listen on `http://127.0.0.1:3847/sse` by default. Set
-`ozBridge.mcpBearerToken` to require an `Authorization: Bearer <token>` header;
-omit the `headers` block below when auth is disabled.
+> **If you set `ozBridge.mcpBearerToken`** (or `--token` / `OZ_MCP_TOKEN` for the
+> standalone server), add an `Authorization: Bearer <token>` header to the
+> URL-based configs below — e.g. `"headers": { "Authorization": "Bearer <token>" }`
+> in JSON, or `http_headers = { "Authorization" = "Bearer <token>" }` for Codex.
 
 ### How do I use Warp Oz in Claude Code?
 
-Add to `~/.claude.json`:
+```bash
+claude mcp add oz -- npx -y @sena-labs/oz-mcp-server --stdio
+```
 
-```json
-{
-  "mcpServers": {
-    "oz-bridge": {
-      "type": "sse",
-      "url": "http://127.0.0.1:3847/sse",
-      "headers": { "Authorization": "Bearer my-secret" }
-    }
-  }
-}
+Or, against a running HTTP server:
+
+```bash
+claude mcp add --transport http oz http://127.0.0.1:3847/mcp
 ```
 
 ### How do I use Warp Oz in Cursor?
 
-Add to `~/.cursor/mcp.json`:
+Add to `~/.cursor/mcp.json` (Windsurf: `~/.codeium/windsurf/mcp_config.json`;
+Claude Desktop: `claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
-    "oz-bridge": {
-      "url": "http://127.0.0.1:3847/sse",
-      "headers": { "Authorization": "Bearer my-secret" }
+    "oz": {
+      "command": "npx",
+      "args": ["-y", "@sena-labs/oz-mcp-server", "--stdio"]
     }
   }
 }
 ```
+
+Or, against a running HTTP server: `{ "mcpServers": { "oz": { "url": "http://127.0.0.1:3847/mcp" } } }`.
 
 ### How do I use Warp Oz in Codex CLI?
 
 Add to `~/.codex/config.toml`:
 
 ```toml
-[[mcp.servers]]
-name = "oz-bridge"
-url = "http://127.0.0.1:3847/sse"
-authorization = "Bearer my-secret"
+[mcp_servers.oz]
+command = "npx"
+args = ["-y", "@sena-labs/oz-mcp-server", "--stdio"]
+```
+
+Or, against a running HTTP server:
+
+```toml
+[mcp_servers.oz]
+url = "http://127.0.0.1:3847/mcp"
 ```
 
 ### How do I use Warp Oz in VS Code?
 
-No MCP wiring needed — install the extension and Oz is available immediately as
-the `@oz` chat participant and as Language Model Tools that Copilot Agent mode
-calls on its own. See [Usage](#usage).
+No MCP wiring needed — install the extension (with GitHub Copilot Chat) and Oz
+is available immediately as the `@oz` chat participant and as four Language
+Model Tools that Copilot Agent mode calls on its own (`oz_run_local`,
+`oz_run_cloud`, `oz_get_run`, `oz_list_runs`). See [Usage](#usage).
 
 Protocol details, endpoint reference and a raw-`curl` cheatsheet live in
 [`docs/MCP.md`](docs/MCP.md).
@@ -605,8 +658,9 @@ extension installed and signed in.
 ## FAQ
 
 **Q: Does OzBridge work with Cursor, Claude Code and Codex?**
-A: Yes. All three are MCP clients — point them at the bridge endpoint and they
-get the same six Oz tools Copilot sees. Copy-paste configs are in
+A: Yes. All three are MCP clients — point them at the bridge and they get the
+six OzBridge MCP tools (Copilot Agent mode instead gets four Language Model
+Tools with different names). Copy-paste configs are in
 [Connect your MCP client](#connect-your-mcp-client).
 
 **Q: Do I need VS Code at all?**
@@ -615,14 +669,16 @@ via `npx` with no editor involved; VS Code is only required for the `@oz` chat
 participant and the sidebar.
 
 **Q: What is the difference between a local run and a cloud run?**
-A: A local run spawns the `oz` CLI in your workspace — no Warp credits, full
-access to your files. A cloud run executes on Warp's infrastructure, consumes
-credits, and runs detached from your machine. Both are reachable from every
+A: A local run spawns the `oz` CLI (`oz agent run`) in your workspace with full
+access to your files; it still uses Warp's AI, so it may count against your Warp
+plan's AI usage. A cloud run executes on Warp's infrastructure, consumes Warp
+cloud credits, and runs detached from your machine. Both are reachable from every
 client.
 
 **Q: Does this extension require a Warp subscription?**
-A: A free Warp account is sufficient for local agent runs. Cloud runs may
-require a paid plan depending on usage. Check your account at
+A: You need a Warp account (`oz login`). Local agent runs use your plan's AI
+usage allowance; cloud runs consume Warp cloud credits and may require a paid
+plan depending on usage. Check your account at
 [app.warp.dev](https://app.warp.dev).
 
 **Q: Can I use a custom model?**

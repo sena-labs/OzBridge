@@ -502,6 +502,48 @@ describe('OzCliService', () => {
         spy.mockRestore();
       }
     });
+
+    it.each(['&', '|', '<', '>', '^', '%', '!', '"', '\r'])(
+      'fails closed (no spawn) when a shell spawn would receive %j on Windows',
+      async (ch) => {
+        const spy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+        try {
+          await expect(cli.agentRun({ prompt: `do x ${ch} calc.exe` }))
+            .rejects.toMatchObject({ kind: OzCliErrorKind.CLI_ERROR, message: expect.stringContaining('ozBridge.ozPath') });
+          expect(mockSpawn).not.toHaveBeenCalled();
+        } finally {
+          spy.mockRestore();
+        }
+      },
+    );
+
+    it('still spawns through the shell on Windows for a prompt without metacharacters', async () => {
+      const spy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+      try {
+        createMockProcess({ stdout: '{}' });
+        await cli.agentRun({ prompt: 'summarize the repo, please.' });
+        expect(mockSpawn).toHaveBeenCalledTimes(1);
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('does not apply the shell metacharacter guard off Windows', async () => {
+      const spy = vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
+      try {
+        createMockProcess({ stdout: '{}' });
+        await cli.agentRun({ prompt: 'a & b | c > d "quoted" 100%!' });
+        expect(mockSpawn).toHaveBeenCalledTimes(1);
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('rejects a model value that starts with "-" (option injection)', async () => {
+      await expect(cli.agentRun({ prompt: 'test', model: '--help' }))
+        .rejects.toThrow('Invalid model: must not start with "-"');
+      expect(mockSpawn).not.toHaveBeenCalled();
+    });
   });
 
   // =========================================================================
@@ -863,11 +905,29 @@ describe('OzCliService', () => {
     });
 
     it('accepts legitimate jq filters with pipes internal to jq', async () => {
-      createMockProcess({ stdout: '[]' });
-      // jq uses `|` as its internal pipe operator; it must be allowed
-      await cli.runList({ jq: '.runs[] | select(.status=="SUCCEEDED") | .id' });
-      const args = mockSpawn.mock.calls[0][1] as string[];
-      expect(args).toContain('--jq');
+      // jq uses `|` as its internal pipe operator; the jq validator must allow
+      // it. Pinned to linux: on Windows the cmd.exe fallback refuses `|` by
+      // design (covered below).
+      const spy = vi.spyOn(process, 'platform', 'get').mockReturnValue('linux');
+      try {
+        createMockProcess({ stdout: '[]' });
+        await cli.runList({ jq: '.runs[] | select(.status=="SUCCEEDED") | .id' });
+        const args = mockSpawn.mock.calls[0][1] as string[];
+        expect(args).toContain('--jq');
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('refuses jq pipes on the Windows cmd.exe fallback', async () => {
+      const spy = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+      try {
+        await expect(cli.runList({ jq: '.runs[] | .id' }))
+          .rejects.toThrow(/shell metacharacters/);
+        expect(mockSpawn).not.toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+      }
     });
   });
 

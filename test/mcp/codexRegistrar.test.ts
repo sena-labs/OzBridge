@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { CodexRegistrar } from '../../src/mcp/registrars/codexRegistrar.js';
+import { CodexRegistrar, tomlKey } from '../../src/mcp/registrars/codexRegistrar.js';
 
 let tmpdir: string;
 let configPath: string;
@@ -18,6 +18,15 @@ afterEach(() => {
   try { fs.rmSync(tmpdir, { recursive: true, force: true }); } catch { /* ignore */ }
 });
 
+function writeConfig(content: string): void {
+  fs.mkdirSync(path.dirname(configPath), { recursive: true });
+  fs.writeFileSync(configPath, content, 'utf8');
+}
+
+function readConfig(): string {
+  return fs.readFileSync(configPath, 'utf8');
+}
+
 describe('CodexRegistrar — metadata', () => {
   it('has the expected client id and display name', () => {
     expect(registrar.clientId).toBe('codex');
@@ -27,103 +36,175 @@ describe('CodexRegistrar — metadata', () => {
 });
 
 describe('CodexRegistrar — register on a fresh file', () => {
-  it('creates config.toml with a single [[mcp.servers]] block', async () => {
-    await registrar.register({
-      name: 'oz-bridge',
-      url: 'http://127.0.0.1:3847/sse',
-    });
+  it('creates config.toml with a single [mcp_servers.<name>] table', async () => {
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp' });
     expect(fs.existsSync(configPath)).toBe(true);
-    const content = fs.readFileSync(configPath, 'utf8');
-    expect(content).toContain('[[mcp.servers]]');
-    expect(content).toContain('name = "oz-bridge"');
-    expect(content).toContain('url = "http://127.0.0.1:3847/sse"');
+    const content = readConfig();
+    expect(content).toBe('[mcp_servers.oz-bridge]\nurl = "http://127.0.0.1:3847/mcp"\n');
+    expect(content).not.toContain('[[mcp.servers]]');
     expect(content).not.toContain('bearer_token');
+    expect(content).not.toContain('http_headers');
   });
 
-  it('includes bearer_token when one is provided', async () => {
-    await registrar.register({
-      name: 'oz-bridge',
-      url: 'http://127.0.0.1:3847/sse',
-      bearerToken: 's3cr3t',
-    });
-    const content = fs.readFileSync(configPath, 'utf8');
-    expect(content).toContain('bearer_token = "s3cr3t"');
+  it('sends the bearer token through http_headers when one is provided', async () => {
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp', bearerToken: 's3cr3t' });
+    expect(readConfig()).toContain('http_headers = { "Authorization" = "Bearer s3cr3t" }');
   });
 
   it('escapes embedded quotes in values', async () => {
-    await registrar.register({
-      name: 'oz-bridge',
-      url: 'http://"weird"/path',
-      bearerToken: 'tok"en',
-    });
-    const content = fs.readFileSync(configPath, 'utf8');
+    await registrar.register({ name: 'oz-bridge', url: 'http://"weird"/path', bearerToken: 'tok"en' });
+    const content = readConfig();
     expect(content).toContain('url = "http://\\"weird\\"/path"');
-    expect(content).toContain('bearer_token = "tok\\"en"');
+    expect(content).toContain('"Bearer tok\\"en"');
+  });
+
+  it('quotes server names that are not valid bare TOML keys', async () => {
+    expect(tomlKey('oz-bridge')).toBe('oz-bridge');
+    expect(tomlKey('oz.bridge')).toBe('"oz.bridge"');
+    await registrar.register({ name: 'oz.bridge', url: 'http://x' });
+    expect(readConfig()).toContain('[mcp_servers."oz.bridge"]');
+    expect(await registrar.status('oz.bridge')).toBe('registered');
   });
 });
 
 describe('CodexRegistrar — preservation of unrelated sections', () => {
   it('keeps arbitrary top-level keys and foreign tables intact', async () => {
-    const original = `# Codex config
+    writeConfig(`# Codex config
 log_level = "info"
 
 [profile.default]
 model = "gpt-4o"
-`;
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.writeFileSync(configPath, original, 'utf8');
-
+`);
     await registrar.register({ name: 'oz-bridge', url: 'http://x' });
 
-    const content = fs.readFileSync(configPath, 'utf8');
+    const content = readConfig();
+    expect(content).toContain('# Codex config');
     expect(content).toContain('log_level = "info"');
     expect(content).toContain('[profile.default]');
     expect(content).toContain('model = "gpt-4o"');
-    expect(content).toContain('[[mcp.servers]]');
-    expect(content).toContain('name = "oz-bridge"');
+    expect(content).toContain('[mcp_servers.oz-bridge]');
   });
 
-  it('preserves pre-existing [[mcp.servers]] blocks for other servers', async () => {
-    const original = `[[mcp.servers]]
-name = "other"
-url = "http://other"
-`;
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.writeFileSync(configPath, original, 'utf8');
+  it('preserves tables for other MCP servers', async () => {
+    writeConfig(`[mcp_servers.other]
+command = "npx"
+args = ["-y", "other"]
 
+[mcp_servers.other.env]
+TOKEN = "t"
+`);
     await registrar.register({ name: 'oz-bridge', url: 'http://new' });
 
-    const content = fs.readFileSync(configPath, 'utf8');
-    // Both entries must still be present
-    const blocks = content.match(/\[\[mcp\.servers\]\]/g) ?? [];
-    expect(blocks.length).toBe(2);
-    expect(content).toContain('name = "other"');
-    expect(content).toContain('name = "oz-bridge"');
+    const content = readConfig();
+    expect(content).toContain('[mcp_servers.other]');
+    expect(content).toContain('[mcp_servers.other.env]');
+    expect(content).toContain('TOKEN = "t"');
+    expect(content).toContain('[mcp_servers.oz-bridge]');
   });
 });
 
-describe('CodexRegistrar — overwriting the same server', () => {
-  it('replaces an existing block with the new one rather than duplicating it', async () => {
+describe('CodexRegistrar — overwriting and migration', () => {
+  it('replaces an existing table with the new one rather than duplicating it', async () => {
     await registrar.register({ name: 'oz-bridge', url: 'http://old' });
     await registrar.register({ name: 'oz-bridge', url: 'http://new' });
 
-    const content = fs.readFileSync(configPath, 'utf8');
+    const content = readConfig();
     expect(content).not.toContain('http://old');
     expect(content).toContain('http://new');
-    const headers = content.match(/\[\[mcp\.servers\]\]/g) ?? [];
-    expect(headers.length).toBe(1);
+    expect(content.match(/\[mcp_servers\.oz-bridge\]/g)?.length).toBe(1);
+  });
+
+  it('also removes our subtables when replacing', async () => {
+    writeConfig(`[mcp_servers.oz-bridge]
+url = "http://old"
+
+[mcp_servers.oz-bridge.env]
+X = "1"
+`);
+    await registrar.register({ name: 'oz-bridge', url: 'http://new' });
+
+    const content = readConfig();
+    expect(content).not.toContain('[mcp_servers.oz-bridge.env]');
+    expect(content).not.toContain('http://old');
+    expect(content).toContain('url = "http://new"');
+  });
+
+  it('removes a table and its blank-line-separated subtable without touching the next server', async () => {
+    writeConfig(`[mcp_servers.oz-bridge]
+url = "http://old"
+
+[mcp_servers.oz-bridge.env]
+X = "1"
+
+[mcp_servers.other]
+command = "npx"
+args = ["-y", "other"]
+`);
+    await registrar.unregister('oz-bridge');
+
+    expect(readConfig()).toBe(`[mcp_servers.other]
+command = "npx"
+args = ["-y", "other"]
+`);
+  });
+
+  it('recognizes headers and name lines with trailing comments', async () => {
+    writeConfig(`[mcp_servers.oz-bridge] # local oz
+url = "http://old"
+
+[[mcp.servers]] # legacy
+name = "oz-bridge" # old entry
+url = "http://legacy"
+`);
+    expect(await registrar.status('oz-bridge')).toBe('registered');
+    await registrar.register({ name: 'oz-bridge', url: 'http://new' });
+
+    const content = readConfig();
+    expect(content.match(/\[mcp_servers\.oz-bridge\]/g)?.length).toBe(1);
+    expect(content).not.toContain('http://old');
+    expect(content).not.toContain('http://legacy');
+    expect(content).toContain('url = "http://new"');
+  });
+
+  it('migrates the legacy [[mcp.servers]] block for the same server', async () => {
+    writeConfig(`log_level = "info"
+
+[[mcp.servers]]
+name = "oz-bridge"
+url = "http://127.0.0.1:3847/sse"
+bearer_token = "old"
+
+[[mcp.servers]]
+name = "other"
+url = "http://other"
+`);
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp' });
+
+    const content = readConfig();
+    expect(content).not.toContain('name = "oz-bridge"');
+    expect(content).not.toContain('bearer_token');
+    expect(content).not.toContain('/sse');
+    expect(content).toContain('name = "other"');
+    expect(content).toContain('log_level = "info"');
+    expect(content).toContain('[mcp_servers.oz-bridge]\nurl = "http://127.0.0.1:3847/mcp"');
   });
 });
 
 describe('CodexRegistrar — unregister and status', () => {
-  it('unregister removes only the named block', async () => {
+  it('unregister removes only the named table', async () => {
     await registrar.register({ name: 'oz-bridge', url: 'http://x' });
     await registrar.register({ name: 'other', url: 'http://y' });
     await registrar.unregister('oz-bridge');
 
-    const content = fs.readFileSync(configPath, 'utf8');
-    expect(content).not.toContain('name = "oz-bridge"');
-    expect(content).toContain('name = "other"');
+    const content = readConfig();
+    expect(content).not.toContain('[mcp_servers.oz-bridge]');
+    expect(content).toContain('[mcp_servers.other]');
+  });
+
+  it('unregister removes a legacy block too', async () => {
+    writeConfig('[[mcp.servers]]\nname = "oz-bridge"\nurl = "u"\n');
+    await registrar.unregister('oz-bridge');
+    expect(readConfig()).not.toContain('oz-bridge');
   });
 
   it('unregister is a no-op when the file does not exist', async () => {
@@ -131,19 +212,20 @@ describe('CodexRegistrar — unregister and status', () => {
     expect(fs.existsSync(configPath)).toBe(false);
   });
 
-  it('unregister is a no-op when the block does not exist', async () => {
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.writeFileSync(configPath, '[[mcp.servers]]\nname = "other"\nurl = "u"\n', 'utf8');
-    const before = fs.readFileSync(configPath, 'utf8');
+  it('unregister is a no-op when no table exists for the server', async () => {
+    writeConfig('[mcp_servers.other]\nurl = "u"\n');
+    const before = readConfig();
     await registrar.unregister('oz-bridge');
-    expect(fs.readFileSync(configPath, 'utf8')).toBe(before);
+    expect(readConfig()).toBe(before);
   });
 
   it('status returns not-configured / missing / registered correctly', async () => {
     expect(await registrar.status('oz-bridge')).toBe('not-configured');
 
-    fs.mkdirSync(path.dirname(configPath), { recursive: true });
-    fs.writeFileSync(configPath, '', 'utf8');
+    writeConfig('');
+    expect(await registrar.status('oz-bridge')).toBe('missing');
+
+    writeConfig('[[mcp.servers]]\nname = "oz-bridge"\nurl = "u"\n');
     expect(await registrar.status('oz-bridge')).toBe('missing');
 
     await registrar.register({ name: 'oz-bridge', url: 'http://x' });

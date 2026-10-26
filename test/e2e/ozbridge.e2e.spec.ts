@@ -317,7 +317,7 @@ test.describe('OzBridge — real MCP lifecycle', () => {
     monitor.setLabel('mcp-lifecycle');
     const win = vscode.window;
 
-    // 1) Start: must show an info toast with the URL http://...:PORT/sse
+    // 1) Start: must show an info toast with the URL http://...:PORT/mcp
     await dismissOverlays(win);
     const prev0 = await lastNotificationText(win);
     await runExactCommand(win, 'OzBridge: Start MCP server');
@@ -346,7 +346,7 @@ test.describe('OzBridge — real MCP lifecycle', () => {
     await runExactCommand(win, 'OzBridge: Copy MCP endpoint URL');
     const copyText = await waitForFreshNotification(win, prev2, 8_000);
     expect(copyText, 'copy: no toast').toBeTruthy();
-    expect(copyText!).toMatch(/http:\/\/.*\/sse|MCP endpoint|copied/i);
+    expect(copyText!).toMatch(/http:\/\/.*\/mcp|MCP endpoint|copied/i);
     await dismissOverlays(win);
 
     // 4) Stop. No fresh-notification wait here: step 5 polls the status

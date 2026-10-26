@@ -26,7 +26,7 @@ describe('CursorRegistrar', () => {
   });
 
   it('creates `.cursor/mcp.json` and any missing parent directories', async () => {
-    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/sse' });
+    await registrar.register({ name: 'oz-bridge', url: 'http://127.0.0.1:3847/mcp' });
     expect(fs.existsSync(configPath)).toBe(true);
     expect(fs.statSync(path.dirname(configPath)).isDirectory()).toBe(true);
   });
@@ -34,14 +34,14 @@ describe('CursorRegistrar', () => {
   it('writes a canonical `mcpServers` entry with bearer-token headers', async () => {
     await registrar.register({
       name: 'oz-bridge',
-      url: 'http://127.0.0.1:3847/sse',
+      url: 'http://127.0.0.1:3847/mcp',
       bearerToken: 'abc',
     });
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    // `type: "sse"` is included for Claude Code compatibility; Cursor ignores it.
+    // `type: "http"` selects Streamable HTTP in Claude Code; Cursor accepts it.
     expect(parsed.mcpServers['oz-bridge']).toEqual({
-      type: 'sse',
-      url: 'http://127.0.0.1:3847/sse',
+      type: 'http',
+      url: 'http://127.0.0.1:3847/mcp',
       headers: { Authorization: 'Bearer abc' },
     });
   });
@@ -59,6 +59,6 @@ describe('CursorRegistrar', () => {
     await registrar.unregister('oz-bridge');
 
     const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    expect(parsed.mcpServers).toEqual({ other: { type: 'sse', url: 'http://y' } });
+    expect(parsed.mcpServers).toEqual({ other: { type: 'http', url: 'http://y' } });
   });
 });

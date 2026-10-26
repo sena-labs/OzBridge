@@ -11,7 +11,7 @@
   "❌ Cloud agent failed": "❌ 云代理失败",
   "{0} already exists. Overwrite?": "{0} 已存在。覆盖？",
   "Overwrite": "覆盖",
-  "OzBridge MCP server listening on http://{0}:{1}/sse": "OzBridge MCP 服务器正在监听 http://{0}:{1}/sse",
+  "OzBridge MCP server listening on http://{0}:{1}/mcp": "OzBridge MCP 服务器正在监听 http://{0}:{1}/mcp",
   "OzBridge MCP server failed to start — see the OzBridge output channel.": "OzBridge MCP 服务器启动失败 — 请查看 OzBridge 输出通道。",
   "OzBridge MCP server stopped.": "OzBridge MCP 服务器已停止。",
   "OzBridge MCP server: {0}": "OzBridge MCP 服务器：{0}",

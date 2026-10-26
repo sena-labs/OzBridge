@@ -29,7 +29,15 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": "limited",
-      "description": "OzBridge spawns the Oz CLI configured by the workspace via .warp/warp-bridge.yaml. In an untrusted workspace these workspace-scoped settings are ignored and only user/global configuration is honored; the CLI is still spawned from the user's PATH or globally configured ozPath."
+      "description": "In an untrusted workspace, workspace values of the security-sensitive settings (ozBridge.ozPath, the MCP server bind address, port, bearer token and enablement, and the telemetry connection string) are ignored and only user/global values are honored, so a cloned repository cannot redirect the Oz CLI binary or expose the MCP server.",
+      "restrictedConfigurations": [
+        "ozBridge.ozPath",
+        "ozBridge.mcpEnabled",
+        "ozBridge.mcpBindAddress",
+        "ozBridge.mcpBearerToken",
+        "ozBridge.mcpPort",
+        "ozBridge.telemetry.connectionString"
+      ]
     },
     "virtualWorkspaces": {
       "supported": false,

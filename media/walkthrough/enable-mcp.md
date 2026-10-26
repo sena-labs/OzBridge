@@ -10,9 +10,15 @@ CLI through OzBridge.
 3. Use **OzBridge: Register MCP client…** to paste the endpoint into a
    supported client's config file automatically.
 
-The MCP server binds to `127.0.0.1` by default and supports an
-optional bearer token (`ozBridge.mcpBearerToken`) for authenticated
-setups.
+Clients connect to the Streamable HTTP endpoint
+`http://127.0.0.1:3847/mcp` (the legacy `/sse` endpoint is
+deprecated). The MCP server binds to `127.0.0.1` by default; no token
+is needed on loopback, but you can set an optional bearer token
+(`ozBridge.mcpBearerToken`) for authenticated setups.
+
+Don't want to keep VS Code running? Any MCP client can spawn the
+standalone server over stdio instead — see the
+[Quick start](https://github.com/sena-labs/OzBridge#quick-start).
 
 ---
 

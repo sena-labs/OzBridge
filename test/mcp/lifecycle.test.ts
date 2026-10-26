@@ -189,7 +189,7 @@ describe('registerMcpCommands', () => {
       await vscodeMock.commands.executeCommand('ozBridge.mcp.copyEndpointUrl');
       expect(vscodeMock.env.clipboard.writeText).toHaveBeenCalledTimes(1);
       const arg = vscodeMock.env.clipboard.writeText.mock.calls[0][0] as string;
-      expect(arg).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/sse$/);
+      expect(arg).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/mcp$/);
     } finally {
       await lifecycle.dispose();
     }

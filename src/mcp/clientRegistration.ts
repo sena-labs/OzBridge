@@ -18,7 +18,7 @@
 export interface McpClientEndpoint {
   /** Unique server name used as the key inside the client's config. */
   readonly name: string;
-  /** Full URL to the MCP transport (e.g. `http://127.0.0.1:3847/sse`). */
+  /** Full URL to the MCP transport (e.g. `http://127.0.0.1:3847/mcp`). */
   readonly url: string;
   /** Optional bearer token injected as an `Authorization` header. */
   readonly bearerToken?: string;
