@@ -5,9 +5,17 @@ All notable changes to **OzBridge for VS Code** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] — 2026-10-26
 
 ### Added
+- **Quick start for every editor.** The README opens with three short paths —
+  Cursor / Windsurf / VSCodium over MCP stdio, VS Code + Copilot Chat, and
+  Claude Code / Codex — with the prerequisites (`oz` on `PATH`, `oz login`)
+  stated once. Most installs come from Open VSX, where Copilot Chat is not
+  available, so MCP is now the documented way in for those editors.
+- **Remediation hints in MCP tool errors.** A failed tool call now ends with
+  the same hint the Copilot tools already showed (for example
+  `Hint: Run \`oz login\` …`), so an MCP client can tell the user what to do.
 - **Streamable HTTP transport (`POST /mcp`).** The MCP specification has
   called HTTP+SSE (`GET /sse` + `POST /messages?sessionId=`) a deprecated
   transport since `2025-03-26` and formally reclassified it as Deprecated in
@@ -81,6 +89,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   request with no version at all — are answered byte-identically to before.
 
 ### Changed
+- **Client registration writes Streamable HTTP (`/mcp`).** Registered Claude
+  Code and Cursor entries use `"type": "http"` and the `/mcp` URL, and every
+  URL shown to the user points at `/mcp`. The server still serves `/sse`, so
+  existing configurations keep working.
+- **Codex registration uses the current config format.** OzBridge wrote a
+  `[[mcp.servers]]` block with `bearer_token`, which current Codex ignores. It
+  now writes `[mcp_servers.<name>]` with `url` and, when a token is set,
+  `http_headers`. Registering or unregistering removes the legacy block for the
+  same name, so existing users are migrated in place.
 - **Minimum VS Code 1.101 and Node.js 22.12 (breaking).** Node.js 20 reached
   end-of-life on 2026-04-30, and the toolchain has moved on: Vitest 5 and
   `@vscode/vsce` 4 require Node 22. The extension runs on the Node.js bundled
@@ -115,6 +132,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   quoted a stale 145 KB, now states the enforced value.
 
 ### Fixed
+- **`oz_agent_run` ran in the wrong directory.** The MCP tool did not pass the
+  workspace as the working directory, so the agent worked wherever the server
+  process was started. It now runs in the workspace root.
 - **Release jobs run on Node 22.** The Marketplace and Open VSX jobs fetch the
   latest `@vscode/vsce` and `ovsx` through `npx`, and both now require Node 22
   (vsce 4.0.0, ovsx 1.2.0), while every `publish.yml` job still ran on Node 20
@@ -129,6 +149,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to the publish attempt so a genuine first release is never suppressed.
 
 ### Security
+- **Untrusted workspaces can no longer override sensitive settings.**
+  `ozBridge.ozPath`, `mcpEnabled`, `mcpBindAddress`, `mcpBearerToken`,
+  `mcpPort` and `telemetry.connectionString` are listed in
+  `restrictedConfigurations`. Before, a cloned repository's
+  `.vscode/settings.json` could point `ozPath` at its own binary or expose the
+  MCP server on `0.0.0.0`.
+- **No shell metacharacters through `cmd.exe`.** When `oz` cannot be resolved
+  to an `.exe` on Windows, the CLI runs through `cmd.exe`; an argument
+  containing `& | < > ^ % ! "` or a newline is now refused, with a message to
+  pin `ozBridge.ozPath` / `OZ_PATH` to the `.exe`. The default Warp install
+  resolves to `warp.exe` and is unaffected.
+- **No option injection.** CLI values such as model or profile names are
+  rejected when they start with `-`.
 - **`Origin` validation on the HTTP+SSE transport.** `GET /sse` and
   `POST /messages` now apply the same DNS-rebinding guard as `/mcp` — the
   HTTP+SSE transport's own `2024-11-05` security warning already required it.
