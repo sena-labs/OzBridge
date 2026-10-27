@@ -5,6 +5,15 @@ All notable changes to **OzBridge for VS Code** will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **MCP Registry job waits for npm.** npm accepts a publish a few minutes
+  before it serves the version, and the registry job checked the package
+  seconds after the npm job finished, so the v2.0.0 release failed that step
+  and had to be re-run. The ownership check now polls npm for up to ~5 minutes
+  before failing.
+
 ## [2.0.0] — 2026-10-26
 
 ### Added

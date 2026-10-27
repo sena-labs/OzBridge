@@ -263,13 +263,23 @@ jobs:
       # server.json and packages/oz-mcp-server/package.json updated, but the
       # version already live on npm still carrying the old mcpName — is rejected
       # with an opaque ownership error. Fail here with the actual mismatch.
+      #
+      # npm accepts a publish before it serves the version ("may take a few
+      # minutes to become available"), and this job starts seconds after the
+      # npm job, so poll for up to ~5 minutes before declaring it missing.
       - name: Verify npm ownership metadata
         env:
           VERSION: ${{ needs.build.outputs.version }}
         run: |
           set -euo pipefail
           SRV_NAME=$(node -p "require('./server.json').name")
-          PUBLISHED=$(npm view "@sena-labs/oz-mcp-server@${VERSION}" mcpName 2>/dev/null || true)
+          PUBLISHED=""
+          for attempt in $(seq 1 20); do
+            PUBLISHED=$(npm view "@sena-labs/oz-mcp-server@${VERSION}" mcpName 2>/dev/null || true)
+            [ -n "$PUBLISHED" ] && break
+            echo "npm does not serve @sena-labs/oz-mcp-server@${VERSION} yet (attempt ${attempt}/20), retrying in 15s"
+            sleep 15
+          done
           if [ -z "$PUBLISHED" ]; then
             echo "::error::@sena-labs/oz-mcp-server@${VERSION} is not on npm, or carries no mcpName"
             exit 1
